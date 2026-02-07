@@ -1642,7 +1642,7 @@ function renderViz(t){
 
   const cx = vizW/2, cy = vizH/2;
   const depth = 3.2;
-  const scale = Math.min(vizW, vizH) * 0.42;
+  const scale = Math.min(vizW, vizH) * 0.42 * (window.__vizZoom || 1);
 
   let drawCount = Math.floor(260 + opennessBlend*600 + stage*120 + (morph.attractors.length-5)*28);
   drawCount = Math.max(200, Math.min(VIZ_N_MAX, drawCount));
@@ -1927,5 +1927,6 @@ saveState();
 </script>
 
 <!-- ORGANISM_EXTENSIONS_V1_END -->
+<script src="viz_controls.js"></script>
 </body>
 </html>
