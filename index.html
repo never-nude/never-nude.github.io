@@ -1616,16 +1616,21 @@ function renderViz(t){
 
   const opennessBlend = 0.25*genome.openness + 0.75*traits.openness;
   const stage = computeStage(quietBank);
+  /* HOLD_FREEZE_RENDER */
+  const holding = (window.__dbView && window.__dbView.holding);
+  if(!holding){
 
-  const speed = (0.00016 + traits.autonomy*0.00070) * (0.35 + (1 - fN)*0.95) * (0.70 + d.calmFactor*0.60);
-  rotY += dt * speed;
-  rotX += dt * speed * 0.62;
+      const speed = (0.00016 + traits.autonomy*0.00070) * (0.35 + (1 - fN)*0.95) * (0.70 + d.calmFactor*0.60);
+      rotY += dt * speed;
+      rotX += dt * speed * 0.62;
 
-  const jit = (iN*0.0010 + d.stress*0.0007 + body.injury*0.0008) * (0.25 + traits.sensitivity*1.1);
-  rotX += Math.sin(t*0.0017) * jit;
-  rotY += Math.cos(t*0.0013) * jit;
+      const jit = (iN*0.0010 + d.stress*0.0007 + body.injury*0.0008) * (0.25 + traits.sensitivity*1.1);
+      rotX += Math.sin(t*0.0017) * jit;
+      rotY += Math.cos(t*0.0013) * jit;
 
-  const clearA = 0.16 + d.stress*0.22 + (1-body.oxygen)*0.08;
+  
+  }
+const clearA = 0.16 + d.stress*0.22 + (1-body.oxygen)*0.08;
   vizCtx.fillStyle = `rgba(0,0,0,${clearA.toFixed(3)})`;
   vizCtx.fillRect(0,0,vizW,vizH);
 
@@ -1927,6 +1932,14 @@ saveState();
 </script>
 
 <!-- ORGANISM_EXTENSIONS_V1_END -->
-<script src="viz_controls.js"></script>
+
+  <script src="viz_controls.js"></script>
+  <script src="tools_track1.js"></script>
+  <script src="memory_track2.js"></script>
+  <script src="physiology_cardio_metab.js"></script>
+  <script src="urgency_brightness.js"></script>
+  <script src="legend_toggle.js"></script>
+  <script src="thinking_depth.js"></script>
+  <script src="decision_timeline.js"></script>
 </body>
 </html>
