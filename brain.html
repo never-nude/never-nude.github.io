@@ -231,6 +231,10 @@
       white-space:pre;
       max-width:96ch;
     }
+  
+    /* DB_HIDE_HISTORY_V1 */
+    #log, #history, #decisionHistory, .history, .decisionHistory{ display:none !important; }
+
   </style>
 </head>
 <body>
@@ -1589,8 +1593,18 @@ function drawWorld(){
 }
 
 function worldLoop(t){
-  const dt = Math.min(0.05, Math.max(0.001, (t - lastWorldFrame)/1000));
+  // DB_PAUSE_DT0_V1
+  const paused = !!(window.DB_PAUSED || window.DB_HOLDING || window.DB_AUTOPAUSE);
+  const raw = (t - lastWorldFrame)/1000;
+  const dt = paused ? 0 : Math.min(0.05, Math.max(0.001, raw));
   lastWorldFrame = t;
+
+  if(paused){
+    updateBars();
+    drawWorld();
+    requestAnimationFrame(worldLoop);
+    return;
+  }
 
   updateAgent(dt);
   updateBars(); /* keep bars responsive */
@@ -1796,6 +1810,8 @@ function renderViz(t){
       vizCtx.fill();
     }
   }
+  // DB_PROJ_EXPORT_V1
+  try{ window.DB_PROJ = PROJ; window.DB_DRAWCOUNT = drawCount; }catch(e){}
 
   vizCtx.globalAlpha = 1;
   requestAnimationFrame(renderViz);
@@ -1941,5 +1957,12 @@ saveState();
   <script src="decision_timeline.js"></script>
   <script src="legend_toggle.js"></script>\n  <script src="world_overlay_marker.js"></script>\n  <script src="viz_think_halo.js"></script>\n  <script src="viz_size_boost.js"></script>
   <script src="pause_time_freeze.js"></script>
+  <script src="smarter_brain.js"></script>
+  <script src="lobes_learning_v1.js"></script>
+  <script src="brain_parts_v1.js"></script>
+
+
+<script src="db_canvas_telemetry.js"></script>
+<script src="db_anatomy_v2.js"></script>
 </body>
 </html>
