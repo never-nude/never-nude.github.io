@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Digital Brain — Color Lobes + Living World</title>
+  <style>
+    :root{
+      --bg:#0e0e0e;
+      --panel:#0a0a0a;
+      --ink:#e0e0e0;
+      --muted:#9a9a9a;
+
+      --c-energy:#39d98a;  /* green */
+      --c-hunger:#ffb020;  /* amber */
+      --c-oxygen:#3ad6ff;  /* cyan */
+      --c-temp:#a78bfa;    /* purple */
+      --c-injury:#ff4d4d;  /* red */
+      --c-explore:#d0d0d0; /* neutral */
+    }
+
+    body{
+      background:var(--bg);
+      color:var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      padding:18px;
+      transition:background-color 6s linear;
+    }
+    body.resting{ background:#0b0b0b; }
+    body.deep{ background:#070707; }
+
+    #viz{
+      width:100%;
+      height:360px;
+      display:block;
+      background:#000;
+      border:1px solid #141414;
+      border-radius:6px;
+      margin-bottom:10px;
+    }
+
+    #hud{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    #organs{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0,1fr));
+      gap:8px;
+    }
+
+    .organ{
+      background:var(--panel);
+      border:1px solid #1e1e1e;
+      border-radius:6px;
+      padding:8px 8px 10px 8px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .organ:hover{ border-color:#2b2b2b; }
+    .organ:active{ transform:translateY(1px); }
+
+    .organ .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:7px;
+    }
+    .organ .name{
+      font-size:11px;
+      letter-spacing:0.08em;
+      color:#bdbdbd;
+      text-transform:uppercase;
+    }
+    .organ .dot{
+      width:8px; height:8px;
+      border-radius:999px;
+      box-shadow:0 0 8px rgba(255,255,255,0.06);
+    }
+
+    .track{
+      height:10px;
+      background:#0d0d0d;
+      border:1px solid #222;
+      border-radius:4px;
+      overflow:hidden;
+    }
+    .fill{
+      height:100%;
+      width:50%;
+      opacity:0.92;
+      transition:width 300ms linear, filter 250ms linear, opacity 250ms linear;
+      filter:saturate(1.1);
+    }
+    .organ.pulse .fill{
+      opacity:1;
+      filter:saturate(1.9) brightness(1.15);
+    }
+
+    #actionRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    #actionStrip{
+      height:3px;
+      flex:1;
+      background:#111;
+      border:1px solid #202020;
+      border-radius:999px;
+      opacity:0.65;
+      transition:opacity 200ms linear;
+    }
+
+    #driveDot{
+      width:12px; height:12px;
+      border-radius:999px;
+      border:1px solid #222;
+      background:#666;
+      box-shadow:0 0 10px rgba(255,255,255,0.06);
+    }
+
+    #controls{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    #btnTouch{
+      background:#141414;
+      color:var(--ink);
+      border:1px solid #2b2b2b;
+      border-radius:8px;
+      padding:10px 14px;
+      font-size:13px;
+      cursor:pointer;
+      user-select:none;
+    }
+    #btnTouch:hover{ border-color:#3b3b3b; }
+    #btnTouch:active{ transform:translateY(1px); }
+
+    #hint{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.25;
+      max-width:66ch;
+    }
+
+    /* world */
+    #world{
+      width:100%;
+      height:180px;
+      display:block;
+      background:#000;
+      border:1px solid #1b1b1b;
+      border-radius:6px;
+      margin-top:6px;
+    }
+    #worldHint{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.25;
+      user-select:none;
+    }
+
+    #log{
+      white-space:pre-wrap;
+      line-height:1.4;
+      max-height:40vh;
+      overflow-y:auto;
+      margin-top:10px;
+      border-top:1px solid #1a1a1a;
+      padding-top:10px;
+    }
+
+    #heartbeat{
+      margin-top:10px;
+      color:#777;
+      user-select:none;
+      cursor:pointer;
+    }
+
+    #stillness{
+      margin-top:10px;
+      height:2px;
+      background:#333;
+      width:0%;
+      opacity:0;
+      transition:width 12s linear, opacity 12s linear;
+    }
+    #stillness.active{ width:100%; opacity:0.35; }
+
+    #echo{
+      margin-top:8px;
+      height:1px;
+      background:#888;
+      width:0%;
+      opacity:0;
+      transition:width 3s ease-out, opacity 6s ease-out;
+    }
+    #echo.active{ width:100%; opacity:0.6; }
+
+    #initiation{
+      margin-top:14px;
+      height:1px;
+      background:#bbb;
+      width:0%;
+      opacity:0;
+      transition:width 8s ease-out, opacity 12s ease-out;
+    }
+    #initiation.active{ width:100%; opacity:0.4; }
+
+    #debug{
+      position:fixed;
+      right:12px;
+      bottom:12px;
+      font-size:12px;
+      line-height:1.35;
+      color:#aaa;
+      background:rgba(0,0,0,0.45);
+      border:1px solid #333;
+      padding:8px 10px;
+      display:none;
+      pointer-events:none;
+      white-space:pre;
+      max-width:96ch;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="viz"></canvas>
+
+<div id="hud">
+  <div id="organs">
+    <div class="organ" id="o_energy" title="ENERGY (green). Click to rest. Key 1">
+      <div class="top"><div class="name">Energy</div><div class="dot" style="background:var(--c-energy)"></div></div>
+      <div class="track"><div class="fill" id="f_energy" style="background:var(--c-energy)"></div></div>
+    </div>
+    <div class="organ" id="o_hunger" title="HUNGER (amber). Click to feed. Key 2">
+      <div class="top"><div class="name">Hunger</div><div class="dot" style="background:var(--c-hunger)"></div></div>
+      <div class="track"><div class="fill" id="f_hunger" style="background:var(--c-hunger)"></div></div>
+    </div>
+    <div class="organ" id="o_oxygen" title="OXYGEN (cyan). Click to add air. Key 3">
+      <div class="top"><div class="name">Oxygen</div><div class="dot" style="background:var(--c-oxygen)"></div></div>
+      <div class="track"><div class="fill" id="f_oxygen" style="background:var(--c-oxygen)"></div></div>
+    </div>
+    <div class="organ" id="o_temp" title="TEMP deviation (purple). Click to cool/regulate. Key 4">
+      <div class="top"><div class="name">Temp</div><div class="dot" style="background:var(--c-temp)"></div></div>
+      <div class="track"><div class="fill" id="f_temp" style="background:var(--c-temp)"></div></div>
+    </div>
+    <div class="organ" id="o_injury" title="INJURY (red). Click to treat. Key 5">
+      <div class="top"><div class="name">Injury</div><div class="dot" style="background:var(--c-injury)"></div></div>
+      <div class="track"><div class="fill" id="f_injury" style="background:var(--c-injury)"></div></div>
+    </div>
+  </div>
+
+  <div id="actionRow">
+    <div id="driveDot" title="Current internal drive (color)"></div>
+    <div id="actionStrip" title="Action flash (drive changes / key events)"></div>
+  </div>
+
+  <div id="controls">
+    <button id="btnTouch" title="Ask the brain to respond. In deep mode it may refuse. Space">TOUCH</button>
+    <div id="hint">
+      Click a system to help it. Space = TOUCH. Keys 1–5 = care.
+      New: the organism now lives in a world below.
+    </div>
+  </div>
+
+  <canvas id="world"></canvas>
+  <div id="worldHint" title="World controls">
+    World: click to place. Press F (food), O (oxygen), H (hazard). Option/Alt‑click removes. The creature moves itself based on its drives.
+  </div>
+</div>
+
+<div id="heartbeat" title="click to toggle debug">heart: ░░░░</div>
+<div id="stillness"></div>
+<div id="echo"></div>
+<div id="initiation"></div>
+
+<div id="log"></div>
+<div id="debug"></div>
+
+<script>
+/* ========= build/persistence ========= */
+const BUILD_ID = "brain_8077_color_lobes_world_v1";
+const MAX_LOG_LINES = 280;
+
+/* keep continuity: read older keys too */
+const STATE_KEY = "digital_brain_organism_8077_v4";
+const LEGACY_KEYS = [
+  "digital_brain_organism_8077_v3",
+  "digital_brain_organism_8077_v2",
+  "digital_brain_organism_8077_v1",
+  "digital_brain_state_8077_v1",
+  "digital_brain_fatigue_v3"
+];
+
+/* ========= constants ========= */
+const FATIGUE_MAX = 1.5;
+const IMPATIENCE_MAX = 5;
+
+const OFFLINE_FATIGUE_RECOVERY_PER_SEC = 0.006;
+const OFFLINE_IMPATIENCE_DECAY_PER_SEC = 0.08;
+
+const FATIGUE_GAIN = 0.25;
+const REFUSAL_FATIGUE_GAIN = 0.06;
+
+const BASE_SILENCE = 12000;
+const BASE_DEEP = 22000;
+const BASE_INITIATION = 70000;
+
+const IMPATIENCE_WINDOW_MS = 3000;
+const BASE_IMPATIENCE_DECAY_PER_SEC = 0.03;
+const CALM_SCALE_MS = 20000;
+
+const BASE_QUIET_FOR_INITIATION_MS = 25000;
+
+const ADAPT_RATE_PER_SEC = 0.0009;
+const ANCHOR_RATE_PER_SEC = 0.0007;
+const MUTATION_BASE = 0.010;
+
+/* morphogenesis */
+const MORPH_RADIUS_MIN = 0.35;
+const MORPH_RADIUS_MAX = 1.65;
+
+/* metabolic speed */
+const BODY_RATE = 0.35;
+
+/* system hues */
+const HUE = { energy:150, hunger:40, oxygen:195, temp:265, injury:0 };
+const SYS = ["energy","hunger","oxygen","temp","injury"];
+
+/* ========= utils ========= */
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function rnd(){ return Math.random(); }
+function rndAround(mid, spread){ return clamp(mid + (rnd()*2-1)*spread, 0, 1); }
+function pick(arr){ return arr[Math.floor(rnd()*arr.length)]; }
+
+function parseJSON(s){ try{ return JSON.parse(s); }catch(e){ return null; } }
+function loadAnyState(){
+  const keys = [STATE_KEY].concat(LEGACY_KEYS);
+  for(const k of keys){
+    const raw = localStorage.getItem(k);
+    if(!raw) continue;
+    const obj = parseJSON(raw);
+    if(obj) return obj;
+  }
+  return {};
+}
+
+function hashStr(str){
+  let h = 2166136261 >>> 0;
+  for(let i=0;i<str.length;i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function makeRNG(seed){
+  let x = (seed>>>0) || 1;
+  return function(){
+    x ^= x<<13; x ^= x>>>17; x ^= x<<5;
+    return (x>>>0) / 4294967296;
+  };
+}
+
+function hueLerp(a,b,t){
+  let d = ((b - a + 540) % 360) - 180;
+  return (a + d*t + 360) % 360;
+}
+
+function vlen(x,y,z){ return Math.sqrt(x*x+y*y+z*z) || 0; }
+function vclampToRadius(a){
+  const r = vlen(a.x,a.y,a.z);
+  if(r < 1e-9){ a.x = MORPH_RADIUS_MIN; a.y = 0; a.z = 0; return; }
+  const rr = clamp(r, MORPH_RADIUS_MIN, MORPH_RADIUS_MAX);
+  const s = rr / r;
+  a.x *= s; a.y *= s; a.z *= s;
+}
+
+function getCss(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function dist2(ax,ay,bx,by){
+  const dx = ax-bx, dy = ay-by;
+  return dx*dx + dy*dy;
+}
+
+/* ========= load state ========= */
+let now = Date.now();
+const saved = loadAnyState();
+const savedAt = (typeof saved.savedAt === "number") ? saved.savedAt : now;
+const deltaSec = Math.max(0, (now - savedAt) / 1000);
+
+let birthAt = (typeof saved.birthAt === "number") ? saved.birthAt : now;
+let speciesId = (typeof saved.speciesId === "string") ? saved.speciesId : (rnd().toString(16).slice(2,8));
+
+let genome = (saved.genome && typeof saved.genome === "object") ? saved.genome : {
+  openness: rndAround(0.5, 0.18),
+  autonomy: rndAround(0.5, 0.18),
+  recovery: rndAround(0.5, 0.18),
+  sensitivity: rndAround(0.5, 0.18)
+};
+
+let traits = (saved.traits && typeof saved.traits === "object") ? saved.traits : {
+  openness: genome.openness,
+  autonomy: genome.autonomy,
+  recovery: genome.recovery,
+  sensitivity: genome.sensitivity
+};
+
+(function normalize(){
+  for(const k of ["openness","autonomy","recovery","sensitivity"]){
+    if(typeof genome[k] !== "number") genome[k] = 0.5;
+    if(typeof traits[k] !== "number") traits[k] = genome[k];
+    genome[k] = clamp(genome[k],0,1);
+    traits[k] = clamp(traits[k],0,1);
+  }
+})();
+
+let quietBank = (typeof saved.quietBank === "number") ? saved.quietBank : 0;
+
+let fatigue = (typeof saved.fatigue === "number") ? saved.fatigue : 0;
+let impatience = (typeof saved.impatience === "number") ? saved.impatience : 0;
+
+let refractoryUntil = (typeof saved.refractoryUntil === "number") ? saved.refractoryUntil : 0;
+let lastAttemptTime = (typeof saved.lastAttemptTime === "number") ? saved.lastAttemptTime : 0;
+
+let lastEventTime = (typeof saved.lastEventAt === "number") ? saved.lastEventAt : now;
+let lastInitiationAt = (typeof saved.lastInitiationAt === "number") ? saved.lastInitiationAt : 0;
+let initiated = (lastInitiationAt > lastEventTime);
+
+let stats = (saved.stats && typeof saved.stats === "object") ? saved.stats : {
+  attempts: 0, care: 0, responded: 0, resisted: 0, initiations: 0
+};
+for(const k of ["attempts","care","responded","resisted","initiations"]){
+  if(typeof stats[k] !== "number") stats[k] = 0;
+}
+
+/* organism body (0..1) */
+let body = (saved.body && typeof saved.body === "object") ? saved.body : {
+  energy: 0.65, hunger: 0.25, oxygen: 0.85, temp: 0.10, injury: 0.05
+};
+for(const k of ["energy","hunger","oxygen","temp","injury"]){
+  if(typeof body[k] !== "number") body[k] = 0.3;
+  body[k] = clamp(body[k],0,1);
+}
+
+/* world + agent (NEW) */
+let world = (saved.world && typeof saved.world === "object") ? saved.world : null;
+if(!world || !Array.isArray(world.food) || !Array.isArray(world.vents) || !Array.isArray(world.hazards)){
+  world = { food:[], vents:[], hazards:[] };
+}
+let agent = (saved.agent && typeof saved.agent === "object") ? saved.agent : null;
+if(!agent || typeof agent.x!=="number" || typeof agent.y!=="number"){
+  agent = { x:0.5, y:0.5, vx:0, vy:0, tx:0.5, ty:0.5, wanderUntil:0, trail:[] };
+}
+if(!Array.isArray(agent.trail)) agent.trail = [];
+
+let placeMode = (typeof saved.placeMode === "string") ? saved.placeMode : "food";
+if(!["food","oxygen","hazard"].includes(placeMode)) placeMode = "food";
+
+/* morph state (persistent) */
+let morph = (saved.morph && typeof saved.morph === "object") ? saved.morph : null;
+if(!morph || !Array.isArray(morph.attractors) || morph.attractors.length < 3){
+  morph = { seed: hashStr("mseed:"+speciesId), attractors: [] };
+}
+if(typeof morph.seed !== "number") morph.seed = hashStr("mseed:"+speciesId);
+if(!Array.isArray(morph.attractors)) morph.attractors = [];
+
+function mRand(){
+  morph.seed = (Math.imul(morph.seed >>> 0, 1664525) + 1013904223) >>> 0;
+  return (morph.seed >>> 0) / 4294967296;
+}
+
+/* ========= stage / lobes ========= */
+function computeStage(q){
+  if(q < 180) return 0;
+  if(q < 900) return 1;
+  if(q < 3600) return 2;
+  return 3;
+}
+function desiredAttractorCount(stage){
+  if(stage >= 3) return 10;
+  if(stage === 2) return 8;
+  if(stage === 1) return 6;
+  return 5;
+}
+function addAttractor(){
+  const theta = 2*Math.PI*mRand();
+  const u = 2*mRand() - 1;
+  const sinphi = Math.sqrt(Math.max(0, 1 - u*u));
+  const rBase = 0.55 + mRand()*0.50;
+
+  const gScale = 0.80 + genome.openness*0.85;
+  const r = rBase * gScale;
+
+  const a = {
+    x: r * sinphi * Math.cos(theta),
+    y: r * sinphi * Math.sin(theta),
+    z: r * u,
+    sys: (morph.attractors.length % 5)
+  };
+  vclampToRadius(a);
+  return a;
+}
+function ensureAttractorsForStage(stage){
+  const want = desiredAttractorCount(stage);
+  while(morph.attractors.length < want){
+    morph.attractors.push(addAttractor());
+  }
+}
+/* backfill sys on old attractors */
+for(let i=0;i<morph.attractors.length;i++){
+  const a = morph.attractors[i];
+  if(typeof a.sys !== "number") a.sys = i % 5;
+  a.sys = ((a.sys%5)+5)%5;
+  vclampToRadius(a);
+}
+ensureAttractorsForStage(computeStage(quietBank));
+
+/* ========= offline drift ========= */
+(function offlineDrift(){
+  fatigue = clamp(
+    fatigue - deltaSec * OFFLINE_FATIGUE_RECOVERY_PER_SEC * (0.6 + traits.recovery*0.8),
+    0, FATIGUE_MAX
+  );
+  impatience = clamp(
+    impatience - deltaSec * OFFLINE_IMPATIENCE_DECAY_PER_SEC * (0.6 + (1-traits.sensitivity)*0.8),
+    0, IMPATIENCE_MAX
+  );
+
+  const t = Math.min(3600, deltaSec);
+  body.hunger = clamp(body.hunger + t*(0.00003), 0, 1);
+  body.energy = clamp(body.energy - t*(0.00002), 0, 1);
+  body.oxygen = clamp(body.oxygen - t*(0.00001), 0, 1);
+  body.temp   = clamp(body.temp   + t*(0.000005), 0, 1);
+  body.injury = clamp(body.injury + t*(0.000002), 0, 1);
+
+  const relax = 1 - Math.exp(-deltaSec / 600);
+  const k = 0.15 * relax;
+  traits.openness = clamp(traits.openness + (genome.openness - traits.openness)*k, 0, 1);
+  traits.autonomy = clamp(traits.autonomy + (genome.autonomy - traits.autonomy)*k, 0, 1);
+  traits.recovery = clamp(traits.recovery + (genome.recovery - traits.recovery)*k, 0, 1);
+  traits.sensitivity = clamp(traits.sensitivity + (genome.sensitivity - traits.sensitivity)*k, 0, 1);
+})();
+
+/* ========= UI refs ========= */
+const vizCanvas = document.getElementById("viz");
+const vizCtx = vizCanvas.getContext("2d");
+
+const worldCanvas = document.getElementById("world");
+const worldCtx = worldCanvas.getContext("2d");
+
+const logEl = document.getElementById("log");
+const heart = document.getElementById("heartbeat");
+const stillness = document.getElementById("stillness");
+const echo = document.getElementById("echo");
+const initiation = document.getElementById("initiation");
+const debug = document.getElementById("debug");
+
+const actionStrip = document.getElementById("actionStrip");
+const driveDot = document.getElementById("driveDot");
+const btnTouch = document.getElementById("btnTouch");
+
+const o_energy = document.getElementById("o_energy");
+const o_hunger = document.getElementById("o_hunger");
+const o_oxygen = document.getElementById("o_oxygen");
+const o_temp   = document.getElementById("o_temp");
+const o_injury = document.getElementById("o_injury");
+
+const f_energy = document.getElementById("f_energy");
+const f_hunger = document.getElementById("f_hunger");
+const f_oxygen = document.getElementById("f_oxygen");
+const f_temp   = document.getElementById("f_temp");
+const f_injury = document.getElementById("f_injury");
+
+let debugOn = false;
+function setDebug(on){ debugOn = !!on; debug.style.display = debugOn ? "block" : "none"; }
+function toggleDebug(){ setDebug(!debugOn); }
+
+const logLines = [];
+function logLine(t){
+  logLines.push(t);
+  while(logLines.length > MAX_LOG_LINES) logLines.shift();
+  logEl.textContent = logLines.join("\n") + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setFill(el, v01){ el.style.width = Math.round(clamp(v01,0,1)*100) + "%"; }
+function pulse(el){ el.classList.add("pulse"); setTimeout(()=>el.classList.remove("pulse"), 220); }
+function flashAction(color){
+  actionStrip.style.background = color;
+  actionStrip.style.opacity = "0.95";
+  setTimeout(()=>{ actionStrip.style.opacity = "0.65"; }, 240);
+}
+function setDriveDot(color){ driveDot.style.background = color; }
+
+/* ========= derived ========= */
+function derived(ts){
+  const idle = ts - lastEventTime;
+  const sinceAttempt = lastAttemptTime ? (ts - lastAttemptTime) : idle;
+
+  const calmFactor = 1 - Math.exp(-sinceAttempt / CALM_SCALE_MS);
+
+  const fN = fatigue / FATIGUE_MAX;
+  const iN = impatience / IMPATIENCE_MAX;
+  const stress = clamp(0.65*fN + 0.35*iN, 0, 1);
+
+  const stage = computeStage(quietBank);
+
+  const silenceThreshold = BASE_SILENCE * (1 + fatigue);
+  const deepThreshold = BASE_DEEP * (1 + fatigue);
+
+  const initiationThreshold =
+    BASE_INITIATION * (1 + fatigue) *
+    (1 + (1 - traits.autonomy)*0.70 + (1 - traits.openness)*0.30);
+
+  const quietReq =
+    BASE_QUIET_FOR_INITIATION_MS +
+    (1 - traits.autonomy)*25000 +
+    stress*5000;
+
+  const deep = idle > deepThreshold;
+
+  const resistanceChance = Math.min(
+    0.95,
+    0.22 +
+    fatigue*0.38 +
+    iN*(0.18 + 0.22*traits.sensitivity) +
+    (1 - traits.openness)*0.28
+  );
+
+  return { idle, sinceAttempt, calmFactor, stress, stage, silenceThreshold, deepThreshold, initiationThreshold, quietReq, deep, resistanceChance };
+}
+
+let lastD = derived(Date.now());
+
+/* ========= save ========= */
+function saveState(){
+  try{
+    localStorage.setItem(STATE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      birthAt, speciesId,
+      genome, traits,
+      morph,
+      fatigue, impatience,
+      refractoryUntil, lastAttemptTime,
+      lastEventAt: lastEventTime,
+      lastInitiationAt,
+      quietBank, stats,
+      body,
+      world, agent,
+      placeMode
+    }));
+  }catch(e){}
+}
+
+/* ========= evolution + morph ========= */
+function evolveGenome(deltaMood, calmFactor, stage){
+  const traitKey = pick(["openness","autonomy","recovery","sensitivity"]);
+  const dir = clamp(deltaMood, -1, 1);
+  const mag = (MUTATION_BASE + stage*0.003) * (0.6 + calmFactor*0.7);
+  const noise = (rnd()-0.5) * 0.006;
+  const step = dir*mag + noise;
+
+  if(traitKey === "sensitivity"){
+    genome.sensitivity = clamp(genome.sensitivity - step, 0, 1);
+  }else{
+    genome[traitKey] = clamp(genome[traitKey] + step, 0, 1);
+  }
+
+  traits.openness = clamp(traits.openness + (genome.openness - traits.openness)*0.04, 0, 1);
+  traits.autonomy = clamp(traits.autonomy + (genome.autonomy - traits.autonomy)*0.04, 0, 1);
+  traits.recovery = clamp(traits.recovery + (genome.recovery - traits.recovery)*0.04, 0, 1);
+  traits.sensitivity = clamp(traits.sensitivity + (genome.sensitivity - traits.sensitivity)*0.04, 0, 1);
+}
+
+function mutateMorph(deltaMood, calmFactor, stage){
+  ensureAttractorsForStage(stage);
+
+  const idx = Math.floor(mRand() * morph.attractors.length);
+  const a = morph.attractors[idx];
+
+  const dir = clamp(deltaMood, -1, 1);
+  const step = (0.03 + stage*0.015) * (0.45 + calmFactor*0.75) * (0.45 + traits.autonomy*0.75);
+
+  const nx = (mRand()*2-1);
+  const ny = (mRand()*2-1);
+  const nz = (mRand()*2-1);
+  const nL = vlen(nx,ny,nz) || 1;
+
+  const outBias = 0.55 + 0.45*dir;
+  a.x += (nx/nL) * step * outBias;
+  a.y += (ny/nL) * step * outBias;
+  a.z += (nz/nL) * step * outBias;
+
+  vclampToRadius(a);
+}
+
+function updateMorph(dtSec, d){
+  ensureAttractorsForStage(d.stage);
+
+  const opennessBlend = 0.25*genome.openness + 0.75*traits.openness;
+  const mood = clamp(d.calmFactor - d.stress, -1, 1);
+
+  const baseR = 0.70 + opennessBlend*0.55 + d.stage*0.08;
+  const goalR = clamp(baseR + mood*0.22, MORPH_RADIUS_MIN, MORPH_RADIUS_MAX);
+
+  const k = 0.012 * dtSec * (0.45 + d.calmFactor*0.85);
+
+  for(const a of morph.attractors){
+    const r = vlen(a.x,a.y,a.z) || 1e-6;
+    const nr = r + (goalR - r)*k;
+    const s = nr / r;
+    a.x *= s; a.y *= s; a.z *= s;
+
+    const n = (mRand()-0.5) * 0.010 * dtSec * (0.20 + traits.autonomy*0.90);
+    a.x += n * (mRand()-0.5);
+    a.y += n * (mRand()-0.5);
+    a.z += n * (mRand()-0.5);
+
+    vclampToRadius(a);
+  }
+}
+
+/* ========= pulses ========= */
+let vizPulseAt = 0;
+let vizPulseType = "none";
+function triggerPulse(type){
+  vizPulseAt = performance.now();
+  vizPulseType = type;
+}
+function pulseHue(type, baseHue){
+  if(type === "feed" || type === "forage") return HUE.hunger;
+  if(type === "air"  || type === "breathe") return HUE.oxygen;
+  if(type === "cool" || type === "regulate") return HUE.temp;
+  if(type === "heal") return HUE.injury;
+  if(type === "rest") return HUE.energy;
+  if(type === "resist") return HUE.injury;
+  return baseHue;
+}
+function pulseSysIndex(type){
+  if(type === "rest") return 0;
+  if(type === "feed" || type === "forage") return 1;
+  if(type === "air" || type === "breathe") return 2;
+  if(type === "cool" || type === "regulate") return 3;
+  if(type === "heal") return 4;
+  return -1;
+}
+
+/* ========= drives ========= */
+let drive = "rest"; // rest, forage, breathe, regulate, heal, explore
+
+function driveColorHex(d){
+  if(d === "forage") return getCss("--c-hunger");
+  if(d === "breathe") return getCss("--c-oxygen");
+  if(d === "regulate") return getCss("--c-temp");
+  if(d === "heal") return getCss("--c-injury");
+  if(d === "rest") return getCss("--c-energy");
+  return getCss("--c-explore");
+}
+function driveHueValue(d, baseHue){
+  if(d === "forage") return HUE.hunger;
+  if(d === "breathe") return HUE.oxygen;
+  if(d === "regulate") return HUE.temp;
+  if(d === "heal") return HUE.injury;
+  if(d === "rest") return HUE.energy;
+  return baseHue;
+}
+
+/* ========= world helpers ========= */
+function setPlaceMode(mode){
+  placeMode = mode;
+  const c =
+    (mode==="food") ? getCss("--c-hunger") :
+    (mode==="oxygen") ? getCss("--c-oxygen") :
+    getCss("--c-injury");
+  worldCanvas.style.borderColor = c;
+  flashAction(c);
+}
+
+function addFood(x,y){
+  world.food.push({ x, y, amt: 1.0 });
+}
+function addVent(x,y){
+  world.vents.push({ x, y, str: 1.0 });
+}
+function addHazard(x,y){
+  world.hazards.push({ x, y, str: 1.0 });
+}
+function removeNearest(x,y){
+  let best = { kind:null, idx:-1, d2: 999 };
+  const scan = (arr, kind)=>{
+    for(let i=0;i<arr.length;i++){
+      const d = dist2(x,y,arr[i].x,arr[i].y);
+      if(d < best.d2){ best = { kind, idx:i, d2:d }; }
+    }
+  };
+  scan(world.food,"food");
+  scan(world.vents,"vents");
+  scan(world.hazards,"hazards");
+
+  if(best.idx < 0) return false;
+  if(best.d2 > 0.006) return false; // radius threshold
+
+  if(best.kind==="food") world.food.splice(best.idx,1);
+  if(best.kind==="vents") world.vents.splice(best.idx,1);
+  if(best.kind==="hazards") world.hazards.splice(best.idx,1);
+  return true;
+}
+
+function nearestItem(list, x, y){
+  let best = null, bestD2 = 999;
+  for(const it of list){
+    const d = dist2(x,y,it.x,it.y);
+    if(d < bestD2){ bestD2 = d; best = it; }
+  }
+  return best;
+}
+
+/* ambient temp deviation: center is “comfortable”, edges are extreme */
+function ambientTempDevAt(x){
+  return clamp(Math.abs(x - 0.5) * 2.0, 0, 1);
+}
+
+/* ========= metabolism (body tick) =========
+   temp is handled by the world (location), not purely by stress.
+*/
+function bodyTick(dtSec, d){
+  const stress = d.stress;
+
+  const basal = (0.006 + 0.006*stress) * BODY_RATE;
+  body.energy = clamp(body.energy - basal*dtSec, 0, 1);
+  body.hunger = clamp(body.hunger + (0.007 + 0.007*stress)*BODY_RATE*dtSec, 0, 1);
+
+  const oxyDrop = (0.004 + 0.012*stress) * (0.6 + traits.sensitivity*0.8) * BODY_RATE;
+  const oxyGain = (0.006 + 0.010*d.calmFactor) * (0.6 + traits.recovery*0.8) * BODY_RATE;
+  body.oxygen = clamp(body.oxygen - oxyDrop*dtSec + oxyGain*dtSec, 0, 1);
+
+  const risk = clamp((0.6 - body.oxygen)*1.4 + body.temp*0.9 + body.hunger*0.5, 0, 2);
+  body.injury = clamp(body.injury + (0.0032*risk)*BODY_RATE*dtSec, 0, 1);
+
+  const heal = (0.006 * d.calmFactor) * (0.4 + traits.recovery*0.9) * (0.3 + body.energy) * BODY_RATE;
+  body.injury = clamp(body.injury - heal*dtSec, 0, 1);
+
+  const recMod = (0.6 + traits.recovery*0.9);
+  fatigue = clamp(fatigue - (0.010 * d.calmFactor * recMod) * BODY_RATE * dtSec, 0, FATIGUE_MAX);
+}
+
+/* drive choice */
+function chooseDrive(){
+  const hungry = body.hunger;
+  const lowEnergy = 1 - body.energy;
+  const lowOxy = 1 - body.oxygen;
+  const tempBad = body.temp;
+  const hurt = body.injury;
+
+  const hasFood = world.food.length > 0;
+  const hasAir  = world.vents.length > 0;
+
+  const u_for = hungry*0.9 + lowEnergy*0.6 + (hasFood ? 0.10 : -0.10);
+  const u_bre = lowOxy*1.2 + (hasAir ? 0.10 : -0.10);
+  const u_reg = tempBad*0.95;
+  const u_heal= hurt*1.05 + lowOxy*0.20;
+  const u_exp = traits.openness*0.45 + traits.autonomy*0.30 + (hasFood||hasAir ? -0.05 : 0.15);
+
+  const maxU = Math.max(u_for,u_bre,u_reg,u_heal,u_exp);
+
+  if(maxU === u_bre && u_bre > 0.32) return "breathe";
+  if(maxU === u_heal && u_heal > 0.22) return "heal";
+  if(maxU === u_for && u_for > 0.28) return "forage";
+  if(maxU === u_reg && u_reg > 0.22) return "regulate";
+  if(maxU === u_exp && u_exp > 0.30) return "explore";
+  return "rest";
+}
+
+function enactDrive(dtSec, d){
+  const prev = drive;
+  drive = chooseDrive();
+
+  if(drive !== prev){
+    const c = driveColorHex(drive);
+    flashAction(c);
+    setDriveDot(c);
+    triggerPulse(drive);
+  }
+
+  const k = BODY_RATE * dtSec;
+
+  if(drive === "rest"){
+    body.energy = clamp(body.energy + (0.010*d.calmFactor)*(0.4 + traits.recovery)*k, 0, 1);
+    fatigue = clamp(fatigue - (0.05*d.calmFactor)*k, 0, FATIGUE_MAX);
+    pulse(o_energy);
+  }
+
+  if(drive === "forage"){
+    pulse(o_hunger);
+  }
+
+  if(drive === "breathe"){
+    pulse(o_oxygen);
+  }
+
+  if(drive === "regulate"){
+    pulse(o_temp);
+  }
+
+  if(drive === "heal"){
+    pulse(o_injury);
+  }
+
+  if(drive === "explore"){
+    body.energy = clamp(body.energy - (0.006)*k, 0, 1);
+    quietBank += (k * (0.10 + d.calmFactor*0.18));
+  }
+}
+
+/* ========= care actions =========
+   also “manifest” help into the world near the creature so it’s not pure magic
+*/
+function spawnNearAgent(kind){
+  const jx = (rnd()*2-1)*0.04;
+  const jy = (rnd()*2-1)*0.04;
+  const x = clamp(agent.x + jx, 0.02, 0.98);
+  const y = clamp(agent.y + jy, 0.02, 0.98);
+
+  if(kind === "food") addFood(x,y);
+  if(kind === "oxygen") addVent(x,y);
+  if(kind === "hazard") addHazard(x,y);
+}
+
+function care(kind){
+  const ts = Date.now();
+  stats.care++;
+  lastAttemptTime = ts;
+
+  if(kind === "rest"){
+    body.energy = clamp(body.energy + 0.14, 0, 1);
+    fatigue = clamp(fatigue - 0.10, 0, FATIGUE_MAX);
+    flashAction(getCss("--c-energy"));
+    pulse(o_energy);
+    triggerPulse("rest");
+  }
+
+  if(kind === "feed"){
+    body.hunger = clamp(body.hunger - 0.22, 0, 1);
+    body.energy = clamp(body.energy + 0.08, 0, 1);
+    flashAction(getCss("--c-hunger"));
+    pulse(o_hunger);
+    triggerPulse("feed");
+    spawnNearAgent("food");
+    spawnNearAgent("food");
+  }
+
+  if(kind === "air"){
+    body.oxygen = clamp(body.oxygen + 0.18, 0, 1);
+    flashAction(getCss("--c-oxygen"));
+    pulse(o_oxygen);
+    triggerPulse("air");
+    spawnNearAgent("oxygen");
+  }
+
+  if(kind === "cool"){
+    body.temp = clamp(body.temp - 0.18, 0, 1);
+    flashAction(getCss("--c-temp"));
+    pulse(o_temp);
+    triggerPulse("cool");
+    /* nudge toward center comfort */
+    agent.tx = 0.5;
+    agent.ty = 0.5;
+  }
+
+  if(kind === "heal"){
+    body.injury = clamp(body.injury - 0.12, 0, 1);
+    body.energy = clamp(body.energy - 0.04, 0, 1);
+    flashAction(getCss("--c-injury"));
+    pulse(o_injury);
+    triggerPulse("heal");
+
+    /* remove one nearby hazard if possible (treating the environment) */
+    removeNearest(agent.x, agent.y);
+  }
+
+  saveState();
+}
+
+o_energy.addEventListener("click", ()=>care("rest"));
+o_hunger.addEventListener("click", ()=>care("feed"));
+o_oxygen.addEventListener("click", ()=>care("air"));
+o_temp.addEventListener("click", ()=>care("cool"));
+o_injury.addEventListener("click", ()=>care("heal"));
+
+/* ========= TOUCH behavior ========= */
+function markActivity(fromSilence){
+  const ts = Date.now();
+  lastEventTime = ts;
+  initiated = false;
+
+  fatigue = clamp(fatigue + FATIGUE_GAIN, 0, FATIGUE_MAX);
+
+  initiation.classList.remove("active");
+  stillness.classList.remove("active");
+  document.body.classList.remove("resting","deep");
+
+  if(fromSilence){
+    echo.classList.add("active");
+    setTimeout(()=>echo.classList.remove("active"),6000);
+  }
+  saveState();
+}
+
+function stimulate(){
+  const ts = Date.now();
+  stats.attempts++;
+
+  if(lastAttemptTime){
+    const dt = ts - lastAttemptTime;
+    if(dt < IMPATIENCE_WINDOW_MS){
+      const boost = (1 - dt/IMPATIENCE_WINDOW_MS) * (0.7 + traits.sensitivity*0.9);
+      impatience = clamp(impatience + boost, 0, IMPATIENCE_MAX);
+    }else{
+      const soften = 0.12 * (0.6 + (1-traits.sensitivity)*0.6);
+      impatience = clamp(impatience - soften, 0, IMPATIENCE_MAX);
+    }
+  }
+  lastAttemptTime = ts;
+
+  if(ts < refractoryUntil){
+    saveState();
+    return;
+  }
+
+  const d = derived(ts);
+
+  if(d.deep && rnd() < d.resistanceChance){
+    fatigue = clamp(fatigue + REFUSAL_FATIGUE_GAIN*(0.85 + traits.sensitivity*0.4), 0, FATIGUE_MAX);
+
+    const iN = impatience / IMPATIENCE_MAX;
+    const base = 800 + (1 - traits.openness)*700;
+    const extra = 800*fatigue + 600*iN;
+    const jitter = rnd()*900;
+    refractoryUntil = ts + Math.min(8000, base + extra + jitter);
+
+    stats.resisted++;
+    triggerPulse("resist");
+    flashAction(getCss("--c-injury"));
+    pulse(o_injury);
+    saveState();
+    return;
+  }
+
+  refractoryUntil = ts + 150;
+  markActivity(d.deep);
+  stats.responded++;
+  logLine(d.deep ? "ACTION → emerged from deep silence" : "ACTION → ordinary response");
+  triggerPulse(d.deep ? "echo" : "touch");
+}
+
+btnTouch.addEventListener("click", stimulate);
+
+/* ========= heartbeat + keys ========= */
+let beat = 0;
+function heartLoop(){
+  beat=(beat+1)%4;
+  heart.textContent = "heart: " + "█".repeat(beat+1) + "░".repeat(3-beat);
+
+  const d = derived(Date.now());
+  const ms = Math.round(clamp(1150 - d.stress*520 + d.calmFactor*160, 450, 1400));
+  setTimeout(heartLoop, ms);
+}
+heartLoop();
+
+heart.addEventListener("click", toggleDebug);
+
+window.addEventListener("keydown",(e)=>{
+  const k = (e.key||"").toLowerCase();
+  if(k === "d") toggleDebug();
+  if(k === " "){ e.preventDefault(); stimulate(); }
+  if(k === "1") care("rest");
+  if(k === "2") care("feed");
+  if(k === "3") care("air");
+  if(k === "4") care("cool");
+  if(k === "5") care("heal");
+
+  /* world place mode */
+  if(k === "f") setPlaceMode("food");
+  if(k === "o") setPlaceMode("oxygen");
+  if(k === "h") setPlaceMode("hazard");
+});
+
+/* auto debug */
+try{
+  const params = new URLSearchParams(location.search);
+  if(params.get("debug")==="1") setDebug(true);
+}catch(e){}
+
+/* ========= bars ========= */
+function updateBars(){
+  setFill(f_energy, body.energy);
+  setFill(f_hunger, body.hunger);
+  setFill(f_oxygen, body.oxygen);
+  setFill(f_temp,   body.temp);
+  setFill(f_injury, body.injury);
+}
+
+/* ========= world interaction ========= */
+const mouse = { inside:false, x:0, y:0 };
+
+function worldEventToNorm(e){
+  const r = worldCanvas.getBoundingClientRect();
+  const px = (e.clientX - r.left) / Math.max(1, r.width);
+  const py = (e.clientY - r.top) / Math.max(1, r.height);
+  return { x: clamp(px,0,1), y: clamp(py,0,1) };
+}
+
+worldCanvas.addEventListener("mousemove",(e)=>{
+  mouse.inside = true;
+  const p = worldEventToNorm(e);
+  mouse.x = p.x; mouse.y = p.y;
+});
+
+worldCanvas.addEventListener("mouseleave",()=>{
+  mouse.inside = false;
+});
+
+worldCanvas.addEventListener("click",(e)=>{
+  const p = worldEventToNorm(e);
+
+  /* option/alt-click removes nearest */
+  if(e.altKey){
+    const ok = removeNearest(p.x, p.y);
+    if(ok){ flashAction("#444"); triggerPulse("touch"); }
+    saveState();
+    return;
+  }
+
+  if(placeMode === "food"){ addFood(p.x,p.y); flashAction(getCss("--c-hunger")); triggerPulse("feed"); }
+  if(placeMode === "oxygen"){ addVent(p.x,p.y); flashAction(getCss("--c-oxygen")); triggerPulse("air"); }
+  if(placeMode === "hazard"){ addHazard(p.x,p.y); flashAction(getCss("--c-injury")); triggerPulse("heal"); }
+
+  saveState();
+});
+
+/* set initial place mode border */
+setPlaceMode(placeMode);
+
+/* ========= main brain loop ========= */
+setDriveDot(driveColorHex(drive));
+updateBars();
+
+let lastTick = Date.now();
+let lastStageSeen = computeStage(quietBank);
+
+setInterval(()=>{
+  const ts = Date.now();
+  const dtSec = Math.max(0.05, Math.min(0.5, (ts - lastTick)/1000));
+  lastTick = ts;
+
+  const d = derived(ts);
+  lastD = d;
+
+  /* impatience decays with real quiet */
+  const decayMod = (0.6 + (1 - traits.sensitivity)*0.9);
+  impatience = clamp(
+    impatience - (BASE_IMPATIENCE_DECAY_PER_SEC * d.calmFactor * decayMod) * dtSec,
+    0, IMPATIENCE_MAX
+  );
+
+  /* fatigue recovery */
+  const recoveryFactor = 1 - Math.exp(-d.idle * (1/120000));
+  const recMod = (0.6 + traits.recovery*0.9);
+  fatigue = clamp(fatigue - (recoveryFactor * 0.02 * recMod) * dtSec, 0, FATIGUE_MAX);
+
+  if(d.sinceAttempt > 7000){
+    quietBank += (dtSec * d.calmFactor);
+  }
+
+  const deltaMood = d.calmFactor - d.stress;
+  const stage = computeStage(quietBank);
+
+  const adapt = ADAPT_RATE_PER_SEC * (0.6 + stage*0.15) * dtSec;
+  const anchor = ANCHOR_RATE_PER_SEC * dtSec;
+
+  traits.openness    = clamp(traits.openness    + adapt*( deltaMood) + anchor*(genome.openness    - traits.openness),    0, 1);
+  traits.autonomy    = clamp(traits.autonomy    + adapt*( deltaMood) + anchor*(genome.autonomy    - traits.autonomy),    0, 1);
+  traits.recovery    = clamp(traits.recovery    + adapt*( deltaMood) + anchor*(genome.recovery    - traits.recovery),    0, 1);
+  traits.sensitivity = clamp(traits.sensitivity + adapt*(-deltaMood) + anchor*(genome.sensitivity - traits.sensitivity), 0, 1);
+
+  updateMorph(dtSec, d);
+  if(stage > lastStageSeen){
+    ensureAttractorsForStage(stage);
+    lastStageSeen = stage;
+    triggerPulse("init");
+  }
+
+  bodyTick(dtSec, d);
+  enactDrive(dtSec, d);
+
+  updateBars();
+
+  if(d.idle > d.silenceThreshold){
+    stillness.classList.add("active");
+    document.body.classList.add("resting");
+  }
+  if(d.idle > d.deepThreshold){
+    document.body.classList.add("deep");
+  }
+
+  const urgency = clamp(body.hunger*0.6 + (1-body.oxygen)*0.9 + body.injury*1.1 + body.temp*0.6, 0, 2);
+  const allowInit = (d.sinceAttempt > d.quietReq) || (urgency > 1.25 && d.sinceAttempt > 9000);
+
+  if(d.idle > d.initiationThreshold && !initiated && allowInit){
+    initiated = true;
+    initiation.classList.add("active");
+    fatigue = clamp(fatigue + FATIGUE_GAIN, 0, FATIGUE_MAX);
+    lastInitiationAt = ts;
+
+    stats.initiations++;
+    logLine("INITIATION → autonomous");
+    triggerPulse("init");
+    flashAction(getCss("--c-oxygen"));
+
+    body.oxygen = clamp(body.oxygen + 0.08, 0, 1);
+    body.energy = clamp(body.energy + 0.04, 0, 1);
+
+    evolveGenome(deltaMood, d.calmFactor, stage);
+    mutateMorph(deltaMood, d.calmFactor, stage);
+  }
+
+  if(debugOn){
+    const mode = document.body.classList.contains("deep") ? "deep" : (document.body.classList.contains("resting") ? "resting" : "ordinary");
+    const refLeft = Math.max(0, refractoryUntil - ts) / 1000;
+    const ageH = ((ts - birthAt)/3600000).toFixed(1);
+
+    debug.textContent =
+      "BUILD: " + BUILD_ID + "\n" +
+      "species: " + speciesId + "   age: " + ageH + "h   stage: " + stage + "   lobes: " + morph.attractors.length + "\n" +
+      "mode: " + mode + "   drive: " + drive + "   place: " + placeMode + "\n" +
+      "attempts: " + stats.attempts + "  care: " + stats.care + "  resp: " + stats.responded + "  resist: " + stats.resisted + "  init: " + stats.initiations + "\n" +
+      "idle: " + (d.idle/1000).toFixed(1) + "s   sinceAttempt: " + (d.sinceAttempt/1000).toFixed(1) + "s\n" +
+      "fatigue: " + fatigue.toFixed(2) + "/" + FATIGUE_MAX + "   impatience: " + impatience.toFixed(2) + "/" + IMPATIENCE_MAX + "\n" +
+      "stress: " + d.stress.toFixed(2) + "   calm: " + d.calmFactor.toFixed(2) + "   quietBank: " + Math.round(quietBank) + "s\n" +
+      "refracLeft: " + refLeft.toFixed(1) + "s   resist%: " + Math.round(d.resistanceChance*100) + "%\n" +
+      "BODY  energy:" + body.energy.toFixed(2) + " hunger:" + body.hunger.toFixed(2) + " oxy:" + body.oxygen.toFixed(2) + " temp:" + body.temp.toFixed(2) + " injury:" + body.injury.toFixed(2) + "\n" +
+      "WORLD food:" + world.food.length + " vents:" + world.vents.length + " hazards:" + world.hazards.length + "  pos:" + agent.x.toFixed(2) + "," + agent.y.toFixed(2);
+  }
+
+  saveState();
+}, 250);
+
+window.addEventListener("beforeunload", saveState);
+
+/* ========= render: world + 3D ========= */
+let vizW=0, vizH=0, vizDPR=1;
+function resizeViz(){
+  vizDPR = window.devicePixelRatio || 1;
+  vizW = vizCanvas.clientWidth || window.innerWidth;
+  vizH = vizCanvas.clientHeight || 360;
+  vizCanvas.width = Math.floor(vizW * vizDPR);
+  vizCanvas.height = Math.floor(vizH * vizDPR);
+  vizCtx.setTransform(vizDPR, 0, 0, vizDPR, 0, 0);
+}
+window.addEventListener("resize", resizeViz);
+resizeViz();
+
+let worldW=0, worldH=0, worldDPR=1;
+function resizeWorld(){
+  worldDPR = window.devicePixelRatio || 1;
+  worldW = worldCanvas.clientWidth || window.innerWidth;
+  worldH = worldCanvas.clientHeight || 180;
+  worldCanvas.width = Math.floor(worldW * worldDPR);
+  worldCanvas.height = Math.floor(worldH * worldDPR);
+  worldCtx.setTransform(worldDPR, 0, 0, worldDPR, 0, 0);
+}
+window.addEventListener("resize", resizeWorld);
+resizeWorld();
+
+/* ========= 3D setup ========= */
+const BASE_HUE = hashStr(speciesId) % 360;
+const vizRand = makeRNG(hashStr("viz:"+speciesId));
+
+const VIZ_N_MAX = 900;
+const NODES = [];
+for(let i=0;i<VIZ_N_MAX;i++){
+  const theta = 2*Math.PI*vizRand();
+  const cosphi = 2*vizRand() - 1;
+  const phi = Math.acos(cosphi);
+  const r = Math.cbrt(vizRand());
+  const sinphi = Math.sin(phi);
+  const x = r*sinphi*Math.cos(theta);
+  const y = r*sinphi*Math.sin(theta);
+  const z = r*cosphi;
+  NODES.push({ bx:x, by:y, bz:z, ph: vizRand()*Math.PI*2, g:0 });
+}
+
+function assignGroups(){
+  const A = morph.attractors;
+  const nA = Math.max(1, A.length);
+
+  const An = A.map(a=>{
+    const r = vlen(a.x,a.y,a.z) || 1;
+    return { x:a.x/r, y:a.y/r, z:a.z/r };
+  });
+
+  for(let i=0;i<NODES.length;i++){
+    const n = NODES[i];
+    const r = vlen(n.bx,n.by,n.bz) || 1;
+    const nx = n.bx/r, ny = n.by/r, nz = n.bz/r;
+
+    let best = 0;
+    let bestDot = -999;
+    for(let k=0;k<nA;k++){
+      const dot = nx*An[k].x + ny*An[k].y + nz*An[k].z;
+      if(dot > bestDot){ bestDot = dot; best = k; }
+    }
+    n.g = best;
+  }
+}
+assignGroups();
+
+/* links */
+const LINKS_PER = 4;
+const CAND = 22;
+const LINKS = Array.from({length:VIZ_N_MAX}, ()=>[]);
+for(let i=0;i<VIZ_N_MAX;i++){
+  const best = [];
+  for(let s=0;s<CAND;s++){
+    const j = Math.floor(vizRand()*VIZ_N_MAX);
+    if(j === i) continue;
+    const dx = NODES[i].bx - NODES[j].bx;
+    const dy = NODES[i].by - NODES[j].by;
+    const dz = NODES[i].bz - NODES[j].bz;
+    const d2 = dx*dx + dy*dy + dz*dz;
+    best.push({j, d2});
+  }
+  best.sort((a,b)=>a.d2-b.d2);
+  LINKS[i] = best.slice(0, LINKS_PER).map(o=>o.j);
+}
+
+let rotX = 0.85;
+let rotY = 0.12;
+let lastFrame = performance.now();
+let lastLobeCountSeen = morph.attractors.length;
+
+/* ========= world sim + draw ========= */
+let lastWorldFrame = performance.now();
+
+function driveTarget(){
+  if(drive === "forage"){
+    const food = nearestItem(world.food, agent.x, agent.y);
+    if(food){ agent.tx = food.x; agent.ty = food.y; return; }
+  }
+  if(drive === "breathe"){
+    const vent = nearestItem(world.vents, agent.x, agent.y);
+    if(vent){ agent.tx = vent.x; agent.ty = vent.y; return; }
+  }
+  if(drive === "regulate"){
+    agent.tx = 0.5; agent.ty = 0.5; return;
+  }
+  if(drive === "heal"){
+    if(world.hazards.length){
+      /* move away from hazard center of mass */
+      let sx=0, sy=0;
+      for(const hz of world.hazards){ sx += hz.x; sy += hz.y; }
+      sx /= world.hazards.length; sy /= world.hazards.length;
+      const dx = agent.x - sx, dy = agent.y - sy;
+      const l = Math.sqrt(dx*dx+dy*dy) || 1;
+      agent.tx = clamp(agent.x + (dx/l)*0.25, 0.05, 0.95);
+      agent.ty = clamp(agent.y + (dy/l)*0.25, 0.05, 0.95);
+      return;
+    }
+    agent.tx = 0.5; agent.ty = 0.92; return;
+  }
+  if(drive === "rest"){
+    agent.tx = agent.x; agent.ty = agent.y; return;
+  }
+  /* explore / fallback wander */
+  const t = performance.now();
+  if(t > agent.wanderUntil || dist2(agent.x,agent.y,agent.tx,agent.ty) < 0.004){
+    agent.tx = rnd()*0.9 + 0.05;
+    agent.ty = rnd()*0.9 + 0.05;
+    agent.wanderUntil = t + 1800 + rnd()*2400;
+  }
+}
+
+function updateAgent(dt){
+  driveTarget();
+
+  const dx = agent.tx - agent.x;
+  const dy = agent.ty - agent.y;
+  const dist = Math.sqrt(dx*dx + dy*dy) + 1e-6;
+
+  let maxSpeed = 0.22 * (0.25 + body.energy*0.95) * (0.75 + traits.autonomy*0.35);
+  if(drive === "rest") maxSpeed *= 0.12;
+  if(drive === "heal") maxSpeed *= 0.70;
+  if(drive === "regulate") maxSpeed *= 0.85;
+  if(drive === "explore") maxSpeed *= 1.05;
+
+  const desiredVx = (dx/dist) * maxSpeed;
+  const desiredVy = (dy/dist) * maxSpeed;
+
+  const steer = 2.8;
+  agent.vx += (desiredVx - agent.vx) * steer * dt;
+  agent.vy += (desiredVy - agent.vy) * steer * dt;
+
+  /* damping */
+  agent.vx *= (1 - 0.18*dt);
+  agent.vy *= (1 - 0.18*dt);
+
+  agent.x += agent.vx * dt;
+  agent.y += agent.vy * dt;
+
+  /* bounds bounce */
+  if(agent.x < 0){ agent.x = 0; agent.vx *= -0.45; }
+  if(agent.x > 1){ agent.x = 1; agent.vx *= -0.45; }
+  if(agent.y < 0){ agent.y = 0; agent.vy *= -0.45; }
+  if(agent.y > 1){ agent.y = 1; agent.vy *= -0.45; }
+
+  /* movement costs */
+  const sp = Math.sqrt(agent.vx*agent.vx + agent.vy*agent.vy);
+  body.energy = clamp(body.energy - sp*0.010*BODY_RATE*dt, 0, 1);
+  body.hunger = clamp(body.hunger + sp*0.007*BODY_RATE*dt, 0, 1);
+  body.oxygen = clamp(body.oxygen - sp*0.004*BODY_RATE*dt, 0, 1);
+
+  /* ambient temperature deviation based on x position */
+  const amb = ambientTempDevAt(agent.x);
+  body.temp = clamp(body.temp + (amb - body.temp)*0.9*BODY_RATE*dt + lastD.stress*0.015*BODY_RATE*dt - lastD.calmFactor*0.010*BODY_RATE*dt, 0, 1);
+
+  /* interact with food */
+  for(let i=world.food.length-1;i>=0;i--){
+    const f = world.food[i];
+    const d2f = dist2(agent.x,agent.y,f.x,f.y);
+    if(d2f < 0.0036){
+      const eat = Math.min(f.amt, 0.25*dt*(0.6 + traits.openness*0.7));
+      f.amt -= eat;
+      body.hunger = clamp(body.hunger - eat*0.90, 0, 1);
+      body.energy = clamp(body.energy + eat*0.55, 0, 1);
+      if(f.amt <= 0.02) world.food.splice(i,1);
+    }
+  }
+
+  /* vents */
+  for(const v of world.vents){
+    const d2v = dist2(agent.x,agent.y,v.x,v.y);
+    if(d2v < 0.0049){
+      body.oxygen = clamp(body.oxygen + (0.32*v.str)*dt*(0.7 + traits.recovery*0.6), 0, 1);
+    }
+  }
+
+  /* hazards */
+  let hurtNow = 0;
+  for(const hz of world.hazards){
+    const d2h = dist2(agent.x,agent.y,hz.x,hz.y);
+    if(d2h < 0.0058){
+      hurtNow += (0.10*hz.str) * dt;
+    }
+  }
+  if(hurtNow > 0){
+    body.injury = clamp(body.injury + hurtNow*(0.9 + traits.sensitivity*0.6), 0, 1);
+  }
+
+  /* trail */
+  if(agent.trail.length === 0 || dist2(agent.x,agent.y,agent.trail[agent.trail.length-1].x,agent.trail[agent.trail.length-1].y) > 0.00035){
+    agent.trail.push({ x: agent.x, y: agent.y });
+    if(agent.trail.length > 80) agent.trail.shift();
+  }
+}
+
+function drawWorld(){
+  /* background: temp gradient (edges purple) */
+  worldCtx.clearRect(0,0,worldW,worldH);
+
+  const g = worldCtx.createLinearGradient(0,0,worldW,0);
+  g.addColorStop(0,   "rgba(167,139,250,0.16)");
+  g.addColorStop(0.5, "rgba(0,0,0,0.00)");
+  g.addColorStop(1,   "rgba(167,139,250,0.16)");
+  worldCtx.fillStyle = g;
+  worldCtx.fillRect(0,0,worldW,worldH);
+
+  /* faint grid */
+  worldCtx.strokeStyle = "rgba(255,255,255,0.05)";
+  worldCtx.lineWidth = 1;
+  for(let i=1;i<10;i++){
+    const x = (worldW*i/10);
+    worldCtx.beginPath(); worldCtx.moveTo(x,0); worldCtx.lineTo(x,worldH); worldCtx.stroke();
+  }
+  for(let i=1;i<6;i++){
+    const y = (worldH*i/6);
+    worldCtx.beginPath(); worldCtx.moveTo(0,y); worldCtx.lineTo(worldW,y); worldCtx.stroke();
+  }
+
+  const toPx = (x,y)=>({ x: x*worldW, y: y*worldH });
+
+  /* draw hazards */
+  for(const hz of world.hazards){
+    const p = toPx(hz.x,hz.y);
+    worldCtx.fillStyle = "rgba(255,77,77,0.80)";
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, 7, 0, Math.PI*2);
+    worldCtx.fill();
+
+    worldCtx.fillStyle = "rgba(255,77,77,0.18)";
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, 18, 0, Math.PI*2);
+    worldCtx.fill();
+  }
+
+  /* draw vents */
+  for(const v of world.vents){
+    const p = toPx(v.x,v.y);
+    worldCtx.fillStyle = "rgba(58,214,255,0.85)";
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, 7, 0, Math.PI*2);
+    worldCtx.fill();
+
+    worldCtx.fillStyle = "rgba(58,214,255,0.16)";
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, 18, 0, Math.PI*2);
+    worldCtx.fill();
+  }
+
+  /* draw food */
+  for(const f of world.food){
+    const p = toPx(f.x,f.y);
+    const r = 5 + 5*clamp(f.amt,0,1);
+    worldCtx.fillStyle = "rgba(255,176,32,0.86)";
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, r, 0, Math.PI*2);
+    worldCtx.fill();
+
+    worldCtx.fillStyle = "rgba(255,176,32,0.14)";
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, r+10, 0, Math.PI*2);
+    worldCtx.fill();
+  }
+
+  /* trail */
+  if(agent.trail.length > 2){
+    worldCtx.strokeStyle = driveColorHex(drive);
+    worldCtx.globalAlpha = 0.25;
+    worldCtx.lineWidth = 2;
+    worldCtx.beginPath();
+    for(let i=0;i<agent.trail.length;i++){
+      const p = toPx(agent.trail[i].x, agent.trail[i].y);
+      if(i===0) worldCtx.moveTo(p.x,p.y); else worldCtx.lineTo(p.x,p.y);
+    }
+    worldCtx.stroke();
+    worldCtx.globalAlpha = 1;
+  }
+
+  /* agent */
+  {
+    const p = toPx(agent.x, agent.y);
+    worldCtx.fillStyle = driveColorHex(drive);
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, 7, 0, Math.PI*2);
+    worldCtx.fill();
+
+    worldCtx.strokeStyle = "rgba(255,255,255,0.7)";
+    worldCtx.lineWidth = 1.5;
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, 8.5, 0, Math.PI*2);
+    worldCtx.stroke();
+  }
+
+  /* placement preview */
+  if(mouse.inside){
+    const p = toPx(mouse.x, mouse.y);
+    let c = "rgba(255,176,32,0.45)";
+    if(placeMode==="oxygen") c = "rgba(58,214,255,0.45)";
+    if(placeMode==="hazard") c = "rgba(255,77,77,0.45)";
+
+    worldCtx.fillStyle = c;
+    worldCtx.beginPath();
+    worldCtx.arc(p.x,p.y, 10, 0, Math.PI*2);
+    worldCtx.fill();
+  }
+}
+
+function worldLoop(t){
+  const dt = Math.min(0.05, Math.max(0.001, (t - lastWorldFrame)/1000));
+  lastWorldFrame = t;
+
+  updateAgent(dt);
+  updateBars(); /* keep bars responsive */
+  drawWorld();
+
+  requestAnimationFrame(worldLoop);
+}
+requestAnimationFrame(worldLoop);
+
+/* ========= 3D render ========= */
+function renderViz(t){
+  if(morph.attractors.length !== lastLobeCountSeen){
+    lastLobeCountSeen = morph.attractors.length;
+    assignGroups();
+  }
+
+  const dt = t - lastFrame;
+  lastFrame = t;
+
+  const d = lastD;
+  const fN = fatigue / FATIGUE_MAX;
+  const iN = impatience / IMPATIENCE_MAX;
+
+  const opennessBlend = 0.25*genome.openness + 0.75*traits.openness;
+  const stage = computeStage(quietBank);
+  /* HOLD_FREEZE_RENDER */
+  const holding = (window.__dbView && window.__dbView.holding);
+  if(!holding){
+
+      const speed = (0.00016 + traits.autonomy*0.00070) * (0.35 + (1 - fN)*0.95) * (0.70 + d.calmFactor*0.60);
+      rotY += dt * speed;
+      rotX += dt * speed * 0.62;
+
+      const jit = (iN*0.0010 + d.stress*0.0007 + body.injury*0.0008) * (0.25 + traits.sensitivity*1.1);
+      rotX += Math.sin(t*0.0017) * jit;
+      rotY += Math.cos(t*0.0013) * jit;
+
+  
+  }
+  const clearA = 0.045 + d.stress*0.06 + (1-body.oxygen)*0.03;
+  vizCtx.fillStyle = `rgba(0,0,0,${clearA.toFixed(3)})`;
+  vizCtx.fillRect(0,0,vizW,vizH);
+
+  const pulseT = vizPulseAt ? (t - vizPulseAt)/1000 : 999;
+  const pulseFade = (pulseT < 3.0) ? Math.exp(-pulseT*1.2) : 0;
+
+  let contraction = 1 - 0.18*d.stress - 0.10*fN - 0.10*body.temp;
+  if(vizPulseType === "resist" && pulseT < 1.6) contraction *= (0.84 + 0.16*(pulseT/1.6));
+  if(vizPulseType === "init" && pulseT < 2.2) contraction *= (1 + 0.10*Math.exp(-pulseT*1.1));
+  contraction = clamp(contraction, 0.55, 1.25);
+
+  const breath = 1 + 0.035*Math.sin(t*0.001 + stage*0.7)*(0.35 + d.calmFactor*0.65);
+  const scaleBase = (0.95 + opennessBlend*1.15) * contraction * breath;
+
+  const cx = vizW/2, cy = vizH/2;
+  const depth = 3.2;
+  const scale = Math.min(vizW, vizH) * 0.42 * (window.__vizZoom || 1);
+
+  let drawCount = Math.floor(260 + opennessBlend*600 + stage*120 + (morph.attractors.length-5)*28);
+  drawCount = Math.max(200, Math.min(VIZ_N_MAX, drawCount));
+
+  const cX = Math.cos(rotX), sX = Math.sin(rotX);
+  const cY = Math.cos(rotY), sY = Math.sin(rotY);
+
+  const warp = (iN*0.10 + d.stress*0.07 + body.injury*0.08) * (0.25 + traits.sensitivity*0.95);
+
+  const A = morph.attractors;
+  const nA = Math.max(1, A.length);
+
+  const pull =
+    (0.10 + opennessBlend*0.30 + stage*0.05) *
+    (0.75 + d.calmFactor*0.55) *
+    (1 - d.stress*0.40) *
+    (0.70 + body.oxygen*0.35);
+
+  /* line tint follows drive + pulse */
+  const dh = driveHueValue(drive, BASE_HUE);
+  let tintHue = hueLerp(BASE_HUE, dh, (drive === "explore") ? 0.12 : 0.55);
+  if(pulseFade > 0){
+    const ph = pulseHue(vizPulseType, BASE_HUE);
+    tintHue = hueLerp(tintHue, ph, clamp(pulseFade*0.65, 0, 0.75));
+  }
+
+  const satLine = Math.round(clamp(38 + body.oxygen*34, 18, 92));
+  const litLine = Math.round(clamp(56 + body.energy*14 - body.injury*16, 24, 86));
+
+  const sysLevels = [body.energy, body.hunger, body.oxygen, body.temp, body.injury];
+  const sysHues = [HUE.energy, HUE.hunger, HUE.oxygen, HUE.temp, HUE.injury];
+  const pSys = pulseSysIndex(vizPulseType);
+
+  const PROJ = new Array(drawCount);
+
+  for(let i=0;i<drawCount;i++){
+    const node = NODES[i];
+    const a = A[node.g % nA];
+
+    const sysIdx = a.sys % 5;
+    const lev = sysLevels[sysIdx];
+
+    const gx = node.bx*(1 - pull) + a.x*pull;
+    const gy = node.by*(1 - pull) + a.y*pull;
+    const gz = node.bz*(1 - pull) + a.z*pull;
+
+    let x = gx * scaleBase;
+    let y = gy * scaleBase;
+    let z = gz * scaleBase;
+
+    x += warp * Math.sin(node.ph + t*0.0019);
+    y += warp * Math.sin(node.ph*1.3 + t*0.0015);
+    z += warp * Math.cos(node.ph*0.7 + t*0.0012);
+
+    const y1 = y*cX - z*sX;
+    const z1 = y*sX + z*cX;
+    const x2 = x*cY + z1*sY;
+    const z2 = -x*sY + z1*cY;
+    const y2 = y1;
+
+    const p = 1 / (z2 + depth);
+    const sx = cx + x2 * scale * p;
+    const sy = cy + y2 * scale * p;
+
+    let a0 = (0.08 + 0.30*p) * (0.35 + opennessBlend*0.65) * (0.55 + d.calmFactor*0.45) * (0.45 + (1 - fN)*0.65);
+    a0 *= (1 - d.stress*0.55) * (0.55 + body.oxygen*0.55);
+    a0 = clamp(a0, 0.02, 0.92);
+
+    let r0 = (0.9 + 2.5*p) * (0.60 + opennessBlend*0.70);
+    r0 *= (0.65 + d.calmFactor*0.45) * (0.85 + (1-fN)*0.25) * (0.65 + body.energy*0.45);
+    r0 = clamp(r0, 0.6, 5.0);
+
+    a0 *= (0.70 + 0.30*lev);
+    r0 *= (0.88 + 0.20*lev);
+
+    if(pulseFade > 0){
+      const dist = Math.sqrt(x*x + y*y + z*z);
+      const wave = Math.sin(dist*7 - pulseT*8);
+      const pulse = pulseFade * (0.5 + 0.5*wave);
+
+      if(vizPulseType === "init"){
+        a0 = clamp(a0 + pulse*0.26, 0, 1);
+        r0 *= (1 + pulse*0.40);
+      }else if(vizPulseType === "echo"){
+        a0 = clamp(a0 + pulse*0.14, 0, 1);
+        r0 *= (1 + pulse*0.20);
+      }else if(vizPulseType === "touch"){
+        a0 = clamp(a0 + pulse*0.08, 0, 1);
+      }else if(vizPulseType === "resist"){
+        a0 = clamp(a0 - pulse*0.18, 0, 1);
+        r0 *= (1 - pulse*0.20);
+      }else{
+        if(pSys === sysIdx){
+          a0 = clamp(a0 + pulse*0.22, 0, 1);
+          r0 *= (1 + pulse*0.34);
+        }else{
+          a0 = clamp(a0 + pulse*0.06, 0, 1);
+        }
+      }
+    }
+
+    PROJ[i] = { sx, sy, p, a:a0, r:r0, sys:sysIdx };
+  }
+
+  const lineBase =
+    (0.028 + opennessBlend*0.13 + (nA-5)*0.010) *
+    (1 - fN*0.65) *
+    (0.55 + d.calmFactor*0.55) *
+    (1 - d.stress*0.45) *
+    (0.55 + body.oxygen*0.55);
+
+  vizCtx.strokeStyle = `hsl(${tintHue}, ${satLine}%, ${litLine}%)`;
+  vizCtx.lineWidth = 1;
+
+  for(let i=0;i<drawCount;i++){
+    const pa = PROJ[i];
+    for(const j of LINKS[i]){
+      if(j >= drawCount || j <= i) continue;
+      const pb = PROJ[j];
+
+      const la = lineBase * (0.35 + 0.65*((pa.p + pb.p)*0.5));
+      if(la < 0.01) continue;
+
+      vizCtx.globalAlpha = la;
+      vizCtx.beginPath();
+      vizCtx.moveTo(pa.sx, pa.sy);
+      vizCtx.lineTo(pb.sx, pb.sy);
+      vizCtx.stroke();
+    }
+  }
+
+  for(let s=0;s<5;s++){
+    const lev = sysLevels[s];
+    const hueSys = hueLerp(sysHues[s], tintHue, 0.18);
+    const satSys = Math.round(clamp(46 + lev*34 + body.oxygen*10, 20, 92));
+    const litSys = Math.round(clamp(52 + lev*18 + body.energy*10 - body.injury*12, 24, 88));
+
+    vizCtx.fillStyle = `hsl(${hueSys}, ${satSys}%, ${litSys}%)`;
+
+    for(let i=0;i<drawCount;i++){
+      const p = PROJ[i];
+      if(p.sys !== s) continue;
+      vizCtx.globalAlpha = p.a;
+      vizCtx.beginPath();
+      vizCtx.arc(p.sx, p.sy, p.r, 0, Math.PI*2);
+      vizCtx.fill();
+    }
+  }
+
+  vizCtx.globalAlpha = 1;
+  requestAnimationFrame(renderViz);
+}
+requestAnimationFrame(renderViz);
+
+/* ========= startup ========= */
+logLine("BRAIN ONLINE — waiting");
+setDriveDot(driveColorHex(drive));
+updateBars();
+
+/* default world seeds if empty (so it’s alive immediately) */
+if(world.food.length + world.vents.length + world.hazards.length === 0){
+  addFood(0.20,0.30);
+  addFood(0.80,0.60);
+  addVent(0.25,0.75);
+  addVent(0.75,0.25);
+  addHazard(0.50,0.20);
+  addHazard(0.50,0.85);
+}
+saveState();
+</script>
+
+<!-- ORGANISM_EXTENSIONS_V1_START -->
+<style>
+  body.dead #viz, body.dead #world { opacity: 0.22; filter: saturate(0.7) brightness(0.85); }
+  body.dead #hud { opacity: 0.45; }
+  body.dead #log { opacity: 0.55; }
+  body.dead #actionStrip { background: #ff4d4d !important; opacity: 0.9 !important; }
+  body.dead canvas { pointer-events:none; }
+  body.dead .organ { pointer-events:none; }
+  body.dead #btnTouch { pointer-events:none; opacity:0.35; }
+
+  #miniControls {
+    display:flex; gap:8px; margin-left:auto; align-items:center;
+  }
+  .miniBtn {
+    background:#121212; color:#e0e0e0; border:1px solid #2b2b2b;
+    border-radius:8px; padding:8px 10px; font-size:12px; cursor:pointer;
+  }
+  .miniBtn:hover { border-color:#3b3b3b; }
+</style>
+
+<script>
+(function(){
+  function wipeAll(){
+    Object.keys(localStorage)
+      .filter(k => k.startsWith("digital_brain"))
+      .forEach(k => localStorage.removeItem(k));
+  }
+
+  function clearWorldOnly(){
+    const keys = Object.keys(localStorage).filter(k => k.startsWith("digital_brain_organism_8077"));
+    for(const k of keys){
+      try{
+        const obj = JSON.parse(localStorage.getItem(k) || "{}");
+        delete obj.world;
+        delete obj.agent;
+        localStorage.setItem(k, JSON.stringify(obj));
+      }catch(e){}
+    }
+  }
+
+  // URL reset hook: open with ?reset=1 to wipe everything
+  try{
+    const params = new URLSearchParams(location.search);
+    if(params.get("reset") === "1"){
+      wipeAll();
+      location.replace(location.pathname + "?v=" + Date.now());
+      return;
+    }
+  }catch(e){}
+
+  // Add tiny buttons into the controls row
+  const controls = document.getElementById("controls");
+  if(controls && !document.getElementById("miniControls")){
+    const wrap = document.createElement("div");
+    wrap.id = "miniControls";
+
+    const bWorld = document.createElement("button");
+    bWorld.className = "miniBtn";
+    bWorld.textContent = "CLEAR WORLD";
+    bWorld.title = "Removes placed items + resets the creature position";
+    bWorld.onclick = () => { clearWorldOnly(); location.reload(); };
+
+    const bNew = document.createElement("button");
+    bNew.className = "miniBtn";
+    bNew.textContent = "NEW ORGANISM";
+    bNew.title = "Wipes all saved state (fresh start)";
+    bNew.onclick = () => { wipeAll(); location.reload(); };
+
+    wrap.appendChild(bWorld);
+    wrap.appendChild(bNew);
+    controls.appendChild(wrap);
+  }
+
+  // Death + Rebirth
+  let dead = false;
+
+  function isDead(){
+    try{
+      return (body.injury > 0.98) || (body.oxygen < 0.05) || ((body.energy < 0.02) && (body.hunger > 0.90));
+    }catch(e){ return false; }
+  }
+
+  function enterDeath(){
+    if(dead) return;
+    dead = true;
+    document.body.classList.add("dead");
+
+    // Freeze agent if it exists
+    try{
+      agent.vx = 0; agent.vy = 0;
+      agent.tx = agent.x; agent.ty = agent.y;
+    }catch(e){}
+
+    // Add REBIRTH button next to TOUCH
+    const btn = document.getElementById("btnTouch");
+    if(btn && !document.getElementById("btnRebirth")){
+      const r = document.createElement("button");
+      r.id = "btnRebirth";
+      r.className = "miniBtn";
+      r.textContent = "REBIRTH";
+      r.title = "Start fresh immediately";
+      r.onclick = () => { wipeAll(); location.reload(); };
+      btn.insertAdjacentElement("afterend", r);
+    }
+  }
+
+  setInterval(() => {
+    if(!dead && isDead()) enterDeath();
+  }, 400);
+})();
+</script>
+
+<!-- ORGANISM_EXTENSIONS_V1_END -->
+
+  <script src="viz_controls.js"></script>
+  <script src="tools_track1.js"></script>
+  <script src="memory_track2.js"></script>
+  <script src="physiology_cardio_metab.js"></script>
+  <script src="thinking_depth.js"></script>
+  <script src="decision_timeline.js"></script>
+  <script src="legend_toggle.js"></script>\n  <script src="world_overlay_marker.js"></script>\n  <script src="viz_think_halo.js"></script>\n  <script src="viz_size_boost.js"></script>
+  <script src="pause_time_freeze.js"></script>
+</body>
+</html>

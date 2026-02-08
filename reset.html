@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DigitalBrain Reset</title>
+<style>
+  body{margin:0;padding:24px;background:#0b0b0b;color:#ddd;font:14px/1.35 system-ui}
+  .box{max-width:720px}
+  code{background:#111;padding:2px 6px;border-radius:6px}
+</style>
+<div class="box">
+  <h2>Resetting local state…</h2>
+  <p>This clears <code>localStorage</code> + <code>sessionStorage</code> for this origin, then redirects to <code>brain.html</code>.</p>
+</div>
+<script>
+try{ localStorage.clear(); }catch(e){}
+try{ sessionStorage.clear(); }catch(e){}
+try{
+  if('caches' in window){
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(()=>{});
+  }
+}catch(e){}
+setTimeout(()=>{ location.href = "brain.html?v=" + Date.now(); }, 60);
+</script>

@@ -1,12 +1,22 @@
-/* legend_toggle.js — Color legend overlay (toggle: C; auto-fade) */
+/* legend_toggle.js — Color meaning overlay (C; auto-fade)
+   Mapping:
+     WHITE  = calm/rest
+     GREEN  = energy / recovery / fuel
+     AMBER  = hunger / food seeking
+     CYAN   = oxygen / breathing
+     PURPLE = temperature regulation
+     RED    = injury / healing
+     MIX    = competing needs
+*/
 (() => {
   const rows = [
-    {name:"REST",     key:"white",  note:"idle / recover",        dot:"rgba(255,255,255,0.85)"},
-    {name:"BREATHE",  key:"cyan",   note:"O₂ / CO₂ pressure",     dot:"rgba(58,214,255,0.95)"},
-    {name:"FORAGE",   key:"green",  note:"fuel seeking",          dot:"rgba(57,217,138,0.95)"},
-    {name:"REGULATE", key:"amber",  note:"temperature control",   dot:"rgba(255,176,32,0.95)"},
-    {name:"HEAL",     key:"red",    note:"injury response",       dot:"rgba(255,77,77,0.92)"},
-    {name:"EXPLORE",  key:"violet", note:"curiosity / wander",    dot:"rgba(167,139,250,0.92)"},
+    {dot:"rgba(255,255,255,0.85)", text:"WHITE — calm / rest / neutral"},
+    {dot:"rgba(57,217,138,0.95)",  text:"GREEN — energy / recovery / fuel"},
+    {dot:"rgba(255,176,32,0.95)",  text:"AMBER — hunger / food seeking"},
+    {dot:"rgba(58,214,255,0.95)",  text:"CYAN — oxygen / breathing"},
+    {dot:"rgba(167,139,250,0.92)", text:"PURPLE — temperature / regulation"},
+    {dot:"rgba(255,77,77,0.92)",   text:"RED — injury / healing"},
+    {dot:"rgba(255,255,255,0.55)", text:"MIX — two needs close at once"},
   ];
 
   const box = document.createElement("div");
@@ -49,7 +59,7 @@
     dot.style.boxShadow = "0 0 12px rgba(255,255,255,0.10)";
 
     const txt = document.createElement("div");
-    txt.textContent = `${r.name} — ${r.note}`;
+    txt.textContent = r.text;
     txt.style.opacity = "0.88";
 
     line.appendChild(dot);
@@ -67,7 +77,7 @@
     });
     try{ window.__dbTools?.status("colors (C)"); }catch(e){}
     clearTimeout(t);
-    t = setTimeout(hide, 2300);
+    t = setTimeout(hide, 2400);
   }
 
   function hide(){
