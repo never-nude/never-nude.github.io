@@ -66,6 +66,7 @@
   }, { passive:false });
 
   window.addEventListener('keydown', (e) => {
+  if (e && e.isTrusted === false) return;
     const tag = (e.target && e.target.tagName) ? e.target.tagName : '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
@@ -497,3 +498,11 @@
 
   requestAnimationFrame(loop);
 })();
+
+// --- UI bridge (safe typeof checks)
+window.NEURAL_RESET_VIEW = window.NEURAL_RESET_VIEW || function(){
+  if (typeof resetView === 'function') return resetView();
+  if (typeof recenterView === 'function') return recenterView();
+  if (typeof reset_view === 'function') return reset_view();
+  if (typeof resetCamera === 'function') return resetCamera();
+};

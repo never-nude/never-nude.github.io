@@ -233,3 +233,89 @@
   if (document.readyState === 'complete') boot();
   else window.addEventListener('load', boot);
 })();
+
+
+// --- NEURAL_RECENTER_CLICK_PATCH
+// Override Recenter button to call NEURAL_RESET_VIEW directly (avoid synthetic KeyboardEvent recursion/freezes).
+(function(){
+  function findButtonByText(label){
+    label = (label||'').trim().toLowerCase();
+    const btns = Array.from(document.querySelectorAll('button'));
+    return btns.find(b => ((b.textContent||'').trim().toLowerCase() === label));
+  }
+  function replaceWithClone(el){
+    const c = el.cloneNode(true);
+    el.parentNode.replaceChild(c, el);
+    return c;
+  }
+  const btn = findButtonByText('recenter');
+  if (btn) {
+    const b = replaceWithClone(btn); // nukes any prior click listeners
+    b.addEventListener('click', (e) => {
+      try { e.preventDefault(); } catch(_) {}
+      if (typeof window.NEURAL_RESET_VIEW === 'function') window.NEURAL_RESET_VIEW();
+    });
+  }
+})();
+
+
+
+// --- NEURAL_DIRECT_BUTTONS_V1
+// Fix: avoid synthetic KeyboardEvent loops that can freeze on click.
+// Recenter => calls window.NEURAL_RESET_VIEW()
+// Close => hides the stimuli panel directly (no key events)
+(function(){
+  function findButtonByText(label){
+    label = (label||'').trim().toLowerCase();
+    const btns = Array.from(document.querySelectorAll('button'));
+    return btns.find(b => ((b.textContent||'').trim().toLowerCase() === label));
+  }
+  function replaceWithClone(el){
+    const c = el.cloneNode(true);
+    el.parentNode.replaceChild(c, el);
+    return c;
+  }
+  function findStimuliPanelRoot(){
+    // Try common ids/classes first
+    let p = document.getElementById('stimuliPanel') ||
+            document.getElementById('db_stimuli_panel') ||
+            document.querySelector('.stimuli-panel') ||
+            document.querySelector('[data-stimuli-panel]');
+    if (p) return p;
+
+    // Heuristic: find the closest container around the "Vision" button
+    const vision = findButtonByText('vision');
+    if (vision) {
+      let el = vision;
+      for (let i=0; i<10 && el; i++){
+        const cs = window.getComputedStyle(el);
+        if (cs && cs.position === 'fixed') return el;
+        el = el.parentElement;
+      }
+      return vision.closest('div');
+    }
+    return null;
+  }
+
+  // Recenter button
+  const recenter = findButtonByText('recenter');
+  if (recenter) {
+    const b = replaceWithClone(recenter);
+    b.addEventListener('click', (e) => {
+      try { e.preventDefault(); } catch(_) {}
+      if (typeof window.NEURAL_RESET_VIEW === 'function') window.NEURAL_RESET_VIEW();
+    });
+  }
+
+  // Close button (hide panel)
+  const close = findButtonByText('close');
+  if (close) {
+    const b = replaceWithClone(close);
+    b.addEventListener('click', (e) => {
+      try { e.preventDefault(); } catch(_) {}
+      const panel = findStimuliPanelRoot();
+      if (panel) panel.style.display = 'none';
+    });
+  }
+})();
+
