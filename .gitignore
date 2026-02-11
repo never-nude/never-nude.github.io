@@ -1,3 +1,6 @@
 
 # Neural backups
 neural/*.bak*
+
+# Neural backups
+neural/*.bak*
