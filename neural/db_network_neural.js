@@ -13,7 +13,7 @@
   const lerp  = (a,b,t)=>a+(b-a)*t;
 
   function hexToRgb(hex){
-    const h = String(hex||'#fff').replace('#','').trim();
+    const h = String(hex||'#ff0000').replace('#','').trim();
     const hh = (h.length===3) ? h.split('').map(c=>c+c).join('') : h;
     const n = parseInt(hh,16);
     return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
