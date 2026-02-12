@@ -235,3 +235,28 @@
     boot();
   }
 })();
+
+
+// UI declutter: hide Intensity/Recenter buttons
+// (We keep keyboard shortcuts and internal wiring; we just remove the on-screen clutter.)
+(function(){
+  const MAX_TRIES = 40;   // ~10s worst-case
+  let tries = 0;
+
+  const timer = setInterval(() => {
+    tries++;
+    let hidAny = false;
+
+    for (const btn of document.querySelectorAll('button')) {
+      const t = (btn.textContent || '').trim();
+      if (t === 'Recenter' || /^Intensity\b/.test(t)) {
+        btn.style.display = 'none';
+        btn.style.pointerEvents = 'none';
+        hidAny = true;
+      }
+    }
+
+    // Stop early if we found/hid them, or stop eventually regardless.
+    if (hidAny || tries >= MAX_TRIES) clearInterval(timer);
+  }, 250);
+})();
