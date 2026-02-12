@@ -77,26 +77,26 @@
   // --- Regions (toy-anatomy, placed in 3D-ish space)
   const REGIONS = [
     // Cortex (L/R)
-    { id:'PFC_L', label:'PFC L', color:'#74d4ff', p:[-0.72,  0.48,  0.85] },
-    { id:'PFC_R', label:'PFC R', color:'#74d4ff', p:[ 0.72,  0.48,  0.85] },
+    { id:'PFC_L', label:'Prefrontal cortex — Left', color:'#74d4ff', p:[-0.72,  0.48,  0.85] },
+    { id:'PFC_R', label:'Prefrontal cortex — Right', color:'#74d4ff', p:[ 0.72,  0.48,  0.85] },
 
-    { id:'M1_L',  label:'Motor/S1 L', color:'#9ff0d0', p:[-0.45,  0.28,  0.30] },
-    { id:'M1_R',  label:'Motor/S1 R', color:'#9ff0d0', p:[ 0.45,  0.28,  0.30] },
+    { id:'M1_L',  label:'Motor / Somatosensory — Left', color:'#9ff0d0', p:[-0.45,  0.28,  0.30] },
+    { id:'M1_R',  label:'Motor / Somatosensory — Right', color:'#9ff0d0', p:[ 0.45,  0.28,  0.30] },
 
     { id:'PAR_L', label:'Parietal L', color:'#7dfc9a', p:[-0.55,  0.34, -0.05] },
     { id:'PAR_R', label:'Parietal R', color:'#7dfc9a', p:[ 0.55,  0.34, -0.05] },
 
-    { id:'TMP_L', label:'Temporal/Aud L', color:'#b98cff', p:[-0.92,  0.05,  0.05] },
-    { id:'TMP_R', label:'Temporal/Aud R', color:'#b98cff', p:[ 0.92,  0.05,  0.05] },
+    { id:'TMP_L', label:'Temporal / Auditory — Left', color:'#b98cff', p:[-0.92,  0.05,  0.05] },
+    { id:'TMP_R', label:'Temporal / Auditory — Right', color:'#b98cff', p:[ 0.92,  0.05,  0.05] },
 
-    { id:'OCC_L', label:'Visual L', color:'#ffb86b', p:[-0.82,  0.34, -0.90] },
-    { id:'OCC_R', label:'Visual R', color:'#ffb86b', p:[ 0.82,  0.34, -0.90] },
+    { id:'OCC_L', label:'Visual cortex — Left', color:'#ffb86b', p:[-0.82,  0.34, -0.90] },
+    { id:'OCC_R', label:'Visual cortex — Right', color:'#ffb86b', p:[ 0.82,  0.34, -0.90] },
 
     { id:'INS_L', label:'Insula L', color:'#66ffd6', p:[-0.32,  0.02,  0.18] },
     { id:'INS_R', label:'Insula R', color:'#66ffd6', p:[ 0.32,  0.02,  0.18] },
 
     // Midline/subcortex
-    { id:'ACC',  label:'ACC', color:'#e7f0ff', p:[0.00, 0.32, 0.55] },
+    { id:'ACC',  label:'Anterior cingulate cortex', color:'#e7f0ff', p:[0.00, 0.32, 0.55] },
     { id:'CALL', label:'Corpus callosum', color:'#d7dbe6', p:[0.00, 0.44, 0.35] },
     { id:'THAL', label:'Thalamus', color:'#cbd5e1', p:[0.00, 0.16, 0.10] },
     { id:'HYPO', label:'Hypothalamus', color:'#ff7aa2', p:[0.00, 0.00, 0.20] },
@@ -453,7 +453,7 @@
       const x = lerp(A.x, B.x, t);
       const y = lerp(A.y, B.y, t);
 
-      ctx.fillStyle = 'rgba(230,245,255,0.90)';
+      ctx.fillStyle = 'rgba(255, 70, 70, 0.90)';
       ctx.beginPath();
       ctx.arc(x,y,2.2,0,Math.PI*2);
       ctx.fill();
