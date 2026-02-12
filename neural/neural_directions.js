@@ -6,8 +6,8 @@
   const CHARS_PER_TICK = 2;   // speed-up per tick
 
   const ROUTES = {
-    'Vision': ['retina', 'thalamus (LGN)', 'V1', 'visual association', 'working memory'],
-    'Sound': ['cochlea', 'brainstem', 'thalamus (MGN)', 'A1', 'auditory association'],
+    'Vision': ['retina', 'thalamus (visual relay)', 'primary visual cortex', 'visual association', 'working memory'],
+    'Sound': ['cochlea', 'brainstem', 'thalamus (auditory relay)', 'primary auditory cortex', 'auditory association'],
     'Touch': ['receptors', 'spinal pathways', 'thalamus', 'S1', 'somatosensory association'],
     'Smell': ['olfactory bulb', 'piriform cortex', 'amygdala', 'hippocampus', 'orbitofrontal'],
     'Taste': ['brainstem', 'thalamus', 'insula', 'orbitofrontal'],
@@ -15,9 +15,9 @@
     'Proprioception': ['spinal pathways', 'cerebellum', 'parietal integration'],
 
     'Heat/Cold': ['spinal pathways', 'thalamus', 'insula', 'attention'],
-    'Pain': ['nociceptors', 'spinal pathways', 'thalamus', 'insula/ACC', 'amygdala'],
+    'Pain': ['nociceptors', 'spinal pathways', 'thalamus', 'insula + anterior cingulate cortex', 'amygdala'],
 
-    'Hunger': ['hypothalamus', 'insula', 'valuation (OFC)', 'planning'],
+    'Hunger': ['hypothalamus', 'insula', 'valuation (orbitofrontal cortex)', 'planning'],
     'Thirst': ['osmoreceptors', 'hypothalamus', 'insula', 'action selection'],
     'Air hunger (CO₂)': ['brainstem chemoreceptors', 'insula', 'amygdala', 'urge to breathe'],
     'Heart pounding': ['interoception', 'insula', 'amygdala', 'threat appraisal'],
@@ -25,12 +25,12 @@
     'Fatigue': ['homeostasis', 'basal forebrain', 'attention downshift'],
 
     'Threat cue': ['amygdala', 'hypothalamus', 'brainstem', 'prefrontal check'],
-    'Social threat': ['amygdala', 'ACC', 'PFC', 'reappraisal'],
-    'Safety cue': ['vmPFC', 'amygdala inhibition', 'parasympathetic bias'],
+    'Social threat': ['amygdala', 'anterior cingulate cortex', 'prefrontal cortex', 'reappraisal'],
+    'Safety cue': ['ventromedial prefrontal cortex', 'amygdala inhibition', 'parasympathetic bias'],
     'Bonding cue': ['hypothalamus', 'ventral striatum', 'social approach'],
-    'Novelty': ['hippocampus', 'VTA dopamine', 'PFC curiosity'],
-    'Uncertainty': ['ACC', 'LC/NE', 'PFC hypothesis testing'],
-    'Time pressure': ['basal ganglia', 'PFC', 'speed/accuracy tradeoff'],
+    'Novelty': ['hippocampus', 'midbrain dopamine system', 'prefrontal cortex curiosity'],
+    'Uncertainty': ['anterior cingulate cortex', 'arousal system (noradrenaline)', 'prefrontal cortex hypothesis testing'],
+    'Time pressure': ['basal ganglia', 'prefrontal cortex', 'speed/accuracy tradeoff'],
     'Reward cue': ['ventral striatum', 'dopamine', 'approach drive'],
     'Memory cue': ['hippocampus', 'association cortex', 'prediction']
   };
