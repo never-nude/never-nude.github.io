@@ -4,3 +4,9 @@ neural/*.bak*
 
 # Neural backups
 neural/*.bak*
+backups/
+tools/
+*.tgz
+*.zip
+.DS_Store
+neural/*.bak_*
