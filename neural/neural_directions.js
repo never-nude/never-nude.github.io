@@ -260,3 +260,227 @@
     if (hidAny || tries >= MAX_TRIES) clearInterval(timer);
   }, 250);
 })();
+
+
+;(() => {
+  const PATCH = 'DB_DIRECTIONS_V4_PATCH';
+  if (window[PATCH]) return;
+  window[PATCH] = true;
+
+  const STYLE_ID = 'dbDirectionsTickerCSS_v4';
+  const KEEP = 60;
+  const buf = [];
+
+  const isMobile = () =>
+    !!(window.matchMedia && window.matchMedia('(pointer: coarse), (max-width: 700px)').matches);
+
+  const escapeHtml = (s) =>
+    String(s).replace(/[&<>"']/g, (c) => (
+      { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+    ));
+
+  const normalizeLine = (line) => {
+    if (line == null) return '';
+    let t = String(line).trim();
+    if (!t) return '';
+    t = t.replace(/^[•\-\*]+\s*/, '');
+    if (/^running\b/i.test(t)) return '';
+    if (/^standing by\b/i.test(t)) return '';
+    if (/^intensity set\b/i.test(t)) return '';
+    if (/^toggle stimuli\b/i.test(t)) return '';
+    return t;
+  };
+
+  const pushLine = (line) => {
+    const t = normalizeLine(line);
+    if (!t) return;
+    if (buf.length && buf[buf.length - 1] === t) return;
+    buf.push(t);
+    if (buf.length > KEEP) buf.splice(0, buf.length - KEEP);
+  };
+
+  const ensureStyle = () => {
+    if (document.getElementById(STYLE_ID)) return;
+    const st = document.createElement('style');
+    st.id = STYLE_ID;
+    st.textContent = `
+#dbDirectionsLines .line, #dbDirectionsLog .line { display: block !important; }
+#dbDirections .line { white-space: normal !important; overflow-wrap: anywhere !important; word-break: break-word !important; }
+#dbDirections .dbDirectionsBody { max-height: 190px !important; overflow: hidden !important; }
+@media (pointer: coarse), (max-width: 700px){
+  #dbDirections { max-width: 92vw !important; }
+  #dbDirections .dbDirectionsBody { max-height: 150px !important; }
+}
+`;
+    document.head.appendChild(st);
+  };
+
+  const render = () => {
+    ensureStyle();
+    const root = document.getElementById('dbDirections');
+    if (!root) return;
+
+    const linesEl =
+      document.getElementById('dbDirectionsLines') ||
+      document.getElementById('dbDirectionsLog') ||
+      document.getElementById('dbDirectionsText') ||
+      root;
+
+    const maxVisible = isMobile() ? 2 : 4;
+    const visible = buf.slice(-maxVisible);
+    linesEl.innerHTML = visible.map(v => `<div class="line">${escapeHtml(v)}</div>`).join('');
+  };
+
+  window.dbDirectionsAdd = (line) => { pushLine(line); render(); };
+  window.dbDirectionsClear = () => { buf.length = 0; render(); };
+  window.renderDirections = render;
+
+  const hideButtonByText = (re) => {
+    for (const b of Array.from(document.querySelectorAll('button'))) {
+      const t = (b.textContent || '').trim();
+      if (t && re.test(t)) b.style.display = 'none';
+    }
+  };
+
+  const cleanup = () => {
+    hideButtonByText(/^Intensity\s*:/i);
+    hideButtonByText(/^Recenter$/i);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { render(); cleanup(); }, { once: true });
+  } else {
+    render();
+    cleanup();
+  }
+  setTimeout(cleanup, 300);
+  setTimeout(cleanup, 1200);
+})();
+
+
+;(() => {
+  const PATCH = 'DB_DIRECTIONS_V5_CLAMP';
+  if (window[PATCH]) return;
+  window[PATCH] = true;
+
+  const STYLE_ID = 'dbDirectionsTickerCSS_v5';
+  const OLD_STYLE_IDS = ['dbDirectionsTickerCSS_v2','dbDirectionsTickerCSS_v3','dbDirectionsTickerCSS_v4'];
+
+  const MAX_DESKTOP = 4;
+  const MAX_MOBILE  = 2;
+
+  const isMobile = () => !!(window.matchMedia && window.matchMedia('(pointer: coarse), (max-width: 700px)').matches);
+
+  const boringRe = /^(running|standing by|intensity set|toggle stimuli)\b/i;
+  const stripLead = (s) => String(s || '').replace(/^[•\-\*]+\s*/, '').trim();
+
+  function ensureStyle(){
+    if (document.getElementById(STYLE_ID)) return;
+
+    for (const id of OLD_STYLE_IDS) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    const st = document.createElement('style');
+    st.id = STYLE_ID;
+    st.textContent = `
+#dbDirections .line{
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
+#dbDirections .dbDirectionsBody{
+  max-height: 160px !important;
+  overflow: hidden !important;
+}
+@media (pointer: coarse), (max-width: 700px){
+  #dbDirections{ max-width: 92vw !important; }
+  #dbDirections .dbDirectionsBody{ max-height: 130px !important; }
+}
+`;
+    document.head.appendChild(st);
+  }
+
+  function getContainer(){
+    return (
+      document.getElementById('dbDirectionsLines') ||
+      document.getElementById('dbDirectionsLog') ||
+      document.getElementById('dbDirectionsText') ||
+      null
+    );
+  }
+
+  function getNodes(container){
+    const q = container.querySelectorAll('.line');
+    if (q && q.length) return Array.from(q);
+    return Array.from(container.children || []);
+  }
+
+  function clampNow(){
+    ensureStyle();
+    const c = getContainer();
+    if (!c) return;
+
+    const nodes = getNodes(c);
+    if (!nodes.length) return;
+
+    const meaningful = [];
+    for (const n of nodes) {
+      const t = stripLead(n.textContent);
+      if (!t) continue;
+      if (boringRe.test(t)) continue;
+      meaningful.push(n);
+    }
+
+    for (const n of nodes) n.style.display = 'none';
+
+    const max = isMobile() ? MAX_MOBILE : MAX_DESKTOP;
+    for (const n of meaningful.slice(-max)) n.style.display = 'block';
+  }
+
+  function wrapFn(obj, key){
+    try {
+      if (!obj) return;
+      const fn = obj[key];
+      if (typeof fn !== 'function') return;
+      if (fn.__dbWrappedV5) return;
+      const wrapped = function(...args){
+        const r = fn.apply(this, args);
+        try { clampNow(); } catch (_) {}
+        return r;
+      };
+      wrapped.__dbWrappedV5 = true;
+      obj[key] = wrapped;
+    } catch (_) {}
+  }
+
+  function start(){
+    clampNow();
+    wrapFn(window, 'renderDirections');
+    wrapFn(window, 'dbDirectionsRender');
+    wrapFn(window, 'dbDirectionsAdd');
+    wrapFn(window, 'dbDirectionsClear');
+
+    const c = getContainer();
+    if (c) {
+      try {
+        if (window.__dbDirectionsV5Observer) window.__dbDirectionsV5Observer.disconnect();
+      } catch (_) {}
+      const obs = new MutationObserver(() => { try { clampNow(); } catch (_) {} });
+      obs.observe(c, { childList: true, subtree: true, characterData: true });
+      window.__dbDirectionsV5Observer = obs;
+    }
+
+    window.addEventListener('resize', () => setTimeout(clampNow, 0));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
+  setTimeout(start, 300);
+  setTimeout(start, 1200);
+})();
+
