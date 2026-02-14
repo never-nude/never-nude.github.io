@@ -506,3 +506,156 @@ window.NEURAL_RESET_VIEW = window.NEURAL_RESET_VIEW || function(){
   if (typeof reset_view === 'function') return reset_view();
   if (typeof resetCamera === 'function') return resetCamera();
 };
+
+
+;(() => {
+  const MARK = 'DB_CANVAS_SPOTLIGHT_V1';
+  if (window[MARK]) return;
+  window[MARK] = true;
+
+  const DIM_EDGE   = 0.10;
+  const BRIGHT_EDGE= 0.95;
+  const DIM_LABEL  = 0.18;
+  const BRIGHT_LABEL=0.95;
+
+  function findMainCanvas(){
+    const canvases = Array.from(document.querySelectorAll('canvas'));
+    if (!canvases.length) return null;
+    canvases.sort((a,b) => (b.width*b.height) - (a.width*a.height));
+    return canvases[0];
+  }
+
+  function isGradient(style){
+    try {
+      return (typeof CanvasGradient !== 'undefined') && (style instanceof CanvasGradient);
+    } catch (_) { return false; }
+  }
+
+  function labelIsActive(text){
+    const terms = window.__dbActiveTerms || [];
+    if (!terms.length) return false;
+    const t = String(text || '').trim().toLowerCase();
+    if (!t) return false;
+
+    for (const raw of terms){
+      const u = String(raw || '').trim().toLowerCase();
+      if (!u) continue;
+      if (u.length >= 4 && (t.includes(u) || u.includes(t))) return true;
+    }
+    return false;
+  }
+
+  function wrap(ctx){
+    if (!ctx || ctx.__dbSpotlightWrapped) return;
+    ctx.__dbSpotlightWrapped = true;
+
+    const oldStroke = ctx.stroke.bind(ctx);
+    const oldFillText = (ctx.fillText || function(){}).bind(ctx);
+
+    ctx.stroke = function(...args){
+      if (!window.__dbDimPaths) return oldStroke(...args);
+
+      const lw = Number(ctx.lineWidth || 1);
+      // Only apply to "line-like" strokes (edges). Avoid huge strokes.
+      if (lw > 4.5) return oldStroke(...args);
+
+      const style = ctx.strokeStyle;
+      const active = isGradient(style);
+
+      ctx.save();
+      ctx.globalAlpha = active ? BRIGHT_EDGE : DIM_EDGE;
+      const r = oldStroke(...args);
+      ctx.restore();
+      return r;
+    };
+
+    ctx.fillText = function(text, x, y, maxWidth){
+      if (!window.__dbDimPaths) return oldFillText(text, x, y, maxWidth);
+
+      const label = String(text || '').trim();
+      // Only apply to plausible region labels (avoid tiny UI text)
+      if (!label || label.length > 42) return oldFillText(text, x, y, maxWidth);
+
+      const active = labelIsActive(label);
+
+      ctx.save();
+      ctx.globalAlpha = active ? BRIGHT_LABEL : DIM_LABEL;
+      const r = oldFillText(text, x, y, maxWidth);
+      ctx.restore();
+      return r;
+    };
+  }
+
+  function boot(){
+    const c = findMainCanvas();
+    if (!c) return false;
+    const ctx = c.getContext('2d');
+    if (!ctx) return false;
+    wrap(ctx);
+    return true;
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => { boot(); }, { once:true });
+  } else {
+    boot();
+  }
+
+  let tries = 0;
+  const t = setInterval(() => {
+    tries += 1;
+    if (boot() || tries > 80) clearInterval(t);
+  }, 100);
+})();
+
+
+;(() => {
+  const MARK = 'DB_HIDE_DOTS_V1';
+  if (window[MARK]) return;
+  window[MARK] = true;
+
+  window.__dbHideDots = true;
+  window.__dbHideDotsRadius = 6.0;
+
+  function findMainCanvas(){
+    const canvases = Array.from(document.querySelectorAll('canvas'));
+    if (!canvases.length) return null;
+    canvases.sort((a,b) => (b.width*b.height) - (a.width*a.height));
+    return canvases[0];
+  }
+
+  function wrap(ctx){
+    if (!ctx || ctx.__dbHideDotsWrapped) return;
+    ctx.__dbHideDotsWrapped = true;
+
+    const oldArc = ctx.arc;
+    ctx.arc = function(x, y, r, sa, ea, ccw){
+      try{
+        if (window.__dbHideDots && Number(r) <= Number(window.__dbHideDotsRadius || 6.0)) return;
+      }catch(_){}
+      return oldArc.call(this, x, y, r, sa, ea, ccw);
+    };
+  }
+
+  function boot(){
+    const c = findMainCanvas();
+    if (!c) return false;
+    const ctx = c.getContext('2d');
+    if (!ctx) return false;
+    wrap(ctx);
+    return true;
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => { boot(); }, { once:true });
+  } else {
+    boot();
+  }
+
+  let tries = 0;
+  const t = setInterval(() => {
+    tries += 1;
+    if (boot() || tries > 80) clearInterval(t);
+  }, 100);
+})();
+

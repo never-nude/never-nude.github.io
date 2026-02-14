@@ -484,3 +484,103 @@
   setTimeout(start, 1200);
 })();
 
+
+;(() => {
+  const MARK = 'DB_ACTIVE_TERMS_FROM_DIRECTIONS_V1';
+  if (window[MARK]) return;
+  window[MARK] = true;
+
+  window.__dbActiveTerms = window.__dbActiveTerms || [];
+  window.__dbDimPaths = window.__dbDimPaths || false;
+
+  let timer = null;
+
+  function uniq(arr){
+    const out = [];
+    const seen = new Set();
+    for (const x of arr){
+      const k = String(x).toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(x);
+    }
+    return out;
+  }
+
+  function parseRouting(line){
+    const s = String(line || '').trim();
+    if (!s) return [];
+
+    // Look for "Routing:" or "Routing to"
+    const m = s.match(/Routing(?:\s+to)?\s*:?\s*(.*)$/i);
+    if (!m) return [];
+
+    let tail = (m[1] || '').trim();
+    if (!tail) return [];
+
+    // Normalize arrows
+    tail = tail.replace(/\s*->\s*/g, ' → ');
+
+    // Split on arrows first
+    const chunks = tail.split('→').map(x => x.trim()).filter(Boolean);
+
+    const terms = [];
+    for (const ch of chunks){
+      // Further split on +, &, commas
+      const parts = ch.split(/[+,/&]/g).map(x => x.trim()).filter(Boolean);
+      for (let t of parts){
+        // Strip leading filler words
+        t = t.replace(/^(to|via|from)\s+/i, '').trim();
+        if (!t) continue;
+        if (t.length < 3) continue;
+        terms.push(t);
+      }
+    }
+    return uniq(terms).slice(0, 14);
+  }
+
+  function updateFromLine(line){
+    const terms = parseRouting(line);
+    if (!terms.length) return;
+
+    window.__dbActiveTerms = terms;
+    window.__dbDimPaths = true;
+
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      // Turn off spotlight if nothing new is routed soon after
+      window.__dbDimPaths = false;
+      window.__dbActiveTerms = [];
+    }, 2200);
+  }
+
+  const oldAdd = window.dbDirectionsAdd;
+  if (typeof oldAdd === 'function'){
+    window.dbDirectionsAdd = function(line){
+      const r = oldAdd(line);
+      try { updateFromLine(line); } catch (_) {}
+      return r;
+    };
+  } else {
+    // Fallback: watch DOM (rare)
+    const tryAttach = () => {
+      const c = document.getElementById('dbDirectionsLines') || document.getElementById('dbDirectionsLog') || document.getElementById('dbDirectionsText');
+      if (!c) return false;
+      const obs = new MutationObserver(() => {
+        try {
+          const nodes = Array.from(c.querySelectorAll('.line'));
+          const last = nodes.length ? nodes[nodes.length - 1].textContent : c.textContent;
+          updateFromLine(last || '');
+        } catch (_) {}
+      });
+      obs.observe(c, { childList:true, subtree:true, characterData:true });
+      return true;
+    };
+    let tries = 0;
+    const t = setInterval(() => {
+      tries += 1;
+      if (tryAttach() || tries > 80) clearInterval(t);
+    }, 100);
+  }
+})();
+
