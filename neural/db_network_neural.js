@@ -455,7 +455,7 @@
 
       ctx.fillStyle = 'rgba(255, 70, 70, 0.90)';
       ctx.beginPath();
-      ctx.arc(x,y,2.2,0,Math.PI*2);
+      /* dots removed (was ctx.arc(x,y,2.2,...)) */
       ctx.fill();
     }
 
@@ -469,7 +469,7 @@
       const rad = 1.1 + a*1.6;
       ctx.fillStyle = rgba(r.color, 0.18 + a*0.62);
       ctx.beginPath();
-      ctx.arc(P.x, P.y, rad, 0, Math.PI*2);
+      /* dots removed (was ctx.arc(P.x,P.y,rad,...)) */
       ctx.fill();
     }
 
