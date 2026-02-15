@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three.module.js";
 
-const BUILD = "BUILD0021";
+const BUILD = "BUILD0022";
 const PROJECT = "E-merge";
 
 const $ = (id) => document.getElementById(id);
@@ -2053,7 +2053,7 @@ requestAnimationFrame(step);
 })();
 
 
-// ----- Epochs (BUILD0021) -----
+// ----- Epochs (BUILD0022) -----
 // Meadow stays patchy (flora clusters) + fauna biased near patches,
 // PLUS grazers (yellow) consume flora as resource competitors.
 (() => {
@@ -2170,6 +2170,7 @@ requestAnimationFrame(step);
 
     window.__emerge_epoch = epoch;
     window.__emerge_epochName = e.name;
+    window.__emerge_epochCfg = e;
 
     // Spawn grazers (competitors) AFTER plants exist
     try {
@@ -2205,9 +2206,9 @@ requestAnimationFrame(step);
 })();
 
 
-// ----- Grazers (BUILD0021) -----
+// ----- Grazers (BUILD0022) -----
 // Competitor herbivores that seek and consume flora (green spheres).
-// Visible truth probes: bottom status shows grazers=N, and flora disappears near grazers.
+// NEW: flee from the player when close + can be eaten with Space if caught.
 (() => {
   if (window.__emerge_grazers_installed) return;
   window.__emerge_grazers_installed = true;
@@ -2218,7 +2219,10 @@ requestAnimationFrame(step);
   const grazers = [];
   window.grazers = grazers;
 
-  const fmt = (n) => (typeof n === "number" && isFinite(n)) ? n.toFixed(2) : "—";
+  const FLEE_R   = 2.4;   // start fleeing when player is this close
+  const FLEE_SPD = 1.85;  // flee speed (should be catchable with sprint)
+  const EAT_R    = 0.95;  // distance needed to eat grazer with Space
+  const GRAZE_SPD= 1.18;  // normal seek speed
 
   function getNode(o){
     return (o && o.mesh && o.mesh.isObject3D) ? o.mesh :
@@ -2242,6 +2246,11 @@ requestAnimationFrame(step);
     }
     grazers.length = 0;
     if (statusEl) statusEl.setAttribute("data-grazers", "0");
+  }
+
+  function updateStatus(){
+    if (!statusEl) return;
+    statusEl.setAttribute("data-grazers", String(grazers.length));
   }
 
   function randDisc(r){
@@ -2277,11 +2286,6 @@ requestAnimationFrame(step);
     } catch(e) {}
   }
 
-  function updateStatus(){
-    if (!statusEl) return;
-    statusEl.setAttribute("data-grazers", String(grazers.length));
-  }
-
   function findNearestPlant(x, z){
     try {
       if (typeof plants === "undefined" || !plants || plants.length === 0) return -1;
@@ -2315,6 +2319,80 @@ requestAnimationFrame(step);
     } catch(e) {}
   }
 
+  // --- Player position detection (robust): controls.target OR find the "rod" rig in the scene ---
+  let playerNode = null;
+  let lastScanMs = 0;
+
+  function dims(geo){
+    if (!geo) return null;
+    try { if (!geo.boundingBox && geo.computeBoundingBox) geo.computeBoundingBox(); } catch(_) {}
+    const bb = geo.boundingBox;
+    if (!bb) return null;
+    return { x: bb.max.x - bb.min.x, y: bb.max.y - bb.min.y, z: bb.max.z - bb.min.z };
+  }
+
+  function isRodMesh(m){
+    if (!m || !m.isMesh || !m.geometry) return false;
+    const d = dims(m.geometry);
+    if (!d) return false;
+    const a = Math.abs(d.x), b = Math.abs(d.y), c = Math.abs(d.z);
+    const mx = Math.max(a,b,c), mn = Math.min(a,b,c);
+    return mx > 0.45 && mn > 0.02 && (mx / (mn || 1)) > 4.0;
+  }
+
+  function isSphereish(m){
+    if (!m || !m.isMesh || !m.geometry) return false;
+    const d = dims(m.geometry);
+    if (!d) return false;
+    const a = Math.abs(d.x), b = Math.abs(d.y), c = Math.abs(d.z);
+    const mx = Math.max(a,b,c), mn = Math.min(a,b,c);
+    return mx > 0.30 && (mx / (mn || 1)) < 1.35;
+  }
+
+  function findPlayerNodeByRod(){
+    if (typeof scene === "undefined" || !scene) return null;
+
+    let rod = null;
+    scene.traverse((o) => { if (!rod && isRodMesh(o)) rod = o; });
+    if (!rod) return null;
+
+    let top = rod;
+    while (top.parent && top.parent !== scene) top = top.parent;
+
+    let sphereFound = false;
+    top.traverse((o) => { if (!sphereFound && isSphereish(o)) sphereFound = true; });
+    if (!sphereFound) return null;
+
+    window.__emerge_playerNode = top;
+    return top;
+  }
+
+  function getPlayerXZ(){
+    // 1) controls.target is often the follow point
+    try {
+      if (typeof controls !== "undefined" && controls && controls.target) {
+        return { x: controls.target.x, z: controls.target.z };
+      }
+    } catch(_) {}
+    try {
+      if (window.controls && window.controls.target) {
+        return { x: window.controls.target.x, z: window.controls.target.z };
+      }
+    } catch(_) {}
+
+    // 2) cached node
+    if (playerNode && playerNode.isObject3D) return { x: playerNode.position.x, z: playerNode.position.z };
+
+    // 3) scan occasionally
+    const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    if (now - lastScanMs < 800) return null;
+    lastScanMs = now;
+
+    playerNode = (window.__emerge_playerNode && window.__emerge_playerNode.isObject3D) ? window.__emerge_playerNode : findPlayerNodeByRod();
+    if (playerNode && playerNode.isObject3D) return { x: playerNode.position.x, z: playerNode.position.z };
+    return null;
+  }
+
   // Called by epoch reseed
   window.__emerge_spawnGrazers = (epochCfg, centers) => {
     clearGrazers();
@@ -2335,8 +2413,67 @@ requestAnimationFrame(step);
     updateStatus();
   };
 
-  // Simple fixed-timestep update (keeps us independent of internal game loop)
+  // Eat grazers with Space (only if close; otherwise let normal eat logic run)
+  window.addEventListener("keydown", (e) => {
+    if (e.repeat) return;
+    if (e.code !== "Space") return;
+
+    // Don't eat while overlays are open
+    const lin = document.getElementById("lineage");
+    if (lin && !lin.classList.contains("hidden")) return;
+    try { if (typeof draftOpen !== "undefined" && draftOpen) return; } catch(_) {}
+
+    const p = getPlayerXZ();
+    if (!p) return;
+
+    let best = -1;
+    let bestD = 1e18;
+    for (let i = 0; i < grazers.length; i++){
+      const g = grazers[i];
+      if (!g || !g.mesh) continue;
+      const dx = g.mesh.position.x - p.x;
+      const dz = g.mesh.position.z - p.z;
+      const d = Math.hypot(dx, dz);
+      if (d < bestD){
+        bestD = d;
+        best = i;
+      }
+    }
+
+    if (best >= 0 && bestD <= EAT_R){
+      const g = grazers[best];
+      try { if (g && g.mesh && g.mesh.parent) g.mesh.parent.remove(g.mesh); } catch(_) {}
+      grazers.splice(best, 1);
+      updateStatus();
+
+      // Visible truth probe: flash/pulse
+      try { if (typeof flash !== "undefined") flash = Math.max(flash, 0.9); } catch(_) {}
+
+      // Energy bump (best-effort; if energy isn't in scope, it simply won't change)
+      try { if (typeof energy === "number") energy = energy + 18; } catch(_) {}
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+
+  // Fixed timestep update
   let last = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+
+  function clampToEpoch(g){
+    try {
+      const cfg = window.__emerge_epochCfg;
+      const R = (cfg && typeof cfg.radius === "number") ? cfg.radius : 26;
+      const x = g.mesh.position.x;
+      const z = g.mesh.position.z;
+      const d = Math.hypot(x, z);
+      if (d > R * 0.98){
+        const s = (R * 0.98) / (d || 1);
+        g.mesh.position.x = x * s;
+        g.mesh.position.z = z * s;
+      }
+    } catch(_) {}
+  }
 
   function step(){
     const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
@@ -2347,12 +2484,31 @@ requestAnimationFrame(step);
     if (!grazers.length) { updateStatus(); return; }
     updateStatus();
 
+    // Compute player once per tick
+    const p = getPlayerXZ();
+
     for (const g of grazers){
       if (!g || !g.mesh) continue;
 
       g.cooldown = Math.max(0, g.cooldown - dt);
 
-      // Acquire target if missing/stale
+      // Flee from player if close
+      if (p){
+        const dxp = g.mesh.position.x - p.x;
+        const dzp = g.mesh.position.z - p.z;
+        const dp = Math.hypot(dxp, dzp);
+        if (dp < FLEE_R){
+          const ux = dxp / (dp || 1);
+          const uz = dzp / (dp || 1);
+          g.mesh.position.x += ux * FLEE_SPD * dt;
+          g.mesh.position.z += uz * FLEE_SPD * dt;
+          g.target = -1;
+          clampToEpoch(g);
+          continue;
+        }
+      }
+
+      // Acquire target plant if missing/stale
       if (g.target < 0 || (typeof plants === "undefined") || !plants || g.target >= plants.length || !getNode(plants[g.target])){
         g.target = findNearestPlant(g.mesh.position.x, g.mesh.position.z);
       }
@@ -2365,24 +2521,24 @@ requestAnimationFrame(step);
         const dz = pn.position.z - g.mesh.position.z;
         const dist = Math.hypot(dx, dz);
 
-        // Eat
+        // Eat plant
         if (dist < 0.55 && g.cooldown <= 0){
           consumePlant(g.target);
           g.target = -1;
-          g.cooldown = 1.10;
+          g.cooldown = 1.05;
 
-          // Tiny visible pulse so it’s undeniable even if you miss the plant popping
+          // Tiny pulse so eating is undeniable
           try { g.mesh.scale.set(1.18, 1.18, 1.18); } catch(_) {}
           setTimeout(() => { try { if (g.mesh) g.mesh.scale.set(1,1,1); } catch(_) {} }, 120);
           continue;
         }
 
         // Move toward plant
-        const spd = 1.18;
         const ux = dx / (dist || 1);
         const uz = dz / (dist || 1);
-        g.mesh.position.x += ux * spd * dt;
-        g.mesh.position.z += uz * spd * dt;
+        g.mesh.position.x += ux * GRAZE_SPD * dt;
+        g.mesh.position.z += uz * GRAZE_SPD * dt;
+        clampToEpoch(g);
 
       } else {
         // Wander
@@ -2394,6 +2550,7 @@ requestAnimationFrame(step);
         const spd = 0.55;
         g.mesh.position.x += Math.cos(g.wanderA) * spd * dt;
         g.mesh.position.z += Math.sin(g.wanderA) * spd * dt;
+        clampToEpoch(g);
       }
     }
   }
