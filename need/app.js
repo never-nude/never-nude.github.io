@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three.module.js";
 
-const BUILD = "BUILD0019";
+const BUILD = "BUILD0020";
 const PROJECT = "E-merge";
 
 const $ = (id) => document.getElementById(id);
@@ -2053,52 +2053,39 @@ requestAnimationFrame(step);
 })();
 
 
-// ----- Epochs (BUILD0019) -----
-// Minimal “world complexity grows” skeleton:
-// - Two epochs: Nursery <-> Meadow
-// - Press M to migrate epoch (re-seeds flora/fauna)
-// - Shows current epoch in HUD (#epochTag)
-// No story, no counting; just parameter packs.
-
+// ----- Epochs (BUILD0020) -----
+// Meadow gets patchy (flora clusters) + fauna clusters around patches (visible competition zones).
 (() => {
   if (window.__emerge_epochs_installed) return;
   window.__emerge_epochs_installed = true;
 
   const EPOCHS = [
-    {
-      name: "Nursery",
-      radius: 16,
-      plantsN: 26,
-      preyN: 8,
-      fruitChance: 0.18,         // more accessible high-value flora early
-      preyW: [0.78, 0.22, 0.00],  // slow/runner/dart weighting
-    },
-    {
-      name: "Meadow",
-      radius: 26,
-      plantsN: 16,
-      preyN: 14,
-      fruitChance: 0.10,         // flora scarcer/less juicy (sets up future competition)
-      preyW: [0.55, 0.35, 0.10],  // more runners + some darts
-    },
+    { name:"Nursery", radius:16, plantsN:26, preyN:8,  fruitChance:0.18, preyW:[0.78,0.22,0.00] },
+    { name:"Meadow",  radius:26, plantsN:16, preyN:14, fruitChance:0.10, preyW:[0.55,0.35,0.10],
+      patchN:3, patchR:5.0, preyNearPatch:0.72 }
   ];
 
   let epoch = 0;
-
   const epochEl = document.getElementById("epochTag");
 
   function setEpochLabel(){
     if (!epochEl) return;
     const e = EPOCHS[epoch];
-    epochEl.textContent = `${e.name} (r=${e.radius})`;
+    const extra = e.patchN ? `, p=${e.patchN}` : "";
+    epochEl.textContent = `${e.name} (r=${e.radius}${extra})`;
     const statusEl = document.getElementById("status");
     if (statusEl) statusEl.setAttribute("data-epoch", e.name);
   }
 
-  function randInDisc(r){
-    const a = Math.random() * Math.PI * 2;
-    const d = Math.sqrt(Math.random()) * r;
-    return { x: Math.cos(a) * d, z: Math.sin(a) * d };
+  function randDisc(r){
+    const a = Math.random()*Math.PI*2;
+    const d = Math.sqrt(Math.random())*r;
+    return { x: Math.cos(a)*d, z: Math.sin(a)*d };
+  }
+
+  function randAround(cx, cz, r){
+    const o = randDisc(r);
+    return { x: cx+o.x, z: cz+o.z };
   }
 
   function clearList(arr){
@@ -2118,85 +2105,85 @@ requestAnimationFrame(step);
   }
 
   function pickWeightedIndex(w){
-    const s = w[0] + w[1] + w[2];
-    const r = Math.random() * s;
+    const s = w[0]+w[1]+w[2];
+    const r = Math.random()*s;
     if (r < w[0]) return 0;
-    if (r < w[0] + w[1]) return 1;
+    if (r < w[0]+w[1]) return 1;
     return 2;
   }
 
   function plantGrade(){
     if (typeof PLANT_GRADES === "undefined" || !PLANT_GRADES || !PLANT_GRADES.length) return null;
-    const fruitIx = Math.min(2, PLANT_GRADES.length - 1);
+    const fruitIx = Math.min(2, PLANT_GRADES.length-1);
     return (Math.random() < EPOCHS[epoch].fruitChance) ? PLANT_GRADES[fruitIx] : PLANT_GRADES[0];
   }
 
   function preyGrade(){
     if (typeof PREY_GRADES === "undefined" || !PREY_GRADES || !PREY_GRADES.length) return null;
-    const ix = Math.min(pickWeightedIndex(EPOCHS[epoch].preyW), PREY_GRADES.length - 1);
+    const ix = Math.min(pickWeightedIndex(EPOCHS[epoch].preyW), PREY_GRADES.length-1);
     return PREY_GRADES[ix];
   }
 
   function reseed(){
-    // Try to clear canonical lists if they exist.
     try { if (typeof plants !== "undefined") clearList(plants); } catch(e) {}
-    try { if (typeof prey !== "undefined") clearList(prey); } catch(e) {}
+    try { if (typeof prey   !== "undefined") clearList(prey); } catch(e) {}
 
-    // Spawn according to epoch pack.
     const e = EPOCHS[epoch];
-
     const canPlant = (typeof spawnPlantAt === "function");
     const canPrey  = (typeof spawnPreyAt === "function");
+    if (!canPlant || !canPrey) { setEpochLabel(); return; }
 
-    if (!canPlant || !canPrey) {
-      console.warn("Epoch reseed: missing spawnPlantAt/spawnPreyAt");
-      setEpochLabel();
-      return;
+    // Patch centers (Meadow only)
+    const centers = [];
+    if (e.patchN){
+      for (let i=0;i<e.patchN;i++){
+        const c = randDisc(e.radius*0.75);
+        centers.push(c);
+      }
     }
+    window.__emerge_patchCenters = centers;
 
-    for (let i = 0; i < e.plantsN; i++){
-      const p = randInDisc(e.radius);
+    for (let i=0;i<e.plantsN;i++){
+      let p = randDisc(e.radius);
+      if (centers.length){
+        const c = centers[Math.floor(Math.random()*centers.length)];
+        p = randAround(c.x, c.z, e.patchR);
+      }
       const g = plantGrade();
       if (g) spawnPlantAt(p.x, p.z, g);
     }
 
-    for (let i = 0; i < e.preyN; i++){
-      const p = randInDisc(e.radius);
+    for (let i=0;i<e.preyN;i++){
+      let p = randDisc(e.radius);
+      if (centers.length && Math.random() < (e.preyNearPatch ?? 0.7)){
+        const c = centers[Math.floor(Math.random()*centers.length)];
+        p = randAround(c.x, c.z, e.patchR*1.7);
+      }
       const g = preyGrade();
       if (g) spawnPreyAt(p.x, p.z, g);
     }
 
-    // Truth probes
     window.__emerge_epoch = epoch;
     window.__emerge_epochName = e.name;
     setEpochLabel();
-
     try { if (typeof flash !== "undefined") flash = Math.max(flash, 1.0); } catch(e) {}
   }
 
-  function nextEpoch(){
-    epoch = (epoch + 1) % EPOCHS.length;
-    reseed();
-  }
+  function nextEpoch(){ epoch = (epoch+1)%EPOCHS.length; reseed(); }
 
-  // Key M = migrate epoch (capture so it wins against other handlers)
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return;
     if (e.code !== "KeyM") return;
-
-    // Don't trigger during lineage overlay or mutation draft.
     const lin = document.getElementById("lineage");
     if (lin && !lin.classList.contains("hidden")) return;
-
     try { if (typeof draftOpen !== "undefined" && draftOpen) return; } catch(_) {}
-
     nextEpoch();
     e.preventDefault();
     e.stopImmediatePropagation();
   }, true);
 
-  // Init: label immediately, then reseed shortly after module init
   setEpochLabel();
   setTimeout(() => reseed(), 60);
-})();
+})(); 
+
 
