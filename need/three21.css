@@ -97,3 +97,8 @@ body { margin: 0; }
 /* Append epoch visually to the existing STATUS line without touching JS status text */
 #status::after { content: " | epoch=" attr(data-epoch); }
 #status[data-epoch=""]::after { content: ""; }
+
+
+/* BUILD0021_GRAZERS1: append grazers count to bottom status */
+#status::after { content: " | epoch=" attr(data-epoch) " | grazers=" attr(data-grazers); }
+#status[data-epoch=""]::after { content: ""; }

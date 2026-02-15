@@ -1,6 +1,6 @@
 import * as THREE from "./vendor/three.module.js";
 
-const BUILD = "BUILD0020";
+const BUILD = "BUILD0021";
 const PROJECT = "E-merge";
 
 const $ = (id) => document.getElementById(id);
@@ -2053,16 +2053,17 @@ requestAnimationFrame(step);
 })();
 
 
-// ----- Epochs (BUILD0020) -----
-// Meadow gets patchy (flora clusters) + fauna clusters around patches (visible competition zones).
+// ----- Epochs (BUILD0021) -----
+// Meadow stays patchy (flora clusters) + fauna biased near patches,
+// PLUS grazers (yellow) consume flora as resource competitors.
 (() => {
   if (window.__emerge_epochs_installed) return;
   window.__emerge_epochs_installed = true;
 
   const EPOCHS = [
-    { name:"Nursery", radius:16, plantsN:26, preyN:8,  fruitChance:0.18, preyW:[0.78,0.22,0.00] },
+    { name:"Nursery", radius:16, plantsN:26, preyN:8,  fruitChance:0.18, preyW:[0.78,0.22,0.00], grazerN:1 },
     { name:"Meadow",  radius:26, plantsN:16, preyN:14, fruitChance:0.10, preyW:[0.55,0.35,0.10],
-      patchN:3, patchR:5.0, preyNearPatch:0.72 }
+      patchN:3, patchR:5.0, preyNearPatch:0.72, grazerN:4 }
   ];
 
   let epoch = 0;
@@ -2078,14 +2079,14 @@ requestAnimationFrame(step);
   }
 
   function randDisc(r){
-    const a = Math.random()*Math.PI*2;
-    const d = Math.sqrt(Math.random())*r;
-    return { x: Math.cos(a)*d, z: Math.sin(a)*d };
+    const a = Math.random() * Math.PI * 2;
+    const d = Math.sqrt(Math.random()) * r;
+    return { x: Math.cos(a) * d, z: Math.sin(a) * d };
   }
 
   function randAround(cx, cz, r){
     const o = randDisc(r);
-    return { x: cx+o.x, z: cz+o.z };
+    return { x: cx + o.x, z: cz + o.z };
   }
 
   function clearList(arr){
@@ -2105,22 +2106,22 @@ requestAnimationFrame(step);
   }
 
   function pickWeightedIndex(w){
-    const s = w[0]+w[1]+w[2];
-    const r = Math.random()*s;
+    const s = w[0] + w[1] + w[2];
+    const r = Math.random() * s;
     if (r < w[0]) return 0;
-    if (r < w[0]+w[1]) return 1;
+    if (r < w[0] + w[1]) return 1;
     return 2;
   }
 
   function plantGrade(){
     if (typeof PLANT_GRADES === "undefined" || !PLANT_GRADES || !PLANT_GRADES.length) return null;
-    const fruitIx = Math.min(2, PLANT_GRADES.length-1);
+    const fruitIx = Math.min(2, PLANT_GRADES.length - 1);
     return (Math.random() < EPOCHS[epoch].fruitChance) ? PLANT_GRADES[fruitIx] : PLANT_GRADES[0];
   }
 
   function preyGrade(){
     if (typeof PREY_GRADES === "undefined" || !PREY_GRADES || !PREY_GRADES.length) return null;
-    const ix = Math.min(pickWeightedIndex(EPOCHS[epoch].preyW), PREY_GRADES.length-1);
+    const ix = Math.min(pickWeightedIndex(EPOCHS[epoch].preyW), PREY_GRADES.length - 1);
     return PREY_GRADES[ix];
   }
 
@@ -2131,33 +2132,37 @@ requestAnimationFrame(step);
     const e = EPOCHS[epoch];
     const canPlant = (typeof spawnPlantAt === "function");
     const canPrey  = (typeof spawnPreyAt === "function");
-    if (!canPlant || !canPrey) { setEpochLabel(); return; }
+
+    if (!canPlant || !canPrey) {
+      setEpochLabel();
+      return;
+    }
 
     // Patch centers (Meadow only)
     const centers = [];
     if (e.patchN){
-      for (let i=0;i<e.patchN;i++){
-        const c = randDisc(e.radius*0.75);
+      for (let i = 0; i < e.patchN; i++){
+        const c = randDisc(e.radius * 0.75);
         centers.push(c);
       }
     }
     window.__emerge_patchCenters = centers;
 
-    for (let i=0;i<e.plantsN;i++){
+    for (let i = 0; i < e.plantsN; i++){
       let p = randDisc(e.radius);
       if (centers.length){
-        const c = centers[Math.floor(Math.random()*centers.length)];
+        const c = centers[Math.floor(Math.random() * centers.length)];
         p = randAround(c.x, c.z, e.patchR);
       }
       const g = plantGrade();
       if (g) spawnPlantAt(p.x, p.z, g);
     }
 
-    for (let i=0;i<e.preyN;i++){
+    for (let i = 0; i < e.preyN; i++){
       let p = randDisc(e.radius);
       if (centers.length && Math.random() < (e.preyNearPatch ?? 0.7)){
-        const c = centers[Math.floor(Math.random()*centers.length)];
-        p = randAround(c.x, c.z, e.patchR*1.7);
+        const c = centers[Math.floor(Math.random() * centers.length)];
+        p = randAround(c.x, c.z, e.patchR * 1.7);
       }
       const g = preyGrade();
       if (g) spawnPreyAt(p.x, p.z, g);
@@ -2165,18 +2170,31 @@ requestAnimationFrame(step);
 
     window.__emerge_epoch = epoch;
     window.__emerge_epochName = e.name;
+
+    // Spawn grazers (competitors) AFTER plants exist
+    try {
+      if (typeof window.__emerge_spawnGrazers === "function") {
+        window.__emerge_spawnGrazers(e, centers);
+      }
+    } catch(_) {}
+
     setEpochLabel();
     try { if (typeof flash !== "undefined") flash = Math.max(flash, 1.0); } catch(e) {}
   }
 
-  function nextEpoch(){ epoch = (epoch+1)%EPOCHS.length; reseed(); }
+  function nextEpoch(){
+    epoch = (epoch + 1) % EPOCHS.length;
+    reseed();
+  }
 
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return;
     if (e.code !== "KeyM") return;
+
     const lin = document.getElementById("lineage");
     if (lin && !lin.classList.contains("hidden")) return;
     try { if (typeof draftOpen !== "undefined" && draftOpen) return; } catch(_) {}
+
     nextEpoch();
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -2184,6 +2202,202 @@ requestAnimationFrame(step);
 
   setEpochLabel();
   setTimeout(() => reseed(), 60);
-})(); 
+})();
 
+
+// ----- Grazers (BUILD0021) -----
+// Competitor herbivores that seek and consume flora (green spheres).
+// Visible truth probes: bottom status shows grazers=N, and flora disappears near grazers.
+(() => {
+  if (window.__emerge_grazers_installed) return;
+  window.__emerge_grazers_installed = true;
+
+  const statusEl = document.getElementById("status");
+  if (statusEl && !statusEl.getAttribute("data-grazers")) statusEl.setAttribute("data-grazers", "0");
+
+  const grazers = [];
+  window.grazers = grazers;
+
+  const fmt = (n) => (typeof n === "number" && isFinite(n)) ? n.toFixed(2) : "—";
+
+  function getNode(o){
+    return (o && o.mesh && o.mesh.isObject3D) ? o.mesh :
+           (o && o.group && o.group.isObject3D) ? o.group :
+           (o && o.obj && o.obj.isObject3D) ? o.obj :
+           (o && o.isObject3D) ? o :
+           null;
+  }
+
+  function removeNode(o){
+    const node = getNode(o);
+    if (!node) return;
+    try { if (node.parent) node.parent.remove(node); else if (typeof scene !== "undefined") scene.remove(node); } catch(e) {}
+  }
+
+  function clearGrazers(){
+    for (const g of grazers){
+      if (g && g.mesh) {
+        try { if (g.mesh.parent) g.mesh.parent.remove(g.mesh); else if (typeof scene !== "undefined") scene.remove(g.mesh); } catch(e) {}
+      }
+    }
+    grazers.length = 0;
+    if (statusEl) statusEl.setAttribute("data-grazers", "0");
+  }
+
+  function randDisc(r){
+    const a = Math.random() * Math.PI * 2;
+    const d = Math.sqrt(Math.random()) * r;
+    return { x: Math.cos(a) * d, z: Math.sin(a) * d };
+  }
+
+  function randAround(cx, cz, r){
+    const o = randDisc(r);
+    return { x: cx + o.x, z: cz + o.z };
+  }
+
+  function spawnGrazerAt(x, z){
+    try {
+      if (typeof THREE === "undefined" || typeof scene === "undefined") return;
+
+      const geo = new THREE.SphereGeometry(0.34, 18, 14);
+      const mat = new THREE.MeshStandardMaterial({ color: 0xF2E36E, roughness: 0.55, metalness: 0.05 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, 0.34, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+
+      grazers.push({
+        mesh,
+        target: -1,
+        cooldown: 0,
+        wanderT: 0,
+        wanderA: Math.random() * Math.PI * 2
+      });
+    } catch(e) {}
+  }
+
+  function updateStatus(){
+    if (!statusEl) return;
+    statusEl.setAttribute("data-grazers", String(grazers.length));
+  }
+
+  function findNearestPlant(x, z){
+    try {
+      if (typeof plants === "undefined" || !plants || plants.length === 0) return -1;
+      let best = -1;
+      let bestD = 1e18;
+      for (let i = 0; i < plants.length; i++){
+        const n = getNode(plants[i]);
+        if (!n) continue;
+        const dx = n.position.x - x;
+        const dz = n.position.z - z;
+        const d2 = dx*dx + dz*dz;
+        if (d2 < bestD){
+          bestD = d2;
+          best = i;
+        }
+      }
+      return best;
+    } catch(e) {
+      return -1;
+    }
+  }
+
+  function consumePlant(ix){
+    try {
+      if (typeof plants === "undefined" || !plants) return;
+      if (ix < 0 || ix >= plants.length) return;
+
+      const p = plants[ix];
+      removeNode(p);
+      plants.splice(ix, 1);
+    } catch(e) {}
+  }
+
+  // Called by epoch reseed
+  window.__emerge_spawnGrazers = (epochCfg, centers) => {
+    clearGrazers();
+
+    const n = (epochCfg && typeof epochCfg.grazerN === "number") ? epochCfg.grazerN : 0;
+    const r = (epochCfg && typeof epochCfg.radius === "number") ? epochCfg.radius : 18;
+    const patchR = (epochCfg && typeof epochCfg.patchR === "number") ? epochCfg.patchR : 4.5;
+
+    for (let i = 0; i < n; i++){
+      let p = randDisc(r * 0.80);
+      if (centers && centers.length){
+        const c = centers[Math.floor(Math.random() * centers.length)];
+        p = randAround(c.x, c.z, patchR * 1.5);
+      }
+      spawnGrazerAt(p.x, p.z);
+    }
+
+    updateStatus();
+  };
+
+  // Simple fixed-timestep update (keeps us independent of internal game loop)
+  let last = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+
+  function step(){
+    const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    let dt = (now - last) / 1000;
+    last = now;
+    dt = Math.max(0.010, Math.min(0.050, dt));
+
+    if (!grazers.length) { updateStatus(); return; }
+    updateStatus();
+
+    for (const g of grazers){
+      if (!g || !g.mesh) continue;
+
+      g.cooldown = Math.max(0, g.cooldown - dt);
+
+      // Acquire target if missing/stale
+      if (g.target < 0 || (typeof plants === "undefined") || !plants || g.target >= plants.length || !getNode(plants[g.target])){
+        g.target = findNearestPlant(g.mesh.position.x, g.mesh.position.z);
+      }
+
+      if (g.target >= 0 && typeof plants !== "undefined" && plants && g.target < plants.length){
+        const pn = getNode(plants[g.target]);
+        if (!pn) { g.target = -1; continue; }
+
+        const dx = pn.position.x - g.mesh.position.x;
+        const dz = pn.position.z - g.mesh.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        // Eat
+        if (dist < 0.55 && g.cooldown <= 0){
+          consumePlant(g.target);
+          g.target = -1;
+          g.cooldown = 1.10;
+
+          // Tiny visible pulse so it’s undeniable even if you miss the plant popping
+          try { g.mesh.scale.set(1.18, 1.18, 1.18); } catch(_) {}
+          setTimeout(() => { try { if (g.mesh) g.mesh.scale.set(1,1,1); } catch(_) {} }, 120);
+          continue;
+        }
+
+        // Move toward plant
+        const spd = 1.18;
+        const ux = dx / (dist || 1);
+        const uz = dz / (dist || 1);
+        g.mesh.position.x += ux * spd * dt;
+        g.mesh.position.z += uz * spd * dt;
+
+      } else {
+        // Wander
+        g.wanderT -= dt;
+        if (g.wanderT <= 0){
+          g.wanderT = 1.2 + Math.random() * 1.8;
+          g.wanderA = Math.random() * Math.PI * 2;
+        }
+        const spd = 0.55;
+        g.mesh.position.x += Math.cos(g.wanderA) * spd * dt;
+        g.mesh.position.z += Math.sin(g.wanderA) * spd * dt;
+      }
+    }
+  }
+
+  setInterval(step, 33);
+})();
 
