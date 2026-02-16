@@ -1,0 +1,322 @@
+:root {
+  --pad: 14px;
+  --accent: #8ab4ff;
+
+  --terrain-clear: #f7f2e8;
+  --terrain-hills: #e7d7b4;
+  --terrain-woods: #b8e3c2;
+  --terrain-rough: #d6cec3;
+  --terrain-water: #b7dcff;
+
+  --side-blue: #7aa2ff;
+  --side-red:  #ff7a7a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: #111;
+  color: #eee;
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px var(--pad);
+  border-bottom: 2px solid #333;
+  background: #151515;
+}
+
+.title { font-weight: 800; letter-spacing: 0.5px; font-size: 20px; }
+.build { font-weight: 800; font-size: 18px; }
+
+.build #buildId {
+  padding: 2px 8px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #0d0d0d;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  min-height: calc(100vh - 54px);
+}
+
+.boardPane { padding: var(--pad); }
+
+.boardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.leftStack { display: flex; flex-direction: column; gap: 4px; }
+
+.truth { font-weight: 900; color: #ddd; }
+.hint { color: #bbb; font-size: 13px; max-width: 520px; line-height: 1.2; }
+
+.lastActionLine {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  color: #cfcfcf;
+}
+.lastActionLine span { color: #fff; }
+
+.board {
+  width: 100%;
+  height: calc(100vh - 140px);
+  border: 2px solid #333;
+  border-radius: 10px;
+  background: #0f0f0f;
+  overflow: hidden;
+}
+
+.boardSvg { width: 100%; height: 100%; display: block; }
+
+.sidePane {
+  padding: var(--pad);
+  border-left: 2px solid #333;
+  background: #141414;
+  overflow: auto;
+}
+
+.sidePane h2 { margin: 14px 0 10px 0; font-size: 15px; }
+.sidePane h2:first-child { margin-top: 0; }
+
+.statusRow, .debugRow {
+  margin: 8px 0;
+  color: #ddd;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.label { width: 70px; color: #aaa; flex: 0 0 auto; }
+
+.miniBtn {
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #101010;
+  color: #ddd;
+  cursor: pointer;
+}
+.miniBtn:hover { border-color: #4a4a4a; }
+.miniBtn.active { outline: 2px solid var(--accent); }
+
+.select {
+  flex: 1 1 auto;
+  min-width: 170px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #101010;
+  color: #ddd;
+}
+
+.btnRow { display: flex; gap: 8px; margin: 8px 0; }
+
+.btnRow button {
+  flex: 1 1 0;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #101010;
+  color: #ddd;
+  cursor: pointer;
+}
+.btnRow button:hover { border-color: #4a4a4a; }
+
+.miniBtn:disabled,
+.btnRow button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0 4px 0;
+}
+
+.palBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #101010;
+  color: #ddd;
+  cursor: pointer;
+  text-align: left;
+}
+.palBtn:hover { border-color: #4a4a4a; }
+.palBtn.active { outline: 2px solid var(--accent); }
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid #2b2b2b;
+  flex: 0 0 auto;
+}
+
+.jsonBox {
+  width: 100%;
+  height: 140px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #0f0f0f;
+  color: #ddd;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.smallNote { margin-top: 6px; color: #aaa; font-size: 12px; }
+
+.log {
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px;
+  height: 220px;
+  overflow: auto;
+  background: #0f0f0f;
+}
+
+.logEntry {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px dashed #222;
+}
+.logEntry:last-child { border-bottom: 0; }
+
+.debug { margin-top: 12px; color: #ccc; }
+
+/* HUD */
+.hudBox {
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: #0f0f0f;
+  padding: 10px;
+  margin: 6px 0 10px 0;
+}
+
+.hudRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.hudLabel { color: #aaa; width: 82px; flex: 0 0 auto; }
+.hudValue { color: #eee; flex: 1 1 auto; }
+
+.hudLegend {
+  margin-top: 8px;
+  color: #aaa;
+  font-size: 12px;
+}
+
+.gameOver {
+  border: 1px solid #5a2b2b;
+  background: #1a0e0e;
+  color: #ffdcdc;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-weight: 900;
+}
+
+/* Hex styling */
+.hex {
+  stroke: #3a3a3a;
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.hex.active { fill: var(--terrain-clear); }
+
+.hex.inactive {
+  fill: transparent;
+  stroke: #2a2a2a;
+  stroke-dasharray: 4 4;
+  opacity: 0.85;
+}
+
+.hex:hover { stroke-width: 2; }
+
+/* Selection = stroke-only */
+.hex.selected { stroke: var(--accent); stroke-width: 3; }
+
+/* Move targets (Play mode) */
+.hex.moveTarget {
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-dasharray: 5 4;
+}
+
+/* Attack targets (Play mode) */
+.hex.attackTarget {
+  stroke: var(--side-red);
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+}
+
+/* Terrain fills */
+.hex.active.terrain-clear { fill: var(--terrain-clear); }
+.hex.active.terrain-hills { fill: var(--terrain-hills); }
+.hex.active.terrain-woods { fill: var(--terrain-woods); }
+.hex.active.terrain-rough { fill: var(--terrain-rough); }
+.hex.active.terrain-water { fill: var(--terrain-water); }
+
+/* In PLAY mode, hide inactive cells completely */
+.mode-play .hex.inactive { display: none; }
+
+/* Unit tokens (SVG) */
+.unit-token { pointer-events: none; }
+.unit-token .u-bg { stroke: #111; stroke-width: 1.2; }
+.unit-token.side-blue .u-bg { fill: var(--side-blue); }
+.unit-token.side-red  .u-bg { fill: var(--side-red); }
+
+.unit-token .u-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-weight: 900;
+  font-size: 7.5px;
+  fill: #101010;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,0.30);
+  stroke-width: 0.6;
+}
+
+.unit-token .u-hp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-weight: 900;
+  font-size: 7px;
+  fill: rgba(0,0,0,0.85);
+  text-anchor: end;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,0.35);
+  stroke-width: 0.6;
+}
+
+.unit-token.selectedUnit .u-bg { stroke: var(--accent); stroke-width: 2.8; }
+
+/* Activated this turn */
+.unit-token.exhausted { opacity: 0.45; }

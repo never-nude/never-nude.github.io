@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Polemos</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">Polemos</div>
+    <div class="build">BUILD <span id="buildId">loading…</span></div>
+  </header>
+
+  <main class="layout">
+    <section class="boardPane">
+      <div class="boardHeader">
+        <div class="leftStack">
+          <div class="truth">TRUTH PROBE: <span id="truthProbe">loading…</span></div>
+          <div class="lastActionLine">LAST: <span id="lastAction">—</span></div>
+        </div>
+        <div class="hint">
+          M8: Play—click a friendly unit to show move targets (blue dashed) + attack targets (red dashed). 3 activations/turn.
+          Dice: 5–6 Hit • 4 Retreat. Standards win.
+        </div>
+      </div>
+
+      <div id="board" class="board"></div>
+    </section>
+
+    <aside class="sidePane">
+      <h2>Battle HUD</h2>
+
+      <div id="gameOverBanner" class="gameOver" style="display:none"></div>
+
+      <div class="hudBox">
+        <div class="hudRow">
+          <span class="hudLabel">Standards</span>
+          <span class="hudValue">
+            Blue <span id="scoreBlue">0</span> —
+            Red <span id="scoreRed">0</span>
+            / <span id="scoreTarget">6</span>
+          </span>
+        </div>
+
+        <div class="hudRow">
+          <span class="hudLabel">Forces</span>
+          <span class="hudValue">
+            Blue <span id="forceBlue">—</span> •
+            Red <span id="forceRed">—</span>
+          </span>
+        </div>
+
+        <div class="hudRow">
+          <span class="hudLabel">Last</span>
+          <span id="hudLastAction" class="hudValue">—</span>
+        </div>
+
+        <div class="hudLegend">Dice: 5–6 Hit • 4 Retreat</div>
+      </div>
+
+      <h2>Editor</h2>
+
+      <div class="statusRow">
+        <span class="label">Mode:</span>
+        <span id="modeLabel">—</span>
+        <button id="modeToggle" class="miniBtn" type="button">Toggle</button>
+      </div>
+
+      <div class="statusRow">
+        <span class="label">Tool:</span>
+        <span id="toolLabel">—</span>
+        <button id="toolShapeBtn" class="miniBtn" type="button">Shape</button>
+        <button id="toolTerrainBtn" class="miniBtn" type="button">Terrain</button>
+        <button id="toolUnitsBtn" class="miniBtn" type="button">Units</button>
+      </div>
+
+      <h2>Turn</h2>
+      <div class="statusRow"><span class="label">Turn:</span> <span id="turnNumber">—</span></div>
+      <div class="statusRow">
+        <span class="label">Side:</span> <span id="turnSide">—</span>
+        <button id="endTurnBtn" class="miniBtn" type="button">End Turn</button>
+      </div>
+      <div class="statusRow"><span class="label">Acts:</span> <span id="actCount">—</span></div>
+
+      <h2>Board stats</h2>
+      <div class="statusRow"><span class="label">Active:</span> <span id="activeCount">—</span></div>
+      <div class="statusRow"><span class="label">Painted:</span> <span id="paintedCount">—</span></div>
+      <div class="statusRow"><span class="label">Units:</span> <span id="unitsCount">—</span></div>
+
+      <div class="statusRow">
+        <span class="label">Preset:</span>
+        <select id="presetSelect" class="select">
+          <option value="default">Default (Island)</option>
+          <option value="corridor">Corridor (wider)</option>
+          <option value="pass">Pass (wide ends)</option>
+        </select>
+        <button id="loadPresetBtn" class="miniBtn" type="button">Load</button>
+      </div>
+
+      <div class="btnRow">
+        <button id="resetDefaultBtn" type="button">Reset Default</button>
+        <button id="clearShapeBtn" type="button">Clear Shape</button>
+      </div>
+
+      <h2>Terrain</h2>
+      <div class="statusRow">
+        <span class="label">Brush:</span>
+        <span id="brushLabel">—</span>
+        <button id="resetTerrainBtn" class="miniBtn" type="button">Reset</button>
+      </div>
+      <div id="terrainPalette" class="palette"></div>
+      <div class="smallNote">Paint only in <b>Edit</b> mode with <b>Tool=Terrain</b>, and only on active hexes.</div>
+
+      <h2>Units</h2>
+      <div class="statusRow">
+        <span class="label">Side:</span>
+        <button id="sideBlueBtn" class="miniBtn" type="button">Blue</button>
+        <button id="sideRedBtn" class="miniBtn" type="button">Red</button>
+      </div>
+
+      <div class="statusRow">
+        <span class="label">Type:</span>
+        <button id="uInfBtn" class="miniBtn" type="button">INF</button>
+        <button id="uCavBtn" class="miniBtn" type="button">CAV</button>
+        <button id="uSkrBtn" class="miniBtn" type="button">SKR</button>
+        <button id="uArcBtn" class="miniBtn" type="button">ARC</button>
+        <button id="uEraseBtn" class="miniBtn" type="button">Erase</button>
+      </div>
+
+      <div class="btnRow">
+        <button id="demoUnitsBtn" type="button">Demo Setup</button>
+        <button id="clearUnitsBtn" type="button">Clear Units</button>
+      </div>
+      <div class="smallNote">
+        In <b>Edit</b> + Tool=Units, you place/remove units. In <b>Play</b>, click a friendly unit to move/attack.
+      </div>
+
+      <h2>Map JSON</h2>
+      <div class="btnRow">
+        <button id="exportBtn" type="button">Export</button>
+        <button id="copyBtn" type="button">Copy</button>
+      </div>
+      <div class="btnRow">
+        <button id="importBtn" type="button">Import</button>
+        <button id="clearJsonBtn" type="button">Clear JSON</button>
+      </div>
+      <textarea id="mapJson" class="jsonBox" spellcheck="false"
+        placeholder="Export → Copy to share. Import restores shape + terrain + units + turn + score."></textarea>
+
+      <h2>Status</h2>
+      <div class="statusRow"><span class="label">Selected:</span> <span id="selected">none</span></div>
+      <div class="statusRow"><span class="label">Hover:</span> <span id="hover">—</span></div>
+      <div class="statusRow"><span class="label">Unit:</span> <span id="selectedUnit">none</span></div>
+
+      <h2>Event log</h2>
+      <div id="log" class="log"></div>
+
+      <details class="debug">
+        <summary>Debug</summary>
+        <div class="debugRow"><span class="label">User agent:</span> <span id="ua"></span></div>
+      </details>
+    </aside>
+  </main>
+
+  <script src="build.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
