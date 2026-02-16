@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>brain-subway • M0</title>
+
+    <!-- cache-bust -->
+    <link rel="stylesheet" href="./style.css?v=3" />
+
+    <!-- Import map so OrbitControls can resolve 'three' -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="hud">
+      <div class="row">
+        <div class="title">brain-subway <span class="pill">M0</span></div>
+        <div class="meta">build <span id="buildId">?</span></div>
+      </div>
+      <div class="row">
+        <div class="meta">nodes <span id="nodeCount">?</span></div>
+        <div class="meta">stimulus <span id="stimulusName">rest</span></div>
+      </div>
+      <div class="row buttons">
+        <button data-stim="rest">Rest</button>
+        <button data-stim="visual">Visual</button>
+        <button data-stim="motor">Motor</button>
+        <button data-stim="auditory">Auditory</button>
+      </div>
+      <div class="hint">
+        Mouse: drag to orbit • wheel: zoom • right-drag: pan
+      </div>
+    </div>
+
+    <canvas id="c"></canvas>
+
+    <!-- cache-bust -->
+    <script type="module" src="./app.js?v=3"></script>
+  </body>
+</html>
