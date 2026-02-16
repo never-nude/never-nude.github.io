@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Apex BUILD0038_INPUTFIX1</title>
-  <link rel="stylesheet" href="./style.css?v=BUILD0038_INPUTFIX1_EVODRAFT1">
-  <link rel="stylesheet" href="./three38.css?v=BUILD0038_INPUTFIX1_EVODRAFT1">
+  <title>E-merge BUILD0019 (EPOCHS)</title>
+  <link rel="stylesheet" href="../style.css?v=BUILD0019_EPOCHS_SKELETON">
+  <link rel="stylesheet" href="./three19.css?v=BUILD0019_EPOCHS_SKELETON">
 
 <style id="lineageStyle">
   #lineage { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: flex-start; justify-content: flex-start;
@@ -28,7 +28,7 @@
   <div class="hud">
     <div class="buildBox">
       <div class="row"><span class="k">GAME</span><span class="v">E-merge</span></div>
-      <div class="row"><span class="k">BUILD</span><span class="v">BUILD0038_INPUTFIX1_EVODRAFT1</span></div>
+      <div class="row"><span class="k">BUILD</span><span class="v">BUILD0019_EPOCHS_SKELETON</span></div>
       <div class="row"><span class="k">PATH</span><span class="v" id="path"></span></div>
       <div class="row"><span class="k">v</span><span class="v" id="vtag"></span></div>
       <div class="row"><span class="k">RENDER</span><span class="v" id="rendererTag"></span></div>
@@ -59,7 +59,7 @@
       <div><span class="chip">R</span> reset world</div>
     </div>
 
-    <div class="status" id="status" data-epoch="">STATUS: loading…</div>
+    <div class="status" id="status">STATUS: loading…</div>
   </div>
 
   <div id="overlay" class="overlay hidden">
@@ -123,6 +123,6 @@
 })();
 </script>
 
-<script type="module" src="./app.js?v=BUILD0038_INPUTFIX1_EVODRAFT1"></script>
+<script type="module" src="./app.js?v=BUILD0019_EPOCHS_SKELETON"></script>
 </body>
 </html>

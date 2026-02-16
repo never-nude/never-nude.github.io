@@ -1,6 +1,6 @@
-import * as THREE from "./vendor/three.module.js";
+import * as THREE from "../vendor/three.module.js";
 
-const BUILD = "BUILD0038_INPUTFIX1";
+const BUILD = "BUILD0033";
 const PROJECT = "Apex";
 
 const $ = (id) => document.getElementById(id);
@@ -1799,45 +1799,10 @@ function draw() {
   const r = ((base >> 16) & 255) + boost;
   const g = ((base >> 8) & 255) + boost;
   const b = (base & 255) + boost;
-  renderer.setClearColor(0x06070b, 1);
+  renderer.setClearColor((clamp(r,0,255)<<16) | (clamp(g,0,255)<<8) | clamp(b,0,255), 1);
 
   organism.position.copy(creature.pos);
-  
-// === APEX_RENDER_SMOOTH ===
-try {
-  if (!window.__apexTmpV) window.__apexTmpV = new THREE.Vector3();
-  const tmp = window.__apexTmpV;
-
-  scene.traverse((o) => {
-    if (!o || !o.isMesh || !o.position || !o.material) return;
-
-    // Color clamp (prevents black/NaN)
-    const m = o.material;
-    const c = m.color;
-    if (c && (!Number.isFinite(c.r) || !Number.isFinite(c.g) || !Number.isFinite(c.b) || (c.r + c.g + c.b) < 0.02)) {
-      c.setRGB(0.85, 0.85, 0.85);
-    }
-
-    // Big-jump smoothing
-    if (!o.userData) o.userData = {};
-    if (!o.userData.__apexSmoothPos) {
-      o.userData.__apexSmoothPos = o.position.clone();
-      return;
-    }
-    const sp = o.userData.__apexSmoothPos;
-    tmp.copy(o.position);
-
-    const dist = Math.hypot(tmp.x - sp.x, tmp.y - sp.y, tmp.z - sp.z);
-    if (dist > 0.55) {
-      sp.lerp(tmp, 0.25);
-      o.position.copy(sp);
-    } else {
-      sp.copy(tmp);
-    }
-  });
-} catch (e) {}
-
-renderer.render(scene, camera);
+  renderer.render(scene, camera);
 }
 
 function step(now) {
@@ -1856,7 +1821,7 @@ resetWorld();
 requestAnimationFrame(step);
 
 
-// ----- Lineage slots (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Lineage slots (BUILD0033_PRESSUREHUD1) -----
 // Polishes truthfulness: lineage overlay reads gen/stage/diet from the SAME HUD tags the player sees.
 // Uses events dispatched by index.html (lineageKeys):
 //   emerge_lineage_toggle
@@ -2754,7 +2719,7 @@ requestAnimationFrame(step);
   setInterval(step, 33);
 })();
 
-// ----- Stragglers + Sheep Eat + Eat FX (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Stragglers + Sheep Eat + Eat FX (BUILD0033_PRESSUREHUD1) -----
 // Fixes phantom orange rings, makes straggler sheep edible, adds eat feedback pulse.
 (() => {
   if (window.__emerge_eatfix_installed) return;
@@ -3120,7 +3085,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Predators (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Predators (BUILD0033_PRESSUREHUD1) -----
 // One red predator competes with you by hunting yellow grazers.
 // Truth probes: status shows pred=<count> and pk=<pred kills>.
 (() => {
@@ -3384,7 +3349,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Prey Tiers (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Prey Tiers (BUILD0033_PRESSUREHUD1) -----
 // Fixes: guarantees at least one p2 exists, adds halo glyph for p2, and makes tiers more visually distinct.
 // Debug: T = force tiers (recolor 3 existing prey if spawn function unavailable).
 (() => {
@@ -3689,7 +3654,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Apex HUD toggle + ring purge (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Apex HUD toggle + ring purge (BUILD0033_PRESSUREHUD1) -----
 // H: toggle HUD overlay (keeps bottom status). K: purge small ring artifacts (keeps big herd ring).
 (() => {
   if (window.__emerge_ui_apex_installed) return;
@@ -3808,7 +3773,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Predators hunt sheep (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Predators hunt sheep (BUILD0033_PRESSUREHUD1) -----
 // Adds a competing predator that hunts flock sheep; leaves meat drops you can steal.
 // Space: eat meat drops (and isolated sheep only). Pred kills increment pk.
 (() => {
@@ -4185,7 +4150,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Metabolic Scaling + Trophic Shift (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Metabolic Scaling + Trophic Shift (BUILD0033_PRESSUREHUD1) -----
 // Baby→Juvenile→Adult changes what food is *efficient* (not what is allowed).
 // Implementation is post-hoc: we watch data-eat "(+N)" and adjust energy delta to match diet factor.
 // Also adds extra baseline drain that grows with maturity and pressure.
@@ -4336,7 +4301,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Simple Biome + Bright Sky (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Simple Biome + Bright Sky (BUILD0033_PRESSUREHUD1) -----
 // Purpose: brighten the background + give a simple biome feel (sky + fog + hemi light + sun).
 // Undo: press B to toggle biome on/off instantly (no rebuild needed).
 (() => {
@@ -4433,8 +4398,8 @@ requestAnimationFrame(step);
       ground = 0x3F7A43;
     }
 
-    try { scene.background = new THREE.Color(0x06070b); } catch(_) {}
-    try { scene.fog = new THREE.Fog(0x06070b, 10, 80); } catch(_) {}
+    try { scene.background = new THREE.Color(sky); } catch(_) {}
+    try { scene.fog = new THREE.Fog(fog, 10, 80); } catch(_) {}
 
     try {
       if (hemi){
@@ -4475,7 +4440,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- PRESSURE MINIHUD (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- PRESSURE MINIHUD (BUILD0033_PRESSUREHUD1) -----
 // Toggle: V (Vitals). This reads from existing on-screen text (instrumentation only).
 (() => {
   if (window.__apex_vitals_installed) return;
@@ -4562,396 +4527,5 @@ requestAnimationFrame(step);
 
   setInterval(tick, 200);
   setTimeout(tick, 250);
-})();
-
-
-
-// DARK MODE CLAMP (BUILD0038_INPUTFIX1_EVODRAFT1)
-// Last-word clamp (wins if something later re-brightens the scene)
-try {
-  if (typeof renderer !== "undefined" && renderer?.setClearColor) renderer.setClearColor(0x06070b, 1);
-  if (typeof scene !== "undefined" && scene) {
-    scene.background = new THREE.Color(0x06070b);
-    if (scene.fog && scene.fog.color) scene.fog.color.set(0x06070b);
-  }
-} catch (e) {}
-
-
-// ----- EVO DRAFT KERNEL (BUILD0038_INPUTFIX1_EVODRAFT1) -----
-// U: open Mutation Draft. 1/2/3 choose. Traits persist.
-// Effects: nutrition efficiency (plants vs meat) + metabolic multiplier.
-// Truth probe: eat text becomes (+base→+trophic→+final).
-(() => {
-  if (window.__apex_evodraft_installed) return;
-  window.__apex_evodraft_installed = true;
-
-  const statusEl = document.getElementById("status");
-  if (!statusEl) return;
-
-  const TRAIT_KEY = "apex_traits_v1";
-  const traits = {
-    plantMult: 1.00,   // scales plant-like foods
-    meatMult:  1.00,   // scales meat-like foods
-    metabMult: 1.00    // scales the trophic extra drain (1=baseline)
-  };
-
-  // load
-  try {
-    const raw = localStorage.getItem(TRAIT_KEY);
-    if (raw) {
-      const obj = JSON.parse(raw);
-      if (obj && typeof obj === "object") {
-        if (typeof obj.plantMult === "number") traits.plantMult = obj.plantMult;
-        if (typeof obj.meatMult  === "number") traits.meatMult  = obj.meatMult;
-        if (typeof obj.metabMult === "number") traits.metabMult = obj.metabMult;
-      }
-    }
-  } catch (_) {}
-
-  window.__apex_traits = traits;
-
-  function save() {
-    try { localStorage.setItem(TRAIT_KEY, JSON.stringify(traits)); } catch (_) {}
-  }
-
-  function overlaysOpen() {
-    const lin = document.getElementById("lineage");
-    if (lin && !lin.classList.contains("hidden")) return true;
-    const ov = document.getElementById("overlay");
-    if (ov && !ov.classList.contains("hidden")) return true;
-    const evo = document.getElementById("apexEvoOverlay");
-    if (evo && !evo.classList.contains("hidden")) return true;
-    return false;
-  }
-
-  function setToast(msg) {
-    try {
-      if (typeof window.__emerge_setEatStatus === "function") window.__emerge_setEatStatus(msg);
-      else statusEl.setAttribute("data-eat", msg);
-    } catch (_) {}
-  }
-
-  function energyRef() {
-    try { if (typeof energy === "number") return { get:()=>energy, set:(v)=>{ energy=v; } }; } catch(_) {}
-    try { if (typeof window.energy === "number") return { get:()=>window.energy, set:(v)=>{ window.energy=v; } }; } catch(_) {}
-    return null;
-  }
-
-  function getPress() {
-    try {
-      const a = parseFloat(statusEl.getAttribute("data-press"));
-      if (Number.isFinite(a)) return a;
-    } catch(_) {}
-    try {
-      const cfg = window.__emerge_epochCfg;
-      if (cfg && typeof cfg.pressure === "number") return cfg.pressure;
-    } catch(_) {}
-    try {
-      const txt = document.body ? document.body.innerText : "";
-      const m = txt.match(/press=([0-9.]+)/);
-      if (m) {
-        const v = parseFloat(m[1]);
-        if (Number.isFinite(v)) return v;
-      }
-    } catch(_) {}
-    return 0;
-  }
-
-  // -------- Diet tracking (data-derived) --------
-  const diet = {
-    plant: 0, // plant/grazer/p0
-    meat:  0, // p1/p2/meat/sheep
-    total: 0
-  };
-
-  function classify(msg) {
-    const m = msg.toLowerCase();
-    if (m.includes("p0") || m.includes("plant") || m.includes("grazer")) return "plant";
-    if (m.includes("p1") || m.includes("p2") || m.includes("meat") || m.includes("sheep") || m.includes("prey")) return "meat";
-    return "other";
-  }
-
-  // -------- Trait application on nutrition (after trophic) --------
-  let lastEat = "";
-  const obs = new MutationObserver(() => {
-    const msg = statusEl.getAttribute("data-eat") || "";
-    if (!msg) return;
-    if (msg === lastEat) return;
-    lastEat = msg;
-
-    const arrowCount = (msg.match(/→/g) || []).length;
-    if (arrowCount < 1) return;      // wait for trophic block to annotate (+base→+trophic)
-    if (arrowCount >= 2) return;     // already trait-applied
-
-    // parse +numbers in the string
-    const nums = [];
-    const re = /\+(\d+)/g;
-    let mm;
-    while ((mm = re.exec(msg)) !== null) {
-      nums.push(parseInt(mm[1], 10));
-    }
-    if (nums.length < 2) return;
-
-    const base = nums[0];
-    const cur  = nums[nums.length - 1];
-    if (!(cur > 0)) return;
-
-    const kind = classify(msg);
-    if (kind === "plant") { diet.plant++; diet.total++; }
-    else if (kind === "meat") { diet.meat++; diet.total++; }
-
-    let mult = 1.0;
-    if (kind === "plant") mult = traits.plantMult;
-    if (kind === "meat")  mult = traits.meatMult;
-
-    const final = Math.max(1, Math.round(cur * mult));
-    const delta = final - cur;
-
-    const e = energyRef();
-    if (e && delta !== 0) {
-      const v = e.get();
-      if (typeof v === "number" && Number.isFinite(v)) e.set(Math.max(0, v + delta));
-    }
-
-    // annotate: (+base→+cur→+final)
-    try {
-      const patched = msg.replace(/\)\s*$/, `→+${final})`);
-      statusEl.setAttribute("data-eat", patched);
-    } catch (_) {}
-  });
-  obs.observe(statusEl, { attributes:true, attributeFilter:["data-eat"] });
-
-  // -------- Metabolic scaling correction (trait-controlled) --------
-  // This multiplies the trophic extra-drain by metabMult without editing the original code.
-  let lastT = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
-  setInterval(() => {
-    if (typeof window.__apex_mass !== "number") return; // only if trophic system exists
-
-    const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
-    let dt = (now - lastT) / 1000;
-    lastT = now;
-    dt = Math.max(0.010, Math.min(0.080, dt));
-
-    const press = getPress();
-    const mass  = window.__apex_mass || 0;
-
-    // must match the trophic block formula you already have
-    const baseDrain = (0.08 + 0.38 * mass) * (1.0 + 0.60 * press);
-
-    const m = traits.metabMult;
-    const corr = baseDrain * (m - 1.0);  // >0 drains more, <0 refunds (more efficient)
-
-    const e = energyRef();
-    if (!e) return;
-    const v = e.get();
-    if (typeof v === "number" && Number.isFinite(v)) {
-      e.set(Math.max(0, v - corr * dt));
-    }
-  }, 100);
-
-  // -------- Mutation Draft UI --------
-  function ensureUI() {
-    if (document.getElementById("apexEvoOverlay")) return;
-
-    const btn = document.createElement("button");
-    btn.id = "apexEvoBtn";
-    btn.type = "button";
-    btn.textContent = "🧬";
-    btn.title = "Mutation Draft (U)";
-    btn.addEventListener("click", () => openDraft("btn"));
-    document.body.appendChild(btn);
-
-    const overlay = document.createElement("div");
-    overlay.id = "apexEvoOverlay";
-    overlay.className = "hidden";
-    overlay.innerHTML = `
-      <div id="apexEvoPanel">
-        <div id="apexEvoRow">
-          <div class="apexEvoCard" data-i="0">
-            <div class="apexEvoTop"><div class="apexEvoIcon">🌿</div><div class="apexEvoKey">1</div></div>
-            <div class="apexEvoBars">
-              <div class="apexBarRow"><div class="apexBarSym">🌿</div><div class="apexBarTrack"><div class="apexBarFill pos" data-bar="p"></div></div></div>
-              <div class="apexBarRow"><div class="apexBarSym">🦷</div><div class="apexBarTrack"><div class="apexBarFill neg" data-bar="m"></div></div></div>
-              <div class="apexBarRow"><div class="apexBarSym">🫀</div><div class="apexBarTrack"><div class="apexBarFill neg" data-bar="d"></div></div></div>
-            </div>
-          </div>
-
-          <div class="apexEvoCard" data-i="1">
-            <div class="apexEvoTop"><div class="apexEvoIcon">🦷</div><div class="apexEvoKey">2</div></div>
-            <div class="apexEvoBars">
-              <div class="apexBarRow"><div class="apexBarSym">🌿</div><div class="apexBarTrack"><div class="apexBarFill neg" data-bar="p"></div></div></div>
-              <div class="apexBarRow"><div class="apexBarSym">🦷</div><div class="apexBarTrack"><div class="apexBarFill pos" data-bar="m"></div></div></div>
-              <div class="apexBarRow"><div class="apexBarSym">🫀</div><div class="apexBarTrack"><div class="apexBarFill neg" data-bar="d"></div></div></div>
-            </div>
-          </div>
-
-          <div class="apexEvoCard" data-i="2">
-            <div class="apexEvoTop"><div class="apexEvoIcon">🫀</div><div class="apexEvoKey">3</div></div>
-            <div class="apexEvoBars">
-              <div class="apexBarRow"><div class="apexBarSym">🌿</div><div class="apexBarTrack"><div class="apexBarFill neg" data-bar="p"></div></div></div>
-              <div class="apexBarRow"><div class="apexBarSym">🦷</div><div class="apexBarTrack"><div class="apexBarFill neg" data-bar="m"></div></div></div>
-              <div class="apexBarRow"><div class="apexBarSym">🫀</div><div class="apexBarTrack"><div class="apexBarFill pos" data-bar="d"></div></div></div>
-            </div>
-          </div>
-        </div>
-
-        <div id="apexEvoHint">
-          <div>U open • 1/2/3 pick</div>
-          <div>Esc close</div>
-        </div>
-      </div>
-    `;
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeDraft();
-    });
-    document.body.appendChild(overlay);
-
-    for (const card of overlay.querySelectorAll(".apexEvoCard")) {
-      card.addEventListener("click", () => {
-        const i = parseInt(card.getAttribute("data-i") || "-1", 10);
-        if (i >= 0) applyOffer(i);
-      });
-    }
-  }
-
-  let offers = [];
-
-  function dietLean() {
-    const t = Math.max(1, diet.total);
-    return (diet.meat - diet.plant) / t; // -1..+1 (plant..meat)
-  }
-
-  function makeOffers() {
-    // Base deltas (multiplicative). Slightly adapt the magnitudes based on diet lean & pressure.
-    const lean = dietLean();     // + means meat-leaning
-    const press = getPress();
-
-    const hungerHint = 0.5 + 0.5 * press;  // crude: pressure ~ “life is hard”
-    const damp = 1.0 - 0.10 * Math.max(0, press - 0.5); // high pressure = smaller jumps
-
-    const plantUp = (1.13 + 0.05 * Math.max(0, -lean)) * damp;
-    const meatUp  = (1.13 + 0.05 * Math.max(0,  lean)) * damp;
-    const costUp  = (1.03 + 0.03 * hungerHint) * damp;
-
-    const effDown = (0.90 - 0.04 * hungerHint); // more pressure => efficiency more valuable
-
-    return [
-      { kind:"plant", pm: plantUp, mm: 0.95, dm: costUp },
-      { kind:"meat",  pm: 0.95,    mm: meatUp, dm: costUp },
-      { kind:"eff",   pm: 0.99,    mm: 0.99,   dm: effDown }
-    ];
-  }
-
-  function renderOffers() {
-    const overlay = document.getElementById("apexEvoOverlay");
-    if (!overlay) return;
-
-    const lean = dietLean();
-    let reco = 2; // default efficiency
-    if (lean > 0.15) reco = 1;       // meat-leaning -> meat focus “recommended”
-    else if (lean < -0.15) reco = 0; // plant-leaning -> plant focus “recommended”
-
-    for (const card of overlay.querySelectorAll(".apexEvoCard")) {
-      const i = parseInt(card.getAttribute("data-i") || "-1", 10);
-      card.classList.toggle("reco", i === reco);
-
-      const o = offers[i];
-      if (!o) continue;
-
-      // set bar widths (0..100) around 50 baseline
-      const p = Math.max(10, Math.min(90, Math.round(50 + (o.pm - 1.0) * 260)));
-      const m = Math.max(10, Math.min(90, Math.round(50 + (o.mm - 1.0) * 260)));
-      const d = Math.max(10, Math.min(90, Math.round(50 + (1.0 - o.dm) * 260))); // lower dm = better (pos)
-
-      // 🌿 bar
-      const bp = card.querySelector('[data-bar="p"]');
-      if (bp) {
-        bp.style.width = p + "%";
-        bp.classList.toggle("pos", o.pm >= 1.0);
-        bp.classList.toggle("neg", o.pm < 1.0);
-      }
-      // 🦷 bar
-      const bm = card.querySelector('[data-bar="m"]');
-      if (bm) {
-        bm.style.width = m + "%";
-        bm.classList.toggle("pos", o.mm >= 1.0);
-        bm.classList.toggle("neg", o.mm < 1.0);
-      }
-      // 🫀 bar (metabolism: lower is better)
-      const bd = card.querySelector('[data-bar="d"]');
-      if (bd) {
-        bd.style.width = d + "%";
-        bd.classList.toggle("pos", o.dm <= 1.0);
-        bd.classList.toggle("neg", o.dm > 1.0);
-      }
-    }
-  }
-
-  function openDraft(reason="") {
-    ensureUI();
-    offers = makeOffers();
-    renderOffers();
-    const overlay = document.getElementById("apexEvoOverlay");
-    if (overlay) overlay.classList.remove("hidden");
-    setToast("🧬");
-  }
-
-  function closeDraft() {
-    const overlay = document.getElementById("apexEvoOverlay");
-    if (overlay) overlay.classList.add("hidden");
-  }
-
-  function applyOffer(i) {
-    const o = offers[i];
-    if (!o) return;
-
-    traits.plantMult *= o.pm;
-    traits.meatMult  *= o.mm;
-    traits.metabMult *= o.dm;
-
-    // keep it sane
-    traits.plantMult = Math.max(0.55, Math.min(2.40, traits.plantMult));
-    traits.meatMult  = Math.max(0.55, Math.min(2.40, traits.meatMult));
-    traits.metabMult = Math.max(0.55, Math.min(1.85, traits.metabMult));
-
-    save();
-    closeDraft();
-
-    // non-wordy confirmation
-    setToast("🧬✓");
-  }
-
-  window.addEventListener("keydown", (e) => {
-    if (e.repeat) return;
-
-    // open
-    if (e.code === "KeyU" && !overlaysOpen()) {
-      openDraft("key");
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      return;
-    }
-
-    const overlay = document.getElementById("apexEvoOverlay");
-    const open = overlay && !overlay.classList.contains("hidden");
-
-    if (open && e.code === "Escape") {
-      closeDraft();
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      return;
-    }
-
-    if (open && (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3")) {
-      const i = (e.code === "Digit1") ? 0 : (e.code === "Digit2") ? 1 : 2;
-      applyOffer(i);
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      return;
-    }
-  }, true);
-
-  // ensure button exists even if you never press U
-  setTimeout(ensureUI, 300);
 })();
 

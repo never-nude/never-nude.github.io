@@ -217,3 +217,89 @@ body.hudOff [data-hud="1"]{
   margin-right: 12px;
   opacity: 0.85;
 }
+
+
+/* BUILD0037_EVODRAFT1: Evo Draft overlay */
+#apexEvoOverlay{
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.66);
+  backdrop-filter: blur(10px);
+}
+#apexEvoOverlay.hidden{ display:none; }
+
+#apexEvoPanel{
+  width: min(860px, calc(100vw - 40px));
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(10,12,18,0.70);
+  box-shadow: 0 12px 60px rgba(0,0,0,0.55);
+  padding: 18px 18px 14px 18px;
+}
+#apexEvoRow{
+  display:flex;
+  gap:14px;
+  align-items: stretch;
+  justify-content: space-between;
+}
+.apexEvoCard{
+  flex:1;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  padding: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.apexEvoCard:hover{ border-color: rgba(255,255,255,0.28); }
+.apexEvoCard.reco{ border-color: rgba(120,200,255,0.55); box-shadow: 0 0 0 2px rgba(120,200,255,0.18) inset; }
+
+.apexEvoTop{
+  display:flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.apexEvoIcon{ font-size: 34px; line-height: 1; }
+.apexEvoKey{ font: 700 13px/1 ui-monospace, Menlo, monospace; opacity: 0.85; }
+
+.apexEvoBars{ display:flex; flex-direction: column; gap:10px; }
+.apexBarRow{ display:flex; align-items:center; gap:10px; }
+.apexBarSym{ width: 18px; text-align:center; opacity:0.9; }
+.apexBarTrack{
+  flex:1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow:hidden;
+}
+.apexBarFill{ height:100%; width:50%; opacity:0.9; }
+.apexBarFill.pos{ background: rgba(120,255,170,0.70); }
+.apexBarFill.neg{ background: rgba(255,120,120,0.70); }
+
+#apexEvoHint{
+  margin-top: 12px;
+  font: 12px/1.3 ui-monospace, Menlo, monospace;
+  opacity: 0.78;
+  display:flex;
+  justify-content: space-between;
+}
+#apexEvoBtn{
+  position: fixed;
+  right: 12px;
+  top: 48px;
+  z-index: 99999;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.45);
+  color: rgba(255,255,255,0.92);
+  font: 700 12px/1.0 ui-monospace, Menlo, monospace;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+#apexEvoBtn:active{ transform: translateY(1px); }
