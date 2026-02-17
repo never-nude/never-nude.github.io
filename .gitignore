@@ -10,3 +10,6 @@ tools/
 *.zip
 .DS_Store
 neural/*.bak_*
+
+# Ball Pit local backups
+backup_subway/
