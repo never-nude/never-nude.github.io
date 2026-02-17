@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Polemos</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20260216-195949" />
 </head>
 <body>
   <header class="topbar">
@@ -127,13 +127,20 @@
         <button id="uArcBtn" class="miniBtn" type="button">ARC</button>
         <button id="uEraseBtn" class="miniBtn" type="button">Erase</button>
       </div>
+      <div class="statusRow">
+        <span class="label">Quality:</span>
+        <button id="qGreenBtn" class="miniBtn" type="button">Green</button>
+        <button id="qRegBtn" class="miniBtn" type="button">Regular</button>
+        <button id="qVetBtn" class="miniBtn" type="button">Veteran</button>
+      </div>
+
 
       <div class="btnRow">
         <button id="demoUnitsBtn" type="button">Demo Setup</button>
         <button id="clearUnitsBtn" type="button">Clear Units</button>
       </div>
       <div class="smallNote">
-        In <b>Edit</b> + Tool=Units, you place/remove units. In <b>Play</b>, click a friendly unit to move/attack.
+        In <b>Edit</b> + Tool=Units, you place/remove units and set Quality (Green/Regular/Veteran). In <b>Play</b>, click a friendly unit to move/attack.
       </div>
 
       <h2>Map JSON</h2>
@@ -163,7 +170,7 @@
     </aside>
   </main>
 
-  <script src="build.js"></script>
-  <script src="main.js"></script>
+  <script src="build.js?v=20260216-195949"></script>
+  <script src="main.js?v=20260216-195949"></script>
 </body>
 </html>

@@ -119,6 +119,9 @@
   const elUSkrBtn = document.getElementById('uSkrBtn');
   const elUArcBtn = document.getElementById('uArcBtn');
   const elUEraseBtn = document.getElementById('uEraseBtn');
+  const elQGreenBtn = document.getElementById('qGreenBtn');
+  const elQRegBtn = document.getElementById('qRegBtn');
+  const elQVetBtn = document.getElementById('qVetBtn');
   const elDemoUnitsBtn = document.getElementById('demoUnitsBtn');
   const elClearUnitsBtn = document.getElementById('clearUnitsBtn');
 
@@ -144,6 +147,23 @@
   function clampMin1(n) { return n < 1 ? 1 : n; }
   function terrainLabel(id) { return (TERRAIN_BY_ID.get(id) || { label: id }).label; }
   function unitAbbrev(id) { return (UNIT_BY_ID.get(id) || { abbrev: id }).abbrev; }
+
+  function normalizeQuality(q) {
+    q = String(q || '').toLowerCase();
+    if (q === 'v' || q === 'vet' || q === 'veteran') return 'veteran';
+    if (q === 'g' || q === 'green') return 'green';
+    return 'regular';
+  }
+
+  function qualLabel(q) {
+    q = normalizeQuality(q);
+    return (q === 'veteran') ? 'Veteran' : (q === 'green') ? 'Green' : 'Regular';
+  }
+
+  function qualAbbrev(q) {
+    q = normalizeQuality(q);
+    return (q === 'veteran') ? 'V' : (q === 'green') ? 'G' : 'R';
+  }
 
   // odd-r offset <-> axial
   function offsetToAxial(q, r) {
@@ -198,8 +218,8 @@
 
   // State
   const state = {
-    milestone: 'M8',
-    feature: 'STANDARDS_WIN_HUD',
+    milestone: 'M9',
+    feature: 'QUALITY_TAGS',
     mode: 'play',
     tool: 'shape',
     brush: 'clear',
@@ -212,6 +232,7 @@
 
     unitSide: 'blue',
     unitType: 'inf',
+    unitQuality: 'regular',
 
     turn: {
       side: 'blue',
@@ -313,7 +334,7 @@
   }
   function fmtUnit(u) {
     if (!u) return 'none';
-    return sideName(u.side) + ' ' + unitAbbrev(u.type) + ' #' + u.id + ' (HP ' + u.hp + ') @ q=' + u.q + ', r=' + u.r;
+    return sideName(u.side) + ' ' + unitAbbrev(u.type) + ' #' + u.id + ' [' + qualAbbrev(u.quality) + '] (HP ' + u.hp + ') @ q=' + u.q + ', r=' + u.r;
   }
 
   function setHoverKey(k) {
@@ -469,6 +490,7 @@
       if (!def) continue;
 
       const u = u0;
+      if (!u.quality) u.quality = 'regular';
       if (!Number.isFinite(u.hp)) u.hp = defaultHpFor(u.type);
 
       const exhausted = state.turn.movedUnitIds.has(u.id) && u.side === state.turn.side && state.mode === 'play';
@@ -522,6 +544,13 @@
       hp.setAttribute('y', '-6');
       hp.textContent = String(u.hp);
       group.appendChild(hp);
+
+      const ql = document.createElementNS(svgNS, 'text');
+      ql.setAttribute('class', 'u-q');
+      ql.setAttribute('x', '-11');
+      ql.setAttribute('y', '-6');
+      ql.textContent = qualAbbrev(u.quality);
+      group.appendChild(ql);
 
       gUnits.appendChild(group);
     }
@@ -1037,7 +1066,7 @@
     if (!def) return;
 
     const p = parseKey(k);
-    const unit = { id: state.nextUnitId++, type: state.unitType, side: state.unitSide, q: p.q, r: p.r, hp: defaultHpFor(state.unitType) };
+    const unit = { id: state.nextUnitId++, type: state.unitType, side: state.unitSide, quality: normalizeQuality(state.unitQuality), q: p.q, r: p.r, hp: defaultHpFor(state.unitType) };
     state.units.set(k, unit);
     rebuildUnitsLayer();
     if (!opts || opts.log !== false) addLog('Placed ' + fmtUnit(unit));
@@ -1074,7 +1103,7 @@
       if (!UNIT_BY_ID.has(it.type)) continue;
       if (terrainAtKey(k) === 'water') continue;
 
-      const unit = { id: ++maxId, type: it.type, side: it.side, q: it.q, r: it.r, hp: defaultHpFor(it.type) };
+      const unit = { id: ++maxId, type: it.type, side: it.side, quality: 'regular', q: it.q, r: it.r, hp: defaultHpFor(it.type) };
       state.units.set(k, unit);
       placed++;
     }
@@ -1208,7 +1237,7 @@
     const units = [];
     for (const [k, u] of state.units.entries()) {
       if (!state.active.has(k)) continue;
-      units.push({ id: u.id, type: u.type, side: u.side, q: u.q, r: u.r, hp: u.hp });
+      units.push({ id: u.id, type: u.type, side: u.side, quality: normalizeQuality(u.quality), q: u.q, r: u.r, hp: u.hp });
     }
     units.sort((a, b) => (a.r - b.r) || (a.q - b.q) || (a.id - b.id));
 
@@ -1287,6 +1316,8 @@
       const side = (String(it && it.side || 'blue') === 'red') ? 'red' : 'blue';
       const id = Number(it && it.id);
       const hp = Number(it && it.hp);
+      const qualityRaw = String(it && it.quality || 'regular');
+      const quality = normalizeQuality(qualityRaw);
 
       if (!Number.isFinite(q) || !Number.isFinite(r) || !withinCanvas(q, r)) continue;
       const k = keyOf(q, r);
@@ -1297,7 +1328,7 @@
       const uid = Number.isFinite(id) ? id : (maxId + 1);
       const uhp = Number.isFinite(hp) ? hp : defaultHpFor(type);
 
-      state.units.set(k, { id: uid, type, side, q, r, hp: uhp });
+      state.units.set(k, { id: uid, type, side, quality, q, r, hp: uhp });
       if (uid > maxId) maxId = uid;
     }
     state.nextUnitId = maxId + 1;
@@ -1386,6 +1417,11 @@
     if (elUSkrBtn) elUSkrBtn.classList.toggle('active', isType('skr'));
     if (elUArcBtn) elUArcBtn.classList.toggle('active', isType('arc'));
     if (elUEraseBtn) elUEraseBtn.classList.toggle('active', isType('erase'));
+
+    const isQ = (q) => normalizeQuality(state.unitQuality) === normalizeQuality(q);
+    if (elQGreenBtn) elQGreenBtn.classList.toggle('active', isQ('green'));
+    if (elQRegBtn) elQRegBtn.classList.toggle('active', isQ('regular'));
+    if (elQVetBtn) elQVetBtn.classList.toggle('active', isQ('veteran'));
 
     if (elTurnNumber) elTurnNumber.textContent = String(state.turn.turnNumber);
     if (elTurnSide) elTurnSide.textContent = currentSideName();
@@ -1480,6 +1516,15 @@
     addLog(msg);
     setLastAction(msg);
   }
+
+  function setUnitQuality(q) {
+    state.unitQuality = normalizeQuality(q);
+    updateStatusText();
+    const msg = 'Unit quality = ' + qualLabel(state.unitQuality);
+    addLog(msg);
+    setLastAction(msg);
+  }
+
 
   // Build polygons
   for (const k of CANVAS_KEYS) {
@@ -1597,6 +1642,9 @@
   if (elUSkrBtn) elUSkrBtn.addEventListener('click', function () { setUnitType('skr'); });
   if (elUArcBtn) elUArcBtn.addEventListener('click', function () { setUnitType('arc'); });
   if (elUEraseBtn) elUEraseBtn.addEventListener('click', function () { setUnitType('erase'); });
+  if (elQGreenBtn) elQGreenBtn.addEventListener('click', function () { setUnitQuality('green'); });
+  if (elQRegBtn) elQRegBtn.addEventListener('click', function () { setUnitQuality('regular'); });
+  if (elQVetBtn) elQVetBtn.addEventListener('click', function () { setUnitQuality('veteran'); });
 
   if (elDemoUnitsBtn) elDemoUnitsBtn.addEventListener('click', function () {
     demoSetupUnits();
@@ -1624,7 +1672,7 @@
   rebuildUnitsLayer();
   updateStatusText();
 
-  const msg = GAME_NAME + ' loaded (M8 Standards + HUD). Turn 1: Blue.';
+  const msg = GAME_NAME + ' loaded (M9 Quality Tags). Turn 1: Blue.';
   addLog(msg);
   setLastAction(msg);
   console.log(GAME_NAME + ' loaded. Build:', BUILD_ID);

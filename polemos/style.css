@@ -320,3 +320,17 @@ body {
 
 /* Activated this turn */
 .unit-token.exhausted { opacity: 0.45; }
+
+
+/* Unit quality (G/R/V) */
+.unit-token .u-q {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-weight: 900;
+  font-size: 7px;
+  fill: rgba(0,0,0,0.85);
+  text-anchor: start;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,0.35);
+  stroke-width: 0.6;
+}
