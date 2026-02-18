@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ad Arma v2 — 20260218-154053</title>
+  <link rel="stylesheet" href="style.css?v=20260218-154053">
+</head>
+<body>
+  <div id="topbar">
+    <div id="build">Ad Arma v2 — BUILD 20260218-154053 — PORT 9981</div>
+    <div id="tagline">Instrument for thinking in formations.</div>
+    <pre id="truth">loading truth…</pre>
+  </div>
+
+  <div id="main">
+    <div id="panel">
+      <div id="boardMeta">board: loading…</div>
+
+      <div id="controls">
+        <div class="row">
+          <label><input type="checkbox" id="editMode" checked> Edit mode</label>
+
+          <label><input type="radio" name="tool" value="place" checked> Place</label>
+          <label><input type="radio" name="tool" value="erase"> Erase</label>
+
+          <label>Side
+            <select id="sideSel">
+              <option value="Blue">Blue</option>
+              <option value="Red">Red</option>
+            </select>
+          </label>
+
+          <label>Type
+            <select id="typeSel">
+              <option value="Infantry">Infantry</option>
+              <option value="Cavalry">Cavalry</option>
+              <option value="Missiles">Missiles</option>
+            </select>
+          </label>
+
+          <label>Quality
+            <select id="qualSel">
+              <option value="Green">Green</option>
+              <option value="Regular" selected>Regular</option>
+              <option value="Veteran">Veteran</option>
+            </select>
+          </label>
+
+          <button id="ping">Ping</button>
+          <div>pings: <span id="pings">0</span></div>
+          <div>units: <span id="unitCount">0</span></div>
+          <div>selected: <span id="selected">none</span></div>
+        </div>
+      </div>
+
+      <div id="boardWrap">
+        <svg id="board" preserveAspectRatio="xMidYMid meet" aria-label="Ad Arma v2 board"></svg>
+      </div>
+
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <script src="build.js?v=20260218-154053"></script>
+  <script src="main.js?v=20260218-154053"></script>
+</body>
+</html>
