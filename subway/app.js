@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const BUILD_ID = `BALLPIT-CONN1-${new Date().toISOString()}`;
+const BUILD_ID = `BALLPIT-SYN1-${new Date().toISOString()}`;
 document.getElementById('buildId').textContent = BUILD_ID;
 
-const DATA_VERSION = 'ballpit4';
+const DATA_VERSION = 'ballpit5';
 const AAL_URL  = `./data/aal_regions.json?v=${DATA_VERSION}`;
 const STIM_URL = `./data/stimuli.json?v=${DATA_VERSION}`;
 const CONN_URL = `./data/connectome_edges.json?v=${DATA_VERSION}`;
