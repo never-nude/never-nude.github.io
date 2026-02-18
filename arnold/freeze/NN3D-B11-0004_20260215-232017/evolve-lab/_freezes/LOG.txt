@@ -1,0 +1,3 @@
+2026-02-13 11:54:23 | BUILD0001 | verified 2D baseline (screenshot + GET logs)
+2026-02-13 12:48:14 | BUILD0002_SHIFT | 3D (Three r160) + Shift sprint + local vendor three.module.js
+2026-02-14 00:07:26 | BUILD0012_MATES | 3 mates (Verdant/Crimson/Prime), trait badges + Prime calm-court aura fill | port 1083

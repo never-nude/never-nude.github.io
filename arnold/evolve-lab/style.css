@@ -1,0 +1,44 @@
+:root {
+  --bg: #07090d;
+  --fg: #e9eef7;
+  --muted: #aab4c6;
+  --panel: rgba(10, 12, 18, 0.85);
+  --border: rgba(255,255,255,0.14);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+#hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 12px; z-index: 10; pointer-events: none;
+}
+#buildBox, #legend {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+}
+#buildBox { min-width: 320px; }
+#buildBox .row { display: flex; gap: 10px; line-height: 1.35; }
+#buildBox .k { color: var(--muted); min-width: 78px; text-align: right; }
+#buildBox .v { color: var(--fg); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--border); background: rgba(255,255,255,0.06);
+  color: var(--fg); font-weight: 700; margin-right: 6px;
+}
+main { height: 100%; width: 100%; }
+#c { display: block; width: 100vw; height: 100vh; }
+#status {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  padding: 10px 12px; border-top: 1px solid var(--border);
+  background: rgba(10, 12, 18, 0.85);
+  color: var(--fg); z-index: 10;
+}

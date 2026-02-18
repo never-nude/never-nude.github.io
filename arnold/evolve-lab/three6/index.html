@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EVOLVE-LAB — BUILD0006 (SOCIAL)</title>
+    <link rel="stylesheet" href="../style.css?v=BUILD0006_SOCIAL" />
+    <link rel="stylesheet" href="./three6.css?v=BUILD0006_SOCIAL" />
+  </head>
+  <body>
+    <header id="hud">
+      <div id="buildBox">
+        <div class="row"><span class="k">PROJECT</span><span class="v">EVOLVE-LAB</span></div>
+        <div class="row"><span class="k">BUILD</span><span class="v">BUILD0006</span></div>
+        <div class="row"><span class="k">PATH</span><span class="v" id="path"></span></div>
+        <div class="row"><span class="k">v=</span><span class="v" id="vtag"></span></div>
+        <div class="row"><span class="k">RENDER</span><span class="v" id="rendererTag"></span></div>
+        <div class="row"><span class="k">GEN</span><span class="v" id="genTag"></span></div>
+        <div class="row"><span class="k">STAGE</span><span class="v" id="stageTag"></span></div>
+        <div class="row"><span class="k">LINE</span><span class="v" id="lineTag"></span></div>
+        <div class="row"><span class="k">SOC</span><span class="v" id="socTag"></span></div>
+        <div class="row"><span class="k">HERD</span><span class="v" id="herdTag"></span></div>
+        <div class="row"><span class="k">MATE</span><span class="v" id="mateTag"></span></div>
+        <div class="row"><span class="k">TRAITS</span><span class="v" id="traitsTag"></span></div>
+        <div class="row"><span class="k">LAST</span><span class="v" id="lastTag"></span></div>
+        <div class="row"><span class="k">LOADED</span><span class="v" id="loadedAt"></span></div>
+      </div>
+
+      <div id="legend">
+        <div><span class="chip">WASD / Arrows</span> move</div>
+        <div><span class="chip">Shift</span> sprint (burns energy)</div>
+        <div><span class="chip">Click</span> spawn food</div>
+        <div><span class="chip">C</span> call mate / accept</div>
+        <div><span class="chip">X</span> reject mate (shame zigzag)</div>
+        <div><span class="chip">[ ]</span> adjust sociability (debug)</div>
+        <div><span class="chip">1/2/3</span> pick mutation (offspring)</div>
+        <div><span class="chip">R</span> reset</div>
+      </div>
+    </header>
+
+    <main>
+      <canvas id="c"></canvas>
+    </main>
+
+    <footer id="status">STATUS: booting…</footer>
+
+    <div id="overlay" class="hidden" role="dialog" aria-modal="true">
+      <div class="panel">
+        <div class="title">MATING — Offspring Mutation Draft</div>
+        <div id="overlayStats" class="stats"></div>
+        <div id="cards" class="cards"></div>
+        <div class="hint">Pick with <b>1 / 2 / 3</b> or click a card. <b>Esc</b> aborts.</div>
+      </div>
+    </div>
+
+    <script type="module" src="./app.js?v=BUILD0006_SOCIAL"></script>
+  </body>
+</html>

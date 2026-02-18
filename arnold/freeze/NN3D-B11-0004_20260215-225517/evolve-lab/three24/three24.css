@@ -1,0 +1,117 @@
+/* BUILD0006 overlay styles only */
+#overlay.hidden { display: none; }
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.66);
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+}
+
+#overlay .panel {
+  width: min(860px, calc(100vw - 24px));
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 14px;
+  background: rgba(12, 14, 20, 0.94);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+  padding: 14px 14px 12px;
+}
+
+#overlay .title {
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+
+#overlay .stats {
+  color: rgba(255,255,255,0.86);
+  font-size: 13px;
+  line-height: 1.35;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
+
+#overlay .cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 820px) {
+  #overlay .cards { grid-template-columns: 1fr; }
+}
+
+.card {
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.92);
+}
+
+.card .name {
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.card .meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.35;
+}
+
+.card .tag {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.07);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+#overlay .hint {
+  margin-top: 10px;
+  color: rgba(255,255,255,0.74);
+  font-size: 12px;
+}
+
+/* BUILD0019_UIFIX1: pin HUD + lock scroll + show epoch in bottom status */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+body { margin: 0; }
+#c { position: fixed; inset: 0; display: block; }
+.hud { position: fixed; inset: 0; }
+
+/* Append epoch visually to the existing STATUS line without touching JS status text */
+#status::after { content: " | epoch=" attr(data-epoch); }
+#status[data-epoch=""]::after { content: ""; }
+
+
+/* BUILD0021_GRAZERS1: append grazers count to bottom status */
+#status::after { content: " | epoch=" attr(data-epoch) " | grazers=" attr(data-grazers); }
+#status[data-epoch=""]::after { content: ""; }
+
+
+/* BUILD0023_PRESSURE_DIAL1: show pressure in bottom status */
+#status::after { content: " | epoch=" attr(data-epoch) " | grazers=" attr(data-grazers) " | press=" attr(data-press); }
+
+
+/* BUILD0024_HERD_BOON1: extend status truth probes */
+#status::after {
+  content: " | epoch=" attr(data-epoch)
+           " | grazers=" attr(data-grazers)
+           " | press=" attr(data-press)
+           " | herd=" attr(data-herd);
+}

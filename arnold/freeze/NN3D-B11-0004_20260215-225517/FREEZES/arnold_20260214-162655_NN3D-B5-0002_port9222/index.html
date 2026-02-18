@@ -1,0 +1,936 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arnold</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+    #hud {
+      position: fixed; top: 12px; left: 12px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      color: #fff;
+      font: 13px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      user-select: none;
+      z-index: 10;
+      min-width: 380px;
+      white-space: pre;
+    }
+    #hud .build { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+    #hud .row { opacity: 0.92; }
+    #fallback {
+      position: fixed; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      color: #fff;
+      font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px; text-align: center;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="build" id="buildLine">BUILD:</div>
+    <div class="row" id="urlLine"></div>
+    <div class="row" id="statsLine"></div>
+    <div class="row" id="memLine"></div>
+    <div class="row" id="persistLine"></div>
+    <div class="row" id="benchLine"></div>
+    <div class="row" id="actionLine"></div>
+    <div class="row" id="helpLine"></div>
+    <div class="row" id="fpsLine"></div>
+  </div>
+
+  <div id="fallback"></div>
+
+  <script type="module">
+    const BUILD = "NN3D-B5-0002"; // Persistence (Save/Load) + associative memory
+    const STORAGE_KEY = "nn3d_state_v1";
+
+    // For persistence to make sense, the *world* must be stable across refresh.
+    // We lock the topology/positions by using a fixed seed for world generation.
+    const WORLD_SEED = 1337;
+
+    const buildLine   = document.getElementById('buildLine');
+    const urlLine     = document.getElementById('urlLine');
+    const statsLine   = document.getElementById('statsLine');
+    const memLine     = document.getElementById('memLine');
+    const persistLine = document.getElementById('persistLine');
+    const benchLine = document.getElementById('benchLine');
+    const actionLine  = document.getElementById('actionLine');
+    const helpLine    = document.getElementById('helpLine');
+    const fpsLine     = document.getElementById('fpsLine');
+    const fallback    = document.getElementById('fallback');
+
+    buildLine.textContent = `Arnold  |  BUILD: ${BUILD}`;
+    urlLine.textContent = location.href;
+    helpLine.textContent =
+      "Click=stimulate  |  L=toggle live learning  |  R=reset all\n" +
+      "1-3=IMPRINT pattern  |  Shift+1-3=RECALL  |  S=SAVE  |  O=LOAD  |  T=BENCH  |  Y=SWEEP";
+
+    console.log(`[Arnold] BUILD ${BUILD}`, location.href);
+
+    // CDN fallback chain
+    const threeUrls = [
+      'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+      'https://unpkg.com/three@0.160.0/build/three.module.js',
+    ];
+
+    let p = import(threeUrls[0]);
+    for (let i = 1; i < threeUrls.length; i++) p = p.catch(() => import(threeUrls[i]));
+
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+    function mulberry32(seed) {
+      let a = seed >>> 0;
+      return function() {
+        a |= 0;
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function randnFrom(rnd) {
+      // Box-Muller
+      let u = 0, v = 0;
+      while (u === 0) u = rnd();
+      while (v === 0) v = rnd();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function randomPointInSphere(radius) {
+      // (pattern generation only; doesn't need to be seeded)
+      for (;;) {
+        const x = (Math.random() * 2 - 1) * radius;
+        const y = (Math.random() * 2 - 1) * radius;
+        const z = (Math.random() * 2 - 1) * radius;
+        if (x*x + y*y + z*z <= radius*radius) return [x, y, z];
+      }
+    }
+
+    function encodeBits(int8arr) {
+      // -1 -> 0, +1 -> 1
+      let s = "";
+      for (let i = 0; i < int8arr.length; i++) s += (int8arr[i] > 0 ? "1" : "0");
+      return s;
+    }
+
+    function decodeBits(bits, n) {
+      const out = new Int8Array(n);
+      const L = Math.min(bits.length, n);
+      for (let i = 0; i < L; i++) out[i] = (bits.charCodeAt(i) === 49) ? 1 : -1; // '1' = 49
+      for (let i = L; i < n; i++) out[i] = -1;
+      return out;
+    }
+
+    function fmtTime(ms) {
+      if (!ms) return "--";
+      try { return new Date(ms).toLocaleTimeString(); }
+      catch { return String(ms); }
+    }
+
+    p.then((THREE) => {
+      // ---------- Scene ----------
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.05, 200);
+      camera.position.set(0, 0, 7);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.domElement.style.display = 'block';
+      document.body.appendChild(renderer.domElement);
+
+      // ---------- Network geometry ----------
+      const NODE_COUNT = 260;
+      const K = 3;
+      const R = 2.4;
+
+      const EDGE_COUNT = NODE_COUNT * K;
+
+      // Seeded RNG for world stability
+      const randWorld = mulberry32(WORLD_SEED);
+
+      // Node positions
+      const positions = new Float32Array(NODE_COUNT * 3);
+      for (let i = 0; i < NODE_COUNT; i++) {
+        const u = randWorld();
+        const v = randWorld();
+        const w = randWorld();
+
+        const r = Math.cbrt(u) * R;
+        const theta = 2 * Math.PI * v;
+        const phi = Math.acos(2 * w - 1);
+
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+
+        positions[i*3+0] = x;
+        positions[i*3+1] = y;
+        positions[i*3+2] = z;
+      }
+
+      // Edges (pairs), also seeded
+      const aIdx = new Uint16Array(EDGE_COUNT);
+      const bIdx = new Uint16Array(EDGE_COUNT);
+      for (let i = 0; i < NODE_COUNT; i++) {
+        for (let k = 0; k < K; k++) {
+          const e = i * K + k;
+          let j = (i + 1 + Math.floor(randWorld() * (NODE_COUNT - 1))) % NODE_COUNT;
+          aIdx[e] = i;
+          bIdx[e] = j;
+        }
+      }
+
+      // Edge vertex positions (2 vertices per segment)
+      const edgePos = new Float32Array(EDGE_COUNT * 2 * 3);
+      for (let e = 0; e < EDGE_COUNT; e++) {
+        const u = aIdx[e], v = bIdx[e];
+        const o = e * 6;
+        edgePos[o+0] = positions[u*3+0];
+        edgePos[o+1] = positions[u*3+1];
+        edgePos[o+2] = positions[u*3+2];
+        edgePos[o+3] = positions[v*3+0];
+        edgePos[o+4] = positions[v*3+1];
+        edgePos[o+5] = positions[v*3+2];
+      }
+
+      // Node colors
+      const nodeColors = new Float32Array(NODE_COUNT * 3);
+      for (let i = 0; i < NODE_COUNT; i++) {
+        nodeColors[i*3+0] = 0.15;
+        nodeColors[i*3+1] = 0.15;
+        nodeColors[i*3+2] = 0.15;
+      }
+
+      const nodesGeo = new THREE.BufferGeometry();
+      nodesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      nodesGeo.setAttribute('color', new THREE.BufferAttribute(nodeColors, 3));
+
+      const nodesMat = new THREE.PointsMaterial({
+        size: 0.055,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+      });
+
+      const nodes = new THREE.Points(nodesGeo, nodesMat);
+
+      // Edge colors
+      const edgeColors = new Float32Array(EDGE_COUNT * 2 * 3);
+      for (let i = 0; i < edgeColors.length; i += 3) {
+        edgeColors[i+0] = 0.05;
+        edgeColors[i+1] = 0.08;
+        edgeColors[i+2] = 0.18;
+      }
+
+      const edgesGeo = new THREE.BufferGeometry();
+      edgesGeo.setAttribute('position', new THREE.BufferAttribute(edgePos, 3));
+      edgesGeo.setAttribute('color', new THREE.BufferAttribute(edgeColors, 3));
+
+      const edgesMat = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.68,
+      });
+
+      const edgeLines = new THREE.LineSegments(edgesGeo, edgesMat);
+
+      const group = new THREE.Group();
+      group.add(edgeLines);
+      group.add(nodes);
+      scene.add(group);
+
+      // Faint sphere
+      const glowGeo = new THREE.SphereGeometry(R*1.02, 32, 32);
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0x224466, transparent: true, opacity: 0.12 });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+      // Render stability (Safari): prevent transparent depth-write occlusion + force render order
+      nodesMat.depthWrite = false;
+      edgesMat.depthWrite = false;
+      glowMat.depthWrite = false;
+
+      glow.renderOrder = -10;
+      edgeLines.renderOrder = 0;
+      nodes.renderOrder = 1;
+      group.add(glow);
+
+      // ---------- Click beacon (input visibility) ----------
+      const clickBeaconGeo = new THREE.SphereGeometry(0.14, 16, 16);
+      const clickBeaconMat = new THREE.MeshBasicMaterial({ color: 0xffaa33, transparent: true, opacity: 0.0 });
+      clickBeaconMat.depthTest = false;
+      clickBeaconMat.depthWrite = false;
+
+      const clickBeacon = new THREE.Mesh(clickBeaconGeo, clickBeaconMat);
+      clickBeacon.renderOrder = 20;
+      group.add(clickBeacon);
+
+      let clickPulse = 0.0; // 0..1
+      // ---------- Learning engine ----------
+      const act = new Float32Array(NODE_COUNT);
+      const actNext = new Float32Array(NODE_COUNT);
+      const stim = new Float32Array(NODE_COUNT);
+      const sum = new Float32Array(NODE_COUNT);
+
+      const w = new Float32Array(EDGE_COUNT);
+      const wMax = 2.0;
+
+      let liveLearningOn = true;
+      const stimDecay = 0.90;
+      const noiseAmp = 0.006; // uses Math.random noise (fine)
+      const leak = 0.20;
+      const gain = 1.25;
+
+      const lrLive = 0.010;
+      const wDecay = 0.0015;
+
+      const patRadius = R * 0.65;
+      const lrStore = 0.10;
+      const storeRepeats = 3;
+      const cueFrac = 0.22;
+      const cueAmp = 1.6;
+      const settleSteps = 36;
+
+      let lastAction = "ready";
+      let glStatus = "OK";
+      renderer.domElement.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        glStatus = "LOST";
+        lastAction = "WEBGL CONTEXT LOST";
+      }, false);
+      renderer.domElement.addEventListener("webglcontextrestored", () => {
+        glStatus = "RESTORED";
+        lastAction = "WEBGL CONTEXT RESTORED (reload recommended)";
+      }, false);
+      let lastStim = -1;
+
+      /** @type {Array<null | {p:Int8Array, center:[number,number,number], radius:number, onFrac:number}>} */
+      const patterns = [null, null, null];
+      let targetSlot = -1;
+
+      const persist = {
+        present: false,
+        savedAt: null,
+        loadedAt: null,
+        lastError: null,
+      };
+
+      function resetAll() {
+        act.fill(0);
+        actNext.fill(0);
+        stim.fill(0);
+
+        // deterministic-ish initial weights on first load (seeded world RNG progressed to here)
+        // and variable weights on subsequent resets (that's fine).
+        for (let e = 0; e < EDGE_COUNT; e++) w[e] = randnFrom(randWorld) * 0.15;
+
+        patterns[0] = patterns[1] = patterns[2] = null;
+        targetSlot = -1;
+        lastStim = -1;
+        lastAction = "reset all";
+      }
+
+      function stepOnce(opts = { noise: noiseAmp, learn: liveLearningOn }) {
+        const noise = opts.noise ?? noiseAmp;
+        const learn = opts.learn ?? liveLearningOn;
+
+        for (let i = 0; i < NODE_COUNT; i++) stim[i] *= stimDecay;
+
+        for (let i = 0; i < NODE_COUNT; i++) {
+          // noise uses Math.random -> alive + non-repeating; doesn't affect persistence correctness
+          sum[i] = stim[i] + noise * randnFrom(Math.random);
+        }
+
+        for (let e = 0; e < EDGE_COUNT; e++) {
+          const u = aIdx[e], v = bIdx[e];
+          const we = w[e];
+          const au = act[u], av = act[v];
+          sum[u] += we * av;
+          sum[v] += we * au;
+        }
+
+        for (let i = 0; i < NODE_COUNT; i++) {
+          actNext[i] = Math.tanh(gain * (leak * act[i] + sum[i]));
+        }
+
+        if (learn) {
+          for (let e = 0; e < EDGE_COUNT; e++) {
+            const u = aIdx[e], v = bIdx[e];
+            let nw = w[e] + lrLive * (act[u] * act[v]) - wDecay * w[e];
+            w[e] = clamp(nw, -wMax, wMax);
+          }
+        }
+
+        act.set(actNext);
+      }
+
+      function patternScore(p) {
+        let dot = 0;
+        for (let i = 0; i < NODE_COUNT; i++) dot += p[i] * act[i];
+        return dot / NODE_COUNT;
+      }
+
+      function makePattern() {
+        const center = randomPointInSphere(R * 0.75);
+        const [cx, cy, cz] = center;
+        const p = new Int8Array(NODE_COUNT);
+        let on = 0;
+
+        for (let i = 0; i < NODE_COUNT; i++) {
+          const x = positions[i*3+0] - cx;
+          const y = positions[i*3+1] - cy;
+          const z = positions[i*3+2] - cz;
+          const d = Math.sqrt(x*x + y*y + z*z);
+          const bit = (d < patRadius) ? 1 : -1;
+          p[i] = bit;
+          if (bit === 1) on++;
+        }
+        return { p, center, radius: patRadius, onFrac: on / NODE_COUNT };
+      }
+
+      function imprint(slot) {
+        const pat = makePattern();
+        patterns[slot] = pat;
+        targetSlot = slot;
+
+        for (let rep = 0; rep < storeRepeats; rep++) {
+          for (let e = 0; e < EDGE_COUNT; e++) {
+            const u = aIdx[e], v = bIdx[e];
+            let nw = w[e] + lrStore * (pat.p[u] * pat.p[v]);
+            w[e] = clamp(nw, -wMax, wMax);
+          }
+        }
+
+        for (let i = 0; i < NODE_COUNT; i++) {
+          act[i] = pat.p[i];
+          stim[i] = 0;
+        }
+
+        lastAction = `IMPRINT ${slot+1}  on≈${Math.round(pat.onFrac*100)}%`;
+      }
+
+      function recall(slot) {
+        const pat = patterns[slot];
+        if (!pat) {
+          lastAction = `RECALL ${slot+1} (empty slot)`;
+          return;
+        }
+        targetSlot = slot;
+
+        for (let i = 0; i < NODE_COUNT; i++) {
+          const isOn = (pat.p[i] === 1);
+          const keep = isOn && (Math.random() < cueFrac);
+          act[i] = keep ? 1 : (Math.random() < 0.5 ? 1 : -1);
+          stim[i] = 0;
+        }
+
+        for (let i = 0; i < NODE_COUNT; i++) {
+          if (pat.p[i] === 1 && Math.random() < cueFrac) stim[i] = cueAmp;
+        }
+
+        for (let s = 0; s < settleSteps; s++) stepOnce({ noise: 0, learn: false });
+
+        lastAction = `RECALL ${slot+1}  cue≈${Math.round(cueFrac*100)}%  settle=${settleSteps}`;
+      }
+
+      // ---------- Persistence ----------
+      function saveState() {
+        try {
+          const state = {
+            version: 1,
+            build: BUILD,
+            savedAt: Date.now(),
+            worldSeed: WORLD_SEED,
+            nodeCount: NODE_COUNT,
+            edgeCount: EDGE_COUNT,
+            liveLearningOn,
+            targetSlot,
+            w: Array.from(w),
+            patterns: patterns.map((pp) => pp ? ({
+              bits: encodeBits(pp.p),
+              center: pp.center,
+              radius: pp.radius,
+              onFrac: pp.onFrac,
+            }) : null),
+          };
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          persist.present = true;
+          persist.savedAt = state.savedAt;
+          persist.lastError = null;
+          lastAction = `saved (${STORAGE_KEY})`;
+        } catch (e) {
+          persist.lastError = `save failed: ${e && e.message ? e.message : String(e)}`;
+          lastAction = persist.lastError;
+        }
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            lastAction = `load: no saved state (${STORAGE_KEY})`;
+            return;
+          }
+          const state = JSON.parse(raw);
+
+          if (!state || state.version !== 1) {
+            lastAction = "load failed: wrong version";
+            return;
+          }
+          if (state.worldSeed !== WORLD_SEED) {
+            lastAction = `load failed: seed mismatch (saved ${state.worldSeed} vs world ${WORLD_SEED})`;
+            return;
+          }
+          if (state.nodeCount !== NODE_COUNT || state.edgeCount !== EDGE_COUNT) {
+            lastAction = "load failed: size mismatch";
+            return;
+          }
+          if (!Array.isArray(state.w) || state.w.length !== EDGE_COUNT) {
+            lastAction = "load failed: weights missing/mismatched";
+            return;
+          }
+
+          w.set(state.w);
+
+          // Restore patterns
+          for (let i = 0; i < 3; i++) {
+            const sp = state.patterns && state.patterns[i];
+            if (!sp) { patterns[i] = null; continue; }
+            const bits = typeof sp.bits === "string" ? sp.bits : "";
+            const pBits = decodeBits(bits, NODE_COUNT);
+            const center = Array.isArray(sp.center) && sp.center.length === 3 ? sp.center : [0,0,0];
+            const radius = typeof sp.radius === "number" ? sp.radius : patRadius;
+            const onFrac = typeof sp.onFrac === "number" ? sp.onFrac : 0;
+            patterns[i] = { p: pBits, center: /** @type {[number,number,number]} */(center), radius, onFrac };
+          }
+
+          liveLearningOn = !!state.liveLearningOn;
+          targetSlot = (typeof state.targetSlot === "number") ? state.targetSlot : -1;
+
+          // Make it *visibly* loaded: show target pattern if available
+          act.fill(0);
+          stim.fill(0);
+          lastStim = -1;
+          if (targetSlot >= 0 && targetSlot < 3 && patterns[targetSlot]) {
+            const pat = patterns[targetSlot];
+            for (let i = 0; i < NODE_COUNT; i++) act[i] = pat.p[i];
+          }
+
+          persist.present = true;
+          persist.savedAt = state.savedAt || null;
+          persist.loadedAt = Date.now();
+          persist.lastError = null;
+          lastAction = `loaded (${STORAGE_KEY})`;
+        } catch (e) {
+          persist.lastError = `load failed: ${e && e.message ? e.message : String(e)}`;
+          lastAction = persist.lastError;
+        }
+      }
+
+      // presence check (do not auto-load; user controls it)
+      try {
+        persist.present = !!localStorage.getItem(STORAGE_KEY);
+      } catch {
+        persist.present = false;
+        persist.lastError = "localStorage unavailable";
+      }
+
+      // ---------- Benchmark (B4) ----------
+      const bench = { status: "idle", ui: "bench: T run | Y sweep", lastMs: null };
+
+      function pctToScore(pct) {
+        // pct = (score + 1) * 50  =>  score = pct/50 - 1
+        return (pct / 50) - 1;
+      }
+
+      function medianInt(arr) {
+        if (!arr.length) return null;
+        const a = Array.from(arr).sort((x,y)=>x-y);
+        const mid = Math.floor(a.length/2);
+        return (a.length % 2) ? a[mid] : Math.round((a[mid-1] + a[mid]) / 2);
+      }
+
+      function runBenchmark(opts = {}) {
+        const trials = opts.trials ?? 30;
+        const thrPct = opts.thrPct ?? 75;   // success threshold
+        const maxSteps = opts.maxSteps ?? 120;
+
+        const slots = [0,1,2].filter(i => patterns[i]);
+        if (!slots.length) {
+          bench.status = "idle";
+          bench.ui = "bench: need patterns (press 1-3)";
+          lastAction = "bench: no patterns stored";
+          return;
+        }
+
+        bench.status = "running";
+        bench.ui = `bench: running ${trials}…`;
+        lastAction = `bench running (${trials} trials)…`;
+
+        const t0 = performance.now();
+
+        // Save current live state so benchmark doesn't trash your scene.
+        const actSave = act.slice();
+        const stimSave = stim.slice();
+        const liveSave = liveLearningOn;
+        const targetSave = targetSlot;
+
+        liveLearningOn = false;
+
+        const thrScore = pctToScore(thrPct);
+
+        let ok = 0;
+        let worst = 0;
+        const stepsOk = [];
+
+        const per = [
+          { total: 0, ok: 0 },
+          { total: 0, ok: 0 },
+          { total: 0, ok: 0 },
+        ];
+
+        for (let t = 0; t < trials; t++) {
+          const slot = slots[t % slots.length]; // round-robin
+          const pat = patterns[slot].p;
+
+          per[slot].total++;
+
+          // cue init (same spirit as recall)
+          for (let i = 0; i < NODE_COUNT; i++) {
+            const isOn = (pat[i] === 1);
+            const keep = isOn && (Math.random() < cueFrac);
+            act[i] = keep ? 1 : (Math.random() < 0.5 ? 1 : -1);
+            stim[i] = 0;
+          }
+          for (let i = 0; i < NODE_COUNT; i++) {
+            if (pat[i] === 1 && Math.random() < cueFrac) stim[i] = cueAmp;
+          }
+
+          let successStep = null;
+          for (let step = 1; step <= maxSteps; step++) {
+            stepOnce({ noise: 0, learn: false });
+            const sc = patternScore(pat);
+            if (sc >= thrScore) { successStep = step; break; }
+          }
+
+          if (successStep != null) {
+            ok++;
+            per[slot].ok++;
+            stepsOk.push(successStep);
+            if (successStep > worst) worst = successStep;
+          } else {
+            if (maxSteps > worst) worst = maxSteps;
+          }
+        }
+
+        const t1 = performance.now();
+        const ms = Math.round(t1 - t0);
+        const rate = Math.round(100 * ok / trials);
+        const med = medianInt(stepsOk);
+
+        bench.status = "done";
+        bench.lastMs = ms;
+        bench.ui =
+          `bench T=${trials} thr=${thrPct}% ok=${ok}/${trials} (${rate}%) med=${med ?? "--"} worst=${worst} ms=${ms} | ` +
+          `1:${per[0].ok}/${per[0].total} 2:${per[1].ok}/${per[1].total} 3:${per[2].ok}/${per[2].total}`;
+
+        lastAction = `bench done: ok ${ok}/${trials} (${rate}%) in ${ms}ms`;
+
+        // Restore live state
+        act.set(actSave);
+        stim.set(stimSave);
+        liveLearningOn = liveSave;
+        targetSlot = targetSave;
+      }
+      function runBenchmarkSweep(opts = {}) {
+        const thrPct = opts.thrPct ?? 75;
+        const maxSteps = opts.maxSteps ?? 120;
+        const trialsPerCue = opts.trialsPerCue ?? 24;
+        const cues = opts.cues ?? [0.05, 0.10, 0.15, 0.22, 0.30, 0.40];
+
+        const slots = [0,1,2].filter(i => patterns[i]);
+        if (!slots.length) {
+          bench.status = "idle";
+          bench.ui = "bench: need patterns (press 1-3)";
+          lastAction = "bench sweep: no patterns stored";
+          return;
+        }
+
+        bench.status = "running";
+        bench.ui = `bench sweep: running ${cues.length} cues…`;
+        lastAction = `bench sweep running (${cues.length} cues)…`;
+
+        const t0 = performance.now();
+
+        // Save current live state (don't trash your scene)
+        const actSave = act.slice();
+        const stimSave = stim.slice();
+        const liveSave = liveLearningOn;
+        const targetSave = targetSlot;
+
+        liveLearningOn = false;
+
+        const thrScore = (thrPct / 50) - 1; // pct -> score
+
+        function medianInt(arr) {
+          if (!arr.length) return null;
+          const a = Array.from(arr).sort((x,y)=>x-y);
+          const mid = Math.floor(a.length/2);
+          return (a.length % 2) ? a[mid] : Math.round((a[mid-1] + a[mid]) / 2);
+        }
+
+        const rows = [];
+        for (const cue of cues) {
+          let ok = 0;
+          let worst = 0;
+          const stepsOk = [];
+
+          for (let t = 0; t < trialsPerCue; t++) {
+            const slot = slots[t % slots.length];
+            const pat = patterns[slot].p;
+
+            // cue init (like recall, but cue fraction is parameter)
+            for (let i = 0; i < NODE_COUNT; i++) {
+              const isOn = (pat[i] === 1);
+              const keep = isOn && (Math.random() < cue);
+              act[i] = keep ? 1 : (Math.random() < 0.5 ? 1 : -1);
+              stim[i] = 0;
+            }
+            for (let i = 0; i < NODE_COUNT; i++) {
+              if (pat[i] === 1 && Math.random() < cue) stim[i] = cueAmp;
+            }
+
+            let successStep = null;
+            for (let step = 1; step <= maxSteps; step++) {
+              stepOnce({ noise: 0, learn: false });
+              const sc = patternScore(pat);
+              if (sc >= thrScore) { successStep = step; break; }
+            }
+
+            if (successStep != null) {
+              ok++;
+              stepsOk.push(successStep);
+              if (successStep > worst) worst = successStep;
+            } else {
+              if (maxSteps > worst) worst = maxSteps;
+            }
+          }
+
+          const rate = Math.round(100 * ok / trialsPerCue);
+          const med = medianInt(stepsOk);
+          const cuePct = String(Math.round(cue * 100)).padStart(2,"0");
+          rows.push(`${cuePct}%: ${String(rate).padStart(3," ")}% / med ${String(med ?? "--").padStart(2," ")} / worst ${String(worst).padStart(2," ")}`);
+        }
+
+        const ms = Math.round(performance.now() - t0);
+        bench.status = "done";
+        bench.lastMs = ms;
+        bench.ui =
+          `bench sweep thr=${thrPct}% steps<=${maxSteps} trials/cue=${trialsPerCue} ms=${ms}\n` +
+          rows.join("  ");
+
+        lastAction = `bench sweep done in ${ms}ms`;
+
+        // Restore live state
+        act.set(actSave);
+        stim.set(stimSave);
+        liveLearningOn = liveSave;
+        targetSlot = targetSave;
+      }
+      // ---------- Input ----------
+      const raycaster = new THREE.Raycaster();
+      raycaster.params.Points.threshold = 0.22;
+      const mouse = new THREE.Vector2();
+
+      function onPointerDown(ev) {
+        mouse.x = (ev.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObject(nodes);
+        if (hits && hits.length) {
+          const idx = hits[0].index;
+          if (idx != null) {
+            stim[idx] = Math.min(2.6, stim[idx] + 1.9);
+            act[idx] = 1;
+            lastStim = idx;
+            clickPulse = 1.0;
+            clickBeacon.position.set(
+              positions[idx*3+0],
+              positions[idx*3+1],
+              positions[idx*3+2]
+            );
+            clickBeacon.scale.setScalar(1.0);
+            lastAction = `click stim node ${idx}`;
+          }
+        }
+      }
+      window.addEventListener('pointerdown', onPointerDown);
+
+      function onKeyDown(ev) {
+        if (ev.code === 'KeyL') { liveLearningOn = !liveLearningOn; lastAction = `live learning ${liveLearningOn ? "ON" : "OFF"}`; return; }
+        if (ev.code === 'KeyR') { resetAll(); return; }
+
+        if (ev.code === 'KeyS') { saveState(); return; }
+        if (ev.code === 'KeyO') { loadState(); return; }
+        if (ev.code === 'KeyT') { runBenchmark(); return; }
+        if (ev.code === 'KeyY') { runBenchmarkSweep(); return; }
+
+        const digitCodes = { Digit1: 0, Digit2: 1, Digit3: 2 };
+        if (ev.code in digitCodes) {
+          const slot = digitCodes[ev.code];
+          if (ev.shiftKey) recall(slot);
+          else imprint(slot);
+        }
+      }
+      window.addEventListener('keydown', onKeyDown);
+
+      // ---------- Visuals ----------
+      function updateVisuals() {
+        for (let i = 0; i < NODE_COUNT; i++) {
+          const t = clamp((act[i] + 1) * 0.5, 0, 1);
+          const inten = 0.26 + 0.74 * t;
+          nodeColors[i*3+0] = inten;
+          nodeColors[i*3+1] = inten;
+          nodeColors[i*3+2] = inten;
+        }
+        nodesGeo.attributes.color.needsUpdate = true;
+
+        for (let e = 0; e < EDGE_COUNT; e++) {
+          const u = aIdx[e], v = bIdx[e];
+          const tu = clamp((act[u] + 1) * 0.5, 0, 1);
+          const tv = clamp((act[v] + 1) * 0.5, 0, 1);
+          const actGate = 0.12 + 0.88 * (tu * tv);
+
+          const wn = Math.abs(w[e]) / wMax;
+          const inten = clamp(0.14 + 0.86 * wn * actGate, 0, 1);
+
+          const r = inten * 0.22;
+          const g = inten * 0.40;
+          const b = inten * 1.00;
+
+          const o = e * 6;
+          edgeColors[o+0] = r; edgeColors[o+1] = g; edgeColors[o+2] = b;
+          edgeColors[o+3] = r; edgeColors[o+4] = g; edgeColors[o+5] = b;
+        }
+        edgesGeo.attributes.color.needsUpdate = true;
+      }
+
+      // ---------- HUD ----------
+      let frames = 0;
+      let lastFpsT = performance.now();
+      let lastHudT = performance.now();
+      let fps = 0;
+
+      function hudTick(t) {
+        if (t - lastFpsT > 500) {
+          fps = Math.round((frames * 1000) / (t - lastFpsT));
+          frames = 0;
+          lastFpsT = t;
+        }
+
+        if (t - lastHudT > 250) {
+          let wAbsSum = 0;
+          let wAbsMax = 0;
+          for (let e = 0; e < EDGE_COUNT; e++) {
+            const aw = Math.abs(w[e]);
+            wAbsSum += aw;
+            if (aw > wAbsMax) wAbsMax = aw;
+          }
+          const wAbsMean = wAbsSum / EDGE_COUNT;
+
+          const slotLabel = (i) => patterns[i] ? `${i+1}*` : `${i+1}-`;
+
+          let bestSlot = -1;
+          let bestScore = -1e9;
+          const scores = [];
+          for (let i = 0; i < 3; i++) {
+            if (!patterns[i]) { scores.push("--"); continue; }
+            const s = patternScore(patterns[i].p);
+            if (s > bestScore) { bestScore = s; bestSlot = i; }
+            const pct = Math.round((s + 1) * 50);
+            scores.push(String(pct).padStart(3, " "));
+          }
+
+          statsLine.textContent =
+            `three r${THREE.REVISION} · nodes ${NODE_COUNT} · edges ${EDGE_COUNT} · seed ${WORLD_SEED} · gl ${glStatus} · liveLearn ${liveLearningOn ? "ON" : "OFF"}\n` +
+            `|w| mean ${wAbsMean.toFixed(3)} · |w|max ${wAbsMax.toFixed(3)} · lastStim ${lastStim >= 0 ? lastStim : "-"}`;
+
+          memLine.textContent =
+            `mem slots [${slotLabel(0)} ${slotLabel(1)} ${slotLabel(2)}]   target ${targetSlot >= 0 ? (targetSlot+1) : "-"}\n` +
+            `scores  1:${scores[0]}  2:${scores[1]}  3:${scores[2]}   best ${bestSlot >= 0 ? (bestSlot+1) : "-"}:${bestSlot >= 0 ? Math.round((bestScore+1)*50) : "--"}`;
+
+          const err = persist.lastError ? `  err: ${persist.lastError}` : "";
+          persistLine.textContent =
+            `persist key ${STORAGE_KEY} present ${persist.present ? "YES" : "no "}  saved ${fmtTime(persist.savedAt)}  loaded ${fmtTime(persist.loadedAt)}${err}`;
+
+          benchLine.textContent = bench.ui;
+          actionLine.textContent = `action: ${lastAction}`;
+          fpsLine.textContent = `fps ~ ${fps}`;
+
+          lastHudT = t;
+        }
+      }
+
+      // ---------- Resize ----------
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      window.addEventListener('resize', onResize);
+
+      // ---------- Main loop ----------
+      resetAll();
+
+      function animate(t) {
+        frames++;
+
+        group.rotation.y = t * 0.00035;
+        group.rotation.x = t * 0.00018;
+        // click beacon pulse (always visible)
+        if (clickPulse > 0) {
+          clickPulse = Math.max(0, clickPulse - 0.035);
+          const p = clickPulse;
+          clickBeaconMat.opacity = 0.85 * p;
+          const sc = 1 + (1 - p) * 2.2;
+          clickBeacon.scale.setScalar(sc);
+        } else {
+          clickBeaconMat.opacity = 0.0;
+        }
+
+        stepOnce({ noise: noiseAmp, learn: liveLearningOn });
+        updateVisuals();
+        hudTick(t);
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }).catch((e) => {
+      fallback.style.display = 'flex';
+      fallback.innerHTML = `
+        <div>
+          <div style="font-weight:700; font-size:18px; margin-bottom:10px;">
+            Three.js failed to load.
+          </div>
+          <div style="opacity:0.9; max-width: 740px;">
+            Open DevTools → Console and copy the first red error line.
+          </div>
+        </div>
+      `;
+      console.error(e);
+    });
+  </script>
+</body>
+</html>

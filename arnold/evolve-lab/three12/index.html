@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EVOLVE-LAB BUILD0012 (MATES)</title>
+  <link rel="stylesheet" href="../style.css?v=BUILD0012_MATES">
+  <link rel="stylesheet" href="./three12.css?v=BUILD0012_MATES">
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div class="hud">
+    <div class="buildBox">
+      <div class="row"><span class="k">PROJECT</span><span class="v">EVOLVE-LAB</span></div>
+      <div class="row"><span class="k">BUILD</span><span class="v">BUILD0012_MATES</span></div>
+      <div class="row"><span class="k">PATH</span><span class="v" id="path"></span></div>
+      <div class="row"><span class="k">v</span><span class="v" id="vtag"></span></div>
+      <div class="row"><span class="k">RENDER</span><span class="v" id="rendererTag"></span></div>
+      <div class="row"><span class="k">GEN</span><span class="v" id="genTag"></span></div>
+      <div class="row"><span class="k">STAGE</span><span class="v" id="stageTag"></span></div>
+      <div class="row"><span class="k">LINE</span><span class="v" id="lineTag"></span></div>
+      <div class="row"><span class="k">SOC</span><span class="v" id="socTag"></span></div>
+      <div class="row"><span class="k">HERD</span><span class="v" id="herdTag"></span></div>
+      <div class="row"><span class="k">DIET</span><span class="v" id="dietTag"></span></div>
+      <div class="row"><span class="k">ECO</span><span class="v" id="ecoTag"></span></div>
+      <div class="row"><span class="k">MATE</span><span class="v" id="mateTag"></span></div>
+      <div class="row"><span class="k">TRAITS</span><span class="v" id="traitsTag"></span></div>
+      <div class="row"><span class="k">LAST</span><span class="v" id="lastTag"></span></div>
+      <div class="row"><span class="k">LOADED</span><span class="v" id="loadedAt"></span></div>
+    </div>
+
+    <div class="legend">
+      <div><span class="chip">WASD</span> move</div>
+      <div><span class="chip">Shift</span> sprint (burns energy)</div>
+      <div><span class="chip">E</span> eat (ring pulses when in range)</div>
+      <div><span class="chip">Click</span> spawn sprout (debug)</div>
+      <div><span class="chip">C</span> call/accept mate (adult + energy≥110)</div>
+      <div><span class="chip">X</span> reject mate (shame zigzag)</div>
+      <div><span class="chip">Mates</span> show trait offers via color + badge shape</div>
+      <div><span class="chip">Prime</span> mate needs calm courting (no sprint) while aura fills</div>
+      <div><span class="chip">[ ]</span> social (debug)</div>
+      <div><span class="chip">1/2/3</span> choose mutation</div>
+      <div><span class="chip">R</span> reset world</div>
+    </div>
+
+    <div class="status" id="status">STATUS: loading…</div>
+  </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="panel">
+      <div class="title">MUTATION DRAFT</div>
+      <pre id="overlayStats" class="stats"></pre>
+      <div id="cards" class="cards"></div>
+      <div class="hint">Keys: 1/2/3 choose • Esc abort</div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js?v=BUILD0012_MATES"></script>
+</body>
+</html>

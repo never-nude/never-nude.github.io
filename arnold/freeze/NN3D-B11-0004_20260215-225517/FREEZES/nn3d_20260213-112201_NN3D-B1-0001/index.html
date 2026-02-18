@@ -1,0 +1,398 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NN3D Lab</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+    #hud {
+      position: fixed; top: 12px; left: 12px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      color: #fff;
+      font: 13px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      user-select: none;
+      z-index: 10;
+      min-width: 320px;
+    }
+    #hud .build { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+    #hud .row { opacity: 0.92; white-space: pre; }
+    #fallback {
+      position: fixed; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      color: #fff;
+      font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px; text-align: center;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="build" id="buildLine">BUILD:</div>
+    <div class="row" id="urlLine"></div>
+    <div class="row" id="statsLine"></div>
+    <div class="row" id="helpLine"></div>
+    <div class="row" id="fpsLine"></div>
+  </div>
+
+  <div id="fallback"></div>
+
+  <script type="module">
+    const BUILD = "NN3D-B1-0001"; // Hebbian learning milestone
+
+    const buildLine = document.getElementById('buildLine');
+    const urlLine   = document.getElementById('urlLine');
+    const statsLine = document.getElementById('statsLine');
+    const helpLine  = document.getElementById('helpLine');
+    const fpsLine   = document.getElementById('fpsLine');
+    const fallback  = document.getElementById('fallback');
+
+    buildLine.textContent = `BUILD: ${BUILD}`;
+    urlLine.textContent = location.href;
+    helpLine.textContent = "Click=stimulate  |  L=toggle learning  |  R=reset";
+    console.log(`[NN3D] BUILD ${BUILD}`, location.href);
+
+    // CDN fallback chain
+    const threeUrls = [
+      'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+      'https://unpkg.com/three@0.160.0/build/three.module.js',
+    ];
+
+    let p = import(threeUrls[0]);
+    for (let i = 1; i < threeUrls.length; i++) p = p.catch(() => import(threeUrls[i]));
+
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+    function randn() {
+      // Box-Muller
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    p.then((THREE) => {
+      // ---------- Scene ----------
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.05, 200);
+      camera.position.set(0, 0, 7);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.domElement.style.display = 'block';
+      document.body.appendChild(renderer.domElement);
+
+      // ---------- Network geometry ----------
+      const NODE_COUNT = 260;
+      const K = 3;          // outgoing edges per node (directed)
+      const R = 2.4;
+
+      // Node positions
+      const positions = new Float32Array(NODE_COUNT * 3);
+      for (let i = 0; i < NODE_COUNT; i++) {
+        const u = Math.random();
+        const v = Math.random();
+        const w = Math.random();
+
+        const r = Math.cbrt(u) * R;
+        const theta = 2 * Math.PI * v;
+        const phi = Math.acos(2 * w - 1);
+
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+
+        positions[i*3+0] = x;
+        positions[i*3+1] = y;
+        positions[i*3+2] = z;
+      }
+
+      // Directed edges: src -> dst, visualized as undirected segments
+      const SEG_COUNT = NODE_COUNT * K;
+      const src = new Uint16Array(SEG_COUNT);
+      const dst = new Uint16Array(SEG_COUNT);
+
+      for (let i = 0; i < NODE_COUNT; i++) {
+        for (let k = 0; k < K; k++) {
+          const s = i * K + k;
+          let j = (i + 1 + Math.floor(Math.random() * (NODE_COUNT - 1))) % NODE_COUNT;
+          src[s] = i;
+          dst[s] = j;
+        }
+      }
+
+      // Edge vertex positions (2 vertices per segment)
+      const edgePos = new Float32Array(SEG_COUNT * 2 * 3);
+      for (let s = 0; s < SEG_COUNT; s++) {
+        const a = src[s], b = dst[s];
+        const v0 = s * 6;
+        edgePos[v0+0] = positions[a*3+0];
+        edgePos[v0+1] = positions[a*3+1];
+        edgePos[v0+2] = positions[a*3+2];
+        edgePos[v0+3] = positions[b*3+0];
+        edgePos[v0+4] = positions[b*3+1];
+        edgePos[v0+5] = positions[b*3+2];
+      }
+
+      // Node colors (per-vertex)
+      const nodeColors = new Float32Array(NODE_COUNT * 3);
+      for (let i = 0; i < NODE_COUNT; i++) {
+        nodeColors[i*3+0] = 0.2;
+        nodeColors[i*3+1] = 0.2;
+        nodeColors[i*3+2] = 0.2;
+      }
+
+      const nodesGeo = new THREE.BufferGeometry();
+      nodesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      nodesGeo.setAttribute('color', new THREE.BufferAttribute(nodeColors, 3));
+
+      const nodesMat = new THREE.PointsMaterial({
+        size: 0.055,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+      });
+
+      const nodes = new THREE.Points(nodesGeo, nodesMat);
+
+      // Edge colors (per-vertex): 2 vertices per segment
+      const edgeColors = new Float32Array(SEG_COUNT * 2 * 3);
+      for (let i = 0; i < edgeColors.length; i += 3) {
+        edgeColors[i+0] = 0.05;
+        edgeColors[i+1] = 0.08;
+        edgeColors[i+2] = 0.18;
+      }
+
+      const edgesGeo = new THREE.BufferGeometry();
+      edgesGeo.setAttribute('position', new THREE.BufferAttribute(edgePos, 3));
+      edgesGeo.setAttribute('color', new THREE.BufferAttribute(edgeColors, 3));
+
+      const edgesMat = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.55, // overall; per-vertex intensity still matters
+      });
+
+      const edgeLines = new THREE.LineSegments(edgesGeo, edgesMat);
+
+      const group = new THREE.Group();
+      group.add(edgeLines);
+      group.add(nodes);
+      scene.add(group);
+
+      // Faint sphere (depth cue)
+      const glowGeo = new THREE.SphereGeometry(R*1.02, 32, 32);
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0x224466, transparent: true, opacity: 0.08 });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+      group.add(glow);
+
+      // ---------- Learning engine (Hebbian) ----------
+      // State: activations + stimulus + scratch
+      const a = new Float32Array(NODE_COUNT);
+      const aNext = new Float32Array(NODE_COUNT);
+      const stim = new Float32Array(NODE_COUNT);
+      const sum = new Float32Array(NODE_COUNT);
+
+      // Weights per directed segment
+      const w = new Float32Array(SEG_COUNT);
+      const wMax = 2.0;
+
+      // Tuned for visibility (gain first, refine later)
+      let learningOn = true;
+      const leak = 0.92;       // activation persistence
+      const stimDecay = 0.90;  // how fast click stimulus fades (per frame-ish)
+      const noiseAmp = 0.008;  // tiny spontaneous firing (kept small)
+      let lr = 0.045;          // Hebbian learning rate (visible)
+      const wDecay = 0.002;    // mild weight decay
+
+      let lastStim = -1;
+
+      function resetAll() {
+        for (let i = 0; i < NODE_COUNT; i++) {
+          a[i] = 0;
+          aNext[i] = 0;
+          stim[i] = 0;
+        }
+        for (let s = 0; s < SEG_COUNT; s++) {
+          w[s] = randn() * 0.22; // small initial weights
+        }
+        lastStim = -1;
+      }
+      resetAll();
+
+      // Click to stimulate nearest node (raycaster → point index)
+      const raycaster = new THREE.Raycaster();
+      raycaster.params.Points.threshold = 0.14; // easier clicking
+      const mouse = new THREE.Vector2();
+
+      function onPointerDown(ev) {
+        mouse.x = (ev.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObject(nodes);
+        if (hits && hits.length) {
+          const idx = hits[0].index;
+          if (idx != null) {
+            stim[idx] = Math.min(2.5, stim[idx] + 1.8);
+            a[idx] = 1.0;
+            lastStim = idx;
+          }
+        }
+      }
+      window.addEventListener('pointerdown', onPointerDown);
+
+      // Keys: L toggle learning, R reset
+      function onKeyDown(ev) {
+        if (ev.key === 'l' || ev.key === 'L') learningOn = !learningOn;
+        if (ev.key === 'r' || ev.key === 'R') resetAll();
+      }
+      window.addEventListener('keydown', onKeyDown);
+
+      function step() {
+        // decay stimulus
+        for (let i = 0; i < NODE_COUNT; i++) stim[i] *= stimDecay;
+
+        // start sums with stimulus + tiny noise
+        for (let i = 0; i < NODE_COUNT; i++) sum[i] = stim[i] + noiseAmp * randn();
+
+        // accumulate along directed edges: src -> dst
+        for (let s = 0; s < SEG_COUNT; s++) {
+          sum[dst[s]] += w[s] * a[src[s]];
+        }
+
+        // activation update
+        for (let i = 0; i < NODE_COUNT; i++) {
+          aNext[i] = Math.tanh(leak * a[i] + sum[i]);
+        }
+
+        // Hebbian learning: Δw ~ pre * post
+        if (learningOn) {
+          for (let s = 0; s < SEG_COUNT; s++) {
+            const pre = a[src[s]];
+            const post = aNext[dst[s]];
+            let nw = w[s] + lr * (pre * post) - wDecay * w[s];
+            nw = clamp(nw, -wMax, wMax);
+            w[s] = nw;
+          }
+        }
+
+        // swap activations
+        a.set(aNext);
+      }
+
+      function updateVisuals() {
+        // Node brightness from |activation|
+        for (let i = 0; i < NODE_COUNT; i++) {
+          const amp = clamp(Math.abs(a[i]), 0, 1);
+          const base = 0.10;
+          const inten = base + 0.90 * amp;
+          nodeColors[i*3+0] = inten;
+          nodeColors[i*3+1] = inten;
+          nodeColors[i*3+2] = inten;
+        }
+        nodesGeo.attributes.color.needsUpdate = true;
+
+        // Edge intensity from |w| and endpoint activity
+        for (let s = 0; s < SEG_COUNT; s++) {
+          const pre = Math.abs(a[src[s]]);
+          const post = Math.abs(a[dst[s]]);
+          const act = 0.20 + 0.80 * (pre * post);
+
+          const wn = Math.abs(w[s]) / wMax; // 0..1
+          const inten = clamp(0.02 + 0.98 * wn * act, 0, 1);
+
+          // bluish (same hue), intensity carries meaning
+          const r = inten * 0.22;
+          const g = inten * 0.40;
+          const b = inten * 1.00;
+
+          const v = s * 6; // 2 vertices * 3
+          edgeColors[v+0] = r; edgeColors[v+1] = g; edgeColors[v+2] = b;
+          edgeColors[v+3] = r; edgeColors[v+4] = g; edgeColors[v+5] = b;
+        }
+        edgesGeo.attributes.color.needsUpdate = true;
+      }
+
+      // ---------- HUD stats ----------
+      let frames = 0;
+      let lastFpsT = performance.now();
+      let lastStatsT = performance.now();
+      let fps = 0;
+
+      function updateHUD(t) {
+        if (t - lastFpsT > 500) {
+          fps = Math.round((frames * 1000) / (t - lastFpsT));
+          frames = 0;
+          lastFpsT = t;
+        }
+
+        if (t - lastStatsT > 250) {
+          let wAbsSum = 0;
+          let wAbsMax = 0;
+          for (let s = 0; s < SEG_COUNT; s++) {
+            const aw = Math.abs(w[s]);
+            wAbsSum += aw;
+            if (aw > wAbsMax) wAbsMax = aw;
+          }
+          const wAbsMean = wAbsSum / SEG_COUNT;
+
+          statsLine.textContent =
+            `three r${THREE.REVISION} · nodes ${NODE_COUNT} · edges ${SEG_COUNT} · learning ${learningOn ? "ON" : "OFF"}\n` +
+            `|w| mean ${wAbsMean.toFixed(3)} · |w|max ${wAbsMax.toFixed(3)} · stim ${lastStim >= 0 ? lastStim : "-"}`;
+
+          fpsLine.textContent = `fps ~ ${fps}`;
+          lastStatsT = t;
+        }
+      }
+
+      // ---------- Resize ----------
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      window.addEventListener('resize', onResize);
+
+      // ---------- Main loop ----------
+      function animate(t) {
+        frames++;
+
+        // obvious motion stays (identity probe: scene is alive)
+        group.rotation.y = t * 0.00035;
+        group.rotation.x = t * 0.00018;
+
+        // run learning engine + visuals
+        step();
+        updateVisuals();
+        updateHUD(t);
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }).catch((e) => {
+      fallback.style.display = 'flex';
+      fallback.innerHTML = `
+        <div>
+          <div style="font-weight:700; font-size:18px; margin-bottom:10px;">
+            Three.js failed to load.
+          </div>
+          <div style="opacity:0.9; max-width: 740px;">
+            Open DevTools → Console and copy the first red error line.
+          </div>
+        </div>
+      `;
+      console.error(e);
+    });
+  </script>
+</body>
+</html>

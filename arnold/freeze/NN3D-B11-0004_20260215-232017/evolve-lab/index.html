@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EVOLVE-LAB — BUILD0001</title>
+    <link rel="stylesheet" href="./style.css?v=BUILD0001" />
+  </head>
+  <body>
+    <header id="hud">
+      <div id="buildBox">
+        <div class="row"><span class="k">PROJECT</span><span class="v">EVOLVE-LAB</span></div>
+        <div class="row"><span class="k">BUILD</span><span class="v">BUILD0001</span></div>
+        <div class="row"><span class="k">PATH</span><span class="v" id="path"></span></div>
+        <div class="row"><span class="k">v=</span><span class="v" id="vtag"></span></div>
+        <div class="row"><span class="k">LOADED</span><span class="v" id="loadedAt"></span></div>
+      </div>
+
+      <div id="legend">
+        <div><span class="chip">WASD / Arrows</span> move</div>
+        <div><span class="chip">Click / Tap</span> spawn food (big ring flash)</div>
+        <div><span class="chip">Hold Mouse</span> sprint (burns energy)</div>
+      </div>
+    </header>
+
+    <main>
+      <canvas id="c"></canvas>
+    </main>
+
+    <footer id="status">STATUS: booting…</footer>
+
+    <script type="module" src="./app.js?v=BUILD0001"></script>
+  </body>
+</html>
