@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const BUILD_ID = `BALLPIT-CONN1-${new Date().toISOString()}`;
 document.getElementById('buildId').textContent = BUILD_ID;
 
-const DATA_VERSION = 'ballpit5';
+const DATA_VERSION = 'ballpit6';
 const AAL_URL  = `./data/aal_regions.json?v=${DATA_VERSION}`;
 const STIM_URL = `./data/stimuli.json?v=${DATA_VERSION}`;
 const CONN_URL = `./data/connectome_edges.json?v=${DATA_VERSION}`;
@@ -245,7 +245,18 @@ function buildStimuliFromSpec(spec) {
   const stimNames = Object.keys(stimSpec);
   const totalLines = stimNames.reduce((acc, k) => acc + (Array.isArray(stimSpec[k]?.lines) ? stimSpec[k].lines.length : 0), 0);
 
-  hud.tracksInfo.textContent = `stimuli.json (${stimNames.length} stims, ${totalLines} lines) + connectome (${connectome.n_edges} edges)`;
+  const wStats = (() => {
+    let mn = Infinity, mx = -Infinity;
+    for (const e of connectome.edges) {
+      const w = Number(e[2]);
+      if (!Number.isFinite(w)) continue;
+      if (w < mn) mn = w;
+      if (w > mx) mx = w;
+    }
+    if (mn === Infinity) { mn = 0; mx = 0; }
+    return { mn, mx };
+  })();
+  hud.tracksInfo.textContent = `stimuli.json (${stimNames.length} stims, ${totalLines} lines) + conn ${connectome.version || 'unknown'} (${connectome.n_edges} edges, w[${wStats.mn.toFixed(3)}, ${wStats.mx.toFixed(3)}])`;
 
   for (const stimName of stimNames) {
     const s = stimSpec[stimName] || {};
