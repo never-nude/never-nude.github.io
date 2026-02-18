@@ -1,0 +1,99 @@
+{
+  "version": "ballpit-stimuli-v1",
+  "generated_at": "2026-02-18T15:59:36Z",
+  "notes": "Starter heuristics. Edit stops (aal_value) freely.",
+  "stimuli": {
+    "rest": {
+      "color": "#66ccff",
+      "lines": [
+        {
+          "name": "rest-heuristic",
+          "stops": [
+            69,
+            70,
+            21,
+            22,
+            65,
+            66,
+            63,
+            64,
+            71,
+            72
+          ]
+        }
+      ]
+    },
+    "visual": {
+      "color": "#ffcc66",
+      "lines": [
+        {
+          "name": "visual-heuristic",
+          "stops": [
+            47,
+            48,
+            49,
+            50,
+            59,
+            60,
+            51,
+            52,
+            57,
+            58,
+            55,
+            56,
+            53,
+            54,
+            71,
+            72
+          ]
+        }
+      ]
+    },
+    "motor": {
+      "color": "#99ff99",
+      "lines": [
+        {
+          "name": "motor-heuristic",
+          "stops": [
+            73,
+            74,
+            61,
+            62,
+            1,
+            2,
+            13,
+            14,
+            15,
+            16
+          ]
+        }
+      ]
+    },
+    "auditory": {
+      "color": "#ff99cc",
+      "lines": [
+        {
+          "name": "auditory-heuristic",
+          "stops": [
+            83,
+            84,
+            33,
+            34,
+            13,
+            14,
+            93,
+            94,
+            89,
+            90,
+            91,
+            92,
+            87,
+            88,
+            85,
+            86
+          ]
+        }
+      ]
+    }
+  }
+}

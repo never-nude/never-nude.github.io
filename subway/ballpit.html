@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Ball Pit • subway</title>
 
-    <link rel="stylesheet" href="./style.css?v=ballpit2" />
+    <link rel="stylesheet" href="./style.css?v=ballpit3" />
 
     <script type="importmap">
       {
@@ -18,7 +18,10 @@
   </head>
 
   <body>
-    <div id="ballpitMarker" style="position:fixed; right:12px; bottom:12px; z-index:9999; color:rgba(255,255,255,0.95); background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:6px 10px; font:12px ui-sans-serif,system-ui;">Ball Pit • ballpit2</div>
+    <div id="ballpitMarker" style="position:fixed; right:12px; bottom:12px; z-index:9999; color:rgba(255,255,255,0.95); background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:6px 10px; font:12px ui-sans-serif,system-ui;">
+      Ball Pit • ballpit3
+    </div>
+
     <div id="hud">
       <div class="row">
         <div class="title">Ball Pit <span class="pill">subway</span></div>
@@ -35,6 +38,11 @@
         <div class="meta">atlas <span id="atlasName">?</span></div>
       </div>
 
+      <div class="row">
+        <div class="meta">tracks <span id="tracksInfo">loading…</span></div>
+        <div class="meta">edges <span id="edgeCount">?</span></div>
+      </div>
+
       <div class="row buttons">
         <button data-stim="rest">Rest</button>
         <button data-stim="visual">Visual</button>
@@ -49,6 +57,6 @@
 
     <canvas id="c"></canvas>
 
-    <script type="module" src="./app.js?v=ballpit2"></script>
+    <script type="module" src="./app.js?v=ballpit3"></script>
   </body>
 </html>

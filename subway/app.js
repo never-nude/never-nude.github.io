@@ -1,22 +1,27 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const BUILD_ID = `BALLPIT-AAL-${new Date().toISOString()}`;
+const BUILD_ID = `BALLPIT-AAL3-${new Date().toISOString()}`;
 document.getElementById('buildId').textContent = BUILD_ID;
 
-const DATA_VERSION = 'ballpit1';
+const DATA_VERSION = 'ballpit3';
 const AAL_URL = `./data/aal_regions.json?v=${DATA_VERSION}`;
+const STIM_URL = `./data/stimuli.json?v=${DATA_VERSION}`;
 
 const hud = {
   nodeCount: document.getElementById('nodeCount'),
   stimulusName: document.getElementById('stimulusName'),
   hoverName: document.getElementById('hoverName'),
   atlasName: document.getElementById('atlasName'),
+  tracksInfo: document.getElementById('tracksInfo'),
+  edgeCount: document.getElementById('edgeCount'),
 };
 
 hud.nodeCount.textContent = 'loading…';
 hud.hoverName.textContent = '—';
 hud.atlasName.textContent = '—';
+if (hud.tracksInfo) hud.tracksInfo.textContent = 'loading…';
+if (hud.edgeCount) hud.edgeCount.textContent = '—';
 
 // ---------- Three.js baseline ----------
 const canvas = document.getElementById('c');
@@ -129,17 +134,7 @@ function groupEdges(pairs, color) {
   return { group: g, edges };
 }
 
-function pickByKeywords(regions, keywords, limit = 14) {
-  const ks = keywords.map(k => k.toLowerCase());
-  const hits = [];
-  for (let i = 0; i < regions.length; i++) {
-    const name = (regions[i].label || '').toLowerCase();
-    if (ks.some(k => name.includes(k))) hits.push(i);
-  }
-  hits.sort((a, b) => (regions[a].label || '').localeCompare(regions[b].label || ''));
-  return hits.slice(0, limit);
-}
-
+// Greedy “subway route” through chosen nodes (for unordered stop sets)
 function chainPairsFromIndices(indices) {
   if (indices.length < 2) return [];
   const unused = indices.slice();
@@ -161,16 +156,30 @@ function chainPairsFromIndices(indices) {
   return pairs;
 }
 
-// ---------- Load AAL + build nodes ----------
+function pairsFromStops(stopIndices, ordered=false) {
+  const idxs = stopIndices.filter(i => Number.isInteger(i));
+  if (idxs.length < 2) return [];
+  if (ordered) {
+    const pairs = [];
+    for (let i = 0; i < idxs.length - 1; i++) pairs.push([idxs[i], idxs[i+1]]);
+    return pairs;
+  }
+  return chainPairsFromIndices(idxs);
+}
+
+// ---------- Load data ----------
 let atlas = null;
 let regions = [];
 let nodes = [];
 let stimuli = {};
 let currentStim = 'rest';
 
-async function loadAAL() {
-  const r = await fetch(AAL_URL, { cache: 'no-store' });
-  if (!r.ok) throw new Error(`Fetch failed ${r.status} for ${AAL_URL}`);
+// map aal_value -> node index
+let aalToNodeIndex = new Map();
+
+async function loadJSON(url) {
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(`Fetch failed ${r.status} for ${url}`);
   return await r.json();
 }
 
@@ -213,39 +222,81 @@ function buildNodesFromRegions(regionsIn) {
     meshes.push(m);
   }
 
+  // mapping
+  aalToNodeIndex = new Map();
+  for (let i = 0; i < regionsIn.length; i++) {
+    const v = Number(regionsIn[i].aal_value);
+    if (Number.isFinite(v)) aalToNodeIndex.set(v, i);
+  }
+
   controls.target.set(0, 0, 0);
   controls.update();
   return meshes;
 }
 
-function buildStimuli() {
-  const visualIdx = pickByKeywords(regions, ['calcarine', 'cuneus', 'lingual', 'occipital', 'fusiform'], 14);
-  const motorIdx  = pickByKeywords(regions, ['precentral', 'postcentral', 'supp', 'paracentral', 'rolandic'], 14);
-  const audIdx    = pickByKeywords(regions, ['heschl', 'temporal_sup', 'temporal', 'insula', 'rolandic_oper'], 14);
-  const restIdx   = pickByKeywords(regions, ['precuneus', 'cingulum', 'angular', 'frontal_med', 'parietal_inf'], 14);
+function buildStimuliFromSpec(spec) {
+  const out = {};
+  const missing = {};
 
-  const fallback = (n = 12) => Array.from({ length: Math.min(n, nodes.length) }, (_, i) => i);
+  const stimSpec = spec?.stimuli || {};
+  for (const stimName of Object.keys(stimSpec)) {
+    const s = stimSpec[stimName] || {};
+    const color = new THREE.Color(s.color || '#ffffff');
+    const lines = Array.isArray(s.lines) ? s.lines : [];
 
-  const restPairs   = chainPairsFromIndices(restIdx.length >= 2 ? restIdx : fallback(12));
-  const visualPairs = chainPairsFromIndices(visualIdx.length >= 2 ? visualIdx : fallback(12));
-  const motorPairs  = chainPairsFromIndices(motorIdx.length >= 2 ? motorIdx : fallback(12));
-  const audPairs    = chainPairsFromIndices(audIdx.length >= 2 ? audIdx : fallback(12));
+    let pairsAll = [];
+    for (const line of lines) {
+      // edges optional: list of [aal_value, aal_value]
+      if (Array.isArray(line?.edges)) {
+        for (const e of line.edges) {
+          if (!Array.isArray(e) || e.length !== 2) continue;
+          const aVal = Number(e[0]), bVal = Number(e[1]);
+          const aIdx = aalToNodeIndex.get(aVal);
+          const bIdx = aalToNodeIndex.get(bVal);
+          if (aIdx == null || bIdx == null) {
+            missing[stimName] = missing[stimName] || [];
+            missing[stimName].push([aVal, bVal]);
+            continue;
+          }
+          pairsAll.push([aIdx, bIdx]);
+        }
+        continue;
+      }
 
-  const make = (pairs, hex) => groupEdges(pairs, new THREE.Color(hex));
+      // stops: list of aal_value
+      const stops = Array.isArray(line?.stops) ? line.stops : [];
+      const ordered = !!line?.ordered;
 
-  const stim = {
-    rest:     make(restPairs,   0x66ccff),
-    visual:   make(visualPairs, 0xffcc66),
-    motor:    make(motorPairs,  0x99ff99),
-    auditory: make(audPairs,    0xff99cc),
-  };
+      const idxs = [];
+      for (const v of stops) {
+        const aVal = Number(v);
+        const idx = aalToNodeIndex.get(aVal);
+        if (idx == null) {
+          missing[stimName] = missing[stimName] || [];
+          missing[stimName].push(aVal);
+          continue;
+        }
+        idxs.push(idx);
+      }
 
-  for (const k of Object.keys(stim)) {
-    stim[k].group.visible = false;
-    scene.add(stim[k].group);
+      pairsAll = pairsAll.concat(pairsFromStops(idxs, ordered));
+    }
+
+    out[stimName] = groupEdges(pairsAll, color);
+    out[stimName].group.visible = false;
+    scene.add(out[stimName].group);
   }
 
-  return stim;
+  // HUD truth probe
+  const stimCount = Object.keys(out).length;
+  const lineCount = Object.values(stimSpec).reduce((acc, s) => acc + (Array.isArray(s?.lines) ? s.lines.length : 0), 0);
+  if (hud.tracksInfo) hud.tracksInfo.textContent = `stimuli.json (${stimCount} stims, ${lineCount} lines)`;
+
+  if (Object.keys(missing).length) {
+    console.warn("Missing stops/edges in stimuli.json:", missing);
+  }
+
+  return out;
 }
 
 function setStim(name) {
@@ -255,6 +306,7 @@ function setStim(name) {
   stimuli[currentStim].group.visible = true;
   hud.stimulusName.textContent = currentStim;
   setActiveButton(currentStim);
+  if (hud.edgeCount) hud.edgeCount.textContent = String(stimuli[currentStim]?.edges?.length ?? 0);
 }
 
 // Buttons
@@ -317,15 +369,20 @@ function tick() {
 // ---------- Boot ----------
 (async function boot() {
   try {
-    const data = await loadAAL();
-    atlas = data.atlas;
-    regions = data.regions;
+    const aal = await loadJSON(AAL_URL);
+    atlas = aal.atlas;
+    regions = aal.regions;
 
     hud.atlasName.textContent = `AAL ${atlas.version}`;
     hud.nodeCount.textContent = String(regions.length);
 
     nodes = buildNodesFromRegions(regions);
-    stimuli = buildStimuli();
+
+    // Tracks from file
+    const stimSpec = await loadJSON(STIM_URL);
+    stimuli = buildStimuliFromSpec(stimSpec);
+
+    // Default
     setStim('rest');
 
     tick();
@@ -334,13 +391,14 @@ function tick() {
       BUILD_ID,
       atlas,
       regionCount: regions.length,
-      sampleLabels: regions.slice(0, 10).map(r => r.label),
+      stimURL: STIM_URL,
       currentStim: () => currentStim,
     };
   } catch (err) {
     console.error(err);
     hud.nodeCount.textContent = 'ERROR';
     hud.hoverName.textContent = String(err?.message || err);
-    hud.atlasName.textContent = 'AAL (load failed)';
+    hud.atlasName.textContent = 'load failed';
+    if (hud.tracksInfo) hud.tracksInfo.textContent = 'load failed';
   }
 })();
