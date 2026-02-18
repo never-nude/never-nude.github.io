@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const BUILD_ID = `BALLPIT-AAL3-${new Date().toISOString()}`;
+const BUILD_ID = `BALLPIT-CONN1-${new Date().toISOString()}`;
 document.getElementById('buildId').textContent = BUILD_ID;
 
-const DATA_VERSION = 'ballpit3';
-const AAL_URL = `./data/aal_regions.json?v=${DATA_VERSION}`;
+const DATA_VERSION = 'ballpit4';
+const AAL_URL  = `./data/aal_regions.json?v=${DATA_VERSION}`;
 const STIM_URL = `./data/stimuli.json?v=${DATA_VERSION}`;
+const CONN_URL = `./data/connectome_edges.json?v=${DATA_VERSION}`;
 
 const hud = {
   nodeCount: document.getElementById('nodeCount'),
@@ -20,8 +21,8 @@ const hud = {
 hud.nodeCount.textContent = 'loading…';
 hud.hoverName.textContent = '—';
 hud.atlasName.textContent = '—';
-if (hud.tracksInfo) hud.tracksInfo.textContent = 'loading…';
-if (hud.edgeCount) hud.edgeCount.textContent = '—';
+hud.tracksInfo.textContent = 'loading…';
+hud.edgeCount.textContent = '—';
 
 // ---------- Three.js baseline ----------
 const canvas = document.getElementById('c');
@@ -95,87 +96,56 @@ function makeCurve(a, b, lift = 0.25) {
   return new THREE.CatmullRomCurve3([a, c1, c2, b]);
 }
 
-function makeEdge(aIdx, bIdx, color) {
+function makeEdge(aIdx, bIdx, color, wNorm = 0.5) {
   const a = nodes[aIdx].position;
   const b = nodes[bIdx].position;
   const curve = makeCurve(a, b, 0.22);
 
-  const tubeGeo = new THREE.TubeGeometry(curve, 48, 0.010, 8, false);
+  const radius = 0.006 + 0.016 * wNorm;
+  const opacity = 0.22 + 0.62 * wNorm;
+  const speed = 0.06 + 0.30 * wNorm;
+
+  const tubeGeo = new THREE.TubeGeometry(curve, 48, radius, 8, false);
   const tubeMat = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.7,
     metalness: 0.0,
     transparent: true,
-    opacity: 0.60,
+    opacity,
   });
   const tube = new THREE.Mesh(tubeGeo, tubeMat);
 
-  const trainGeo = new THREE.SphereGeometry(0.018, 16, 16);
+  const trainR = 0.014 + 0.012 * wNorm;
+  const trainGeo = new THREE.SphereGeometry(trainR, 16, 16);
   const trainMat = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.2,
     metalness: 0.0,
     emissive: new THREE.Color(color),
-    emissiveIntensity: 0.35,
+    emissiveIntensity: 0.25 + 0.45 * wNorm,
   });
   const train = new THREE.Mesh(trainGeo, trainMat);
 
-  return { aIdx, bIdx, curve, tube, train, speed: 0.10 + Math.random() * 0.20, phase: Math.random() };
+  return { aIdx, bIdx, curve, tube, train, speed, phase: Math.random() };
 }
 
-function groupEdges(pairs, color) {
+function groupEdgesWeighted(pairsW, color) {
   const g = new THREE.Group();
-  const edges = pairs.map(([a, b]) => {
-    const e = makeEdge(a, b, color);
-    g.add(e.tube);
-    g.add(e.train);
-    return e;
-  });
+  const ws = pairsW.map(e => e.w);
+  const wMin = Math.min(...ws, 0);
+  const wMax = Math.max(...ws, 1);
+  const denom = (wMax - wMin) || 1;
+
+  const edges = [];
+  for (const e of pairsW) {
+    const wNorm = (e.w - wMin) / denom;
+    const ed = makeEdge(e.aIdx, e.bIdx, color, wNorm);
+    g.add(ed.tube);
+    g.add(ed.train);
+    edges.push(ed);
+  }
   return { group: g, edges };
 }
-
-// Greedy “subway route” through chosen nodes (for unordered stop sets)
-function chainPairsFromIndices(indices) {
-  if (indices.length < 2) return [];
-  const unused = indices.slice();
-  const order = [unused.shift()];
-
-  while (unused.length) {
-    const last = order[order.length - 1];
-    let bestJ = 0;
-    let bestD = Infinity;
-    for (let j = 0; j < unused.length; j++) {
-      const d = nodes[last].position.distanceTo(nodes[unused[j]].position);
-      if (d < bestD) { bestD = d; bestJ = j; }
-    }
-    order.push(unused.splice(bestJ, 1)[0]);
-  }
-
-  const pairs = [];
-  for (let i = 0; i < order.length - 1; i++) pairs.push([order[i], order[i + 1]]);
-  return pairs;
-}
-
-function pairsFromStops(stopIndices, ordered=false) {
-  const idxs = stopIndices.filter(i => Number.isInteger(i));
-  if (idxs.length < 2) return [];
-  if (ordered) {
-    const pairs = [];
-    for (let i = 0; i < idxs.length - 1; i++) pairs.push([idxs[i], idxs[i+1]]);
-    return pairs;
-  }
-  return chainPairsFromIndices(idxs);
-}
-
-// ---------- Load data ----------
-let atlas = null;
-let regions = [];
-let nodes = [];
-let stimuli = {};
-let currentStim = 'rest';
-
-// map aal_value -> node index
-let aalToNodeIndex = new Map();
 
 async function loadJSON(url) {
   const r = await fetch(url, { cache: 'no-store' });
@@ -183,6 +153,16 @@ async function loadJSON(url) {
   return await r.json();
 }
 
+// ---------- Data state ----------
+let atlas = null;
+let regions = [];
+let nodes = [];
+let stimuli = {};
+let currentStim = 'rest';
+let aalToNodeIndex = new Map();
+let connectome = null;
+
+// ---------- Build nodes ----------
 function buildNodesFromRegions(regionsIn) {
   const pts = regionsIn.map(r => new THREE.Vector3(r.center_mm[0], r.center_mm[1], r.center_mm[2]));
   const tf = fitTransform(pts, 1.0);
@@ -222,11 +202,9 @@ function buildNodesFromRegions(regionsIn) {
     meshes.push(m);
   }
 
-  // mapping
   aalToNodeIndex = new Map();
   for (let i = 0; i < regionsIn.length; i++) {
-    const v = Number(regionsIn[i].aal_value);
-    if (Number.isFinite(v)) aalToNodeIndex.set(v, i);
+    aalToNodeIndex.set(Number(regionsIn[i].aal_value), i);
   }
 
   controls.target.set(0, 0, 0);
@@ -234,66 +212,86 @@ function buildNodesFromRegions(regionsIn) {
   return meshes;
 }
 
+// ---------- Build connectome-driven stimuli ----------
+function selectEdgesForLine(line, maxEdges) {
+  const stops = Array.isArray(line?.stops) ? line.stops : [];
+  const idxs = [];
+  for (const v of stops) {
+    const idx = aalToNodeIndex.get(Number(v));
+    if (idx != null) idxs.push(idx);
+  }
+  const set = new Set(idxs);
+  if (set.size < 2) return [];
+
+  // Filter precomputed connectome edges
+  const out = [];
+  for (const e of connectome.edges) {
+    const aIdx = aalToNodeIndex.get(e[0]);
+    const bIdx = aalToNodeIndex.get(e[1]);
+    if (aIdx == null || bIdx == null) continue;
+    if (set.has(aIdx) && set.has(bIdx)) {
+      out.push({ aIdx, bIdx, w: e[2] });
+    }
+  }
+
+  out.sort((x,y) => y.w - x.w);
+  return out.slice(0, maxEdges);
+}
+
 function buildStimuliFromSpec(spec) {
   const out = {};
-  const missing = {};
-
   const stimSpec = spec?.stimuli || {};
-  for (const stimName of Object.keys(stimSpec)) {
+
+  const stimNames = Object.keys(stimSpec);
+  const totalLines = stimNames.reduce((acc, k) => acc + (Array.isArray(stimSpec[k]?.lines) ? stimSpec[k].lines.length : 0), 0);
+
+  hud.tracksInfo.textContent = `stimuli.json (${stimNames.length} stims, ${totalLines} lines) + connectome (${connectome.n_edges} edges)`;
+
+  for (const stimName of stimNames) {
     const s = stimSpec[stimName] || {};
     const color = new THREE.Color(s.color || '#ffffff');
     const lines = Array.isArray(s.lines) ? s.lines : [];
 
-    let pairsAll = [];
+    const maxStimEdges = Number.isFinite(s.max_edges) ? Math.max(6, s.max_edges) : 48;
+    const perLine = Math.max(6, Math.floor(maxStimEdges / Math.max(1, lines.length)));
+
+    const chosen = [];
+    const seen = new Set();
+
     for (const line of lines) {
-      // edges optional: list of [aal_value, aal_value]
-      if (Array.isArray(line?.edges)) {
-        for (const e of line.edges) {
-          if (!Array.isArray(e) || e.length !== 2) continue;
-          const aVal = Number(e[0]), bVal = Number(e[1]);
-          const aIdx = aalToNodeIndex.get(aVal);
-          const bIdx = aalToNodeIndex.get(bVal);
-          if (aIdx == null || bIdx == null) {
-            missing[stimName] = missing[stimName] || [];
-            missing[stimName].push([aVal, bVal]);
-            continue;
-          }
-          pairsAll.push([aIdx, bIdx]);
-        }
-        continue;
+      const maxEdges = Number.isFinite(line?.max_edges) ? Math.max(4, line.max_edges) : perLine;
+      const edges = selectEdgesForLine(line, maxEdges);
+
+      for (const e of edges) {
+        const a = Math.min(e.aIdx, e.bIdx);
+        const b = Math.max(e.aIdx, e.bIdx);
+        const key = `${a}-${b}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        chosen.push(e);
       }
-
-      // stops: list of aal_value
-      const stops = Array.isArray(line?.stops) ? line.stops : [];
-      const ordered = !!line?.ordered;
-
-      const idxs = [];
-      for (const v of stops) {
-        const aVal = Number(v);
-        const idx = aalToNodeIndex.get(aVal);
-        if (idx == null) {
-          missing[stimName] = missing[stimName] || [];
-          missing[stimName].push(aVal);
-          continue;
-        }
-        idxs.push(idx);
-      }
-
-      pairsAll = pairsAll.concat(pairsFromStops(idxs, ordered));
     }
 
-    out[stimName] = groupEdges(pairsAll, color);
-    out[stimName].group.visible = false;
-    scene.add(out[stimName].group);
-  }
+    // Fallback: if connectome produces nothing, make a minimal chain
+    if (chosen.length === 0) {
+      const stopsAll = [];
+      for (const line of lines) {
+        const stops = Array.isArray(line?.stops) ? line.stops : [];
+        for (const v of stops) {
+          const idx = aalToNodeIndex.get(Number(v));
+          if (idx != null) stopsAll.push(idx);
+        }
+      }
+      const uniq = [...new Set(stopsAll)];
+      for (let i = 0; i < uniq.length - 1; i++) {
+        chosen.push({ aIdx: uniq[i], bIdx: uniq[i+1], w: 0.5 });
+      }
+    }
 
-  // HUD truth probe
-  const stimCount = Object.keys(out).length;
-  const lineCount = Object.values(stimSpec).reduce((acc, s) => acc + (Array.isArray(s?.lines) ? s.lines.length : 0), 0);
-  if (hud.tracksInfo) hud.tracksInfo.textContent = `stimuli.json (${stimCount} stims, ${lineCount} lines)`;
-
-  if (Object.keys(missing).length) {
-    console.warn("Missing stops/edges in stimuli.json:", missing);
+    const g = groupEdgesWeighted(chosen, color);
+    g.group.visible = false;
+    scene.add(g.group);
+    out[stimName] = g;
   }
 
   return out;
@@ -305,8 +303,8 @@ function setStim(name) {
   currentStim = name;
   stimuli[currentStim].group.visible = true;
   hud.stimulusName.textContent = currentStim;
+  hud.edgeCount.textContent = String(stimuli[currentStim]?.edges?.length ?? 0);
   setActiveButton(currentStim);
-  if (hud.edgeCount) hud.edgeCount.textContent = String(stimuli[currentStim]?.edges?.length ?? 0);
 }
 
 // Buttons
@@ -378,13 +376,11 @@ function tick() {
 
     nodes = buildNodesFromRegions(regions);
 
-    // Tracks from file
     const stimSpec = await loadJSON(STIM_URL);
+    connectome = await loadJSON(CONN_URL);
+
     stimuli = buildStimuliFromSpec(stimSpec);
-
-    // Default
     setStim('rest');
-
     tick();
 
     window.__BALLPIT__ = {
@@ -392,6 +388,7 @@ function tick() {
       atlas,
       regionCount: regions.length,
       stimURL: STIM_URL,
+      connURL: CONN_URL,
       currentStim: () => currentStim,
     };
   } catch (err) {
@@ -399,6 +396,6 @@ function tick() {
     hud.nodeCount.textContent = 'ERROR';
     hud.hoverName.textContent = String(err?.message || err);
     hud.atlasName.textContent = 'load failed';
-    if (hud.tracksInfo) hud.tracksInfo.textContent = 'load failed';
+    hud.tracksInfo.textContent = 'load failed';
   }
 })();
