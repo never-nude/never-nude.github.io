@@ -58,7 +58,7 @@
   <div id="fallback"></div>
 
   <script type="module">
-    const BUILD = "NN3D-B11-0006"; // Persistence (Save/Load) + associative memory
+    const BUILD = "NN3D-B11-0007_A_ADAMS"; // Persistence (Save/Load) + associative memory
     const STORAGE_KEY = "nn3d_state_v1";
       const AUTOLOAD_KEY = "arnold_autoload_v1";
       let autoLoadOn = false;
@@ -259,7 +259,7 @@
       }
 
       // Node colors
-      let nodeColors = new Float32Array(NODE_COUNT * 3);
+      var nodeColors = new Float32Array(NODE_COUNT * 3);
       for (let i = 0; i < NODE_COUNT; i++) {
         nodeColors[i*3+0] = 0.15;
         nodeColors[i*3+1] = 0.15;
@@ -325,11 +325,11 @@ window.addEventListener('keydown', (ev) => {
 // VIZ_MEM_VIEW_V1: memory-slot coloring toggle (M)
 
 
-let vizMemOn = false;
+var vizMemOn = false;
 
-const VIZ = { OFF: 0, ACT: 1, STIM: 2 };
-let vizMode = VIZ.OFF;
-let vizDirty = true;
+var VIZ = { OFF: 0, ACT: 1, STIM: 2 };
+var vizMode = VIZ.OFF;
+var vizDirty = true;
 
 const __NODE_COUNT = (typeof NODE_COUNT !== "undefined")
   ? NODE_COUNT
