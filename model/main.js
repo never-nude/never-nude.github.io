@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
-const BUILD_ID = "1771474447";
+const BUILD_ID = "1771479650";
 
 // ---------- UI ----------
 const buildEl = document.getElementById("build");
@@ -62,7 +62,7 @@ function mniToThree([x, y, z]) {
   return new THREE.Vector3(x * SCALE, z * SCALE, -y * SCALE);
 }
 
-// Cache-bust assets (OBJLoader doesn't give us fetch cache controls)
+// Cache-bust assets (OBJLoader doesn't give fetch cache controls)
 const GRAPH_URL = `./assets/aal_graph.json?v=${BUILD_ID}`;
 const HULL_URL  = `./assets/brain_hull.obj?v=${BUILD_ID}`;
 
@@ -70,60 +70,163 @@ const HULL_URL  = `./assets/brain_hull.obj?v=${BUILD_ID}`;
 let graph = null;
 let nodeMesh = null;
 let hullGroup = null;
-let edgeLines = null;
-let edgesShown = 0;
-let hoveredIdx = null;
 
-// ---------- HUD render ----------
+let edgeLines = null;
+let edgeHighlightLines = null;
+
+// edgesFiltered = edges above threshold (used for selection & highlight)
+// edgesShown = edges actually drawn (0 if edges toggled off)
+let edgesFiltered = [];
+let edgesShown = 0;
+
+let hoveredIdx = null;
+let selectedIdx = null;
+let selectedNeighbors = new Set();
+
+// Node base data (for restoring after selection clears)
+const nodeBase = []; // { pos: Vector3, baseScale: number, baseColor: Color }
+const dummy = new THREE.Object3D();
+
+// Shared raycast helpers
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+function updateMouseFromEvent(ev) {
+  mouse.x = (ev.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(ev.clientY / innerHeight) * 2 + 1;
+}
+
+// ---------- HUD ----------
 function renderHud() {
   if (!graph) {
     hud(`BUILD ${BUILD_ID}\nLoading…`);
     return;
   }
 
-  const base =
-`BUILD ${BUILD_ID}
-Nodes: ${graph.nodes.length} • Edges shown: ${edgesShown}
-Edge threshold: ${state.edgeThreshold.toFixed(2)}
-Edges: ${state.edgesOn ? "ON" : "OFF"} • Hull: ${state.hullOn ? "ON" : "OFF"} • Auto: ${state.autoRotate ? "ON" : "OFF"}
-Use panel (top-right)`;
+  const lines = [];
+  lines.push(`BUILD ${BUILD_ID}`);
+  lines.push(`Nodes: ${graph.nodes.length} • Edges shown: ${edgesShown}`);
+  lines.push(`Edge threshold: ${state.edgeThreshold.toFixed(2)} • Edges ${state.edgesOn ? "ON" : "OFF"} • Hull ${state.hullOn ? "ON" : "OFF"} • Auto ${state.autoRotate ? "ON" : "OFF"}`);
+
+  if (selectedIdx !== null) {
+    const n = graph.nodes[selectedIdx];
+    lines.push(`Selected: ${n.name}  (${selectedNeighbors.size} neighbors)`);
+    lines.push(`Tip: click empty space or press Esc to clear`);
+  } else {
+    lines.push(`Selected: none (click a node to select)`);
+  }
 
   if (hoveredIdx !== null) {
-    const n = graph.nodes[hoveredIdx];
-    hud(`${base}\n\n${n.name}  (atlas id ${n.id})`);
+    const h = graph.nodes[hoveredIdx];
+    lines.push(`Hover: ${h.name}`);
   } else {
-    hud(base);
+    lines.push(`Hover: none`);
+  }
+
+  hud(lines.join("\n"));
+}
+
+// ---------- Selection helpers ----------
+function computeSelectedNeighbors() {
+  selectedNeighbors = new Set();
+  if (selectedIdx === null || !graph) return;
+
+  for (const e of edgesFiltered) {
+    if (e.source === selectedIdx) selectedNeighbors.add(e.target);
+    else if (e.target === selectedIdx) selectedNeighbors.add(e.source);
   }
 }
 
-// ---------- Edges rebuild ----------
+function applyNodeStyle() {
+  if (!nodeMesh || !graph) return;
+
+  computeSelectedNeighbors();
+
+  const SELECT_COLOR = new THREE.Color(0xffe066);
+  const NEIGH_COLOR  = new THREE.Color(0x9dffb0);
+
+  for (let i = 0; i < graph.nodes.length; i++) {
+    const base = nodeBase[i];
+
+    let scale = base.baseScale;
+    let color = base.baseColor;
+
+    if (selectedIdx !== null) {
+      if (i === selectedIdx) {
+        scale = base.baseScale * 1.70;
+        color = SELECT_COLOR;
+      } else if (selectedNeighbors.has(i)) {
+        scale = base.baseScale * 1.25;
+        color = NEIGH_COLOR;
+      } else {
+        // Dim non-participants to make selection legible
+        const dim = base.baseColor.clone().multiplyScalar(0.25);
+        color = dim;
+      }
+    }
+
+    dummy.position.copy(base.pos);
+    dummy.scale.setScalar(scale);
+    dummy.updateMatrix();
+    nodeMesh.setMatrixAt(i, dummy.matrix);
+    nodeMesh.setColorAt(i, color);
+  }
+
+  nodeMesh.instanceMatrix.needsUpdate = true;
+  nodeMesh.instanceColor.needsUpdate = true;
+}
+
+function clearSelection() {
+  selectedIdx = null;
+  applyNodeStyle();
+  rebuildEdgeHighlight();
+  renderHud();
+}
+
+function setSelection(idx) {
+  selectedIdx = idx;
+  applyNodeStyle();
+  rebuildEdgeHighlight();
+  renderHud();
+}
+
+// ---------- Edges ----------
+function removeLines(objRefName) {
+  const obj = objRefName === "base" ? edgeLines : edgeHighlightLines;
+  if (!obj) return;
+
+  scene.remove(obj);
+  obj.geometry.dispose();
+  obj.material.dispose();
+
+  if (objRefName === "base") edgeLines = null;
+  else edgeHighlightLines = null;
+}
+
 function rebuildEdges() {
   if (!graph) return;
 
-  // Remove old edges
-  if (edgeLines) {
-    scene.remove(edgeLines);
-    edgeLines.geometry.dispose();
-    edgeLines.material.dispose();
-    edgeLines = null;
-  }
+  // Always compute the filtered set (used by selection neighbors)
+  edgesFiltered = graph.edges.filter(e => (e.weight_norm ?? 0) >= state.edgeThreshold);
+
+  // Remove old base edges
+  removeLines("base");
 
   if (!state.edgesOn) {
     edgesShown = 0;
+    rebuildEdgeHighlight(); // will hide highlight too
+    applyNodeStyle();       // neighbors reflect threshold even if edges hidden
     renderHud();
     return;
   }
 
+  edgesShown = edgesFiltered.length;
+
   const nodes = graph.nodes;
-  const edges = graph.edges;
+  const positions = new Float32Array(edgesFiltered.length * 2 * 3);
 
-  const kept = edges.filter(e => (e.weight_norm ?? 0) >= state.edgeThreshold);
-  edgesShown = kept.length;
-
-  const positions = new Float32Array(kept.length * 2 * 3);
-
-  for (let k = 0; k < kept.length; k++) {
-    const e = kept[k];
+  for (let k = 0; k < edgesFiltered.length; k++) {
+    const e = edgesFiltered[k];
     const a = mniToThree(nodes[e.source].mni_mm);
     const b = mniToThree(nodes[e.target].mni_mm);
     const base = k * 6;
@@ -138,7 +241,37 @@ function rebuildEdges() {
   edgeLines = new THREE.LineSegments(geo, mat);
   scene.add(edgeLines);
 
+  rebuildEdgeHighlight();
+  applyNodeStyle();
   renderHud();
+}
+
+function rebuildEdgeHighlight() {
+  removeLines("highlight");
+
+  if (!graph || selectedIdx === null || !state.edgesOn) return;
+
+  const nodes = graph.nodes;
+  const incident = edgesFiltered.filter(e => e.source === selectedIdx || e.target === selectedIdx);
+  if (!incident.length) return;
+
+  const positions = new Float32Array(incident.length * 2 * 3);
+
+  for (let k = 0; k < incident.length; k++) {
+    const e = incident[k];
+    const a = mniToThree(nodes[e.source].mni_mm);
+    const b = mniToThree(nodes[e.target].mni_mm);
+    const base = k * 6;
+    positions[base + 0] = a.x; positions[base + 1] = a.y; positions[base + 2] = a.z;
+    positions[base + 3] = b.x; positions[base + 4] = b.y; positions[base + 5] = b.z;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.LineBasicMaterial({ color: 0xffffcc, transparent: true, opacity: 0.90 });
+  edgeHighlightLines = new THREE.LineSegments(geo, mat);
+  scene.add(edgeHighlightLines);
 }
 
 // ---------- Loaders ----------
@@ -193,44 +326,58 @@ function addNodes(g) {
   nodeMesh = new THREE.InstancedMesh(sphereGeo, sphereMat, nodes.length);
   nodeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
-  const dummy = new THREE.Object3D();
   const c = new THREE.Color();
 
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
-    dummy.position.copy(mniToThree(n.mni_mm));
+    const pos = mniToThree(n.mni_mm);
 
-    const s = 0.7 + 0.6 * Math.sqrt(n.volume_mm3 / 20000);
-    dummy.scale.setScalar(THREE.MathUtils.clamp(s, 0.6, 1.8));
-
-    dummy.updateMatrix();
-    nodeMesh.setMatrixAt(i, dummy.matrix);
+    const baseScale = THREE.MathUtils.clamp(0.7 + 0.6 * Math.sqrt(n.volume_mm3 / 20000), 0.6, 1.8);
 
     if (n.hemisphere === "L") c.setHex(0xff7aa2);
     else if (n.hemisphere === "R") c.setHex(0x7ad7ff);
     else c.setHex(0xd6d6d6);
+
+    nodeBase[i] = {
+      pos,
+      baseScale,
+      baseColor: c.clone(),
+    };
+
+    dummy.position.copy(pos);
+    dummy.scale.setScalar(baseScale);
+    dummy.updateMatrix();
+    nodeMesh.setMatrixAt(i, dummy.matrix);
     nodeMesh.setColorAt(i, c);
   }
-  nodeMesh.instanceColor.needsUpdate = true;
 
+  nodeMesh.instanceColor.needsUpdate = true;
   scene.add(nodeMesh);
 
-  // Hover raycast
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-
-  addEventListener("pointermove", (ev) => {
-    mouse.x = (ev.clientX / innerWidth) * 2 - 1;
-    mouse.y = -(ev.clientY / innerHeight) * 2 + 1;
-
+  // Hover
+  window.addEventListener("pointermove", (ev) => {
+    updateMouseFromEvent(ev);
     raycaster.setFromCamera(mouse, camera);
     const hits = raycaster.intersectObject(nodeMesh);
-    if (hits.length) hoveredIdx = hits[0].instanceId;
-    else hoveredIdx = null;
-
+    hoveredIdx = hits.length ? hits[0].instanceId : null;
     renderHud();
   });
+
+  // Select (click)
+  renderer.domElement.addEventListener("pointerdown", (ev) => {
+    if (ev.button !== 0) return;
+    updateMouseFromEvent(ev);
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObject(nodeMesh);
+    if (hits.length) setSelection(hits[0].instanceId);
+    else clearSelection();
+  });
 }
+
+// Esc clears selection
+window.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") clearSelection();
+});
 
 // ---------- UI wiring ----------
 function syncUI() {
