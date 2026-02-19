@@ -2,7 +2,60 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
-const BUILD_ID = "1771479650";
+const BUILD_ID = "1771512836";
+
+
+
+function prettyAalLabel(raw) {
+  if (!raw) return "";
+
+  // Hemisphere suffix
+  let hemi = "";
+  if (raw.endsWith("_L")) { hemi = "Left"; raw = raw.slice(0, -2); }
+  else if (raw.endsWith("_R")) { hemi = "Right"; raw = raw.slice(0, -2); }
+
+  // Token expansion
+  const tok = {
+    Sup: "Superior",
+    Mid: "Middle",
+    Inf: "Inferior",
+    Ant: "Anterior",
+    Post: "Posterior",
+    Med: "Medial",
+    Lat: "Lateral",
+    Orb: "Orbital",
+    Oper: "Opercular",
+    Tri: "Triangular",
+    Rol: "Rolandic",
+    Rect: "Rectus",
+    Supp: "Supplementary",
+    Cingulum: "Cingulate",
+    ParaHippocampal: "Parahippocampal",
+  };
+
+  let parts = raw.split("_").map(p => tok[p] || p);
+
+  // Add spaces for CamelCase tokens if any
+  parts = parts.map(p => p.replace(/([a-z])([A-Z])/g, "$1 $2"));
+
+  // Small reorder heuristics
+  const lobes = new Set(["Frontal", "Temporal", "Parietal", "Occipital"]);
+  const desc  = new Set(["Superior", "Middle", "Inferior", "Medial", "Lateral", "Anterior", "Posterior", "Orbital"]);
+
+  // "Frontal Superior" -> "Superior Frontal"
+  if (parts.length >= 2 && lobes.has(parts[0]) && desc.has(parts[1])) {
+    parts = [parts[1], parts[0], ...parts.slice(2)];
+  }
+
+  // "Cingulate Anterior" -> "Anterior Cingulate"
+  if (parts.length >= 2 && parts[0] === "Cingulate" && (parts[1] === "Anterior" || parts[1] === "Posterior")) {
+    parts = [parts[1], parts[0], ...parts.slice(2)];
+  }
+
+  let label = parts.join(" ");
+  if (hemi) label += ` (${hemi})`;
+  return label;
+}
 
 // ---------- UI ----------
 const buildEl = document.getElementById("build");
@@ -110,7 +163,7 @@ function renderHud() {
 
   if (selectedIdx !== null) {
     const n = graph.nodes[selectedIdx];
-    lines.push(`Selected: ${n.name}  (${selectedNeighbors.size} neighbors)`);
+    lines.push(`Selected: ${prettyAalLabel(n.name)}  (${selectedNeighbors.size} neighbors)`);
     lines.push(`Tip: click empty space or press Esc to clear`);
   } else {
     lines.push(`Selected: none (click a node to select)`);
@@ -118,7 +171,7 @@ function renderHud() {
 
   if (hoveredIdx !== null) {
     const h = graph.nodes[hoveredIdx];
-    lines.push(`Hover: ${h.name}`);
+    lines.push(`Hover: ${prettyAalLabel(h.name)}`);
   } else {
     lines.push(`Hover: none`);
   }
