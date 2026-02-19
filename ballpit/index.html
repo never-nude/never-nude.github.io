@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ball Pit — Subway</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; background:#060b12; overflow:hidden; }
+    #c { width:100vw; height:100vh; display:block; }
+
+    #hud {
+      position: fixed; left: 12px; top: 12px; z-index: 9999;
+      color: rgba(255,255,255,0.92);
+      font: 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: rgba(0,0,0,0.42);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      min-width: 320px;
+      backdrop-filter: blur(6px);
+    }
+    #hud .titleRow { display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
+    #hud .title { font-weight: 700; letter-spacing: 0.2px; }
+    #hud .pill {
+      display:inline-block; padding:2px 8px; border-radius:999px;
+      border:1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      font-size: 11px;
+    }
+    #hud .meta { opacity:0.85; display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 8px; }
+    #hud .meta span b { font-weight:600; opacity:0.95; }
+    #hud .buttons { display:flex; gap:6px; margin: 8px 0 8px; flex-wrap:wrap; }
+    #hud button {
+      appearance:none; border:1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+      padding: 4px 10px; border-radius: 10px;
+      cursor: pointer; font-size: 12px;
+    }
+    #hud button.active { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.28); }
+    #hud .hint { opacity:0.75; line-height:1.35; }
+    #hud .hover { margin-top: 8px; opacity:0.9; }
+    #hud .hover b { font-weight:600; }
+
+    #marker {
+      position: fixed; right: 12px; bottom: 12px; z-index: 9999;
+      color: rgba(255,255,255,0.90);
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font: 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="titleRow">
+      <div class="title">Ball Pit <span class="pill">subway</span></div>
+      <div class="pill" id="buildId">build …</div>
+    </div>
+
+    <div class="meta">
+      <span><b>stimulus</b> <span id="stimulusName">rest</span></span>
+      <span><b>nodes</b> <span id="nodeCount">?</span></span>
+      <span><b>edges</b> <span id="edgeCount">?</span></span>
+      <span><b>lines</b> <span id="lineCount">?</span></span>
+      <span><b>trains</b> <span id="trainCount">?</span></span>
+    </div>
+
+    <div class="buttons">
+      <button data-stim="rest" class="active">Rest</button>
+      <button data-stim="visual">Visual</button>
+      <button data-stim="motor">Motor</button>
+      <button data-stim="auditory">Auditory</button>
+    </div>
+
+    <div class="hint">
+      Mouse: drag to orbit • wheel: zoom • right-drag: pan
+    </div>
+
+    <div class="hover">
+      hover — <b id="hoverName">none</b>
+    </div>
+  </div>
+
+  <canvas id="c"></canvas>
+
+  <div id="marker">Ball Pit • ballpit-url1</div>
+
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+    "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="./ballpit_subway.js?v=ballpit-url1"></script>
+</body>
+</html>
