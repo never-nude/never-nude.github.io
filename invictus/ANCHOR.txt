@@ -1,6 +1,6 @@
 PROJECT=Invictus
-MILESTONE=A_AEGIS_SCAFFOLD
+MILESTONE=B_BASTION_BOARD_RENDER
 REPO_ROOT=/Users/michael/dev/never-nude.github.io
 SERVE_CMD=python3 -m http.server 6657 --bind 127.0.0.1
-LOCAL_URL=http://127.0.0.1:6657/invictus/?ts=20260218-202727
+LOCAL_URL=http://127.0.0.1:6657/invictus/?ts=20260218-213059
 PUBLISH_URL=https://digitalbrain.live/invictus/
