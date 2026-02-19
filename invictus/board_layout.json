@@ -702,5 +702,5 @@
       "c": 19
     }
   ],
-  "source_truth": "invictus edge-fill: add void cells with >=3 live neighbors"
+  "source_truth": "restore edge-fill 11 (5 left, 6 right): void cells w/ >=3 neighbors"
 }
