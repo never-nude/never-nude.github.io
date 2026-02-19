@@ -255,7 +255,7 @@ function layoutPositions(regions) {
   UI.nodeCount.textContent = String(nodeGroup.children.length);
 
   // Lines spec
-  const spec = await loadJSON(`./data/lines.json?v=${ts}`);
+  const spec = await loadJSON(`./data/lines2.json?v=${ts}`);
   const lines = spec.lines ?? [];
 
   // Color palette for lines
