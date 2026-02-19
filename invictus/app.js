@@ -75,7 +75,17 @@ function setupGame(layout, scenario) {
 
   // State
   const initialUnits = Array.isArray(scenario?.units) ? scenario.units : [];
+
+  // UNITCOUNT_DYNAMIC
+  const uc = document.querySelector('#unitCount');
+  if (uc) uc.textContent = String(initialUnits.length);
+
   let units = deepClone(initialUnits);
+
+  // UNITCOUNT_PATCH
+  const ucEl = document.querySelector('#unitCount');
+  if (ucEl) ucEl.textContent = String(units.length);
+
 
   let turnSide = "Blue";
   let activationsUsed = 0;

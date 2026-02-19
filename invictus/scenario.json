@@ -1,5 +1,5 @@
 {
-  "name": "Even Lines \u2014 Cohort Test",
+  "name": "Triplex Lines \u2014 Echelon Default (12 per side)",
   "victory": {
     "mode": "standards",
     "target": 6
@@ -7,23 +7,24 @@
   "standards": [],
   "units": [
     {
-      "id": "B_GEN_1",
+      "id": "B_SLG_1",
       "side": "Blue",
-      "type": "GEN",
-      "quality": "Veteran",
-      "hp": 5,
-      "maxHp": 5,
-      "r": 5,
-      "c": 5,
-      "moraleRadius": 3,
-      "attack": {
-        "range": 1,
-        "dice": "1d6",
-        "hitOn": [
-          6
-        ],
-        "notes": "Adjacent only; hits only on a 6."
-      }
+      "type": "SLG",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 4,
+      "c": 12
+    },
+    {
+      "id": "B_SLG_2",
+      "side": "Blue",
+      "type": "SLG",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 4,
+      "c": 14
     },
     {
       "id": "B_CAV_1",
@@ -32,8 +33,18 @@
       "quality": "Veteran",
       "hp": 4,
       "maxHp": 4,
-      "r": 4,
-      "c": 7
+      "r": 3,
+      "c": 10
+    },
+    {
+      "id": "B_CAV_2",
+      "side": "Blue",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 16
     },
     {
       "id": "B_INF_1",
@@ -42,18 +53,48 @@
       "quality": "Regular",
       "hp": 4,
       "maxHp": 4,
-      "r": 5,
-      "c": 6
+      "r": 3,
+      "c": 11
     },
     {
-      "id": "B_SKR_1",
+      "id": "B_INF_2",
       "side": "Blue",
-      "type": "SKR",
-      "quality": "Green",
-      "hp": 3,
-      "maxHp": 3,
-      "r": 6,
-      "c": 7
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 12
+    },
+    {
+      "id": "B_INF_3",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 13
+    },
+    {
+      "id": "B_INF_4",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 14
+    },
+    {
+      "id": "B_INF_5",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 15
     },
     {
       "id": "B_ARC_1",
@@ -62,18 +103,28 @@
       "quality": "Regular",
       "hp": 3,
       "maxHp": 3,
-      "r": 5,
-      "c": 8
+      "r": 2,
+      "c": 12
     },
     {
-      "id": "R_GEN_1",
-      "side": "Red",
+      "id": "B_ARC_2",
+      "side": "Blue",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 2,
+      "c": 14
+    },
+    {
+      "id": "B_GEN_1",
+      "side": "Blue",
       "type": "GEN",
       "quality": "Veteran",
       "hp": 5,
       "maxHp": 5,
-      "r": 5,
-      "c": 20,
+      "r": 2,
+      "c": 13,
       "moraleRadius": 3,
       "attack": {
         "range": 1,
@@ -85,14 +136,44 @@
       }
     },
     {
+      "id": "R_SLG_1",
+      "side": "Red",
+      "type": "SLG",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 12
+    },
+    {
+      "id": "R_SLG_2",
+      "side": "Red",
+      "type": "SLG",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 14
+    },
+    {
       "id": "R_CAV_1",
       "side": "Red",
       "type": "CAV",
       "quality": "Veteran",
       "hp": 4,
       "maxHp": 4,
-      "r": 4,
-      "c": 19
+      "r": 7,
+      "c": 10
+    },
+    {
+      "id": "R_CAV_2",
+      "side": "Red",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 16
     },
     {
       "id": "R_INF_1",
@@ -101,18 +182,48 @@
       "quality": "Regular",
       "hp": 4,
       "maxHp": 4,
-      "r": 5,
-      "c": 19
+      "r": 7,
+      "c": 11
     },
     {
-      "id": "R_SKR_1",
+      "id": "R_INF_2",
       "side": "Red",
-      "type": "SKR",
-      "quality": "Green",
-      "hp": 3,
-      "maxHp": 3,
-      "r": 6,
-      "c": 19
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 12
+    },
+    {
+      "id": "R_INF_3",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 13
+    },
+    {
+      "id": "R_INF_4",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 14
+    },
+    {
+      "id": "R_INF_5",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 15
     },
     {
       "id": "R_ARC_1",
@@ -121,9 +232,38 @@
       "quality": "Regular",
       "hp": 3,
       "maxHp": 3,
-      "r": 5,
-      "c": 17
+      "r": 8,
+      "c": 12
+    },
+    {
+      "id": "R_ARC_2",
+      "side": "Red",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 8,
+      "c": 14
+    },
+    {
+      "id": "R_GEN_1",
+      "side": "Red",
+      "type": "GEN",
+      "quality": "Veteran",
+      "hp": 5,
+      "maxHp": 5,
+      "r": 8,
+      "c": 13,
+      "moraleRadius": 3,
+      "attack": {
+        "range": 1,
+        "dice": "1d6",
+        "hitOn": [
+          6
+        ],
+        "notes": "Adjacent only; hits only on a 6."
+      }
     }
   ],
-  "notes": "Milestone D: add Generals (HP=5), aura radius=3 shown on select. Attack rule recorded (not executed yet)."
+  "notes": "Symmetric top/bottom. Front=2 SLG (gap at center). Second=INF adjacent block flanked by CAV. Back=ARC GEN ARC."
 }
