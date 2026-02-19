@@ -1,5 +1,5 @@
-three46 AAL viewer
-BUILD_ID: 1771458386
-Serve from: $HOME/dev/nn3d/evolve-lab
-Command: python3 -m http.server 1083
-URL: http://localhost:1083/three46/?v=1771458386
+model AAL viewer (Ariadne)
+BUILD_ID: 1771474447
+Local dev URL: http://localhost:1099/model/?v=1771474447
+Live URL (www): https://www.digitalbrain.live/model/?v=1771474447
+Live URL (gh):  https://never-nude.github.io/model/?v=1771474447
