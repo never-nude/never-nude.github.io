@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
-const BUILD_ID = "1771536835";
+const BUILD_ID = "1771539535";
 
 
 
@@ -81,7 +81,7 @@ buildEl.textContent = `model • AAL viewer • BUILD ${BUILD_ID}`;
 const state = {
   edgesOn: true,
   hullOn: true,
-  autoRotate: false,
+  autoRotate: true,
   edgeThreshold: 0.08,
 };
 
@@ -100,7 +100,7 @@ renderer.domElement.style.touchAction = "none";
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.autoRotateSpeed = 0.7;
+controls.autoRotateSpeed = 1.4;
 controls.target.set(0, 0.2, 0);
 controls.update();
 controls.saveState();
