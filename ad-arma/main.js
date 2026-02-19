@@ -1,22 +1,57 @@
 (function(){
   const $ = (sel) => document.querySelector(sel);
   const build = window.AD_ARMA_BUILD_ID || "UNKNOWN";
-  const port = Number(window.location.port) || 9981;
+  const port  = Number(window.location.port) || 9981;
 
   const ROW_COUNTS = [12,13,14,15,16,17,16,15,14,13,12];
   const ROWS = ROW_COUNTS.length;
+  const TOTAL = ROW_COUNTS.reduce((a,b)=>a+b,0);
 
+  const UNIT_TYPES = ["Cavalry","Infantry","Slingers","Archers","General"];
+  const QUALITIES  = ["Green","Regular","Veteran"];
+  const SIDES      = ["Blue","Red"];
+
+  // Pointy-top hex geometry (axial coords -> pixels)
   const SIZE = 28;
   const SQRT3 = Math.sqrt(3);
-  const toPixel = (q, r) => ({ x: SQRT3 * SIZE * (q + r/2), y: 1.5 * SIZE * r });
+  const toPixel = (q, r) => ({
+    x: SQRT3 * SIZE * (q + r/2),
+    y: 1.5 * SIZE * r,
+  });
 
   const state = {
-    meta: { build, port, feature: "SCENARIO_LOADING_V0" },
-    board: { rowCounts: ROW_COUNTS, rows: ROWS, cells: [], viewBox: "0 0 10 10", selectedCellId: null, selectedUnitId: null, midX: null },
+    meta: {
+      build,
+      port,
+      milestone: window.AD_ARMA_MILESTONE || "AUGUSTUS",
+      feature: window.AD_ARMA_FEATURE || "SCENARIO_LOADING_V0_TYPE5_LOCKED",
+    },
+    board: {
+      rowCounts: ROW_COUNTS,
+      rows: ROWS,
+      total: TOTAL,
+      cells: [],
+      viewBox: "0 0 10 10",
+      selectedCellId: null,
+      selectedUnitId: null,
+      midX: null,
+    },
+    scenarios: {
+      indexPath: "/scenarios/index.json",
+      list: [],
+      loadedId: null,
+      loadedLabel: "none",
+    },
     units: [],
     nextUnitId: 1,
-    scenarios: { index: [], loadedId: null, loadedLabel: null },
-    ui: { editMode: true, tool: "place", side: "Blue", type: "Infantry", quality: "Regular", pings: 0 }
+    ui: {
+      editMode: true,
+      tool: "place",
+      side: "Blue",
+      type: "Infantry",
+      quality: "Regular",
+      pings: 0,
+    }
   };
   window.AD_ARMA_STATE = state;
 
@@ -26,43 +61,82 @@
     el.textContent = (el.textContent ? el.textContent + "\n" : "") + msg;
   }
 
+  // Catch “I accidentally loaded some script” incidents
+  function scriptSanityCheck(){
+    const allow = new Set(["/build.js", "/main.js"]);
+    const paths = [...document.scripts]
+      .map(s => s.src)
+      .filter(Boolean)
+      .map(src => {
+        try { return new URL(src, window.location.href).pathname; }
+        catch { return src; }
+      })
+      .filter(p => String(p).endsWith(".js"));
+
+    const unexpected = paths.filter(p => !allow.has(p));
+    if (unexpected.length){
+      log(`[sanity] WARNING unexpected scripts loaded: ${unexpected.join(", ")}`);
+      console.warn("[Ad Arma v2] unexpected scripts:", unexpected);
+    }else{
+      log("[sanity] scripts OK (build.js + main.js only)");
+    }
+  }
+
   function hexPoints(cx, cy, s){
     const pts = [];
     for (let i=0;i<6;i++){
-      const angle = (Math.PI/180) * (60*i - 30);
-      pts.push(`${(cx + s*Math.cos(angle)).toFixed(2)},${(cy + s*Math.sin(angle)).toFixed(2)}`);
+      const angle = (Math.PI/180) * (60*i - 30); // pointy-top
+      const px = cx + s * Math.cos(angle);
+      const py = cy + s * Math.sin(angle);
+      pts.push(`${px.toFixed(2)},${py.toFixed(2)}`);
     }
     return pts.join(" ");
   }
 
   function buildBoard(){
     const cells = [];
-    const rOffset = Math.floor(ROWS/2);
-    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    const rOffset = Math.floor(ROWS/2); // r is -5..+5
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 
     for (let row=0; row<ROWS; row++){
       const r = row - rOffset;
       const count = ROW_COUNTS[row];
 
+      // Symmetry: mean(x)=0 -> qMin = -(r + (count-1))/2
       let qMin = -((r + (count - 1)) / 2);
       if (!Number.isInteger(qMin)) qMin = Math.round(qMin);
 
       for (let i=0;i<count;i++){
         const q = qMin + i;
         const {x,y} = toPixel(q,r);
-        minX = Math.min(minX, x - SIZE); maxX = Math.max(maxX, x + SIZE);
-        minY = Math.min(minY, y - SIZE); maxY = Math.max(maxY, y + SIZE);
-        cells.push({ id: `${q},${r}`, q, r, rowIndex: row, colIndex: i, x, y, points: hexPoints(x,y,SIZE) });
+
+        minX = Math.min(minX, x - SIZE);
+        maxX = Math.max(maxX, x + SIZE);
+        minY = Math.min(minY, y - SIZE);
+        maxY = Math.max(maxY, y + SIZE);
+
+        cells.push({
+          id: `${q},${r}`,
+          q, r,
+          rowIndex: row,
+          colIndex: i,
+          x, y,
+          points: hexPoints(x,y,SIZE),
+        });
       }
     }
-    state.board.midX = (minX + maxX)/2;
+
+    state.board.midX = (minX + maxX) / 2;
 
     const margin = SIZE * 1.4;
-    const vbX = (minX - margin), vbY = (minY - margin);
-    const vbW = (maxX - minX) + margin*2, vbH = (maxY - minY) + margin*2;
+    const vbX = (minX - margin);
+    const vbY = (minY - margin);
+    const vbW = (maxX - minX) + margin*2;
+    const vbH = (maxY - minY) + margin*2;
 
     state.board.cells = cells;
     state.board.viewBox = `${vbX.toFixed(2)} ${vbY.toFixed(2)} ${vbW.toFixed(2)} ${vbH.toFixed(2)}`;
+
     log(`[board] built rows=${ROWS} total=${cells.length} midX=${state.board.midX.toFixed(2)} rowCounts=[${ROW_COUNTS.join(",")}]`);
   }
 
@@ -71,9 +145,33 @@
     const q = Number(qs), r = Number(rs);
     return state.board.cells.find(c => c.q === q && c.r === r) || null;
   }
-  function unitAt(q,r){ return state.units.find(u => u.q === q && u.r === r) || null; }
-  function typeLetter(type){ return type==="Infantry" ? "I" : type==="Cavalry" ? "C" : type==="Missiles" ? "M" : "?"; }
-  function qualLetter(q){ return q==="Green" ? "G" : q==="Regular" ? "R" : q==="Veteran" ? "V" : "?"; }
+
+  function unitAt(q,r){
+    return state.units.find(u => u.q === q && u.r === r) || null;
+  }
+
+  function typeLetter(type){
+    if (type === "Infantry") return "I";
+    if (type === "Cavalry") return "C";
+    if (type === "Slingers") return "S";
+    if (type === "Archers") return "A";
+    if (type === "General") return "G";
+    return "?";
+  }
+  function qualLetter(q){
+    if (q === "Green") return "G";
+    if (q === "Regular") return "R";
+    if (q === "Veteran") return "V";
+    return "?";
+  }
+
+  function normalizeUnit(u){
+    const q = Number(u.q), r = Number(u.r);
+    const side = SIDES.includes(u.side) ? u.side : "Blue";
+    const type = UNIT_TYPES.includes(u.type) ? u.type : "Infantry";
+    const quality = QUALITIES.includes(u.quality) ? u.quality : "Regular";
+    return { q, r, side, type, quality };
+  }
 
   function placeOrUpdateUnit(q,r){
     const existing = unitAt(q,r);
@@ -85,7 +183,13 @@
       log(`[edit] updated unit ${existing.id} at ${q},${r} -> ${existing.side} ${existing.type} ${existing.quality}`);
       return;
     }
-    const u = { id: `u${state.nextUnitId++}`, q, r, side: state.ui.side, type: state.ui.type, quality: state.ui.quality };
+    const u = {
+      id: `u${state.nextUnitId++}`,
+      q, r,
+      side: state.ui.side,
+      type: state.ui.type,
+      quality: state.ui.quality,
+    };
     state.units.push(u);
     state.board.selectedUnitId = u.id;
     log(`[edit] placed unit ${u.id} at ${q},${r} -> ${u.side} ${u.type} ${u.quality}`);
@@ -96,10 +200,18 @@
     state.units = state.units.filter(u => !(u.q === q && u.r === r));
     if (state.units.length !== before){
       log(`[edit] erased unit at ${q},${r}`);
-      if (state.board.selectedUnitId && !state.units.some(u => u.id === state.board.selectedUnitId)){
-        state.board.selectedUnitId = null;
+      if (state.board.selectedUnitId){
+        const still = state.units.some(u => u.id === state.board.selectedUnitId);
+        if (!still) state.board.selectedUnitId = null;
       }
     }
+  }
+
+  function unitTypeClass(t){
+    if (t === "General") return "unitGeneral";
+    if (t === "Archers") return "unitArchers";
+    if (t === "Slingers") return "unitSlingers";
+    return "";
   }
 
   function renderBoard(){
@@ -113,50 +225,112 @@
     parts.push('<g id="hexes">');
     for (const c of state.board.cells){
       const cls = (c.id === selCell) ? "hex selected" : "hex";
-      parts.push(`<polygon class="${cls}" data-cell-id="${c.id}" points="${c.points}" vector-effect="non-scaling-stroke"></polygon>`);
+      parts.push(
+        `<polygon class="${cls}" data-cell-id="${c.id}" points="${c.points}" vector-effect="non-scaling-stroke">` +
+          `<title>q=${c.q} r=${c.r} row=${c.rowIndex} col=${c.colIndex}</title>` +
+        `</polygon>`
+      );
     }
     parts.push("</g>");
 
+    // Units layer
     parts.push('<g id="units">');
     for (const u of state.units){
       const cell = cellById(`${u.q},${u.r}`);
       if (!cell) continue;
       const isSel = (u.id === selUnit);
       const clsSide = (u.side === "Red") ? "unitRed" : "unitBlue";
-      const cls = isSel ? "unitSelected" : "";
+      const classes = [];
+      if (isSel) classes.push("unitSelected");
+      const tc = unitTypeClass(u.type);
+      if (tc) classes.push(tc);
+
       const rTok = 14;
+
       parts.push(
-        `<g data-unit-id="${u.id}" transform="translate(${cell.x.toFixed(2)} ${cell.y.toFixed(2)})" class="${cls}">` +
+        `<g data-unit-id="${u.id}" transform="translate(${cell.x.toFixed(2)} ${cell.y.toFixed(2)})" class="${classes.join(" ")}">` +
           `<circle class="unitCircle ${clsSide}" r="${rTok}"></circle>` +
           `<text class="unitTextMain" y="-2">${typeLetter(u.type)}</text>` +
           `<text class="unitTextQual" y="11">${qualLetter(u.quality)}</text>` +
+          `<title>${u.side} ${u.type} ${u.quality} (${u.id})</title>` +
         `</g>`
       );
     }
     parts.push("</g>");
 
     svg.innerHTML = parts.join("");
+
     $("#unitCount").textContent = String(state.units.length);
 
     const selectedText = selCell ? selCell : "none";
     $("#selected").textContent = selectedText;
 
-    const scen = state.scenarios.loadedLabel ? ` scenario=${state.scenarios.loadedLabel}` : "";
-    $("#boardMeta").textContent =
-      `board: rows=${ROWS} total=${state.board.cells.length} (expected 157) midX=${state.board.midX.toFixed(2)} units=${state.units.length}${scen} selected=${selectedText}`;
+    $("#loadedScenario").textContent = state.scenarios.loadedLabel || "none";
 
-    $("#scenarioLoaded").textContent = state.scenarios.loadedLabel || "none";
+    $("#boardMeta").textContent =
+      `board: rows=${ROWS} total=${state.board.cells.length} (expected 157) midX=${state.board.midX.toFixed(2)} units=${state.units.length} scenario=${state.scenarios.loadedLabel} selected=${selectedText}`;
   }
 
   async function loadTruth(){
     try{
-      const res = await fetch(`TRUTH.txt?ts=${Date.now()}`, { cache: "no-store" });
+      const res = await fetch(`/TRUTH.txt?ts=${Date.now()}`, { cache: "no-store" });
       const txt = await res.text();
       $("#truth").textContent = txt.trim();
       log(`[truth] loaded @ ${stamp()}`);
     }catch(e){
       $("#truth").textContent = "TRUTH fetch failed";
       log(`[truth] ERROR @ ${stamp()}: ${String(e)}`);
+    }
+  }
+
+  async function loadScenarioIndex(){
+    const sel = $("#scenarioSel");
+    try{
+      const res = await fetch(`${state.scenarios.indexPath}?ts=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`scenario index HTTP ${res.status}`);
+      const data = await res.json();
+      const list = Array.isArray(data.scenarios) ? data.scenarios : [];
+      state.scenarios.list = list;
+
+      sel.innerHTML = list.map(s => `<option value="${s.id}">${s.label}</option>`).join("");
+      if (!sel.value && list.length) sel.value = list[0].id;
+
+      log(`[scenarios] index loaded (${list.length})`);
+    }catch(e){
+      sel.innerHTML = `<option value="">(scenario index missing)</option>`;
+      log(`[scenarios] ERROR: ${String(e)}`);
+    }
+  }
+
+  async function loadScenarioById(id){
+    const sc = state.scenarios.list.find(s => s.id === id);
+    if (!sc){
+      log(`[scenarios] no scenario id=${id}`);
+      return;
+    }
+    try{
+      const url = `/${sc.file}?ts=${Date.now()}`;
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`scenario HTTP ${res.status}`);
+      const data = await res.json();
+
+      const units = Array.isArray(data.units) ? data.units.map(normalizeUnit) : [];
+      state.units = [];
+      state.nextUnitId = 1;
+      for (const u of units){
+        state.units.push({ id: `u${state.nextUnitId++}`, ...u });
+      }
+
+      state.board.selectedCellId = null;
+      state.board.selectedUnitId = null;
+
+      state.scenarios.loadedId = sc.id;
+      state.scenarios.loadedLabel = sc.label;
+
+      renderBoard();
+      log(`[scenarios] loaded ${sc.label} units=${state.units.length}`);
+    }catch(e){
+      log(`[scenarios] ERROR loading ${sc.label}: ${String(e)}`);
     }
   }
 
@@ -168,93 +342,47 @@
     state.ui.quality = $("#qualSel").value;
   }
 
-  function populateScenarioSelect(list){
-    const sel = $("#scenarioSel");
-    sel.innerHTML = "";
-    for (const s of list){
-      const opt = document.createElement("option");
-      opt.value = s.id;
-      opt.textContent = s.label;
-      sel.appendChild(opt);
-    }
-    // default to demo_lines if present (more visible than empty)
-    if (list.some(s => s.id === "demo_lines")) sel.value = "demo_lines";
-  }
-
-  async function loadScenarioIndex(){
-    try{
-      const res = await fetch(`scenarios/_index.json?ts=${Date.now()}`, { cache: "no-store" });
-      const list = await res.json();
-      if (!Array.isArray(list)) throw new Error("scenario index is not an array");
-      state.scenarios.index = list;
-      populateScenarioSelect(list);
-      log(`[scenario] index loaded (${list.length})`);
-    }catch(e){
-      state.scenarios.index = [];
-      const sel = $("#scenarioSel");
-      sel.innerHTML = `<option value="">(no scenarios)</option>`;
-      log(`[scenario] ERROR loading index: ${String(e)}`);
-    }
-  }
-
-  function applyScenario(scen){
-    const units = Array.isArray(scen.units) ? scen.units : [];
-    state.units = units.map((u, i) => ({
-      id: `u${i+1}`,
-      q: Number(u.q),
-      r: Number(u.r),
-      side: (u.side === "Red") ? "Red" : "Blue",
-      type: (u.type === "Cavalry" || u.type === "Missiles" || u.type === "Infantry") ? u.type : "Infantry",
-      quality: (u.quality === "Green" || u.quality === "Regular" || u.quality === "Veteran") ? u.quality : "Regular",
-    }));
-    state.nextUnitId = state.units.length + 1;
-
-    state.board.selectedCellId = null;
-    state.board.selectedUnitId = null;
-
-    state.scenarios.loadedId = scen.id || null;
-    state.scenarios.loadedLabel = scen.label || scen.id || "unknown";
-
-    log(`[scenario] loaded: ${state.scenarios.loadedLabel} units=${state.units.length}`);
-    renderBoard();
-  }
-
-  async function loadScenarioById(id){
-    const hit = state.scenarios.index.find(s => s.id === id);
-    if (!hit){
-      log(`[scenario] not found in index: ${id}`);
-      return;
-    }
-    try{
-      const res = await fetch(`scenarios/${hit.file}?ts=${Date.now()}`, { cache: "no-store" });
-      const scen = await res.json();
-      applyScenario(scen);
-    }catch(e){
-      log(`[scenario] ERROR loading ${id}: ${String(e)}`);
-    }
-  }
-
   function init(){
-    // Build badge is the truth probe in the UI
     $("#build").textContent = `Ad Arma v2 — BUILD ${build} — PORT ${port}`;
     $("#tagline").textContent = "Instrument for thinking in formations.";
+
+    // Truth starts hidden
+    const truthEl = $("#truth");
+    truthEl.classList.remove("open");
+    $("#truthToggle").addEventListener("click", () => {
+      const open = truthEl.classList.toggle("open");
+      $("#truthToggle").textContent = open ? "Truth ▾" : "Truth ▸";
+      $("#truthToggle").setAttribute("aria-expanded", open ? "true" : "false");
+    });
 
     buildBoard();
     syncUIFromControls();
     renderBoard();
 
+    // Control listeners
     $("#controls").addEventListener("change", () => {
       syncUIFromControls();
       log(`[ui] edit=${state.ui.editMode} tool=${state.ui.tool} side=${state.ui.side} type=${state.ui.type} qual=${state.ui.quality}`);
     });
 
+    // Board click: unit first, then cell
     $("#board").addEventListener("click", (e) => {
+      syncUIFromControls();
+
       const unitG = e.target.closest("g[data-unit-id]");
       if (unitG){
         const uid = unitG.getAttribute("data-unit-id");
-        state.board.selectedUnitId = uid;
         const u = state.units.find(x => x.id === uid);
-        if (u) state.board.selectedCellId = `${u.q},${u.r}`;
+        if (!u) return;
+
+        state.board.selectedUnitId = uid;
+        state.board.selectedCellId = `${u.q},${u.r}`;
+
+        if (state.ui.editMode){
+          if (state.ui.tool === "erase") eraseUnit(u.q, u.r);
+          if (state.ui.tool === "place") placeOrUpdateUnit(u.q, u.r);
+        }
+
         renderBoard();
         log(`[select] unit ${uid} @ ${stamp()}`);
         return;
@@ -275,7 +403,6 @@
       const [qs, rs] = id.split(",");
       const q = Number(qs), r = Number(rs);
 
-      syncUIFromControls();
       if (state.ui.editMode){
         if (state.ui.tool === "place") placeOrUpdateUnit(q,r);
         if (state.ui.tool === "erase") eraseUnit(q,r);
@@ -285,19 +412,36 @@
       log(`[select] cell ${id} @ ${stamp()}`);
     });
 
+    // Scenario load
+    $("#scenarioLoad").addEventListener("click", () => {
+      const id = $("#scenarioSel").value;
+      loadScenarioById(id);
+    });
+
+    // Ping
     $("#ping").addEventListener("click", () => {
       state.ui.pings += 1;
       $("#pings").textContent = String(state.ui.pings);
       log(`[ping] #${state.ui.pings} @ ${stamp()} (build ${build})`);
+      console.log(`[Ad Arma v2] ping #${state.ui.pings} build ${build}`);
     });
 
-    $("#loadScenario").addEventListener("click", () => {
-      const id = $("#scenarioSel").value;
-      if (id) loadScenarioById(id);
-    });
+    // Expose a tiny debug API (helps “am I on the right build?” checks)
+    window.AD_ARMA_API = {
+      state,
+      exportScenario: () => JSON.stringify({
+        version: 1,
+        id: "custom",
+        label: "Custom (exported)",
+        units: state.units.map(({id, ...u}) => u),
+      }, null, 2),
+      loadScenarioById,
+    };
 
+    scriptSanityCheck();
     loadTruth();
     loadScenarioIndex();
+
     log(`[boot] init @ ${stamp()} (build ${build})`);
   }
 

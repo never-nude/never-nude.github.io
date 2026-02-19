@@ -1,6 +1,83 @@
-<!doctype html><meta charset="utf-8"><title>Ad Arma</title>
-<meta http-equiv="refresh" content="0; url=/ad_arma/">
-<script>
-  const tail = (location.search || "") + (location.hash || "");
-  location.replace("/ad_arma/" + tail);
-</script>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ad Arma v2 — 20260218-233305</title>
+  <!-- IMPORTANT: cache-bust via querystring (prevents style.cssP... 404 nonsense) -->
+  <link rel="stylesheet" href="style.css?v=20260218-233305">
+</head>
+<body>
+  <div id="topbar">
+    <div id="build">Ad Arma v2 — BUILD 20260218-233305 — PORT 9981</div>
+    <div id="tagline">Instrument for thinking in formations.</div>
+    <button id="truthToggle" type="button" aria-expanded="false">Truth ▸</button>
+    <pre id="truth">loading truth…</pre>
+  </div>
+
+  <div id="main">
+    <div id="panel">
+      <div id="boardMeta">board: loading…</div>
+
+      <div id="controls">
+        <div class="row">
+          <label>Scenario
+            <select id="scenarioSel">
+              <option value="">loading…</option>
+            </select>
+          </label>
+          <button id="scenarioLoad">Load</button>
+          <div>loaded: <span id="loadedScenario">none</span></div>
+
+          <span style="opacity:.35">|</span>
+
+          <label><input type="checkbox" id="editMode" checked> Edit mode</label>
+
+          <label><input type="radio" name="tool" value="place" checked> Place</label>
+          <label><input type="radio" name="tool" value="erase"> Erase</label>
+
+          <label>Side
+            <select id="sideSel">
+              <option value="Blue">Blue</option>
+              <option value="Red">Red</option>
+            </select>
+          </label>
+
+          <label>Type
+            <select id="typeSel">
+              <option value="Cavalry">Cavalry</option>
+<option value="Infantry">Infantry</option>
+<option value="Slingers">Slingers</option>
+<option value="Archers">Archers</option>
+<option value="General">General</option>
+            </select>
+          </label>
+
+          <label>Quality
+            <select id="qualSel">
+              <option value="Green">Green</option>
+<option value="Regular" selected>Regular</option>
+<option value="Veteran">Veteran</option>
+            </select>
+          </label>
+
+          <button id="ping">Ping</button>
+          <div>pings: <span id="pings">0</span></div>
+          <div>units: <span id="unitCount">0</span></div>
+          <div>selected: <span id="selected">none</span></div>
+        </div>
+      </div>
+
+      <div id="boardWrap">
+        <svg id="board" preserveAspectRatio="xMidYMid meet" aria-label="Ad Arma v2 board"></svg>
+      </div>
+
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <!-- IMPORTANT: only these two scripts. Nothing else. -->
+  <script src="build.js?v=20260218-233305"></script>
+  <script src="main.js?v=20260218-233305"></script>
+</body>
+</html>
