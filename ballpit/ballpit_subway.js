@@ -434,7 +434,7 @@ function animate() {
   if (hits.length) {
     const val = hits[0].object.userData.val;
     const d = nodeByVal.get(val);
-    el.hover.textContent = d ? `${d.label} (${d.net}${d.hub ? ', hub' : ''})` : String(val);
+    el.hover.textContent = d ? `${__prettyRegionLabel__(d.label)} (${d.net}${d.hub ? ', hub' : ''})` : String(val);
   } else {
     el.hover.textContent = 'none';
   }
