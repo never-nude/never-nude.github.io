@@ -72,20 +72,41 @@
     return state.board.cells.find(c => c.q === q && c.r === r) || null;
   }
   function unitAt(q,r){ return state.units.find(u => u.q === q && u.r === r) || null; }
-  function typeLetter(type){ return type==="Infantry" ? "I" : type==="Cavalry" ? "C" : type==="Missiles" ? "M" : "?"; }
+  function normalizeType(t){
+    t = String(t || "").trim();
+    // Legacy + aliases
+    if (t === "Missiles" || t === "Missile" || t === "Slinger" || t === "Sling") return "Slingers";
+    if (t === "Archer" || t === "Bow") return "Archers";
+    if (t === "Gen" || t === "Commander") return "General";
+    if (t === "Cav") return "Cavalry";
+    if (t === "Inf") return "Infantry";
+    // Canonical
+    if (t === "Infantry" || t === "Cavalry" || t === "Slingers" || t === "Archers" || t === "General") return t;
+    return t || "Infantry";
+  }
+
+  function typeLetter(type){
+    const tt = normalizeType(type);
+    if (tt === "Infantry") return "I";
+    if (tt === "Cavalry") return "C";
+    if (tt === "Slingers") return "S";
+    if (tt === "Archers") return "A";
+    if (tt === "General") return "★";
+    return "?";
+  }
   function qualLetter(q){ return q==="Green" ? "G" : q==="Regular" ? "R" : q==="Veteran" ? "V" : "?"; }
 
   function placeOrUpdateUnit(q,r){
     const existing = unitAt(q,r);
     if (existing){
       existing.side = state.ui.side;
-      existing.type = state.ui.type;
+      existing.type = normalizeType(state.ui.type);
       existing.quality = state.ui.quality;
       state.board.selectedUnitId = existing.id;
       log(`[edit] updated unit ${existing.id} at ${q},${r} -> ${existing.side} ${existing.type} ${existing.quality}`);
       return;
     }
-    const u = { id: `u${state.nextUnitId++}`, q, r, side: state.ui.side, type: state.ui.type, quality: state.ui.quality };
+    const u = { id: `u${state.nextUnitId++}`, q, r, side: state.ui.side, type: normalizeType(state.ui.type), quality: state.ui.quality };
     state.units.push(u);
     state.board.selectedUnitId = u.id;
     log(`[edit] placed unit ${u.id} at ${q},${r} -> ${u.side} ${u.type} ${u.quality}`);
