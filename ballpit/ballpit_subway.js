@@ -15,7 +15,7 @@ const __AAL_ABBREV__ = {
   Orb:  "Orbital",
   Oper: "Opercular",
   Tri:  "Triangular",
-};
+ VTA: "Ventral Tegmental Area",};
 
 function __prettyRegionLabel__(raw) {
   if (raw == null) return "";
