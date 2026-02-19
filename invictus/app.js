@@ -164,15 +164,14 @@ function setupGame(layout, scenario) {
   }
 
   function drawUnitToken(u, g) {
-  // TOKEN_UI_V5_SHAPE_ABBR_HP: type=shape+abbr, hp=center, quality=outline style
+  // TOKEN_UI_V5_SHAPE_ABBR_HP: type=shape+abbr, hp=center, quality=outline style FONT_SCALE_0_432
   const { cx, cy } = centerOf(u.r, u.c, g);
   const R = g.s * 0.82;
   const isSel = (selectedId === u.id);
 
   // 28% smaller text (same shrink you requested)
-  const S = 0.72;
-
-  const tUp = String(u.type || "").toUpperCase();
+  const S = 0.432; // 40% smaller (0.72 * 0.6)
+const tUp = String(u.type || "").toUpperCase();
   const MAP = {
     "INF":"INF","INFANTRY":"INF",
     "CAV":"CAV","CAVALRY":"CAV",
@@ -284,10 +283,9 @@ function setupGame(layout, scenario) {
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ffffff";
 
-  const abFont = Math.max(7, Math.round(g.s * 0.38 * S));
-  const hpFont = Math.max(9, Math.round(g.s * 0.84 * S));
-
-  ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"`;
+  const abFont = Math.max(4, Math.round(g.s * 0.38 * S));
+const hpFont = Math.max(5, Math.round(g.s * 0.84 * S));
+ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"`;
   ctx.fillText(abbr, cx, cy - R * 0.30);
 
   ctx.font = `900 ${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
