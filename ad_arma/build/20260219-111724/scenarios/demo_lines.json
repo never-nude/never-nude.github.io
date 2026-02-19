@@ -38,34 +38,6 @@
       "quality": "Regular"
     },
     {
-      "q": 0,
-      "r": -3,
-      "side": "Red",
-      "type": "Slingers",
-      "quality": "Green"
-    },
-    {
-      "q": -6,
-      "r": -2,
-      "side": "Red",
-      "type": "Cavalry",
-      "quality": "Veteran"
-    },
-    {
-      "q": 6,
-      "r": -2,
-      "side": "Red",
-      "type": "Cavalry",
-      "quality": "Veteran"
-    },
-    {
-      "q": 3,
-      "r": -4,
-      "side": "Red",
-      "type": "General",
-      "quality": "Regular"
-    },
-    {
       "q": -2,
       "r": 1,
       "side": "Blue",
@@ -101,6 +73,41 @@
       "quality": "Regular"
     },
     {
+      "q": -6,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Veteran"
+    },
+    {
+      "q": 6,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Veteran"
+    },
+    {
+      "q": -6,
+      "r": 2,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Veteran"
+    },
+    {
+      "q": 6,
+      "r": 2,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Veteran"
+    },
+    {
+      "q": 0,
+      "r": -3,
+      "side": "Red",
+      "type": "Slingers",
+      "quality": "Green"
+    },
+    {
       "q": 0,
       "r": 3,
       "side": "Blue",
@@ -108,17 +115,17 @@
       "quality": "Green"
     },
     {
-      "q": -5,
-      "r": 3,
-      "side": "Blue",
-      "type": "Cavalry",
+      "q": 0,
+      "r": -4,
+      "side": "Red",
+      "type": "General",
       "quality": "Veteran"
     },
     {
-      "q": 5,
-      "r": 3,
+      "q": 0,
+      "r": 4,
       "side": "Blue",
-      "type": "Cavalry",
+      "type": "General",
       "quality": "Veteran"
     }
   ]

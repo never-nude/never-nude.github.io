@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ad Arma v2 — 20260219-012640</title>
-  <link rel="stylesheet" href="style.css?v=20260219-012640">
+  <title>Ad Arma v2 — 20260219-111724</title>
+  <link rel="stylesheet" href="style.css?v=20260219-111724">
 </head>
 <body>
   <div id="topbar">
-    <div id="build">Ad Arma v2 — BUILD 20260219-012640 — PORT 9981</div>
+    <div id="build">Ad Arma v2 — BUILD 20260219-111724 — PORT 9981</div>
     <div id="tagline">Instrument for thinking in formations.</div>
     <button id="truthToggle" type="button">Truth ▸</button>
     <pre id="truth">loading truth…</pre>
@@ -24,9 +24,11 @@
             <select id="scenarioSel"><option>loading…</option></select>
           </label>
           <button id="loadScenario" type="button">Load</button>
-          <div>loaded: <span id="loadedScenario">none</span></div>
 
-          <label><input type="checkbox" id="editMode" checked> Edit mode</label>
+          <span style="opacity:.35">|</span>
+
+          <div>mode: <span id="modeLabel">Edit</span></div>
+          <label><input type="checkbox" id="editMode" checked> Edit</label>
           <label><input type="radio" name="tool" value="place" checked> Place</label>
           <label><input type="radio" name="tool" value="erase"> Erase</label>
 
@@ -55,10 +57,19 @@
             </select>
           </label>
 
+          <span style="opacity:.35">|</span>
+
+          <div>turn: <span id="turnSide">Blue</span></div>
+          <div>acts: <span id="actsUsed">0</span>/<span id="actsLimit">3</span></div>
+          <button id="endTurn" type="button">End turn</button>
+
+          <span style="opacity:.35">|</span>
+
           <button id="ping" type="button">Ping</button>
           <div>pings: <span id="pings">0</span></div>
           <div>units: <span id="unitCount">0</span></div>
           <div>selected: <span id="selected">none</span></div>
+          <div>loaded: <span id="loadedScenario">none</span></div>
         </div>
       </div>
 
@@ -70,8 +81,8 @@
     </div>
   </div>
 
-  <!-- NOTE: relative paths on purpose (works in / and /ad-arma/) -->
-  <script src="build.js?v=20260219-012640"></script>
-  <script src="main.js?v=20260219-012640"></script>
+  <!-- relative paths (work locally + under /ad-arma/build/<id>/) -->
+  <script src="build.js?v=20260219-111724"></script>
+  <script src="main.js?v=20260219-111724"></script>
 </body>
 </html>

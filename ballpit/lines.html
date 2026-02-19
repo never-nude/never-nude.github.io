@@ -3,90 +3,80 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ball Pit — Subway</title>
+  <title>Ball Pit — Lines</title>
   <style>
-    html, body { margin:0; padding:0; height:100%; background:#060b12; overflow:hidden; }
+    html, body { margin:0; height:100%; background:#05070b; overflow:hidden; }
     #c { width:100vw; height:100vh; display:block; }
-
     #hud {
       position: fixed; left: 12px; top: 12px; z-index: 9999;
       color: rgba(255,255,255,0.92);
-      font: 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: rgba(0,0,0,0.42);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 10px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
       padding: 10px 12px;
-      min-width: 320px;
+      font: 13px/1.25 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      max-width: 560px;
       backdrop-filter: blur(6px);
     }
-    #hud .titleRow { display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
-    #hud .title { font-weight: 700; letter-spacing: 0.2px; }
+    #hud .row { margin: 4px 0; }
+    #hud .title { font-weight: 700; font-size: 14px; }
     #hud .pill {
       display:inline-block; padding:2px 8px; border-radius:999px;
       border:1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.08);
-      font-size: 11px;
+      background: rgba(255,255,255,0.06);
+      margin-left:6px;
+      font-size: 12px;
     }
-    #hud .meta { opacity:0.85; display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 8px; }
-    #hud .meta span b { font-weight:600; opacity:0.95; }
-    #hud .buttons { display:flex; gap:6px; margin: 8px 0 8px; flex-wrap:wrap; }
     #hud button {
-      appearance:none; border:1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.08);
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.07);
       color: rgba(255,255,255,0.92);
-      padding: 4px 10px; border-radius: 10px;
-      cursor: pointer; font-size: 12px;
+      border-radius: 10px;
+      padding: 5px 10px;
+      font: inherit;
+      cursor:pointer;
+      margin-right:6px;
+      margin-top:4px;
     }
-    #hud button.active { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.28); }
-    #hud .hint { opacity:0.75; line-height:1.35; }
-    #hud .hover { margin-top: 8px; opacity:0.9; }
-    #hud .hover b { font-weight:600; }
-
+    #hud button.active {
+      background: rgba(255,255,255,0.16);
+      border-color: rgba(255,255,255,0.32);
+    }
+    #hud .dim { color: rgba(255,255,255,0.70); }
     #marker {
       position: fixed; right: 12px; bottom: 12px; z-index: 9999;
-      color: rgba(255,255,255,0.90);
-      background: rgba(0,0,0,0.45);
-      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.9);
+      background: rgba(0,0,0,0.40);
+      border: 1px solid rgba(255,255,255,0.16);
       border-radius: 10px;
       padding: 6px 10px;
-      font: 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      font: 12px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
   </style>
 </head>
 <body>
   <div id="hud">
-    <div class="titleRow">
-      <div class="title">Ball Pit <span class="pill">subway</span></div>
-      <div class="pill" id="buildId">build …</div>
+    <div class="row title">Ball Pit <span class="pill">subway-lines</span> <span class="dim" id="buildId">build …</span></div>
+    <div class="row">
+      stimulus <b id="stimName">rest</b>
+      &nbsp;•&nbsp; nodes <b id="nodeCount">?</b>
+      &nbsp;•&nbsp; lines <b id="lineCount">?</b>
+      &nbsp;•&nbsp; trains <b id="trainCount">?</b>
     </div>
-
-    <div class="meta">
-      <span><b>stimulus</b> <span id="stimulusName">rest</span></span>
-      <span><b>nodes</b> <span id="nodeCount">?</span></span>
-      <span><b>edges</b> <span id="edgeCount">?</span></span>
-      <span><b>lines</b> <span id="lineCount">?</span></span>
-      <span><b>trains</b> <span id="trainCount">?</span></span>
-    </div>
-
-    <div class="buttons">
+    <div class="row">
       <button data-stim="rest" class="active">Rest</button>
       <button data-stim="visual">Visual</button>
       <button data-stim="motor">Motor</button>
       <button data-stim="auditory">Auditory</button>
     </div>
-
-    <div class="hint">
-      Mouse: drag to orbit • wheel: zoom • right-drag: pan
-    </div>
-
-    <div class="hover">
-      hover — <b id="hoverName">none</b>
-    </div>
+    <div class="row dim">Mouse: drag to orbit • wheel: zoom • right-drag: pan</div>
+    <div class="row">hover — <b id="hoverName">none</b></div>
+    <div class="row dim" id="statusLine"></div>
   </div>
 
   <canvas id="c"></canvas>
-
-  <div id="marker">Ball Pit • ballpit-url1</div>
+  <div id="marker">Ball Pit • lines2</div>
 
   <script type="importmap">
 {
@@ -97,6 +87,38 @@
   }
 }
 </script>
-<script type="module" src="./ballpit_lines.js?v=ballpit-url1"></script>
+
+<script type="module" src="./ballpit_lines.js?v=lines2"></script>
+
+<!-- View toggle (subway ↔ lines) -->
+<div id="viewToggle" style="position:fixed; top:12px; right:12px; z-index:9999; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:6px 10px; font:12px ui-sans-serif,system-ui; color:rgba(255,255,255,0.92);">
+  <span style="opacity:0.75; margin-right:8px;">view</span>
+  <a id="toSubway" href="/ballpit/" style="color:inherit; text-decoration:none; margin-right:8px; padding:2px 8px; border:1px solid rgba(255,255,255,0.2); border-radius:8px;">subway</a>
+  <a id="toLines" href="/ballpit/lines.html" style="color:inherit; text-decoration:none; padding:2px 8px; border:1px solid rgba(255,255,255,0.2); border-radius:8px;">lines</a>
+</div>
+<script>
+(() => {
+  try {
+    const qs = new URLSearchParams(location.search);
+    const suffix = qs.toString() ? ("?" + qs.toString()) : "";
+    const path = location.pathname || "";
+    const subway = document.getElementById("toSubway");
+    const lines  = document.getElementById("toLines");
+    if (subway) subway.href = "/ballpit/" + suffix;
+    if (lines)  lines.href  = "/ballpit/lines.html" + suffix;
+
+    // highlight active
+    const isLines = path.endsWith("/lines.html");
+    const activeStyle = "background:rgba(255,255,255,0.14);";
+    if (isLines) {
+      if (lines) lines.setAttribute("style", (lines.getAttribute("style") || "") + activeStyle);
+    } else {
+      if (subway) subway.setAttribute("style", (subway.getAttribute("style") || "") + activeStyle);
+    }
+  } catch (e) {}
+})();
+</script>
+<!-- /View toggle -->
+
 </body>
 </html>
