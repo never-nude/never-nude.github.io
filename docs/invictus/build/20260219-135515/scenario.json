@@ -505,5 +505,5 @@
       }
     }
   ],
-  "notes": "Top/bottom symmetric deep formation. Front=4 SLG. Main=CAV wings + 7 INF adjacent. Res=6 INF symmetric pairs. Rear=ARC,GEN,ARC (+2 wing ARC)."
+  "notes": "Symmetric deep formation centered at col 13 (halfspan=5). Front=4 SLG. Main=2 CAV + 7 INF adjacent. Res=6 INF paired. Rear=4 ARC + GEN."
 }
