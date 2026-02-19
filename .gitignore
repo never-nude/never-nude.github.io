@@ -20,3 +20,6 @@ backup_subway/
 # Ball Pit private inputs + local backups
 subway/private/
 backup_ballpit/
+
+# local safety backups
+_local_backups/
