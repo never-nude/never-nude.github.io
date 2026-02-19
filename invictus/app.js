@@ -18,7 +18,8 @@ const TOKEN_TEXT_SCALE = 0.432;
 
 // Movement milestone E
 const ACTIVATIONS_PER_TURN = 3;
-const MOVE_RANGE = { INF:2, ARC:2, GEN:2, CAV:3, SKR:3, SLG:3 };
+const MOVE_RANGE = { INF:1, ARC:1, SLG:2, SKR:2, CAV:3, GEN:3 };
+// MOVE_RANGES_V2
 
 function oddrToCube(r, c) {
   const x = c - ((r - (r & 1)) / 2);

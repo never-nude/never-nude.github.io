@@ -2,5 +2,5 @@ PROJECT=Invictus
 MILESTONE=E_ECHELON_MOVEMENT
 REPO_ROOT=/Users/michael/dev/never-nude.github.io
 SERVE_CMD=python3 -m http.server 6657 --bind 127.0.0.1
-LOCAL_URL=http://127.0.0.1:6657/invictus/?ts=20260219-112726
+LOCAL_URL=http://127.0.0.1:6657/invictus/?ts=20260219-115042
 PUBLISH_URL=https://digitalbrain.live/invictus/
