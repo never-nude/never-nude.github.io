@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Death Before Dishonor scenario/save (dbd-scn-0.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "board", "standardsToWin", "terrain", "units", "turn"],
+  "properties": {
+    "schema": { "const": "dbd-scn-0.1" },
+    "board": { "const": "DBD-157-v1" },
+
+    "standardsToWin": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+
+    "terrain": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "pattern": "^(0|[1-9][0-9]{0,2})$"
+      },
+      "patternProperties": {
+        "^(0|[1-9][0-9]{0,2})$": {
+          "type": "string",
+          "enum": ["CLEAR", "WOODS", "ROUGH", "HILL", "WATER"]
+        }
+      }
+    },
+
+    "units": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "side", "type", "quality", "hp", "hex"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "side": { "type": "string", "enum": ["BLUE", "RED"] },
+          "type": { "type": "string", "enum": ["INF", "CAV", "SKR", "ARC", "GEN"] },
+          "quality": { "type": "string", "enum": ["GREEN", "REGULAR", "VETERAN"] },
+          "hp": { "type": "integer", "minimum": 1, "maximum": 20 },
+          "hex": { "type": "integer", "minimum": 0, "maximum": 156 }
+        }
+      }
+    },
+
+    "turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["side", "turnNumber", "activationsLeft"],
+      "properties": {
+        "side": { "type": "string", "enum": ["BLUE", "RED"] },
+        "turnNumber": { "type": "integer", "minimum": 1, "maximum": 9999 },
+        "activationsLeft": { "type": "integer", "minimum": 0, "maximum": 3 }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
