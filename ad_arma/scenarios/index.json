@@ -1,15 +1,12 @@
-{
-  "version": 1,
-  "scenarios": [
-    {
-      "id": "empty",
-      "label": "Empty board",
-      "file": "scenarios/empty.json"
-    },
-    {
-      "id": "demo_lines",
-      "label": "Demo lines (all 5 types)",
-      "file": "scenarios/demo_lines.json"
-    }
-  ]
-}
+[
+  {
+    "id": "empty",
+    "label": "Empty board",
+    "file": "empty.json"
+  },
+  {
+    "id": "demo_lines",
+    "label": "Demo lines (all 5 types)",
+    "file": "demo_lines.json"
+  }
+]

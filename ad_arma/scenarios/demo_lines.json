@@ -102,58 +102,16 @@
       "quality": "Veteran"
     },
     {
-      "q": -2,
+      "q": -1,
       "r": -3,
       "side": "Red",
       "type": "Slingers",
       "quality": "Green"
     },
     {
-      "q": 2,
+      "q": 1,
       "r": -3,
       "side": "Red",
-      "type": "Slingers",
-      "quality": "Green"
-    },
-    {
-      "q": -2,
-      "r": 3,
-      "side": "Blue",
-      "type": "Slingers",
-      "quality": "Green"
-    },
-    {
-      "q": 2,
-      "r": 3,
-      "side": "Blue",
-      "type": "Slingers",
-      "quality": "Green"
-    },
-    {
-      "q": -1,
-      "r": -4,
-      "side": "Red",
-      "type": "Archers",
-      "quality": "Regular"
-    },
-    {
-      "q": 1,
-      "r": -4,
-      "side": "Red",
-      "type": "Archers",
-      "quality": "Regular"
-    },
-    {
-      "q": -1,
-      "r": 4,
-      "side": "Blue",
-      "type": "Archers",
-      "quality": "Regular"
-    },
-    {
-      "q": 1,
-      "r": 4,
-      "side": "Blue",
       "type": "Archers",
       "quality": "Regular"
     },
@@ -163,6 +121,20 @@
       "side": "Red",
       "type": "General",
       "quality": "Veteran"
+    },
+    {
+      "q": -1,
+      "r": 3,
+      "side": "Blue",
+      "type": "Slingers",
+      "quality": "Green"
+    },
+    {
+      "q": 1,
+      "r": 3,
+      "side": "Blue",
+      "type": "Archers",
+      "quality": "Regular"
     },
     {
       "q": 0,
