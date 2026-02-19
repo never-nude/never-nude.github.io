@@ -1,0 +1,91 @@
+{
+  "name": "Even Lines \u2014 Cohort Test",
+  "victory": {
+    "mode": "standards",
+    "target": 6
+  },
+  "standards": [],
+  "units": [
+    {
+      "id": "B_CAV_1",
+      "side": "Blue",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 4,
+      "c": 7
+    },
+    {
+      "id": "B_INF_1",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 5,
+      "c": 6
+    },
+    {
+      "id": "B_SKR_1",
+      "side": "Blue",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 7
+    },
+    {
+      "id": "B_ARC_1",
+      "side": "Blue",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 5,
+      "c": 8
+    },
+    {
+      "id": "R_CAV_1",
+      "side": "Red",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 4,
+      "c": 19
+    },
+    {
+      "id": "R_INF_1",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 5,
+      "c": 19
+    },
+    {
+      "id": "R_SKR_1",
+      "side": "Red",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 19
+    },
+    {
+      "id": "R_ARC_1",
+      "side": "Red",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 5,
+      "c": 17
+    }
+  ],
+  "notes": "Milestone C: static unit render + click select + inspector. No movement/combat yet."
+}

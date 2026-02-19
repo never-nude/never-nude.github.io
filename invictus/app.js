@@ -9,11 +9,23 @@ async function fetchJSON(path) {
   return await r.json();
 }
 
-function setupBoard(layout) {
+const SIDE_FILL = {
+  Blue: "#2563eb",
+  Red:  "#dc2626",
+};
+const QUALITY_SHORT = { Green: "G", Regular: "R", Veteran: "V" };
+
+function setupGame(layout, scenario) {
   const canvas = $("#hexCanvas");
   const ctx = canvas.getContext("2d");
   const hoverEl = $("#hoverInfo");
+  const selEl = $("#selectedInfo");
 
+  $("#scenarioName").textContent = scenario?.name || "—";
+  $("#unitCount").textContent = (scenario?.units?.length ?? 0).toString();
+
+  const units = Array.isArray(scenario?.units) ? scenario.units : [];
+  let selectedId = null;
   let drawn = [];   // [{r,c,cx,cy}]
   let hover = null;
   let gLast = null;
@@ -62,6 +74,71 @@ function setupBoard(layout) {
     ctx.closePath();
   }
 
+  function unitAt(r, c) {
+    for (const u of units) {
+      if (u.r === r && u.c === c) return u;
+    }
+    return null;
+  }
+
+  function updateSelectedPanel() {
+    if (!selectedId) {
+      selEl.textContent = "Selected: —\n(click a unit token)";
+      return;
+    }
+    const u = units.find(x => x.id === selectedId);
+    if (!u) {
+      selEl.textContent = "Selected: —\n(click a unit token)";
+      selectedId = null;
+      return;
+    }
+    selEl.textContent =
+`Selected
+ID: ${u.id}
+Side: ${u.side}
+Type: ${u.type}
+Quality: ${u.quality}
+HP: ${u.hp}/${u.maxHp}
+Hex: row ${u.r}, col ${u.c}`;
+  }
+
+  function drawUnitToken(u, g) {
+    const { cx, cy } = centerOf(u.r, u.c, g);
+    const R = g.s * 0.72;
+
+    // base
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = SIDE_FILL[u.side] || "#666";
+    ctx.fill();
+
+    // outline (selected gets a heavier ring)
+    const isSel = (selectedId === u.id);
+    ctx.lineWidth = isSel ? 3 : 1.5;
+    ctx.strokeStyle = isSel ? "#111" : "#ffffff";
+    ctx.stroke();
+
+    // labels
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const typeFont = Math.max(10, Math.round(g.s * 0.52));
+    const hpFont   = Math.max(10, Math.round(g.s * 0.55));
+    const qFont    = Math.max(9,  Math.round(g.s * 0.42));
+
+    ctx.fillStyle = "#fff";
+    ctx.font = `${typeFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.fillText(u.type, cx, cy - R * 0.20);
+
+    ctx.font = `${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.fillText(String(u.hp), cx, cy + R * 0.30);
+
+    // quality badge (top-left-ish)
+    const q = QUALITY_SHORT[u.quality] || "?";
+    ctx.font = `${qFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"`;
+    ctx.fillText(q, cx - R * 0.48, cy - R * 0.48);
+  }
+
   function render() {
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -78,9 +155,10 @@ function setupBoard(layout) {
       return { r, c, cx, cy };
     });
 
+    // hexes
     ctx.lineWidth = 1;
     for (const h of drawn) {
-      const isHover = hover && hover.r === h.r && hover.c === h.c;
+      const isHover = hover && (hover.r === h.r) && (hover.c === h.c);
 
       hexPath(h.cx, h.cy, g.s);
       ctx.fillStyle = isHover ? "#e6f2ff" : "#f7f7f7";
@@ -89,12 +167,16 @@ function setupBoard(layout) {
       ctx.stroke();
     }
 
+    // units on top
+    for (const u of units) drawUnitToken(u, g);
+
+    // footer marker
     ctx.fillStyle = "#666";
     ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-    ctx.fillText(`Bastion: ${layout.live_hexes} live hexes (27×11)`, 12, g.H - 12);
+    ctx.fillText(`Cohort: ${units.length} units (click to select)`, 12, g.H - 12);
   }
 
-  function pick(mx, my) {
+  function pickHex(mx, my) {
     if (!gLast || drawn.length === 0) return null;
 
     let best = null;
@@ -122,7 +204,7 @@ function setupBoard(layout) {
     const mx = ev.clientX - rect.left;
     const my = ev.clientY - rect.top;
 
-    const h = pick(mx, my);
+    const h = pickHex(mx, my);
     const changed = (!hover && h) || (hover && !h) || (hover && h && (hover.r !== h.r || hover.c !== h.c));
     if (!changed) return;
 
@@ -137,8 +219,29 @@ function setupBoard(layout) {
     render();
   });
 
+  canvas.addEventListener("click", (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = ev.clientX - rect.left;
+    const my = ev.clientY - rect.top;
+
+    const h = pickHex(mx, my);
+    if (!h) {
+      selectedId = null;
+      updateSelectedPanel();
+      render();
+      return;
+    }
+
+    const u = unitAt(h.r, h.c);
+    selectedId = u ? u.id : null;
+    updateSelectedPanel();
+    render();
+  });
+
   window.addEventListener("resize", resize);
+
   hoverEl.textContent = "hover: —";
+  updateSelectedPanel();
   resize();
 }
 
@@ -151,7 +254,8 @@ async function main() {
   }
 
   const layout = await fetchJSON("board_layout.json");
-  setupBoard(layout);
+  const scenario = await fetchJSON("scenario.json");
+  setupGame(layout, scenario);
 }
 
 main();
