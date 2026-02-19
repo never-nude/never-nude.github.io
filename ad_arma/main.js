@@ -37,7 +37,7 @@
       midX: null,
     },
     scenarios: {
-      indexPath: "/scenarios/_index.json",
+      indexPath: "/scenarios/index.json",
       list: [],
       loadedId: null,
       loadedLabel: "none",
