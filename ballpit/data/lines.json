@@ -1,0 +1,61 @@
+{
+  "atlas": "AAL",
+  "generated_at": "2026-02-19T14:05:24Z",
+  "lines": [
+    {
+      "id": "rest_dmn_L",
+      "label": "DMN-L",
+      "stimulus": "rest",
+      "trains": 3,
+      "stops": [
+        "Precuneus_L",
+        "Cingulate_Post_L",
+        "Angular_L",
+        "Frontal_Sup_Medial_L",
+        "Hippocampus_L",
+        "ParaHippocampal_L"
+      ]
+    },
+    {
+      "id": "visual_L",
+      "label": "Visual-L",
+      "stimulus": "visual",
+      "trains": 3,
+      "stops": [
+        "Thal_AV_L",
+        "Calcarine_L",
+        "Cuneus_L",
+        "Lingual_L",
+        "Occipital_Mid_L",
+        "Fusiform_L"
+      ]
+    },
+    {
+      "id": "motor_L",
+      "label": "Motor-L",
+      "stimulus": "motor",
+      "trains": 2,
+      "stops": [
+        "Precentral_L",
+        "Supp_Motor_Area_L",
+        "Postcentral_L",
+        "Putamen_L",
+        "Thal_AV_L",
+        "Cerebellum_6_L"
+      ]
+    },
+    {
+      "id": "auditory_L",
+      "label": "Auditory-L",
+      "stimulus": "auditory",
+      "trains": 2,
+      "stops": [
+        "Thal_AV_L",
+        "Heschl_L",
+        "Temporal_Sup_L",
+        "Insula_L",
+        "Temporal_Mid_L"
+      ]
+    }
+  ]
+}

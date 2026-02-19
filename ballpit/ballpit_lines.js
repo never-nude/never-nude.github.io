@@ -1,175 +1,36 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'https://unpkg.com/three@0.161.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js';
 
-const DATA_VERSION = 'ballpit-url1';
-const BUILD_ID = `BALLPIT-BALLPITURL1-${new Date().toISOString()}`;
-
-const el = {
-  build: document.getElementById('buildId'),
-  stim: document.getElementById('stimulusName'),
-  nodeCount: document.getElementById('nodeCount'),
-  edgeCount: document.getElementById('edgeCount'),
-  lineCount: document.getElementById('lineCount'),
-  trainCount: document.getElementById('trainCount'),
-  hover: document.getElementById('hoverName'),
-};
-
-el.build.textContent = BUILD_ID;
-
-const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-renderer.setClearColor(0x060b12, 1);
-
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x060b12, 320, 1400);
-
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
-camera.position.set(0, 0, 420);
-
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.enablePan = true;
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const key = new THREE.DirectionalLight(0xffffff, 0.85);
-key.position.set(1, 1.2, 1).multiplyScalar(400);
-scene.add(key);
-
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2(999, 999);
-
-let currentStim = 'rest';
+const VERSION = 'lines2';
+const BUILD_ID = `BALLPIT-LINES2-${new Date().toISOString()}`;
 const STIMS = ['rest','visual','motor','auditory'];
 
-const nodeMeshes = [];
-const nodeByVal = new Map();   // aal_value -> {val,label,net,hub,pos,color}
-const meshByVal = new Map();   // aal_value -> mesh
+const UI = {
+  buildId: document.getElementById('buildId'),
+  stimName: document.getElementById('stimName'),
+  nodeCount: document.getElementById('nodeCount'),
+  lineCount: document.getElementById('lineCount'),
+  trainCount: document.getElementById('trainCount'),
+  hoverName: document.getElementById('hoverName'),
+  statusLine: document.getElementById('statusLine'),
+  buttons: Array.from(document.querySelectorAll('#hud button[data-stim]'))
+};
 
-const stimGroups = new Map();  // stim -> { group, trains, edgeCount, lineCount }
+UI.buildId.textContent = `build ${BUILD_ID}`;
 
-function norm(s) {
-  return (s || '').toString().trim().toLowerCase();
+function setStatus(msg) { UI.statusLine.textContent = msg || ''; }
+
+function normLabel(s) {
+  return String(s ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/[^a-z0-9_]/g, '');
 }
 
-// Heuristics: good enough for v1; replace later with a proper network atlas if you want.
-const VIS = ['calcarine','cuneus','lingual','fusiform','occipital'];
-const MOT = ['precentral','postcentral','supp_motor','paracentral','rolandic'];
-const AUD = ['heschl','temporal_sup','temporal_mid','temporal_inf','supra_temporal','insula','superior_temporal'];
-const HUB = ['thalamus','precuneus','cingulum','hippocampus','parahippocampal','angular'];
-
-function netOf(label) {
-  const l = norm(label);
-  if (VIS.some(k => l.includes(k))) return 'visual';
-  if (MOT.some(k => l.includes(k))) return 'motor';
-  if (AUD.some(k => l.includes(k))) return 'auditory';
-  return 'rest';
-}
-function isHub(label) {
-  const l = norm(label);
-  return HUB.some(k => l.includes(k));
-}
-
-function getXYZ(r) {
-  // robust centroid getter (handles different schemas)
-  for (const key of ['mni_xyz','mni','xyz','coord','coords','center','centroid','centroid_mni']) {
-    const v = r[key];
-    if (!v) continue;
-    if (Array.isArray(v) && v.length === 3) return new THREE.Vector3(+v[0], +v[1], +v[2]);
-    if (typeof v === 'object' && 'x' in v && 'y' in v && 'z' in v) return new THREE.Vector3(+v.x, +v.y, +v.z);
-  }
-  // deterministic fallback
-  const seed = (parseInt(r.aal_value || 0, 10) * 10007 + 1337) >>> 0;
-  let x = seed;
-  const rnd = () => (x = (x * 1664525 + 1013904223) >>> 0) / 4294967296;
-  return new THREE.Vector3((rnd()*2-1)*60, (rnd()*2-1)*80, (rnd()*2-1)*60);
-}
-
-function seededColor(val) {
-  // golden-ratio-ish hue walk for stable distinct colors
-  const h = ( (val * 0.61803398875) % 1 + 1 ) % 1;
-  const c = new THREE.Color();
-  c.setHSL(h, 0.62, 0.56);
-  return c;
-}
-
-function resize() {
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', resize, { passive: true });
-
-canvas.addEventListener('pointermove', (e) => {
-  const r = canvas.getBoundingClientRect();
-  mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
-  mouse.y = -(((e.clientY - r.top) / r.height) * 2 - 1);
-}, { passive: true });
-
-function setActiveButton(stim) {
-  document.querySelectorAll('button[data-stim]').forEach(b => {
-    b.classList.toggle('active', b.dataset.stim === stim);
-  });
-}
-
-document.querySelectorAll('button[data-stim]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const next = btn.dataset.stim;
-    if (!STIMS.includes(next) || next === currentStim) return;
-    setStimulus(next);
-  });
-});
-
-async function loadJSON(url) {
-  const r = await fetch(url, { cache: 'no-store' });
-  if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
-  return await r.json();
-}
-
-function buildBrainShell(bounds) {
-  const size = new THREE.Vector3().subVectors(bounds.max, bounds.min);
-  const radius = Math.max(size.x, size.y, size.z) * 0.55;
-
-  const geom = new THREE.SphereGeometry(radius, 64, 64);
-  // squish a bit into a brain-ish ellipsoid
-  geom.scale(1.0, 1.15, 0.95);
-
-  const mat = new THREE.MeshPhongMaterial({
-    color: 0x1b2430,
-    transparent: true,
-    opacity: 0.22,
-    shininess: 20,
-    depthWrite: false,
-  });
-
-  const mesh = new THREE.Mesh(geom, mat);
-  mesh.position.set(0, 0, 0);
-  return mesh;
-}
-
-function weightedChoice(rng, items) {
-  // items: [[w, value], ...]
-  let sum = 0;
-  for (const [w] of items) sum += Math.max(0, w);
-  if (sum <= 0) return items[Math.floor(rng() * items.length)]?.[1];
-  let t = rng() * sum;
-  for (const [w, v] of items) {
-    t -= Math.max(0, w);
-    if (t <= 0) return v;
-  }
-  return items[items.length - 1][1];
-}
-
-function makeRNG(seedStr) {
-  // tiny xorshift-ish RNG, deterministic per stim
-  let x = 2166136261 >>> 0;
-  for (let i = 0; i < seedStr.length; i++) {
-    x ^= seedStr.charCodeAt(i);
-    x = Math.imul(x, 16777619) >>> 0;
-  }
+function seededRand(seed) {
+  let x = seed >>> 0;
   return () => {
     x ^= x << 13; x >>>= 0;
     x ^= x >> 17; x >>>= 0;
@@ -178,274 +39,318 @@ function makeRNG(seedStr) {
   };
 }
 
-function buildStimulusGroup(stim, allEdges) {
-  const group = new THREE.Group();
-  group.name = `stim_${stim}`;
+function getCoord(r) {
+  // Prefer real coordinates if present
+  const tryArr = (v) => Array.isArray(v) && v.length >= 3 ? [Number(v[0]), Number(v[1]), Number(v[2])] : null;
 
-  // Node eligibility rules:
-  // - rest: everyone
-  // - others: that net + hubs
-  const eligible = new Set();
-  for (const [val, n] of nodeByVal.entries()) {
-    if (stim === 'rest') eligible.add(val);
-    else if (n.net === stim || n.hub) eligible.add(val);
-  }
-
-  // Edge eligibility + selection
-  const MAX_EDGES = (stim === 'rest') ? 900 : 420;
-
-  const scored = [];
-  for (const e of allEdges) {
-    const a = e[0], b = e[1], w = +e[2];
-    if (!eligible.has(a) || !eligible.has(b)) continue;
-
-    const na = nodeByVal.get(a), nb = nodeByVal.get(b);
-    if (!na || !nb) continue;
-
-    // For non-rest, prefer within-stim edges, but allow hub bridges.
-    let ok = true;
-    if (stim !== 'rest') {
-      const within = (na.net === stim && nb.net === stim);
-      const bridge = (na.net === stim && nb.hub) || (nb.net === stim && na.hub) || (na.hub && nb.hub);
-      ok = within || bridge;
-    }
-    if (!ok) continue;
-
-    scored.push([w, a, b]);
-  }
-
-  scored.sort((x,y) => y[0] - x[0]);
-  const picked = scored.slice(0, MAX_EDGES);
-  const edgeCount = picked.length;
-
-  // adjacency for random walks
-  const adj = new Map(); // val -> [[w, nbr], ...]
-  const addAdj = (u, v, w) => {
-    if (!adj.has(u)) adj.set(u, []);
-    adj.get(u).push([w, v]);
-  };
-  for (const [w, a, b] of picked) {
-    addAdj(a, b, w);
-    addAdj(b, a, w);
-  }
-
-  // pick line starts from high-degree nodes
-  const deg = [];
-  for (const [v, arr] of adj.entries()) {
-    const s = arr.reduce((acc, [w]) => acc + w, 0);
-    deg.push([s, v]);
-  }
-  deg.sort((x,y) => y[0] - x[0]);
-  const topStarts = deg.slice(0, Math.min(30, deg.length)).map(x => x[1]);
-
-  const rng = makeRNG(`ballpit_${DATA_VERSION}_${stim}`);
-  const N_LINES = (stim === 'rest') ? 10 : 8;
-  const LEN = (stim === 'rest') ? 9 : 8;
-
-  const trains = [];
-
-  const tubeRadius = (stim === 'rest') ? 0.9 : 1.05;
-  const tubeSegs = 80;
-
-  for (let li = 0; li < N_LINES; li++) {
-    if (topStarts.length === 0) break;
-
-    let cur = topStarts[Math.floor(rng() * topStarts.length)];
-    const path = [cur];
-
-    for (let k = 0; k < LEN - 1; k++) {
-      const nbrs = adj.get(cur);
-      if (!nbrs || nbrs.length === 0) break;
-      // avoid immediate backtracking when possible
-      const prev = path.length >= 2 ? path[path.length-2] : null;
-      const options = nbrs.filter(([w, v]) => v !== prev);
-      const choicePool = options.length ? options : nbrs;
-      const nxt = weightedChoice(rng, choicePool);
-      if (nxt == null) break;
-      path.push(nxt);
-      cur = nxt;
-    }
-
-    if (path.length < 4) continue;
-
-    const pts = path.map(v => nodeByVal.get(v).pos.clone());
-    // slight per-line offset so multiple tubes don't perfectly overlap
-    const jitter = new THREE.Vector3((rng()*2-1)*3.0, (rng()*2-1)*3.0, (rng()*2-1)*3.0);
-    for (const p of pts) p.add(jitter);
-
-    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-    const geom = new THREE.TubeGeometry(curve, tubeSegs, tubeRadius, 8, false);
-
-    // color per line: seeded + slight stim flavor
-    const baseHue = (rng() + (stim === 'visual' ? 0.58 : stim === 'motor' ? 0.32 : stim === 'auditory' ? 0.80 : 0.10)) % 1;
-    const col = new THREE.Color().setHSL(baseHue, 0.70, 0.55);
-
-    const mat = new THREE.MeshStandardMaterial({
-      color: col,
-      roughness: 0.35,
-      metalness: 0.15,
-      transparent: true,
-      opacity: (stim === 'rest') ? 0.55 : 0.70,
-    });
-
-    const tube = new THREE.Mesh(geom, mat);
-    group.add(tube);
-
-    // train
-    const trainGeom = new THREE.SphereGeometry(2.0, 16, 16);
-    const trainMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: col.clone().multiplyScalar(0.6),
-      emissiveIntensity: 0.8,
-      roughness: 0.25,
-      metalness: 0.1,
-    });
-    const train = new THREE.Mesh(trainGeom, trainMat);
-
-    const t0 = rng();
-    train.position.copy(curve.getPointAt(t0));
-    group.add(train);
-
-    trains.push({
-      mesh: train,
-      curve,
-      t: t0,
-      speed: (stim === 'rest' ? 0.035 : 0.05) * (0.75 + rng() * 0.6),
-    });
-  }
-
-  return {
-    group,
-    trains,
-    edgeCount,
-    lineCount: group.children.filter(o => o.type === 'Mesh').length - trains.length,
-  };
+  // NOTE: center_mm is the big one in your file
+  return (
+    tryArr(r?.center_mm) ||
+    tryArr(r?.centerMm) ||
+    tryArr(r?.centroid_mm) ||
+    tryArr(r?.centroidMm) ||
+    tryArr(r?.mni_xyz) ||
+    tryArr(r?.xyz) ||
+    tryArr(r?.mni) ||
+    tryArr(r?.coord) ||
+    tryArr(r?.coords) ||
+    (r && typeof r === 'object' && r.center && typeof r.center === 'object' && 'x' in r.center ? [Number(r.center.x), Number(r.center.y), Number(r.center.z)] : null) ||
+    null
+  );
 }
 
-function applyStimulusToNodes(stim) {
-  for (const n of nodeMeshes) {
-    const d = nodeByVal.get(n.userData.val);
-    const active = (stim === 'rest') ? true : (d.net === stim || d.hub);
-    const targetScale = active ? 1.15 : 0.80;
-    n.scale.setScalar(targetScale);
-    n.material.opacity = active ? 0.95 : 0.14;
-  }
+function colorForValue(v) {
+  const h = ((v * 0.61803398875) % 1 + 1) % 1;
+  const c = new THREE.Color();
+  c.setHSL(h, 0.62, 0.56);
+  return c;
 }
 
-function setStimulus(stim) {
+async function loadJSON(url) {
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+  return r.json();
+}
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.setClearColor(0x05070b, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x05070b, 8, 28);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
+camera.position.set(0, 0, 10);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const key = new THREE.DirectionalLight(0xffffff, 0.85);
+key.position.set(3, 4, 5);
+scene.add(key);
+
+// Soft hull
+const hullGeo = new THREE.SphereGeometry(3.2, 64, 64);
+hullGeo.scale(1.05, 1.25, 0.95);
+const hullMat = new THREE.MeshStandardMaterial({
+  color: 0x101827,
+  roughness: 0.9,
+  metalness: 0.0,
+  transparent: true,
+  opacity: 0.28,
+  depthWrite: false
+});
+scene.add(new THREE.Mesh(hullGeo, hullMat));
+
+const nodeGroup = new THREE.Group();
+scene.add(nodeGroup);
+
+const lineGroups = new Map(); // stim -> group
+const trainsByStim = new Map(); // stim -> train objects
+
+for (const s of STIMS) {
+  const g = new THREE.Group();
+  g.visible = (s === 'rest');
+  scene.add(g);
+  lineGroups.set(s, g);
+  trainsByStim.set(s, []);
+}
+
+let currentStim = 'rest';
+function setActiveButton(stim) {
+  UI.buttons.forEach(b => b.classList.toggle('active', b.dataset.stim === stim));
+}
+function setStimulus(stim, nodesUsedSet) {
   currentStim = stim;
-  el.stim.textContent = stim;
+  UI.stimName.textContent = stim;
   setActiveButton(stim);
 
-  for (const [k, g] of stimGroups.entries()) {
-    g.group.visible = (k === stim);
+  for (const s of STIMS) {
+    lineGroups.get(s).visible = (s === stim);
+    for (const t of trainsByStim.get(s)) t.mesh.visible = (s === stim);
   }
 
-  const g = stimGroups.get(stim);
-  el.edgeCount.textContent = g ? String(g.edgeCount) : '?';
-  el.lineCount.textContent = g ? String(g.lineCount) : '?';
-  el.trainCount.textContent = g ? String(g.trains.length) : '?';
-
-  applyStimulusToNodes(stim);
+  // Highlight nodes used in this stim
+  if (nodesUsedSet) {
+    nodeGroup.children.forEach(m => {
+      const used = nodesUsedSet.has(m.userData.key);
+      m.material.opacity = used ? 0.95 : 0.10;
+      m.scale.setScalar(used ? 1.25 : 0.85);
+    });
+  }
 }
 
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(0.05, clock.getDelta());
+const raycaster = new THREE.Raycaster();
+const mouseNDC = new THREE.Vector2(999, 999);
 
-  // hover
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(nodeMeshes, false);
-  if (hits.length) {
-    const val = hits[0].object.userData.val;
-    const d = nodeByVal.get(val);
-    el.hover.textContent = d ? `${d.label} (${d.net}${d.hub ? ', hub' : ''})` : String(val);
-  } else {
-    el.hover.textContent = 'none';
+renderer.domElement.addEventListener('pointermove', (ev) => {
+  const r = renderer.domElement.getBoundingClientRect();
+  mouseNDC.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+  mouseNDC.y = -(((ev.clientY - r.top) / r.height) * 2 - 1);
+}, { passive: true });
+
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+}, { passive: true });
+
+function tubeForCurve(curve, colorHex) {
+  const geom = new THREE.TubeGeometry(curve, 240, 0.06, 10, false);
+  const mat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    roughness: 0.65,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.62
+  });
+  return new THREE.Mesh(geom, mat);
+}
+
+function makeTrain(colorHex) {
+  const geom = new THREE.SphereGeometry(0.10, 16, 16);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: new THREE.Color(colorHex).multiplyScalar(0.55),
+    emissiveIntensity: 0.9,
+    roughness: 0.25,
+    metalness: 0.1
+  });
+  return new THREE.Mesh(geom, mat);
+}
+
+function layoutPositions(regions) {
+  // Build raw coords (fallback = deterministic)
+  const pts = [];
+  for (const r of regions) {
+    const lab = r?.label ?? r?.name ?? r?.region ?? r?.roi ?? '';
+    const key = normLabel(lab);
+    const val = Number(r?.aal_value ?? 0);
+    let c = getCoord(r);
+
+    if (!c) {
+      const rnd = seededRand((val * 10007 + 1337) >>> 0);
+      c = [(rnd()*2-1)*60, (rnd()*2-1)*80, (rnd()*2-1)*60];
+    }
+    pts.push({ r, key, label: String(lab), val, c });
   }
 
-  // trains update only for visible group
-  for (const [k, g] of stimGroups.entries()) {
-    if (!g.group.visible) continue;
-    for (const t of g.trains) {
+  // Normalize to fit ellipsoid-ish space
+  let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+  for (const p of pts) {
+    const [x,y,z] = p.c;
+    if (x<minX) minX=x; if (y<minY) minY=y; if (z<minZ) minZ=z;
+    if (x>maxX) maxX=x; if (y>maxY) maxY=y; if (z>maxZ) maxZ=z;
+  }
+  const dx = Math.max(1e-6, maxX-minX);
+  const dy = Math.max(1e-6, maxY-minY);
+  const dz = Math.max(1e-6, maxZ-minZ);
+
+  const rx=2.85, ry=3.55, rz=2.65;
+
+  for (const p of pts) {
+    const [x,y,z] = p.c;
+    const nx = ((x - minX) / dx) * 2 - 1;
+    const ny = ((y - minY) / dy) * 2 - 1;
+    const nz = ((z - minZ) / dz) * 2 - 1;
+    p.pos = new THREE.Vector3(nx*rx, ny*ry, nz*rz);
+  }
+  return pts;
+}
+
+(async function main() {
+  setStatus('loading…');
+
+  const ts = Date.now();
+  const aal = await loadJSON(`./data/aal_regions.json?v=${ts}`);
+  const regions = Array.isArray(aal) ? aal : (aal.regions ?? aal.nodes ?? aal.labels ?? []);
+
+  if (!regions.length) throw new Error('No regions found in aal_regions.json');
+
+  const pts = layoutPositions(regions);
+
+  // Build lookup
+  const byKey = new Map();
+  for (const p of pts) byKey.set(p.key, p);
+
+  // Nodes
+  const nodeGeom = new THREE.SphereGeometry(0.075, 16, 16);
+  for (const p of pts) {
+    const mat = new THREE.MeshStandardMaterial({
+      color: colorForValue(p.val || 0),
+      roughness: 0.6,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.10
+    });
+    const m = new THREE.Mesh(nodeGeom, mat);
+    m.position.copy(p.pos);
+    m.userData = { key: p.key, label: p.label };
+    nodeGroup.add(m);
+  }
+  UI.nodeCount.textContent = String(nodeGroup.children.length);
+
+  // Lines spec
+  const spec = await loadJSON(`./data/lines.json?v=${ts}`);
+  const lines = spec.lines ?? [];
+
+  // Color palette for lines
+  const palette = [0x8ab4f8,0xf28b82,0x81c995,0xfdd663,0xd7aefb,0x78d9ec,0xf6aea9,0xa7ffeb];
+  let colorIdx = 0;
+
+  // Build per-stim used node sets
+  const usedByStim = new Map();
+  for (const s of STIMS) usedByStim.set(s, new Set());
+
+  let totalLinesBuilt = 0;
+  let totalTrainsBuilt = 0;
+  let missingCount = 0;
+
+  for (const ln of lines) {
+    const stim = ln.stimulus;
+    if (!lineGroups.has(stim)) continue;
+
+    const stops = Array.isArray(ln.stops) ? ln.stops : [];
+    const ptsLine = [];
+    for (const stop of stops) {
+      const k = normLabel(stop);
+      const p = byKey.get(k);
+      if (!p) { missingCount++; continue; }
+      ptsLine.push(p.pos.clone());
+      usedByStim.get(stim).add(k);
+    }
+
+    if (ptsLine.length < 3) continue;
+
+    const curve = new THREE.CatmullRomCurve3(ptsLine, false, 'catmullrom', 0.5);
+    const col = palette[colorIdx % palette.length]; colorIdx++;
+
+    const tube = tubeForCurve(curve, col);
+    lineGroups.get(stim).add(tube);
+    totalLinesBuilt++;
+
+    const nTrains = Math.max(0, Number(ln.trains ?? 0));
+    for (let i = 0; i < nTrains; i++) {
+      const train = makeTrain(col);
+      const t0 = (i / Math.max(1, nTrains)) % 1;
+      train.position.copy(curve.getPointAt(t0));
+      train.visible = (stim === 'rest');
+      scene.add(train);
+
+      trainsByStim.get(stim).push({
+        mesh: train,
+        curve,
+        t: t0,
+        speed: 0.04 + 0.03 * Math.random()
+      });
+      totalTrainsBuilt++;
+    }
+  }
+
+  setStatus(`lines built: ${totalLinesBuilt}, trains: ${totalTrainsBuilt}, missing stops skipped: ${missingCount}`);
+
+  function applyStim(stim) {
+    const used = usedByStim.get(stim) || new Set();
+    UI.lineCount.textContent = String(lineGroups.get(stim).children.length);
+    UI.trainCount.textContent = String(trainsByStim.get(stim).length);
+    setStimulus(stim, used);
+  }
+
+  // Buttons
+  UI.buttons.forEach(btn => {
+    btn.addEventListener('click', () => applyStim(btn.dataset.stim));
+  });
+
+  applyStim('rest');
+
+  // Animation loop
+  const clock = new THREE.Clock();
+
+  function tick() {
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, clock.getDelta());
+
+    // hover
+    raycaster.setFromCamera(mouseNDC, camera);
+    const hits = raycaster.intersectObjects(nodeGroup.children, false);
+    UI.hoverName.textContent = hits.length ? (hits[0].object.userData.label || 'Unknown') : 'none';
+
+    // trains update for current stim only
+    for (const t of trainsByStim.get(currentStim)) {
       t.t = (t.t + t.speed * dt) % 1;
       t.mesh.position.copy(t.curve.getPointAt(t.t));
     }
+
+    controls.update();
+    renderer.render(scene, camera);
   }
-
-  controls.update();
-  renderer.render(scene, camera);
-}
-
-const clock = new THREE.Clock();
-
-(async function main() {
-  resize();
-
-  const regionsURL = `./data/aal_regions.json?v=${DATA_VERSION}`;
-  const connectomeURL = `./data/connectome_edges.json?v=${DATA_VERSION}`;
-
-  const [regionsData, connData] = await Promise.all([
-    loadJSON(regionsURL),
-    loadJSON(connectomeURL),
-  ]);
-
-  const regions = regionsData.regions || regionsData;
-  const edgesAll = connData.edges || [];
-
-  // Build nodes (and bounds)
-  const bounds = { min: new THREE.Vector3(+1e9, +1e9, +1e9), max: new THREE.Vector3(-1e9, -1e9, -1e9) };
-
-  for (const r of regions) {
-    const val = parseInt(r.aal_value, 10);
-    const label = r.label || r.name || `aal_${val}`;
-    const pos = getXYZ(r);
-
-    bounds.min.min(pos);
-    bounds.max.max(pos);
-
-    const net = netOf(label);
-    const hub = isHub(label);
-    const color = seededColor(val);
-
-    nodeByVal.set(val, { val, label, net, hub, pos, color });
-  }
-
-  el.nodeCount.textContent = String(nodeByVal.size);
-
-  // Shell
-  const shell = buildBrainShell(bounds);
-  scene.add(shell);
-
-  // Nodes
-  const nodeGeom = new THREE.SphereGeometry(1.55, 16, 16);
-  for (const [val, d] of nodeByVal.entries()) {
-    const mat = new THREE.MeshStandardMaterial({
-      color: d.color,
-      transparent: true,
-      opacity: 0.95,
-      roughness: 0.45,
-      metalness: 0.1,
-    });
-    const m = new THREE.Mesh(nodeGeom, mat);
-    m.position.copy(d.pos);
-    m.userData = { val };
-    scene.add(m);
-    nodeMeshes.push(m);
-    meshByVal.set(val, m);
-  }
-
-  // Build stimulus groups
-  for (const stim of STIMS) {
-    const g = buildStimulusGroup(stim, edgesAll);
-    g.group.visible = false;
-    scene.add(g.group);
-    stimGroups.set(stim, g);
-  }
-
-  setStimulus('rest');
-  animate();
+  tick();
 })().catch(err => {
   console.error(err);
-  el.hover.textContent = 'ERROR (check console)';
+  setStatus(`ERROR: ${err?.message || err}`);
+  UI.hoverName.textContent = 'ERROR (see console)';
 });
