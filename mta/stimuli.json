@@ -1,0 +1,47 @@
+[
+  {
+    "id": "threat-demo",
+    "name": "Threat response (demo)",
+    "route": ["Thalamus_L","Amygdala_L","Insula_L","Cingulum_Ant_L","Frontal_Med_Orb_L"]
+  },
+  {
+    "id": "reward-demo",
+    "name": "Reward / motivation (demo)",
+    "route": ["Thalamus_L","Accumbens_L","Caudate_L","Putamen_L","Frontal_Med_Orb_L","Cingulum_Ant_L"]
+  },
+  {
+    "id": "motor-demo",
+    "name": "Motor intention (demo)",
+    "route": ["Frontal_Sup_L","Supp_Motor_Area_L","Precentral_L","Postcentral_L","Parietal_Sup_L"]
+  },
+
+  { "id": "visual-processing", "name": "Visual processing", "route": ["Calcarine_L","Cuneus_L","Lingual_L","Occipital_Mid_L","Fusiform_L","Temporal_Inf_L"] },
+  { "id": "auditory-processing", "name": "Auditory processing", "route": ["Heschl_L","Temporal_Sup_L","Temporal_Mid_L","Insula_L","Frontal_Inf_Oper_L"] },
+  { "id": "language-comprehension", "name": "Language comprehension (left)", "route": ["Temporal_Sup_L","SupraMarginal_L","Angular_L","Frontal_Inf_Tri_L"] },
+  { "id": "speech-production", "name": "Speech production (left)", "route": ["Frontal_Inf_Oper_L","Insula_L","Precentral_L","Supp_Motor_Area_L"] },
+
+  { "id": "episodic-encoding", "name": "Episodic memory (encoding)", "route": ["Hippocampus_L","Parahippocampal_L","Amygdala_L","Temporal_Mid_L","Frontal_Med_Orb_L"] },
+  { "id": "episodic-retrieval", "name": "Episodic memory (retrieval)", "route": ["Precuneus_L","Cingulum_Post_L","Hippocampus_L","Angular_L","Frontal_Mid_L"] },
+
+  { "id": "working-memory", "name": "Working memory / executive loop", "route": ["Frontal_Mid_L","Parietal_Inf_L","Cingulum_Mid_L","Thalamus_L","Frontal_Mid_L"] },
+  { "id": "cognitive-control", "name": "Cognitive control (ACC-centered)", "route": ["Cingulum_Ant_L","Frontal_Mid_L","Parietal_Inf_L","Cingulum_Mid_L","Thalamus_L"] },
+
+  { "id": "attention-orienting", "name": "Attention orienting", "route": ["Precuneus_L","Parietal_Sup_L","Frontal_Mid_L","Occipital_Sup_L","Parietal_Sup_L"] },
+  { "id": "salience-pain", "name": "Salience / pain (schematic)", "route": ["Thalamus_L","Postcentral_L","Insula_L","Cingulum_Ant_L","Parietal_Inf_L"] },
+
+  { "id": "emotion-regulation", "name": "Emotion regulation / reappraisal", "route": ["Amygdala_L","Cingulum_Ant_L","Frontal_Sup_L","Frontal_Med_Orb_L"] },
+  { "id": "habit-loop", "name": "Habit loop (basal ganglia)", "route": ["Putamen_L","Pallidum_L","Thalamus_L","Frontal_Sup_L","Supp_Motor_Area_L"] },
+
+  { "id": "default-mode", "name": "Default mode (mind wandering)", "route": ["Frontal_Sup_Medial_L","Cingulum_Post_L","Precuneus_L","Angular_L","Temporal_Pole_Mid_L"] },
+  { "id": "social-cognition", "name": "Social cognition (schematic)", "route": ["Temporal_Pole_Sup_L","Amygdala_L","Frontal_Med_Orb_L","Cingulum_Ant_L","Precuneus_L"] },
+
+  { "id": "olfaction", "name": "Olfaction", "route": ["Olfactory_L","Insula_L","Frontal_Med_Orb_L","Amygdala_L","Hippocampus_L"] },
+  { "id": "somatosensory", "name": "Somatosensory integration", "route": ["Postcentral_L","Parietal_Sup_L","Parietal_Inf_L","SupraMarginal_L","Insula_L"] },
+
+  { "id": "face-processing", "name": "Face processing (schematic)", "route": ["Occipital_Inf_L","Fusiform_L","Temporal_Mid_L","Amygdala_L","Frontal_Med_Orb_L"] },
+  { "id": "reading-network", "name": "Reading network (schematic)", "route": ["Occipital_Mid_L","Fusiform_L","Temporal_Inf_L","Angular_L","Frontal_Inf_Tri_L"] },
+  { "id": "music-network", "name": "Music perception (schematic)", "route": ["Heschl_L","Temporal_Sup_L","Temporal_Pole_Sup_L","Frontal_Inf_Oper_L","Cingulum_Ant_L"] },
+
+  { "id": "visuomotor", "name": "Visuomotor integration", "route": ["Occipital_Sup_L","Parietal_Sup_L","Precentral_L","Supp_Motor_Area_L"] },
+  { "id": "stress-response", "name": "Stress response (schematic)", "route": ["Amygdala_L","Hippocampus_L","Insula_L","Cingulum_Ant_L","Frontal_Med_Orb_L"] }
+]
