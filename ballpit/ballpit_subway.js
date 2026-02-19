@@ -1,6 +1,81 @@
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
+
+/* PRETTY_REGION_LABELS_V1
+   Display-only: keeps raw IDs for joins; only prettifies what humans see.
+*/
+const __AAL_ABBREV__ = {
+  Sup:  "Superior",
+  Inf:  "Inferior",
+  Mid:  "Middle",
+  Med:  "Medial",
+  Ant:  "Anterior",
+  Post: "Posterior",
+  Orb:  "Orbital",
+  Oper: "Opercular",
+  Tri:  "Triangular",
+};
+
+function __prettyRegionLabel__(raw) {
+  if (raw == null) return "";
+  let s = String(raw).trim();
+  if (!s || s === "none") return s;
+  if (s.startsWith("ERROR")) return s;
+
+  // Preserve trailing "(rest)" / "(visual)" etc, but format nicer.
+  let suffix = "";
+  const m = s.match(/^(.*?)(\s*\([^)]*\))$/);
+  if (m) { s = m[1].trim(); suffix = m[2]; }
+
+  const sufCore = suffix.replace(/[()]/g, "").trim().toLowerCase();
+  if (sufCore in {rest:1, visual:1, motor:1, auditory:1}) {
+    suffix = " · " + sufCore;
+  }
+
+  // Hemisphere suffix
+  let hemi = "";
+  if (s.endsWith("_L")) { hemi = "Left";  s = s.slice(0, -2); }
+  else if (s.endsWith("_R")) { hemi = "Right"; s = s.slice(0, -2); }
+
+  // Tokenize on underscores and expand common AAL abbrevs.
+  const toks = s.split("_").filter(Boolean).map(t => __AAL_ABBREV__[t] || t);
+  let out = toks.join(" ");
+
+  if (hemi) out = out + " (" + hemi + ")";
+  return (out + suffix).trim();
+}
+
+function __attachPrettyHover__() {
+  const hoverEl = document.getElementById("hoverName");
+  if (!hoverEl) return;
+
+  let inObs = false;
+  const obs = new MutationObserver(() => {
+    if (inObs) return;
+    inObs = true;
+    try {
+      const v = hoverEl.textContent || "";
+      const p = __prettyRegionLabel__(v);
+      if (p && p !== v) hoverEl.textContent = p;
+    } finally {
+      inObs = false;
+    }
+  });
+
+  obs.observe(hoverEl, { childList: true, characterData: true, subtree: true });
+
+  // normalize initial value
+  const v0 = hoverEl.textContent || "";
+  const p0 = __prettyRegionLabel__(v0);
+  if (p0 && p0 !== v0) hoverEl.textContent = p0;
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", __attachPrettyHover__);
+} else {
+  __attachPrettyHover__();
+}
 const DATA_VERSION = 'ballpit-url1';
 const BUILD_ID = `BALLPIT-BALLPITURL1-${new Date().toISOString()}`;
 
@@ -334,7 +409,7 @@ function applyStimulusToNodes(stim) {
 
 function setStimulus(stim) {
   currentStim = stim;
-  el.stim.textContent = stim;
+  if (el.stim) el.stim.textContent = stim;
   setActiveButton(stim);
 
   for (const [k, g] of stimGroups.entries()) {
