@@ -7,6 +7,25 @@
   "standards": [],
   "units": [
     {
+      "id": "B_GEN_1",
+      "side": "Blue",
+      "type": "GEN",
+      "quality": "Veteran",
+      "hp": 5,
+      "maxHp": 5,
+      "r": 5,
+      "c": 5,
+      "moraleRadius": 3,
+      "attack": {
+        "range": 1,
+        "dice": "1d6",
+        "hitOn": [
+          6
+        ],
+        "notes": "Adjacent only; hits only on a 6."
+      }
+    },
+    {
       "id": "B_CAV_1",
       "side": "Blue",
       "type": "CAV",
@@ -45,6 +64,25 @@
       "maxHp": 3,
       "r": 5,
       "c": 8
+    },
+    {
+      "id": "R_GEN_1",
+      "side": "Red",
+      "type": "GEN",
+      "quality": "Veteran",
+      "hp": 5,
+      "maxHp": 5,
+      "r": 5,
+      "c": 20,
+      "moraleRadius": 3,
+      "attack": {
+        "range": 1,
+        "dice": "1d6",
+        "hitOn": [
+          6
+        ],
+        "notes": "Adjacent only; hits only on a 6."
+      }
     },
     {
       "id": "R_CAV_1",
@@ -87,5 +125,5 @@
       "c": 17
     }
   ],
-  "notes": "Milestone C: static unit render + click select + inspector. No movement/combat yet."
+  "notes": "Milestone D: add Generals (HP=5), aura radius=3 shown on select. Attack rule recorded (not executed yet)."
 }

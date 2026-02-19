@@ -9,26 +9,53 @@ async function fetchJSON(path) {
   return await r.json();
 }
 
-const SIDE_FILL = {
-  Blue: "#2563eb",
-  Red:  "#dc2626",
-};
+const SIDE_FILL = { Blue: "#2563eb", Red: "#dc2626" };
 const QUALITY_SHORT = { Green: "G", Regular: "R", Veteran: "V" };
+
+// TEXT_SCALE_0_72: shrink on-token text by 28%
+const TEXT_SCALE = 0.72;
+
+// GENERALS_V1: HP=5; attack=adjacent only; 1d6 hit on 6; morale radius default 3
+const DEFAULT_MORALE_RADIUS = 3;
+
+const key = (r, c) => `${r},${c}`;
+
+function oddrToCube(r, c) {
+  const x = c - ((r - (r & 1)) / 2);
+  const z = r;
+  const y = -x - z;
+  return { x, y, z };
+}
+function cubeDist(a, b) {
+  return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z)) / 2;
+}
+function hexDist(r1, c1, r2, c2) {
+  return cubeDist(oddrToCube(r1, c1), oddrToCube(r2, c2));
+}
 
 function setupGame(layout, scenario) {
   const canvas = $("#hexCanvas");
   const ctx = canvas.getContext("2d");
+
   const hoverEl = $("#hoverInfo");
-  const selEl = $("#selectedInfo");
+  const auraEl  = $("#auraInfo");
+  const selEl   = $("#selectedInfo");
 
   $("#scenarioName").textContent = scenario?.name || "—";
-  $("#unitCount").textContent = (scenario?.units?.length ?? 0).toString();
+  $("#unitCount").textContent = String(scenario?.units?.length ?? 0);
 
   const units = Array.isArray(scenario?.units) ? scenario.units : [];
+  const unitByHex = new Map();
+  for (const u of units) unitByHex.set(key(u.r, u.c), u);
+
   let selectedId = null;
-  let drawn = [];   // [{r,c,cx,cy}]
   let hover = null;
+  let drawn = [];
   let gLast = null;
+
+  // computed only when selection changes
+  let auraSet = null;  // Set<"r,c">
+  let auraSide = null;
 
   function computeGeometry() {
     const cols = layout.cols;
@@ -74,37 +101,73 @@ function setupGame(layout, scenario) {
     ctx.closePath();
   }
 
-  function unitAt(r, c) {
-    for (const u of units) {
-      if (u.r === r && u.c === c) return u;
+  function isGeneral(u) {
+    return !!u && (u.type === "GEN" || u.isGeneral === true);
+  }
+
+  function computeAuraForSelected() {
+    auraSet = null;
+    auraSide = null;
+    auraEl.textContent = "";
+
+    if (!selectedId) return;
+    const u = units.find(x => x.id === selectedId);
+    if (!u || !isGeneral(u)) return;
+
+    const radius = (typeof u.moraleRadius === "number") ? u.moraleRadius : DEFAULT_MORALE_RADIUS;
+    auraSide = u.side;
+    auraEl.textContent = `aura: ${radius}`;
+
+    const set = new Set();
+    for (const h of layout.hexes) {
+      if (hexDist(u.r, u.c, h.r, h.c) <= radius) set.add(key(h.r, h.c));
     }
-    return null;
+    auraSet = set;
   }
 
   function updateSelectedPanel() {
     if (!selectedId) {
       selEl.textContent = "Selected: —\n(click a unit token)";
+      auraSet = null; auraSide = null; auraEl.textContent = "";
       return;
     }
+
     const u = units.find(x => x.id === selectedId);
     if (!u) {
-      selEl.textContent = "Selected: —\n(click a unit token)";
       selectedId = null;
+      selEl.textContent = "Selected: —\n(click a unit token)";
+      auraSet = null; auraSide = null; auraEl.textContent = "";
       return;
     }
-    selEl.textContent =
-`Selected
-ID: ${u.id}
-Side: ${u.side}
-Type: ${u.type}
-Quality: ${u.quality}
-HP: ${u.hp}/${u.maxHp}
-Hex: row ${u.r}, col ${u.c}`;
+
+    const lines = [
+      "Selected",
+      `ID: ${u.id}`,
+      `Side: ${u.side}`,
+      `Type: ${u.type}`,
+      `Quality: ${u.quality ?? "—"}`,
+      `HP: ${u.hp}/${u.maxHp}`,
+      `Hex: row ${u.r}, col ${u.c}`,
+    ];
+
+    if (isGeneral(u)) {
+      const radius = (typeof u.moraleRadius === "number") ? u.moraleRadius : DEFAULT_MORALE_RADIUS;
+      const atk = u.attack || {};
+      const hitOn = Array.isArray(atk.hitOn) ? atk.hitOn.join(",") : "6";
+      lines.push(`Morale radius: ${radius}`);
+      lines.push(`Attack: adjacent | 1d6 | hit on ${hitOn}`);
+      lines.push(`(attack rule recorded; combat not active yet)`);
+    }
+
+    selEl.textContent = lines.join("\n");
+    computeAuraForSelected();
   }
 
   function drawUnitToken(u, g) {
+    // TOKEN_UI_V3 (quiet: type + hp only) TEXT_SCALE_0_72
     const { cx, cy } = centerOf(u.r, u.c, g);
-    const R = g.s * 0.72;
+    const R = g.s * 0.76;
+    const isSel = (selectedId === u.id);
 
     // base
     ctx.beginPath();
@@ -112,31 +175,44 @@ Hex: row ${u.r}, col ${u.c}`;
     ctx.fillStyle = SIDE_FILL[u.side] || "#666";
     ctx.fill();
 
-    // outline (selected gets a heavier ring)
-    const isSel = (selectedId === u.id);
-    ctx.lineWidth = isSel ? 3 : 1.5;
-    ctx.strokeStyle = isSel ? "#111" : "#ffffff";
+    // ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.95)";
     ctx.stroke();
+
+    // selected ring
+    if (isSel) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, R + 2, 0, Math.PI * 2);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#111111";
+      ctx.stroke();
+    }
+
+    // subtle "general" extra ring (only for GEN, not for everyone)
+    if (u.type === "GEN") {
+      ctx.beginPath();
+      ctx.arc(cx, cy, R - 4, 0, Math.PI * 2);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(255,255,255,0.55)";
+      ctx.stroke();
+    }
 
     // labels
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
 
-    const typeFont = Math.max(10, Math.round(g.s * 0.52));
-    const hpFont   = Math.max(10, Math.round(g.s * 0.55));
-    const qFont    = Math.max(9,  Math.round(g.s * 0.42));
+    const typeFont = Math.max(7, Math.round(g.s * 0.44 * TEXT_SCALE));
+    const hpFont   = Math.max(9, Math.round(g.s * 0.72 * TEXT_SCALE));
 
-    ctx.fillStyle = "#fff";
-    ctx.font = `${typeFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-    ctx.fillText(u.type, cx, cy - R * 0.20);
+    ctx.font = `800 ${typeFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.fillText(u.type, cx, cy - R * 0.22);
 
-    ctx.font = `${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-    ctx.fillText(String(u.hp), cx, cy + R * 0.30);
-
-    // quality badge (top-left-ish)
-    const q = QUALITY_SHORT[u.quality] || "?";
-    ctx.font = `${qFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"`;
-    ctx.fillText(q, cx - R * 0.48, cy - R * 0.48);
+    ctx.font = `900 ${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.fillText(String(u.hp), cx, cy + R * 0.22);
   }
 
   function render() {
@@ -155,25 +231,34 @@ Hex: row ${u.r}, col ${u.c}`;
       return { r, c, cx, cy };
     });
 
+    const auraFill =
+      auraSide === "Red" ? "rgba(220,38,38,0.14)" :
+      auraSide === "Blue" ? "rgba(37,99,235,0.14)" :
+      null;
+
     // hexes
     ctx.lineWidth = 1;
     for (const h of drawn) {
       const isHover = hover && (hover.r === h.r) && (hover.c === h.c);
+      const inAura = auraSet && auraSet.has(key(h.r, h.c));
 
       hexPath(h.cx, h.cy, g.s);
-      ctx.fillStyle = isHover ? "#e6f2ff" : "#f7f7f7";
+      let fill = "#f7f7f7";
+      if (inAura && auraFill) fill = auraFill;
+      if (isHover) fill = "#e6f2ff";
+
+      ctx.fillStyle = fill;
       ctx.strokeStyle = isHover ? "#2563eb" : "#b0b0b0";
       ctx.fill();
       ctx.stroke();
     }
 
-    // units on top
+    // units
     for (const u of units) drawUnitToken(u, g);
 
-    // footer marker
     ctx.fillStyle = "#666";
     ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-    ctx.fillText(`Cohort: ${units.length} units (click to select)`, 12, g.H - 12);
+    ctx.fillText(`Diadem: generals + aura (select GEN)`, 12, g.H - 12);
   }
 
   function pickHex(mx, my) {
@@ -232,7 +317,7 @@ Hex: row ${u.r}, col ${u.c}`;
       return;
     }
 
-    const u = unitAt(h.r, h.c);
+    const u = unitByHex.get(key(h.r, h.c));
     selectedId = u ? u.id : null;
     updateSelectedPanel();
     render();
