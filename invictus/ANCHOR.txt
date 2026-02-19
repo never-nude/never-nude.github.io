@@ -1,6 +1,5 @@
-PROJECT=Invictus
-MILESTONE=C_COHORT_UNITS_STATIC
-REPO_ROOT=/Users/michael/dev/never-nude.github.io
-SERVE_CMD=python3 -m http.server 6657 --bind 127.0.0.1
-LOCAL_URL=http://127.0.0.1:6657/invictus/?ts=20260218-230855
-PUBLISH_URL=https://digitalbrain.live/invictus/
+PROJECT=POLEMOS2
+BUILD=1771480772
+UTC=2026-02-19T05:59:32Z
+EXPECTED_CANVAS=27x11
+EXPECTED_ACTIVE_HEXES=157
