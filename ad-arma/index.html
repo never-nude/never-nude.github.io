@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ad Arma v2 — 20260219-004546</title>
-  <link rel="stylesheet" href="style.css?v=20260219-004546">
+  <title>Ad Arma v2 — 20260219-012640</title>
+  <link rel="stylesheet" href="style.css?v=20260219-012640">
 </head>
 <body>
   <div id="topbar">
-    <div id="build">Ad Arma v2 — BUILD 20260219-004546 — PORT 9981</div>
+    <div id="build">Ad Arma v2 — BUILD 20260219-012640 — PORT 9981</div>
     <div id="tagline">Instrument for thinking in formations.</div>
-    <button id="truthToggle" type="button" aria-expanded="false">Truth ▸</button>
+    <button id="truthToggle" type="button">Truth ▸</button>
     <pre id="truth">loading truth…</pre>
   </div>
 
@@ -21,20 +21,12 @@
       <div id="controls">
         <div class="row">
           <label>Scenario
-            <select id="scenarioSel"></select>
+            <select id="scenarioSel"><option>loading…</option></select>
           </label>
-          <button id="scenarioLoad" type="button">Load</button>
-
-          <button id="scenarioExport" type="button">Export JSON</button>
-
-          <button id="scenarioImport" type="button">Import JSON</button>
-          <input id="scenarioFile" type="file" accept="application/json,.json" style="display:none">
-
+          <button id="loadScenario" type="button">Load</button>
           <div>loaded: <span id="loadedScenario">none</span></div>
 
-          <span style="opacity:.35">|</span>
-
-          <label><input type="checkbox" id="editMode" checked> Edit</label>
+          <label><input type="checkbox" id="editMode" checked> Edit mode</label>
           <label><input type="radio" name="tool" value="place" checked> Place</label>
           <label><input type="radio" name="tool" value="erase"> Erase</label>
 
@@ -48,7 +40,7 @@
           <label>Type
             <select id="typeSel">
               <option value="Cavalry">Cavalry</option>
-              <option value="Infantry">Infantry</option>
+              <option value="Infantry" selected>Infantry</option>
               <option value="Slingers">Slingers</option>
               <option value="Archers">Archers</option>
               <option value="General">General</option>
@@ -71,15 +63,15 @@
       </div>
 
       <div id="boardWrap">
-        <svg id="board" preserveAspectRatio="xMidYMid meet"></svg>
+        <svg id="board" preserveAspectRatio="xMidYMid meet" aria-label="Ad Arma v2 board"></svg>
       </div>
 
       <div id="log"></div>
     </div>
   </div>
 
-  <!-- Only these two scripts. Nothing else. -->
-  <script src="build.js?v=20260219-004546"></script>
-  <script src="main.js?v=20260219-004546"></script>
+  <!-- NOTE: relative paths on purpose (works in / and /ad-arma/) -->
+  <script src="build.js?v=20260219-012640"></script>
+  <script src="main.js?v=20260219-012640"></script>
 </body>
 </html>

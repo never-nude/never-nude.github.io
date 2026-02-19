@@ -6,7 +6,7 @@
   },
   {
     "id": "demo_lines",
-    "label": "Demo lines (all 5 types)",
+    "label": "Demo lines",
     "file": "demo_lines.json"
   }
 ]

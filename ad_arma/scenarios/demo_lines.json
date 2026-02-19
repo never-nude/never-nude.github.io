@@ -1,7 +1,6 @@
 {
-  "version": 1,
   "id": "demo_lines",
-  "label": "Demo lines (all 5 types)",
+  "label": "Demo lines",
   "units": [
     {
       "q": -2,
@@ -39,6 +38,34 @@
       "quality": "Regular"
     },
     {
+      "q": 0,
+      "r": -3,
+      "side": "Red",
+      "type": "Slingers",
+      "quality": "Green"
+    },
+    {
+      "q": -6,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Veteran"
+    },
+    {
+      "q": 6,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Veteran"
+    },
+    {
+      "q": 3,
+      "r": -4,
+      "side": "Red",
+      "type": "General",
+      "quality": "Regular"
+    },
+    {
       "q": -2,
       "r": 1,
       "side": "Blue",
@@ -74,73 +101,24 @@
       "quality": "Regular"
     },
     {
-      "q": -6,
-      "r": -2,
-      "side": "Red",
-      "type": "Cavalry",
-      "quality": "Veteran"
-    },
-    {
-      "q": 6,
-      "r": -2,
-      "side": "Red",
-      "type": "Cavalry",
-      "quality": "Veteran"
-    },
-    {
-      "q": -6,
-      "r": 2,
-      "side": "Blue",
-      "type": "Cavalry",
-      "quality": "Veteran"
-    },
-    {
-      "q": 6,
-      "r": 2,
-      "side": "Blue",
-      "type": "Cavalry",
-      "quality": "Veteran"
-    },
-    {
-      "q": -1,
-      "r": -3,
-      "side": "Red",
-      "type": "Slingers",
-      "quality": "Green"
-    },
-    {
-      "q": 1,
-      "r": -3,
-      "side": "Red",
-      "type": "Archers",
-      "quality": "Regular"
-    },
-    {
       "q": 0,
-      "r": -4,
-      "side": "Red",
-      "type": "General",
-      "quality": "Veteran"
-    },
-    {
-      "q": -1,
-      "r": 3,
-      "side": "Blue",
-      "type": "Slingers",
-      "quality": "Green"
-    },
-    {
-      "q": 1,
       "r": 3,
       "side": "Blue",
       "type": "Archers",
-      "quality": "Regular"
+      "quality": "Green"
     },
     {
-      "q": 0,
-      "r": 4,
+      "q": -5,
+      "r": 3,
       "side": "Blue",
-      "type": "General",
+      "type": "Cavalry",
+      "quality": "Veteran"
+    },
+    {
+      "q": 5,
+      "r": 3,
+      "side": "Blue",
+      "type": "Cavalry",
       "quality": "Veteran"
     }
   ]
