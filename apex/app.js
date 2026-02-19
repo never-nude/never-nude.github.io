@@ -29,7 +29,7 @@ import * as THREE from "./vendor/three.module.js";
   });
 })();
 
-const BUILD = "BUILD0058_CAMFIX2";
+const BUILD = "BUILD0061_CORTEX1";
 const PROJECT = "Apex";
 
 const $ = (id) => document.getElementById(id);
@@ -280,7 +280,7 @@ function newLifeStats() {
 let life = newLifeStats();
 
 
-// ----- Courtship signal (BUILD0058_CAMFIX2) -----
+// ----- Courtship signal (BUILD0061_CORTEX1) -----
 // "Signal" = what your recent eating behavior communicates socially.
 // It fades over time. Higher-quality meals produce stronger signal.
 let lastMeal = { t: -9999, type: "none", grade: "(none)", value: 0, gained: 0 };
@@ -908,13 +908,13 @@ function spawnHeartsAt(x, z, count=6) {
   }
 }
 
-// ----- Mate choice system (two candidates + glyphs; BUILD0058_CAMFIX2) -----
+// ----- Mate choice system (two candidates + glyphs; BUILD0061_CORTEX1) -----
 const mates = [];
 let mateStatus = "none";
 let mateSummary = "";
 let selectedMate = null;
 
-// If BUILD0058_CAMFIX2 signal exists, use it; else fall back.
+// If BUILD0061_CORTEX1 signal exists, use it; else fall back.
 function safeMateSignalFactor(m) {
   try { if (typeof mateSignalFactor === "function") return mateSignalFactor(m, worldT); } catch (e) {}
   return 1.0;
@@ -1932,7 +1932,7 @@ resetWorld();
 /* __APEX_rAF_MOVED__ */
 
 
-// ----- Lineage slots (BUILD0058_CAMFIX2) -----
+// ----- Lineage slots (BUILD0061_CORTEX1) -----
 // Polishes truthfulness: lineage overlay reads gen/stage/diet from the SAME HUD tags the player sees.
 // Uses events dispatched by index.html (lineageKeys):
 //   emerge_lineage_toggle
@@ -2164,7 +2164,7 @@ resetWorld();
 })();
 
 
-// ----- Epochs (BUILD0058_CAMFIX2) -----
+// ----- Epochs (BUILD0061_CORTEX1) -----
 // Adds PRESSURE (0..1). Keys: [ decrease pressure, ] increase pressure.
 // Pressure expands Meadow radius, reduces flora, increases grazers.
 (() => {
@@ -2351,7 +2351,7 @@ resetWorld();
   setTimeout(() => reseed(), 60);
 })();
 
-// ----- Grazers (BUILD0058_CAMFIX2) -----
+// ----- Grazers (BUILD0061_CORTEX1) -----
 // Competitor herbivores that seek and consume flora (green spheres).
 // NEW: flee from the player when close + can be eaten with Space if caught.
 (() => {
@@ -2710,7 +2710,7 @@ resetWorld();
 
 
 
-// ----- Herd Boon (BUILD0058_CAMFIX2) -----
+// ----- Herd Boon (BUILD0061_CORTEX1) -----
 // Symbiosis: near the sheep herd you get a small “rest” benefit.
 // Visible truth probe: a ground ring under the player + status data-herd=ON.
 // Mechanical effect: gentle energy regen up to a soft cap while herd=ON.
@@ -2832,7 +2832,7 @@ const mat = new THREE.MeshBasicMaterial({ color: 0x66CCFF, transparent: true, op
   setInterval(step, 33);
 })();
 
-// ----- Stragglers + Sheep Eat + Eat FX (BUILD0058_CAMFIX2) -----
+// ----- Stragglers + Sheep Eat + Eat FX (BUILD0061_CORTEX1) -----
 // Fixes phantom orange rings, makes straggler sheep edible, adds eat feedback pulse.
 (() => {
   if (window.__emerge_eatfix_installed) return;
@@ -3209,7 +3209,7 @@ const mat = new THREE.MeshBasicMaterial({
 
 
 
-// ----- Predators (BUILD0058_CAMFIX2) -----
+// ----- Predators (BUILD0061_CORTEX1) -----
 // One red predator competes with you by hunting yellow grazers.
 // Truth probes: status shows pred=<count> and pk=<pred kills>.
 (() => {
@@ -3475,7 +3475,7 @@ const mat = new THREE.MeshBasicMaterial({
 
 
 
-// ----- Prey Tiers (BUILD0058_CAMFIX2) -----
+// ----- Prey Tiers (BUILD0061_CORTEX1) -----
 // Fixes: guarantees at least one p2 exists, adds halo glyph for p2, and makes tiers more visually distinct.
 // Debug: T = force tiers (recolor 3 existing prey if spawn function unavailable).
 (() => {
@@ -3780,7 +3780,7 @@ const mat = new THREE.MeshBasicMaterial({
 
 
 
-// ----- Apex HUD toggle + ring purge (BUILD0058_CAMFIX2) -----
+// ----- Apex HUD toggle + ring purge (BUILD0061_CORTEX1) -----
 // H: toggle HUD overlay (keeps bottom status). K: purge small ring artifacts (keeps big herd ring).
 (() => {
   if (window.__emerge_ui_apex_installed) return;
@@ -3901,7 +3901,7 @@ if (sx >= 4.0) return;
 
 
 
-// ----- Predators hunt sheep (BUILD0058_CAMFIX2) -----
+// ----- Predators hunt sheep (BUILD0061_CORTEX1) -----
 // Adds a competing predator that hunts flock sheep; leaves meat drops you can steal.
 // Space: eat meat drops (and isolated sheep only). Pred kills increment pk.
 (() => {
@@ -4280,7 +4280,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// ----- Metabolic Scaling + Trophic Shift (BUILD0058_CAMFIX2) -----
+// ----- Metabolic Scaling + Trophic Shift (BUILD0061_CORTEX1) -----
 // Baby→Juvenile→Adult changes what food is *efficient* (not what is allowed).
 // Implementation is post-hoc: we watch data-eat "(+N)" and adjust energy delta to match diet factor.
 // Also adds extra baseline drain that grows with maturity and pressure.
@@ -4431,7 +4431,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// ----- Simple Biome + Bright Sky (BUILD0058_CAMFIX2) -----
+// ----- Simple Biome + Bright Sky (BUILD0061_CORTEX1) -----
 // Purpose: brighten the background + give a simple biome feel (sky + fog + hemi light + sun).
 // Undo: press B to toggle biome on/off instantly (no rebuild needed).
 (() => {
@@ -4570,7 +4570,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// ----- PRESSURE MINIHUD (BUILD0058_CAMFIX2) -----
+// ----- PRESSURE MINIHUD (BUILD0061_CORTEX1) -----
 // Toggle: V (Vitals). This reads from existing on-screen text (instrumentation only).
 (() => {
   if (window.__apex_vitals_installed) return;
@@ -4661,7 +4661,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// DARK MODE CLAMP (BUILD0058_CAMFIX2)
+// DARK MODE CLAMP (BUILD0061_CORTEX1)
 // Last-word clamp (wins if something later re-brightens the scene)
 try {
   if (typeof renderer !== "undefined" && renderer?.setClearColor) renderer.setClearColor(0x06070b, 1);
@@ -4672,7 +4672,7 @@ try {
 } catch (e) {}
 
 
-// ----- EVO DRAFT KERNEL (BUILD0058_CAMFIX2) -----
+// ----- EVO DRAFT KERNEL (BUILD0061_CORTEX1) -----
 // U: open Mutation Draft. 1/2/3 choose. Traits persist.
 // Effects: nutrition efficiency (plants vs meat) + metabolic multiplier.
 // Truth probe: eat text becomes (+base→+trophic→+final).
@@ -5873,5 +5873,67 @@ var dt = (typeof dt === "number" && isFinite(dt) && dt > 0) ? dt : (1/60);
 
     apply();
   } catch(_) {}
+})();
+
+
+
+
+/* APEX_CORTEX_UI1
+   Tighten HUD panels (visual only). Does NOT change gameplay.
+   Styles: HUD (WASD block), STATUS bar, and VITALS box.
+*/
+(() => {
+  const STYLE_ID = "apex_cortex_ui_style";
+
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID)) return;
+    const s = document.createElement("style");
+    s.id = STYLE_ID;
+    s.textContent = `
+      .apex-panel{
+        background: rgba(0,0,0,0.35);
+        color: rgba(255,255,255,0.92);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 10px 12px;
+        text-shadow: 0 1px 0 rgba(0,0,0,0.25);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+      }
+      .apex-hud{ max-width: 360px; line-height: 1.15; font-size: 12px; }
+      .apex-status{ line-height: 1.10; font-size: 12px; }
+      .apex-vitals{ line-height: 1.15; font-size: 12px; min-width: 170px; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function classify() {
+    const els = Array.from(document.querySelectorAll("div,pre"));
+    const hudRe = /\bWASD\b[\s\S]*\bmove\b/i;
+    const vitalsRe = /\bAPEX\b[\s\S]*\bVITALS\b/i;
+    const statusRe = /\bstage=|\bdiet=|\bSTATUS\s*:/i;
+
+    let hud = null, vitals = null, status = null;
+    for (const el of els) {
+      const t = (el.textContent || "").trim();
+      if (!t) continue;
+      if (!vitals && vitalsRe.test(t)) { vitals = el; continue; }
+      if (!hud && hudRe.test(t)) { hud = el; continue; }
+      if (!status && statusRe.test(t)) { status = el; continue; }
+    }
+    return { hud, vitals, status };
+  }
+
+  function apply() {
+    ensureStyle();
+    const { hud, vitals, status } = classify();
+    if (hud)    hud.classList.add("apex-panel", "apex-hud");
+    if (status) status.classList.add("apex-panel", "apex-status");
+    if (vitals) vitals.classList.add("apex-panel", "apex-vitals");
+  }
+
+  setTimeout(apply, 0);
+  setTimeout(apply, 250);
+  setTimeout(apply, 1000);
 })();
 
