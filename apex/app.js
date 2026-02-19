@@ -29,7 +29,7 @@ import * as THREE from "./vendor/three.module.js";
   });
 })();
 
-const BUILD = "BUILD0061_CORTEX1";
+const BUILD = "BUILD0062_DERMIS1";
 const PROJECT = "Apex";
 
 const $ = (id) => document.getElementById(id);
@@ -280,7 +280,7 @@ function newLifeStats() {
 let life = newLifeStats();
 
 
-// ----- Courtship signal (BUILD0061_CORTEX1) -----
+// ----- Courtship signal (BUILD0062_DERMIS1) -----
 // "Signal" = what your recent eating behavior communicates socially.
 // It fades over time. Higher-quality meals produce stronger signal.
 let lastMeal = { t: -9999, type: "none", grade: "(none)", value: 0, gained: 0 };
@@ -908,13 +908,13 @@ function spawnHeartsAt(x, z, count=6) {
   }
 }
 
-// ----- Mate choice system (two candidates + glyphs; BUILD0061_CORTEX1) -----
+// ----- Mate choice system (two candidates + glyphs; BUILD0062_DERMIS1) -----
 const mates = [];
 let mateStatus = "none";
 let mateSummary = "";
 let selectedMate = null;
 
-// If BUILD0061_CORTEX1 signal exists, use it; else fall back.
+// If BUILD0062_DERMIS1 signal exists, use it; else fall back.
 function safeMateSignalFactor(m) {
   try { if (typeof mateSignalFactor === "function") return mateSignalFactor(m, worldT); } catch (e) {}
   return 1.0;
@@ -1932,7 +1932,7 @@ resetWorld();
 /* __APEX_rAF_MOVED__ */
 
 
-// ----- Lineage slots (BUILD0061_CORTEX1) -----
+// ----- Lineage slots (BUILD0062_DERMIS1) -----
 // Polishes truthfulness: lineage overlay reads gen/stage/diet from the SAME HUD tags the player sees.
 // Uses events dispatched by index.html (lineageKeys):
 //   emerge_lineage_toggle
@@ -2164,7 +2164,7 @@ resetWorld();
 })();
 
 
-// ----- Epochs (BUILD0061_CORTEX1) -----
+// ----- Epochs (BUILD0062_DERMIS1) -----
 // Adds PRESSURE (0..1). Keys: [ decrease pressure, ] increase pressure.
 // Pressure expands Meadow radius, reduces flora, increases grazers.
 (() => {
@@ -2351,7 +2351,7 @@ resetWorld();
   setTimeout(() => reseed(), 60);
 })();
 
-// ----- Grazers (BUILD0061_CORTEX1) -----
+// ----- Grazers (BUILD0062_DERMIS1) -----
 // Competitor herbivores that seek and consume flora (green spheres).
 // NEW: flee from the player when close + can be eaten with Space if caught.
 (() => {
@@ -2710,7 +2710,7 @@ resetWorld();
 
 
 
-// ----- Herd Boon (BUILD0061_CORTEX1) -----
+// ----- Herd Boon (BUILD0062_DERMIS1) -----
 // Symbiosis: near the sheep herd you get a small “rest” benefit.
 // Visible truth probe: a ground ring under the player + status data-herd=ON.
 // Mechanical effect: gentle energy regen up to a soft cap while herd=ON.
@@ -2832,7 +2832,7 @@ const mat = new THREE.MeshBasicMaterial({ color: 0x66CCFF, transparent: true, op
   setInterval(step, 33);
 })();
 
-// ----- Stragglers + Sheep Eat + Eat FX (BUILD0061_CORTEX1) -----
+// ----- Stragglers + Sheep Eat + Eat FX (BUILD0062_DERMIS1) -----
 // Fixes phantom orange rings, makes straggler sheep edible, adds eat feedback pulse.
 (() => {
   if (window.__emerge_eatfix_installed) return;
@@ -3209,7 +3209,7 @@ const mat = new THREE.MeshBasicMaterial({
 
 
 
-// ----- Predators (BUILD0061_CORTEX1) -----
+// ----- Predators (BUILD0062_DERMIS1) -----
 // One red predator competes with you by hunting yellow grazers.
 // Truth probes: status shows pred=<count> and pk=<pred kills>.
 (() => {
@@ -3475,7 +3475,7 @@ const mat = new THREE.MeshBasicMaterial({
 
 
 
-// ----- Prey Tiers (BUILD0061_CORTEX1) -----
+// ----- Prey Tiers (BUILD0062_DERMIS1) -----
 // Fixes: guarantees at least one p2 exists, adds halo glyph for p2, and makes tiers more visually distinct.
 // Debug: T = force tiers (recolor 3 existing prey if spawn function unavailable).
 (() => {
@@ -3780,7 +3780,7 @@ const mat = new THREE.MeshBasicMaterial({
 
 
 
-// ----- Apex HUD toggle + ring purge (BUILD0061_CORTEX1) -----
+// ----- Apex HUD toggle + ring purge (BUILD0062_DERMIS1) -----
 // H: toggle HUD overlay (keeps bottom status). K: purge small ring artifacts (keeps big herd ring).
 (() => {
   if (window.__emerge_ui_apex_installed) return;
@@ -3901,7 +3901,7 @@ if (sx >= 4.0) return;
 
 
 
-// ----- Predators hunt sheep (BUILD0061_CORTEX1) -----
+// ----- Predators hunt sheep (BUILD0062_DERMIS1) -----
 // Adds a competing predator that hunts flock sheep; leaves meat drops you can steal.
 // Space: eat meat drops (and isolated sheep only). Pred kills increment pk.
 (() => {
@@ -4280,7 +4280,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// ----- Metabolic Scaling + Trophic Shift (BUILD0061_CORTEX1) -----
+// ----- Metabolic Scaling + Trophic Shift (BUILD0062_DERMIS1) -----
 // Baby→Juvenile→Adult changes what food is *efficient* (not what is allowed).
 // Implementation is post-hoc: we watch data-eat "(+N)" and adjust energy delta to match diet factor.
 // Also adds extra baseline drain that grows with maturity and pressure.
@@ -4431,7 +4431,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// ----- Simple Biome + Bright Sky (BUILD0061_CORTEX1) -----
+// ----- Simple Biome + Bright Sky (BUILD0062_DERMIS1) -----
 // Purpose: brighten the background + give a simple biome feel (sky + fog + hemi light + sun).
 // Undo: press B to toggle biome on/off instantly (no rebuild needed).
 (() => {
@@ -4570,7 +4570,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// ----- PRESSURE MINIHUD (BUILD0061_CORTEX1) -----
+// ----- PRESSURE MINIHUD (BUILD0062_DERMIS1) -----
 // Toggle: V (Vitals). This reads from existing on-screen text (instrumentation only).
 (() => {
   if (window.__apex_vitals_installed) return;
@@ -4661,7 +4661,7 @@ const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacit
 
 
 
-// DARK MODE CLAMP (BUILD0061_CORTEX1)
+// DARK MODE CLAMP (BUILD0062_DERMIS1)
 // Last-word clamp (wins if something later re-brightens the scene)
 try {
   if (typeof renderer !== "undefined" && renderer?.setClearColor) renderer.setClearColor(0x06070b, 1);
@@ -4672,7 +4672,7 @@ try {
 } catch (e) {}
 
 
-// ----- EVO DRAFT KERNEL (BUILD0061_CORTEX1) -----
+// ----- EVO DRAFT KERNEL (BUILD0062_DERMIS1) -----
 // U: open Mutation Draft. 1/2/3 choose. Traits persist.
 // Effects: nutrition efficiency (plants vs meat) + metabolic multiplier.
 // Truth probe: eat text becomes (+base→+trophic→+final).
@@ -5935,5 +5935,145 @@ var dt = (typeof dt === "number" && isFinite(dt) && dt > 0) ? dt : (1/60);
   setTimeout(apply, 0);
   setTimeout(apply, 250);
   setTimeout(apply, 1000);
+})();
+
+
+
+
+/* APEX_DERMIS_CLEAN1
+   Real clean UI toggle (U). Default: clean ON on live sites, OFF on localhost.
+   Override: ?clean=1 or ?clean=0
+*/
+(() => {
+  try {
+    const KEY = "apex_clean_ui";
+    const STYLE_ID = "apex_dermis_clean_style";
+
+    const isLocal = () => (location.hostname === "127.0.0.1" || location.hostname === "localhost");
+
+    const parseBool = (v) => {
+      v = (v ?? "").toString().trim().toLowerCase();
+      if (["1","true","yes","y","on"].includes(v)) return true;
+      if (["0","false","no","n","off"].includes(v)) return false;
+      return null;
+    };
+
+    function toast(msg) {
+      try {
+        if (typeof showToast === "function") { showToast(msg); return; }
+      } catch(_) {}
+      try {
+        const id = "__apex_toast";
+        let el = document.getElementById(id);
+        if (!el) {
+          el = document.createElement("div");
+          el.id = id;
+          el.style.position = "fixed";
+          el.style.left = "50%";
+          el.style.top = "18px";
+          el.style.transform = "translateX(-50%)";
+          el.style.zIndex = "99999";
+          el.style.padding = "8px 12px";
+          el.style.borderRadius = "10px";
+          el.style.background = "rgba(0,0,0,0.55)";
+          el.style.color = "rgba(255,255,255,0.92)";
+          el.style.border = "1px solid rgba(255,255,255,0.10)";
+          el.style.backdropFilter = "blur(6px)";
+          el.style.webkitBackdropFilter = "blur(6px)";
+          el.style.font = "12px -apple-system, system-ui, sans-serif";
+          document.body.appendChild(el);
+        }
+        el.textContent = msg;
+        el.style.opacity = "1";
+        clearTimeout(window.__apexToastT);
+        window.__apexToastT = setTimeout(() => { try { el.style.opacity = "0"; } catch(_){} }, 800);
+      } catch(_) {}
+    }
+
+    function ensureStyle() {
+      if (document.getElementById(STYLE_ID)) return;
+      const s = document.createElement("style");
+      s.id = STYLE_ID;
+      s.textContent = `
+        body.apex-clean .apex-hud,
+        body.apex-clean .apex-status,
+        body.apex-clean .apex-debug {
+          display: none !important;
+        }
+        body.apex-clean .apex-vitals {
+          opacity: 0.90;
+        }
+      `;
+      document.head.appendChild(s);
+    }
+
+    function tagPanels() {
+      try {
+        const els = Array.from(document.querySelectorAll("div,pre"));
+        const hudRe = /\bWASD\b[\s\S]*\bmove\b/i;
+        const vitalsRe = /\bAPEX\b[\s\S]*\bVITALS\b/i;
+        const statusRe = /\bstage=|\bdiet=|\bSTATUS\s*:/i;
+        const debugRe = /\bGAMEApex\b|\bRENDERTHREE\b|\bBUILD\d{4}\b/i;
+
+        let hud=null, vitals=null, status=null, debug=null;
+        for (const el of els) {
+          const t = (el.textContent || "").trim();
+          if (!t) continue;
+          if (!vitals && vitalsRe.test(t)) { vitals = el; continue; }
+          if (!hud && hudRe.test(t)) { hud = el; continue; }
+          if (!status && statusRe.test(t)) { status = el; continue; }
+          if (!debug && debugRe.test(t)) { debug = el; continue; }
+        }
+
+        // CORTEX already adds apex-panel/apex-hud/apex-status/apex-vitals.
+        // Here we just tag the debug slab so clean mode can hide it.
+        if (debug) debug.classList.add("apex-panel", "apex-debug");
+        if (hud) hud.classList.add("apex-panel", "apex-hud");
+        if (status) status.classList.add("apex-panel", "apex-status");
+        if (vitals) vitals.classList.add("apex-panel", "apex-vitals");
+      } catch(_) {}
+    }
+
+    const params = new URLSearchParams(location.search);
+    const forced = parseBool(params.get("clean"));
+
+    let clean;
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (forced !== null) clean = forced;
+      else if (stored !== null) clean = (stored === "1");
+      else clean = !isLocal(); // default: clean on live, debug on localhost
+    } catch(_) {
+      clean = !isLocal();
+    }
+
+    function setClean(on, noisy=true) {
+      clean = !!on;
+      ensureStyle();
+      tagPanels();
+      try { document.body.classList.toggle("apex-clean", clean); } catch(_) {}
+      try { localStorage.setItem(KEY, clean ? "1" : "0"); } catch(_) {}
+      if (noisy) toast(clean ? "CLEAN UI" : "DEBUG UI");
+    }
+
+    // Capture-phase so we can prevent older U handlers from double-toggling.
+    window.addEventListener("keydown", (e) => {
+      if (e.code !== "KeyU") return;
+      const a = document.activeElement;
+      const tag = (a && a.tagName ? a.tagName.toLowerCase() : "");
+      if (tag === "input" || tag === "textarea" || (a && a.isContentEditable)) return;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      setClean(!clean, true);
+    }, true);
+
+    // expose for debugging
+    window.__apexSetClean = (v) => setClean(!!v, true);
+
+    setClean(clean, false);
+    setTimeout(() => setClean(clean, false), 200);
+    setTimeout(() => setClean(clean, false), 800);
+  } catch(_) {}
 })();
 
