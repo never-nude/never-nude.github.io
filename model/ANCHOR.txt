@@ -1,5 +1,5 @@
-model AAL viewer (Ariadne)
-BUILD_ID: 1771512836
-Local dev URL: http://localhost:1099/model/?v=1771512836
-Live URL (www): https://www.digitalbrain.live/model/?v=1771512836
-Live URL (gh):  https://never-nude.github.io/model/?v=1771512836
+model AAL viewer (Aang milestone + iPhone layout)
+BUILD_ID: 1771536835
+Local dev URL: http://localhost:1099/model/?v=1771536835
+Live URL (www): https://www.digitalbrain.live/model/?v=1771536835
+Live URL (gh):  https://never-nude.github.io/model/?v=1771536835

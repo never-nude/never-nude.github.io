@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
-const BUILD_ID = "1771512836";
+const BUILD_ID = "1771536835";
 
 
 
@@ -95,6 +95,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
+renderer.domElement.style.touchAction = "none";
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
