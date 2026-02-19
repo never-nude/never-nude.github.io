@@ -1,6 +1,35 @@
 import * as THREE from "./vendor/three.module.js";
 
-const BUILD = "BUILD0038_INPUTFIX1";
+// apex_panic_overlay (auto)
+(function(){
+  const ID = "apex_panic_overlay";
+  function show(msg){
+    try{
+      let d = document.getElementById(ID);
+      if(!d){
+        d = document.createElement("div");
+        d.id = ID;
+        d.style.cssText =
+          "position:fixed;top:10px;right:10px;max-width:46vw;z-index:99999;" +
+          "background:rgba(60,0,0,0.85);color:#ffd7d7;padding:10px 12px;" +
+          "font:12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;" +
+          "white-space:pre-wrap;border:1px solid rgba(255,180,180,0.45);border-radius:10px;";
+        document.body.appendChild(d);
+      }
+      d.textContent = msg;
+    }catch(_){}
+  }
+  window.addEventListener("error", (e)=> {
+    const msg = e?.message || (""+e) || "error";
+    show("JS ERROR\n" + msg);
+  });
+  window.addEventListener("unhandledrejection", (e)=> {
+    const msg = e?.reason?.message || (""+e?.reason) || "rejection";
+    show("PROMISE REJECTION\n" + msg);
+  });
+})();
+
+const BUILD = "BUILD0058_CAMFIX2";
 const PROJECT = "Apex";
 
 const $ = (id) => document.getElementById(id);
@@ -40,6 +69,25 @@ try { renderer.outputColorSpace = THREE.SRGBColorSpace; } catch {}
 ui.rendererTag.textContent = `THREE r${THREE.REVISION}`;
 
 const scene = new THREE.Scene();
+// APEX_DEBUG_ORIGIN (auto)
+try {
+  const __apexDbg = new THREE.Mesh(
+    new THREE.SphereGeometry(0.6, 12, 8),
+    new THREE.MeshBasicMaterial({ color: 0xff00ff })
+  );
+  __apexDbg.name = "APEX_DEBUG_ORIGIN";
+  __apexDbg.position.set(0, 0.6, 0);
+  scene.add(__apexDbg);
+
+  const __grid = new THREE.GridHelper(80, 80);
+  __grid.name = "APEX_DEBUG_GRID";
+  scene.add(__grid);
+
+  scene.add(new THREE.AxesHelper(4));
+} catch (e) {
+  console.warn("APEX debug helpers failed", e);
+}
+
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 250);
 const camOffset = new THREE.Vector3(0, 6.5, 10.5);
 
@@ -232,7 +280,7 @@ function newLifeStats() {
 let life = newLifeStats();
 
 
-// ----- Courtship signal (BUILD0013) -----
+// ----- Courtship signal (BUILD0058_CAMFIX2) -----
 // "Signal" = what your recent eating behavior communicates socially.
 // It fades over time. Higher-quality meals produce stronger signal.
 let lastMeal = { t: -9999, type: "none", grade: "(none)", value: 0, gained: 0 };
@@ -489,6 +537,12 @@ function nearestEdible() {
 
   for (let i = 0; i < prey.length; i++) {
     const f = prey[i];
+
+    // APEX_SMOOTH_PREY1: smoothly blend wander direction (avoid jerky direction snaps)
+    if (f.twx === undefined) { f.twx = f.wx; f.twz = f.wz; }
+    const wLerp = clamp(dt * 6.0, 0, 1);
+    f.wx += (f.twx - f.wx) * wLerp;
+    f.wz += (f.twz - f.wz) * wLerp;
     const dx = f.mesh.position.x - creature.pos.x;
     const dz = f.mesh.position.z - creature.pos.z;
     const d2 = dx*dx + dz*dz;
@@ -584,14 +638,17 @@ window.addEventListener("keydown", (e) => {
 const PREY_BOUNDS_R = 30;
 
 function updatePrey(dt) {
+  // APEX_SMOOTH_PREY1: clamp dt to avoid twitch/teleport on slow frames
+  dt = Math.min(dt, 0.05);
+
   for (let i = 0; i < prey.length; i++) {
     const f = prey[i];
 
     f.turnT -= dt;
     if (f.turnT <= 0) {
-      f.turnT = rand(0.35, 0.95);
-      f.wx = rand(-1, 1);
-      f.wz = rand(-1, 1);
+      f.turnT = rand(0.90, 1.80);
+      f.twx = rand(-1, 1);
+      f.twz = rand(-1, 1);
     }
 
     let ax = f.wx * f.wander;
@@ -601,7 +658,9 @@ function updatePrey(dt) {
     const dz = f.mesh.position.z - creature.pos.z;
     const d2 = dx*dx + dz*dz;
 
-    if (d2 < f.fearR * f.fearR) {
+    const panic = (d2 < f.fearR * f.fearR);
+
+    if (panic) {
       const d = Math.sqrt(d2) || 1e-6;
       const t = 1 - (d / f.fearR);
 
@@ -610,7 +669,7 @@ function updatePrey(dt) {
 
       const px = -(dz / d);
       const pz = (dx / d);
-      const zig = Math.sin(worldT * 12.0 + f.seed + i * 0.9) * (f.zig * t);
+      const zig = Math.sin(worldT * 7.0 + f.seed + i * 0.9) * (f.zig * t * 0.65);
       ax += px * zig;
       az += pz * zig;
     }
@@ -630,9 +689,10 @@ function updatePrey(dt) {
     f.vz -= f.vz * f.drag * dt;
 
     const sp = Math.sqrt(f.vx*f.vx + f.vz*f.vz);
-    if (sp > f.maxSpeed) {
-      f.vx = (f.vx / sp) * f.maxSpeed;
-      f.vz = (f.vz / sp) * f.maxSpeed;
+    const maxSp = panic ? f.maxSpeed : (f.maxSpeed * 0.55);
+    if (sp > maxSp) {
+      f.vx = (f.vx / sp) * maxSp;
+      f.vz = (f.vz / sp) * maxSp;
     }
 
     f.mesh.position.x += f.vx * dt;
@@ -848,13 +908,13 @@ function spawnHeartsAt(x, z, count=6) {
   }
 }
 
-// ----- Mate choice system (two candidates + glyphs; BUILD0016) -----
+// ----- Mate choice system (two candidates + glyphs; BUILD0058_CAMFIX2) -----
 const mates = [];
 let mateStatus = "none";
 let mateSummary = "";
 let selectedMate = null;
 
-// If BUILD0013 signal exists, use it; else fall back.
+// If BUILD0058_CAMFIX2 signal exists, use it; else fall back.
 function safeMateSignalFactor(m) {
   try { if (typeof mateSignalFactor === "function") return mateSignalFactor(m, worldT); } catch (e) {}
   return 1.0;
@@ -1837,6 +1897,22 @@ try {
   });
 } catch (e) {}
 
+apexDangerStep(scene); // APEX: danger bite v1
+
+
+// APEX_CAMERA_SANITY (auto)
+/*__APEX_CAM_SANITY_WRAP__*/
+try {
+if (!Number.isFinite(camera.position.x) || !Number.isFinite(camera.position.y) || !Number.isFinite(camera.position.z) ||
+    Math.abs(camera.position.x) > 1e6 || Math.abs(camera.position.y) > 1e6 || Math.abs(camera.position.z) > 1e6) {
+  console.warn("[APEX] camera blew up; resetting");
+  camera.position.set(0, 14, 18);
+  camera.lookAt(0, 0, 0);
+}
+} catch (e) {
+  console.warn('[APEX] camera sanity error (ignored)', e);
+}
+
 renderer.render(scene, camera);
 }
 
@@ -1849,14 +1925,14 @@ function step(now) {
 
   update(dt);
   draw();
-  requestAnimationFrame(step);
+  /* __APEX_rAF_MOVED__ */
 }
 
 resetWorld();
-requestAnimationFrame(step);
+/* __APEX_rAF_MOVED__ */
 
 
-// ----- Lineage slots (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Lineage slots (BUILD0058_CAMFIX2) -----
 // Polishes truthfulness: lineage overlay reads gen/stage/diet from the SAME HUD tags the player sees.
 // Uses events dispatched by index.html (lineageKeys):
 //   emerge_lineage_toggle
@@ -2088,7 +2164,7 @@ requestAnimationFrame(step);
 })();
 
 
-// ----- Epochs (BUILD0023) -----
+// ----- Epochs (BUILD0058_CAMFIX2) -----
 // Adds PRESSURE (0..1). Keys: [ decrease pressure, ] increase pressure.
 // Pressure expands Meadow radius, reduces flora, increases grazers.
 (() => {
@@ -2275,7 +2351,7 @@ requestAnimationFrame(step);
   setTimeout(() => reseed(), 60);
 })();
 
-// ----- Grazers (BUILD0022) -----
+// ----- Grazers (BUILD0058_CAMFIX2) -----
 // Competitor herbivores that seek and consume flora (green spheres).
 // NEW: flee from the player when close + can be eaten with Space if caught.
 (() => {
@@ -2634,7 +2710,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Herd Boon (BUILD0024) -----
+// ----- Herd Boon (BUILD0058_CAMFIX2) -----
 // Symbiosis: near the sheep herd you get a small “rest” benefit.
 // Visible truth probe: a ground ring under the player + status data-herd=ON.
 // Mechanical effect: gentle energy regen up to a soft cap while herd=ON.
@@ -2685,7 +2761,9 @@ requestAnimationFrame(step);
   function ensureRing(){
     if (ring || typeof THREE === "undefined" || typeof scene === "undefined") return;
     const geo = new THREE.RingGeometry(1.0, 1.45, 48);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x66CCFF, transparent: true, opacity: 0.30, side: THREE.DoubleSide });
+    
+ground.visible = false; // APEX: ring default hidden
+const mat = new THREE.MeshBasicMaterial({ color: 0x66CCFF, transparent: true, opacity: 0.30, side: THREE.DoubleSide });
     ring = new THREE.Mesh(geo, mat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.02;
@@ -2754,7 +2832,7 @@ requestAnimationFrame(step);
   setInterval(step, 33);
 })();
 
-// ----- Stragglers + Sheep Eat + Eat FX (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Stragglers + Sheep Eat + Eat FX (BUILD0058_CAMFIX2) -----
 // Fixes phantom orange rings, makes straggler sheep edible, adds eat feedback pulse.
 (() => {
   if (window.__emerge_eatfix_installed) return;
@@ -2889,9 +2967,14 @@ requestAnimationFrame(step);
   const ringBySheep = new Map(); // sheepMesh -> ringMesh
 
   function ensureHerdRing(){
+  // TEMP disable herd ring (mesh ref crash)
+  return;
+
     if (herdRing || typeof THREE === "undefined" || typeof scene === "undefined" || !scene) return;
     const geo = new THREE.RingGeometry(1.9, 2.7, 64);
-    const mat = new THREE.MeshBasicMaterial({
+    
+mesh.visible = false; // APEX: ring default hidden
+const mat = new THREE.MeshBasicMaterial({
       color: 0x00FFFF, transparent: true, opacity: 0.70, side: THREE.DoubleSide,
       depthTest: false, depthWrite: false
     });
@@ -3013,7 +3096,13 @@ requestAnimationFrame(step);
       refreshSheep();
     }
 
-    ensureHerdRing();
+    if (!window.__APEX_HERDRING_BROKEN__) {
+
+      try { ensureHerdRing(); }
+
+      catch(e) { window.__APEX_HERDRING_BROKEN__ = true; console.warn('[APEX] herd ring crashed; disabling', e); }
+
+    }
 
     const p = getPlayerXZ();
     const alive = new Set(sheep.filter(s => s && !(s.userData && s.userData.__eaten)));
@@ -3120,7 +3209,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Predators (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Predators (BUILD0058_CAMFIX2) -----
 // One red predator competes with you by hunting yellow grazers.
 // Truth probes: status shows pred=<count> and pk=<pred kills>.
 (() => {
@@ -3202,7 +3291,9 @@ requestAnimationFrame(step);
     try {
       if (typeof THREE === "undefined" || typeof scene === "undefined" || !scene) return;
       const geo = new THREE.RingGeometry(0.28, 0.42, 28);
-      const mat = new THREE.MeshBasicMaterial({
+      
+r.visible = false; // APEX: ring default hidden
+const mat = new THREE.MeshBasicMaterial({
         color: 0xD43A3A, transparent: true, opacity: 0.85, side: THREE.DoubleSide,
         depthTest: false, depthWrite: false
       });
@@ -3384,7 +3475,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Prey Tiers (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Prey Tiers (BUILD0058_CAMFIX2) -----
 // Fixes: guarantees at least one p2 exists, adds halo glyph for p2, and makes tiers more visually distinct.
 // Debug: T = force tiers (recolor 3 existing prey if spawn function unavailable).
 (() => {
@@ -3689,7 +3780,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Apex HUD toggle + ring purge (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Apex HUD toggle + ring purge (BUILD0058_CAMFIX2) -----
 // H: toggle HUD overlay (keeps bottom status). K: purge small ring artifacts (keeps big herd ring).
 (() => {
   if (window.__emerge_ui_apex_installed) return;
@@ -3770,7 +3861,9 @@ requestAnimationFrame(step);
 
         // keep big rings (herd zone etc)
         const sx = Math.max(o.scale.x || 1, o.scale.z || 1);
-        if (sx >= 4.0) return;
+        
+mesh.visible = false; // APEX: ring default hidden
+if (sx >= 4.0) return;
 
         kill.push(o);
       });
@@ -3808,7 +3901,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Predators hunt sheep (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Predators hunt sheep (BUILD0058_CAMFIX2) -----
 // Adds a competing predator that hunts flock sheep; leaves meat drops you can steal.
 // Space: eat meat drops (and isolated sheep only). Pred kills increment pk.
 (() => {
@@ -3923,7 +4016,9 @@ requestAnimationFrame(step);
     // small ground cue
     try {
       const rg = new THREE.RingGeometry(0.20, 0.28, 24);
-      const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacity:0.60, side:THREE.DoubleSide, depthTest:false});
+      
+ring.visible = false; // APEX: ring default hidden
+const rm = new THREE.MeshBasicMaterial({color:0xFF8A00, transparent:true, opacity:0.60, side:THREE.DoubleSide, depthTest:false});
       const ring = new THREE.Mesh(rg, rm);
       ring.rotation.x = -Math.PI/2;
       ring.position.y = 0.01;
@@ -4185,7 +4280,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Metabolic Scaling + Trophic Shift (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Metabolic Scaling + Trophic Shift (BUILD0058_CAMFIX2) -----
 // Baby→Juvenile→Adult changes what food is *efficient* (not what is allowed).
 // Implementation is post-hoc: we watch data-eat "(+N)" and adjust energy delta to match diet factor.
 // Also adds extra baseline drain that grows with maturity and pressure.
@@ -4336,7 +4431,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- Simple Biome + Bright Sky (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- Simple Biome + Bright Sky (BUILD0058_CAMFIX2) -----
 // Purpose: brighten the background + give a simple biome feel (sky + fog + hemi light + sun).
 // Undo: press B to toggle biome on/off instantly (no rebuild needed).
 (() => {
@@ -4475,7 +4570,7 @@ requestAnimationFrame(step);
 
 
 
-// ----- PRESSURE MINIHUD (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- PRESSURE MINIHUD (BUILD0058_CAMFIX2) -----
 // Toggle: V (Vitals). This reads from existing on-screen text (instrumentation only).
 (() => {
   if (window.__apex_vitals_installed) return;
@@ -4566,7 +4661,7 @@ requestAnimationFrame(step);
 
 
 
-// DARK MODE CLAMP (BUILD0038_INPUTFIX1_EVODRAFT1)
+// DARK MODE CLAMP (BUILD0058_CAMFIX2)
 // Last-word clamp (wins if something later re-brightens the scene)
 try {
   if (typeof renderer !== "undefined" && renderer?.setClearColor) renderer.setClearColor(0x06070b, 1);
@@ -4577,7 +4672,7 @@ try {
 } catch (e) {}
 
 
-// ----- EVO DRAFT KERNEL (BUILD0038_INPUTFIX1_EVODRAFT1) -----
+// ----- EVO DRAFT KERNEL (BUILD0058_CAMFIX2) -----
 // U: open Mutation Draft. 1/2/3 choose. Traits persist.
 // Effects: nutrition efficiency (plants vs meat) + metabolic multiplier.
 // Truth probe: eat text becomes (+base→+trophic→+final).
@@ -4727,23 +4822,23 @@ try {
   setInterval(() => {
     if (typeof window.__apex_mass !== "number") return; // only if trophic system exists
 
-    const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
-    let dt = (now - lastT) / 1000;
+    var now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    var dt = (now - lastT) / 1000;
     lastT = now;
     dt = Math.max(0.010, Math.min(0.080, dt));
 
-    const press = getPress();
-    const mass  = window.__apex_mass || 0;
+    var press = getPress();
+    var mass  = window.__apex_mass || 0;
 
     // must match the trophic block formula you already have
-    const baseDrain = (0.08 + 0.38 * mass) * (1.0 + 0.60 * press);
+    var baseDrain = (0.08 + 0.38 * mass) * (1.0 + 0.60 * press);
 
-    const m = traits.metabMult;
-    const corr = baseDrain * (m - 1.0);  // >0 drains more, <0 refunds (more efficient)
+    var m = traits.metabMult;
+    var corr = baseDrain * (m - 1.0);  // >0 drains more, <0 refunds (more efficient)
 
-    const e = energyRef();
+    var e = energyRef();
     if (!e) return;
-    const v = e.get();
+    var v = e.get();
     if (typeof v === "number" && Number.isFinite(v)) {
       e.set(Math.max(0, v - corr * dt));
     }
@@ -4753,7 +4848,7 @@ try {
   function ensureUI() {
     if (document.getElementById("apexEvoOverlay")) return;
 
-    const btn = document.createElement("button");
+    var btn = document.createElement("button");
     btn.id = "apexEvoBtn";
     btn.type = "button";
     btn.textContent = "🧬";
@@ -4761,7 +4856,7 @@ try {
     btn.addEventListener("click", () => openDraft("btn"));
     document.body.appendChild(btn);
 
-    const overlay = document.createElement("div");
+    var overlay = document.createElement("div");
     overlay.id = "apexEvoOverlay";
     overlay.className = "hidden";
     overlay.innerHTML = `
@@ -4806,34 +4901,34 @@ try {
     });
     document.body.appendChild(overlay);
 
-    for (const card of overlay.querySelectorAll(".apexEvoCard")) {
+    for (var card of overlay.querySelectorAll(".apexEvoCard")) {
       card.addEventListener("click", () => {
-        const i = parseInt(card.getAttribute("data-i") || "-1", 10);
+        var i = parseInt(card.getAttribute("data-i") || "-1", 10);
         if (i >= 0) applyOffer(i);
       });
     }
   }
 
-  let offers = [];
+  var offers = [];
 
   function dietLean() {
-    const t = Math.max(1, diet.total);
+    var t = Math.max(1, diet.total);
     return (diet.meat - diet.plant) / t; // -1..+1 (plant..meat)
   }
 
   function makeOffers() {
     // Base deltas (multiplicative). Slightly adapt the magnitudes based on diet lean & pressure.
-    const lean = dietLean();     // + means meat-leaning
-    const press = getPress();
+    var lean = dietLean();     // + means meat-leaning
+    var press = getPress();
 
-    const hungerHint = 0.5 + 0.5 * press;  // crude: pressure ~ “life is hard”
-    const damp = 1.0 - 0.10 * Math.max(0, press - 0.5); // high pressure = smaller jumps
+    var hungerHint = 0.5 + 0.5 * press;  // crude: pressure ~ “life is hard”
+    var damp = 1.0 - 0.10 * Math.max(0, press - 0.5); // high pressure = smaller jumps
 
-    const plantUp = (1.13 + 0.05 * Math.max(0, -lean)) * damp;
-    const meatUp  = (1.13 + 0.05 * Math.max(0,  lean)) * damp;
-    const costUp  = (1.03 + 0.03 * hungerHint) * damp;
+    var plantUp = (1.13 + 0.05 * Math.max(0, -lean)) * damp;
+    var meatUp  = (1.13 + 0.05 * Math.max(0,  lean)) * damp;
+    var costUp  = (1.03 + 0.03 * hungerHint) * damp;
 
-    const effDown = (0.90 - 0.04 * hungerHint); // more pressure => efficiency more valuable
+    var effDown = (0.90 - 0.04 * hungerHint); // more pressure => efficiency more valuable
 
     return [
       { kind:"plant", pm: plantUp, mm: 0.95, dm: costUp },
@@ -4843,42 +4938,42 @@ try {
   }
 
   function renderOffers() {
-    const overlay = document.getElementById("apexEvoOverlay");
+    var overlay = document.getElementById("apexEvoOverlay");
     if (!overlay) return;
 
-    const lean = dietLean();
-    let reco = 2; // default efficiency
+    var lean = dietLean();
+    var reco = 2; // default efficiency
     if (lean > 0.15) reco = 1;       // meat-leaning -> meat focus “recommended”
     else if (lean < -0.15) reco = 0; // plant-leaning -> plant focus “recommended”
 
-    for (const card of overlay.querySelectorAll(".apexEvoCard")) {
-      const i = parseInt(card.getAttribute("data-i") || "-1", 10);
+    for (var card of overlay.querySelectorAll(".apexEvoCard")) {
+      var i = parseInt(card.getAttribute("data-i") || "-1", 10);
       card.classList.toggle("reco", i === reco);
 
-      const o = offers[i];
+      var o = offers[i];
       if (!o) continue;
 
       // set bar widths (0..100) around 50 baseline
-      const p = Math.max(10, Math.min(90, Math.round(50 + (o.pm - 1.0) * 260)));
-      const m = Math.max(10, Math.min(90, Math.round(50 + (o.mm - 1.0) * 260)));
-      const d = Math.max(10, Math.min(90, Math.round(50 + (1.0 - o.dm) * 260))); // lower dm = better (pos)
+      var p = Math.max(10, Math.min(90, Math.round(50 + (o.pm - 1.0) * 260)));
+      var m = Math.max(10, Math.min(90, Math.round(50 + (o.mm - 1.0) * 260)));
+      var d = Math.max(10, Math.min(90, Math.round(50 + (1.0 - o.dm) * 260))); // lower dm = better (pos)
 
       // 🌿 bar
-      const bp = card.querySelector('[data-bar="p"]');
+      var bp = card.querySelector('[data-bar="p"]');
       if (bp) {
         bp.style.width = p + "%";
         bp.classList.toggle("pos", o.pm >= 1.0);
         bp.classList.toggle("neg", o.pm < 1.0);
       }
       // 🦷 bar
-      const bm = card.querySelector('[data-bar="m"]');
+      var bm = card.querySelector('[data-bar="m"]');
       if (bm) {
         bm.style.width = m + "%";
         bm.classList.toggle("pos", o.mm >= 1.0);
         bm.classList.toggle("neg", o.mm < 1.0);
       }
       // 🫀 bar (metabolism: lower is better)
-      const bd = card.querySelector('[data-bar="d"]');
+      var bd = card.querySelector('[data-bar="d"]');
       if (bd) {
         bd.style.width = d + "%";
         bd.classList.toggle("pos", o.dm <= 1.0);
@@ -4891,18 +4986,18 @@ try {
     ensureUI();
     offers = makeOffers();
     renderOffers();
-    const overlay = document.getElementById("apexEvoOverlay");
+    var overlay = document.getElementById("apexEvoOverlay");
     if (overlay) overlay.classList.remove("hidden");
     setToast("🧬");
   }
 
   function closeDraft() {
-    const overlay = document.getElementById("apexEvoOverlay");
+    var overlay = document.getElementById("apexEvoOverlay");
     if (overlay) overlay.classList.add("hidden");
   }
 
   function applyOffer(i) {
-    const o = offers[i];
+    var o = offers[i];
     if (!o) return;
 
     traits.plantMult *= o.pm;
@@ -4932,8 +5027,8 @@ try {
       return;
     }
 
-    const overlay = document.getElementById("apexEvoOverlay");
-    const open = overlay && !overlay.classList.contains("hidden");
+    var overlay = document.getElementById("apexEvoOverlay");
+    var open = overlay && !overlay.classList.contains("hidden");
 
     if (open && e.code === "Escape") {
       closeDraft();
@@ -4943,7 +5038,7 @@ try {
     }
 
     if (open && (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3")) {
-      const i = (e.code === "Digit1") ? 0 : (e.code === "Digit2") ? 1 : 2;
+      var i = (e.code === "Digit1") ? 0 : (e.code === "Digit2") ? 1 : 2;
       applyOffer(i);
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -4953,5 +5048,830 @@ try {
 
   // ensure button exists even if you never press U
   setTimeout(ensureUI, 300);
+})();
+
+
+// === APEX PATCH: LEGIBILITY1 ===
+(() => {
+  var statusEl = document.getElementById('status');
+
+  // toast
+  var toast = document.createElement('div');
+  toast.id = 'apexToast';
+  toast.style.position = 'fixed';
+  toast.style.left = '50%';
+  toast.style.bottom = '72px';
+  toast.style.transform = 'translateX(-50%)';
+  toast.style.padding = '10px 12px';
+  toast.style.borderRadius = '10px';
+  toast.style.background = 'rgba(0,0,0,0.65)';
+  toast.style.border = '1px solid rgba(255,255,255,0.18)';
+  toast.style.color = '#fff';
+  toast.style.font = '12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+  toast.style.pointerEvents = 'none';
+  toast.style.opacity = '0';
+  toast.style.transition = 'opacity 120ms ease';
+  toast.style.zIndex = '9999';
+  document.body.appendChild(toast);
+
+  var toastT = 0;
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toastT);
+    toastT = setTimeout(() => { toast.style.opacity = '0'; }, 650);
+  }
+
+  // watch the engine's eat status, if it uses data-eat
+  if (statusEl) {
+    var mo = new MutationObserver((mutList) => {
+      for (var m of mutList) {
+        if (m.type === 'attributes' && m.attributeName === 'data-eat') {
+          var v = statusEl.getAttribute('data-eat') || '';
+          if (v) showToast('EAT → ' + v);
+        }
+      }
+    });
+    mo.observe(statusEl, { attributes: true });
+  }
+
+  // keyboard HUD toggle (tries to click your existing HUD pill if present)
+  function findHudEl() {
+    var els = Array.from(document.querySelectorAll('button,div,span,a'));
+    return els.find(el => /^HUD\b/i.test((el.textContent || '').trim())) || null;
+  }
+
+  // APEX: default tryEatFallback (calls engine tryEat when Space isn't reaching it)
+  if (typeof window.tryEatFallback !== 'function') {
+    window.tryEatFallback = function() {
+      try {
+        if (typeof window.tryEat === 'function') { window.tryEat(); return; }
+        if (typeof tryEat === 'function') { tryEat(); return; }
+      } catch (e) { console.log('[APEX] tryEatFallback error', e); }
+    };
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyH') {
+      var hudEl = findHudEl();
+      if (hudEl) hudEl.click();
+      showToast(hudEl ? ('HUD toggled') : 'HUD toggle: not found');
+      return;
+    }
+
+    if (e.code !== 'Space') return;
+
+    // prove key capture (even if eat fails)
+    showToast('Space captured');
+
+    var probe = 'EATPROBE:' + Date.now();
+    if (statusEl) statusEl.setAttribute('data-eat', probe);
+
+    setTimeout(() => {
+      var after = statusEl ? (statusEl.getAttribute('data-eat') || '') : '';
+      if (after && after !== probe) return; // engine handled it
+
+      // call module-level fallback if it exists
+      try {
+        if (typeof tryEatFallback === 'function') tryEatFallback();
+      } catch (_) {}
+
+      var after2 = statusEl ? (statusEl.getAttribute('data-eat') || '') : '';
+      if (statusEl && (!after2 || after2 === probe || after2 === after)) {
+        statusEl.setAttribute('data-eat', 'MISS: no handler/target');
+      }
+    }, 0);
+  }, true);
+})();
+
+
+
+/* APEX: ECOCHAIN removed (was crashing) */
+
+
+
+/* APEX_DANGERLITE1 */
+(() => {
+  var LOG = (...a) => console.log("[APEX DANGERLITE1]", ...a);
+
+  var scene = (typeof SCENE !== "undefined") ? SCENE
+              : (typeof scene !== "undefined") ? scene
+              : null;
+
+  var groupChildren = (g) => {
+    if (!g) return [];
+    if (Array.isArray(g)) return g;
+    if (g && g.children) return g.children;
+    return [];
+  };
+
+  var findPlayerMesh = () => {
+    var candidates = [
+      (typeof PLAYER !== "undefined") ? PLAYER : null,
+      (typeof ME !== "undefined") ? ME : null,
+      (typeof ORG !== "undefined") ? ORG : null,
+      (typeof organism !== "undefined") ? organism : null,
+      (typeof CAM_TARGET !== "undefined") ? CAM_TARGET : null,
+    ].filter(Boolean);
+
+    for (var c of candidates) {
+      if (c && c.position) return c;
+    }
+
+    // fallback: scan scene for something marked as player
+    if (scene && typeof scene.traverse === "function") {
+      var found = null;
+      scene.traverse((o) => {
+        if (found) return;
+        var ud = o && o.userData ? o.userData : {};
+        if (o && o.isMesh && o.position && (ud.isPlayer || ud.player || ud.role === "player")) {
+          found = o;
+        }
+      });
+      if (found) return found;
+    }
+    return null;
+  };
+
+  var player = findPlayerMesh();
+
+  // ----- (1) Ring cleanup: hide ring meshes stuck at origin -----
+  var hideOriginRings = () => {
+    if (!scene || typeof scene.traverse !== "function") return;
+    scene.traverse((o) => {
+      if (!o || !o.isMesh || !o.visible) return;
+      var gt = o.geometry && o.geometry.type ? o.geometry.type : "";
+      var nm = (o.name || "").toLowerCase();
+      var isRing = (gt === "RingGeometry") || nm.includes("ring");
+      
+ring.visible = false; // APEX: ring default hidden
+if (!isRing) return;
+
+      var len = Math.hypot(o.position.x, o.position.y, o.position.z);
+      if (len < 0.001 && !(o.userData && o.userData.keepAtOrigin)) {
+        o.visible = false;
+      }
+    });
+  };
+  hideOriginRings();
+  setInterval(hideOriginRings, 500);
+
+  // ----- (2) Motion clamp / smoothing (reduces twitch) -----
+  var last = new WeakMap();
+  var clampStep = (o, maxStep) => {
+    if (!o || !o.position) return;
+    var p = o.position;
+    var prev = last.get(o);
+    if (prev) {
+      var dx = p.x - prev.x, dy = p.y - prev.y, dz = p.z - prev.z;
+      var d = Math.hypot(dx, dy, dz);
+      if (d > maxStep && d > 1e-6) {
+        var k = maxStep / d;
+        p.x = prev.x + dx * k;
+        p.y = prev.y + dy * k;
+        p.z = prev.z + dz * k;
+      }
+    }
+    last.set(o, { x: p.x, y: p.y, z: p.z });
+  };
+
+  var SHEEP_G  = (typeof SHEEP !== "undefined") ? SHEEP : ((typeof HERD !== "undefined") ? HERD : null);
+  var GRAZERS_G = (typeof GRAZERS !== "undefined") ? GRAZERS : null;
+  var PREDS_G   = (typeof PREDS !== "undefined") ? PREDS : null;
+
+  var clampTick = () => {
+    // Sheep calm unless player near any sheep (panic)
+    var sheepStep = 0.12;
+    if (player && SHEEP_G) {
+      for (var s of groupChildren(SHEEP_G)) {
+        if (!s || !s.position) continue;
+        var d = s.position.distanceTo(player.position);
+        if (d < 6.0) { sheepStep = 0.26; break; }
+      }
+    }
+    for (var s of groupChildren(SHEEP_G)) clampStep(s, sheepStep);
+    for (var g of groupChildren(GRAZERS_G)) clampStep(g, 0.22);
+    for (var p of groupChildren(PREDS_G)) clampStep(p, 0.26);
+  };
+  setInterval(clampTick, 33);
+
+  // ----- (3) Fix "NOT EDIBLE (competitor/protected)": Space-to-eat for grazers/preds -----
+  var addEnergy = (amt) => {
+    if (typeof addEnergy === "function") return addEnergy(amt); // if engine already has it
+    if (typeof energy !== "undefined") energy = Math.min(9999, energy + amt);
+  };
+
+  var eatClosest = (group, radius, gain, label) => {
+    if (!player || !group) return False;
+    var items = groupChildren(group);
+    if (!items.length) return False;
+
+    var best = null, bestD = 1e9;
+    for (var o of items) {
+      if (!o || !o.position) continue;
+      var d = o.position.distanceTo(player.position);
+      if (d < bestD) { bestD = d; best = o; }
+    }
+    if (!best || bestD > radius) return False;
+
+    try {
+      if (best.parent) best.parent.remove(best);
+      best.visible = false;
+    } catch (e) {}
+
+    // update eat marker so existing HUD/toast can notice it
+    var statusEl = document.getElementById("status");
+    if (statusEl) statusEl.setAttribute("data-eat", `${label.toLowerCase()}:${gain}`);
+
+    if (typeof toastMsg === "function") toastMsg(`${label} +${gain}`);
+    if (typeof energy !== "undefined") energy = Math.min(9999, energy + gain);
+
+    return True;
+  };
+
+  // JS booleans are true/false, but we're in a raw string; patch small:
+  // We'll redefine with correct booleans in runtime:
+  // (This avoids any weirdness if upstream code uses True/False.)
+  // NOTE: We'll just patch it quickly by overriding the function right after definition:
+  // (Yes, it's hacky. It's also robust.)
+  var _eatClosest = (group, radius, gain, label) => {
+    if (!player || !group) return false;
+    var items = groupChildren(group);
+    if (!items.length) return false;
+
+    var best = null, bestD = 1e9;
+    for (var o of items) {
+      if (!o || !o.position) continue;
+      var d = o.position.distanceTo(player.position);
+      if (d < bestD) { bestD = d; best = o; }
+    }
+    if (!best || bestD > radius) return false;
+
+    try {
+      if (best.parent) best.parent.remove(best);
+      best.visible = false;
+    } catch (e) {}
+
+    var statusEl = document.getElementById("status");
+    if (statusEl) statusEl.setAttribute("data-eat", `${label.toLowerCase()}:${gain}`);
+
+    if (typeof toastMsg === "function") toastMsg(`${label} +${gain}`);
+    if (typeof energy !== "undefined") energy = Math.min(9999, energy + gain);
+
+    return true;
+  };
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code !== "Space") return;
+
+    // Prefer bigger targets first
+    var ate = _eatClosest(PREDS_G,   1.10, 28, "PRED")
+             || _eatClosest(GRAZERS_G, 1.00, 18, "GRAZER");
+
+    if (ate) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+
+  // ----- (4) Danger-lite: predators drain your energy if they get close -----
+  var lastHitToast = 0;
+  var threatTick = () => {
+    if (!player || !PREDS_G || typeof energy === "undefined") return;
+
+    var hit = false;
+    for (var p of groupChildren(PREDS_G)) {
+      if (!p || !p.position) continue;
+      var d = p.position.distanceTo(player.position);
+      if (d < 1.2) {
+        energy = Math.max(0, energy - 0.8); // tuneable
+        hit = true;
+      }
+    }
+
+    var now = performance.now();
+    if (hit && typeof toastMsg === "function" && (now - lastHitToast) > 700) {
+      toastMsg("HIT!");
+      lastHitToast = now;
+    }
+  };
+  setInterval(threatTick, 120);
+
+  LOG("armed", {
+    hasScene: !!scene,
+    hasPlayer: !!player,
+    sheep: !!SHEEP_G,
+    grazers: !!GRAZERS_G,
+    preds: !!PREDS_G
+  });
+})();
+
+
+// APEX: ring default hidden
+
+
+// APEX: danger bite v1
+var __APEX_DANGER = {
+  enabled: true,
+  radius: 1.35,      // near-range danger radius
+  dps: 14.0,         // energy drain per second at point blank (scaled by proximity)
+  ringIn: 0.65,
+  ringOut: 0.85,
+  lastT: performance.now(),
+  ring: null,
+  cache: null,
+  cacheT: 0,
+};
+
+function apexEnsureDangerRing(scene){
+  if (__APEX_DANGER.ring) return;
+  var geo = new THREE.RingGeometry(__APEX_DANGER.ringIn, __APEX_DANGER.ringOut, 48);
+  var mat = new THREE.MeshBasicMaterial({
+    color: 0xffa500,
+    transparent: true,
+    opacity: 0.45,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  var ring = new THREE.Mesh(geo, mat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(0, 0.02, 0);
+  ring.visible = false;
+  scene.add(ring);
+  __APEX_DANGER.ring = ring;
+}
+
+function apexPlayerObj(){
+  try { if (typeof o !== "undefined" && o && o.position) return o; } catch {}
+  try { if (typeof player !== "undefined" && player && player.position) return player; } catch {}
+  try { if (typeof organism !== "undefined" && organism && organism.position) return organism; } catch {}
+  return null;
+}
+
+function apexApplyEnergyDelta(dE){
+  try {
+    if (typeof energy === "number") {
+      energy = Math.max(0, energy + dE);
+      return true;
+    }
+  } catch {}
+  try {
+    if (typeof state === "object" && state && typeof state.energy === "number") {
+      state.energy = Math.max(0, state.energy + dE);
+      return true;
+    }
+  } catch {}
+  try {
+    if (typeof sim === "object" && sim && typeof sim.energy === "number") {
+      sim.energy = Math.max(0, sim.energy + dE);
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+function apexAsMesh(x){
+  if (!x) return null;
+  if (x.position) return x;
+  if (x.mesh && x.mesh.position) return x.mesh;
+  if (x.o && x.o.position) return x.o;
+  if (x.obj && x.obj.position) return x.obj;
+  return null;
+}
+
+function apexCollectDangerCandidates(scene){
+  var out = [];
+  var tryPush = (arr) => {
+    if (!arr) return;
+    for (var it of arr) {
+      var m = apexAsMesh(it);
+      if (m) out.push(m);
+    }
+  };
+
+  // Prefer explicit arrays if they exist
+  try { if (typeof predators !== "undefined") tryPush(predators); } catch {}
+  try { if (typeof preds !== "undefined") tryPush(preds); } catch {}
+  try { if (typeof grazers !== "undefined") tryPush(grazers); } catch {}
+  try { if (typeof competitors !== "undefined") tryPush(competitors); } catch {}
+
+  if (out.length) return out;
+
+  // Fallback prototype: scan for yellow-ish spheres (competitor vibe)
+  var tmp = { h:0, s:0, l:0 };
+  scene.traverse((obj) => {
+    if (!obj || !obj.isMesh) return;
+    var g = obj.geometry;
+    var gt = g ? (g.type || "") : "";
+    if (gt !== "SphereGeometry" && gt !== "IcosahedronGeometry") return;
+    var mat = obj.material;
+    if (!mat || !mat.color) return;
+    mat.color.getHSL(tmp);
+    // yellow-ish band in HSL (prototype)
+    if (tmp.s > 0.20 && tmp.h > 0.08 && tmp.h < 0.18) out.push(obj);
+  });
+  return out;
+}
+
+function apexDangerStep(scene){
+  if (!__APEX_DANGER.enabled) return;
+
+  const now = performance.now();
+  let dt = (now - __APEX_DANGER.lastT) / 1000;
+  __APEX_DANGER.lastT = now;
+  if (!isFinite(dt) || dt <= 0) return;
+  dt = Math.min(dt, 0.05);
+
+  const p = apexPlayerObj();
+  if (!p) return;
+
+  apexEnsureDangerRing(scene);
+
+  // refresh candidate cache ~ every 1.5s
+  if (!__APEX_DANGER.cache || (now - __APEX_DANGER.cacheT) > 1500) {
+    __APEX_DANGER.cache = apexCollectDangerCandidates(scene);
+    __APEX_DANGER.cacheT = now;
+  }
+  const cand = __APEX_DANGER.cache || [];
+  if (!cand.length) return;
+
+  let best = null;
+  let bestD = 1e9;
+  for (const m of cand) {
+    if (!m || !m.position) continue;
+    if (m === p) continue;
+    const dx = m.position.x - p.position.x;
+    const dz = m.position.z - p.position.z;
+    const d = Math.hypot(dx, dz);
+    if (d < bestD) { bestD = d; best = m; }
+  }
+
+  const ring = __APEX_DANGER.ring;
+  if (!ring) return;
+
+  const r = __APEX_DANGER.radius;
+  if (best && bestD < r) {
+    ring.visible = true;
+    ring.position.set(p.position.x, 0.02, p.position.z);
+
+    const prox = 1 - (bestD / r);
+    const pulse = 1 + 0.12 * Math.sin(now * 0.008);
+    ring.scale.setScalar(pulse * (0.9 + 0.35 * prox));
+
+    const drain = __APEX_DANGER.dps * prox * dt;
+    apexApplyEnergyDelta(-drain);
+  } else {
+    ring.visible = false;
+  }
+}
+
+
+// --- __APEX_SAFE_RAF seatbelt (auto-added) ---
+(() => {
+  if (window.__APEX_SAFE_RAF) return;
+  window.__APEX_SAFE_RAF = true;
+
+  const __orig = (typeof step === "function") ? step : null;
+  if (!__orig) {
+    console.warn("[Apex] SAFE_RAF: could not find loop function 'step'.");
+    return;
+  }
+
+  function __apex_frame(now) {
+    requestAnimationFrame(__apex_frame);
+    try {
+      __orig(now);
+    } catch (e) {
+      if (!window.__APEX_FRAME_ERR_SHOWN) {
+        window.__APEX_FRAME_ERR_SHOWN = true;
+        console.error("[Apex] frame error (kept alive):", e);
+      }
+      // Try to render *something* even if sim step crashed.
+      try {
+        if (typeof renderer !== "undefined" && typeof scene !== "undefined" && typeof camera !== "undefined") {
+          renderer.render(scene, camera);
+        }
+      } catch (_) {}
+    }
+  }
+  requestAnimationFrame(__apex_frame);
+})();
+// --- end __APEX_SAFE_RAF ---
+
+// __APEX_HERDRING_FAILSOFT__
+try {
+  if (typeof ensureHerdRing === "function") {
+    const __apex_orig_ensureHerdRing = ensureHerdRing;
+    ensureHerdRing = function(...args){
+      try { return __apex_orig_ensureHerdRing.apply(this, args); }
+      catch (e) {
+        console.warn("[APEX] ensureHerdRing crashed; disabling", e);
+        ensureHerdRing = function(){ return; };
+        return;
+      }
+    };
+  }
+} catch (e) {}
+
+
+
+/* APEX_DEBUG_HELPERS_OFF
+   Hide render-sanity helpers (magenta origin sphere + axes) unless URL has ?debug=1.
+*/
+(() => {
+  const params = new URLSearchParams(location.search);
+  const debug = (params.get("debug") || "").toLowerCase();
+  if (debug === "1" || debug === "true" || debug === "yes") return;
+
+  function hideOnce() {
+    try {
+      if (typeof scene === "undefined" || !scene || !scene.children) return;
+
+      // Hide axes helper(s)
+      for (const o of scene.children) {
+        if (!o) continue;
+        if (o.type === "AxesHelper") o.visible = false;
+      }
+
+      // Hide the magenta render-sanity sphere (MeshBasicMaterial, 0xff00ff)
+      for (const o of scene.children) {
+        if (!o || o.type !== "Mesh") continue;
+        const m = o.material;
+        const hex = (m && m.color && typeof m.color.getHex === "function") ? m.color.getHex() : null;
+        if (hex === 0xff00ff && m && m.type === "MeshBasicMaterial") o.visible = false;
+      }
+
+      // If the *player* somehow ended up magenta, force it back to white.
+      const candidates = [];
+      try { if (typeof creature !== "undefined" && creature && creature.mesh) candidates.push(creature.mesh); } catch(_) {}
+      try { if (typeof PLAYER   !== "undefined" && PLAYER) candidates.push(PLAYER); } catch(_) {}
+      try { if (typeof ME       !== "undefined" && ME) candidates.push(ME); } catch(_) {}
+      try { if (typeof mesh     !== "undefined" && mesh) candidates.push(mesh); } catch(_) {}
+      for (const c of candidates) {
+        try {
+          const mat = c && c.material;
+          const hx = (mat && mat.color && typeof mat.color.getHex === "function") ? mat.color.getHex() : null;
+          if (hx === 0xff00ff && mat && mat.color) mat.color.setHex(0xffffff);
+        } catch(_) {}
+      }
+    } catch(_) {}
+  }
+
+  // Run a few times in case helpers spawn slightly later.
+  setTimeout(hideOnce, 0);
+  setTimeout(hideOnce, 250);
+  setTimeout(hideOnce, 1000);
+})();
+
+
+
+
+/* APEX_CAM_RESCUE1
+   If the follow-cam loses the player target (or latches onto a static debug mesh),
+   the camera appears "stuck". This patch reacquires the player mesh and nudges the
+   camera back into a sane follow position.
+   Hotkey: K = manual camera recenter.
+*/
+(() => {
+  const TAG = "[APEX CAM_RESCUE1]";
+  const log = (...a) => { try { console.log(TAG, ...a); } catch (_) {} };
+
+  // Make it easier for Safari to capture keys: ensure the canvas can be focused.
+  function focusCanvas() {
+    try {
+      const c = document.querySelector("canvas");
+      if (!c) return;
+      c.tabIndex = 0;
+      c.focus();
+    } catch (_) {}
+  }
+  setTimeout(focusCanvas, 0);
+  window.addEventListener("pointerdown", focusCanvas, true);
+
+  // Track recent movement input so we only rescue when you're actually trying to move.
+  let lastMoveKeyT = 0;
+  let lastToastT = 0;
+  const moveKeys = new Set(["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowLeft","ArrowDown","ArrowRight"]);
+
+  window.addEventListener("keydown", (e) => {
+    const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+
+    if (moveKeys.has(e.code)) {
+      lastMoveKeyT = now;
+      if (typeof toast === "function" && (now - lastToastT) > 2500) {
+        lastToastT = now;
+        toast("INPUT OK", 600);
+      }
+    }
+
+    if (e.code === "KeyK") {
+      e.preventDefault();
+      tryRescue("K");
+    }
+  }, true);
+
+  function getScene() {
+    try { if (typeof scene !== "undefined" && scene) return scene; } catch (_) {}
+    try { if (typeof SCENE !== "undefined" && SCENE) return SCENE; } catch (_) {}
+    return null;
+  }
+  function getCamera() {
+    try { if (typeof camera !== "undefined" && camera) return camera; } catch (_) {}
+    try { if (typeof CAMERA !== "undefined" && CAMERA) return CAMERA; } catch (_) {}
+    try { if (typeof cam !== "undefined" && cam) return cam; } catch (_) {}
+    return null;
+  }
+
+  function isSphereMesh(o) {
+    try {
+      if (!o || !o.isMesh || !o.geometry) return false;
+      const t = o.geometry.type || "";
+      return /Sphere/i.test(t);
+    } catch (_) { return false; }
+  }
+  function hasCylinderChild(o) {
+    try {
+      if (!o || !o.children) return false;
+      for (const c of o.children) {
+        const t = c && c.geometry ? (c.geometry.type || "") : "";
+        if (/Cylinder/i.test(t)) return true;
+      }
+      return false;
+    } catch (_) { return false; }
+  }
+
+  function findPlayerMesh(sc) {
+    // 1) Honor explicit markers if present.
+    let found = null;
+    try {
+      if (sc && typeof sc.traverse === "function") {
+        sc.traverse((o) => {
+          if (found) return;
+          const ud = (o && o.userData) ? o.userData : {};
+          if (o && o.isMesh && o.position && (ud.isPlayer || ud.player || ud.role === "player")) {
+            found = o;
+          }
+        });
+      }
+    } catch (_) {}
+    if (found) return found;
+
+    // 2) Heuristic fallback: player sphere often has a little "stick" (cylinder) child.
+    try {
+      if (sc && typeof sc.traverse === "function") {
+        sc.traverse((o) => {
+          if (found) return;
+          if (isSphereMesh(o) && hasCylinderChild(o)) found = o;
+        });
+      }
+    } catch (_) {}
+    if (found) {
+      try { found.userData = found.userData || {}; found.userData.isPlayer = true; } catch (_) {}
+      return found;
+    }
+    return null;
+  }
+
+  function dist3(a, b) {
+    const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+    return Math.sqrt(dx*dx + dy*dy + dz*dz);
+  }
+
+  let lastCamPos = null;
+  let lastRescueT = 0;
+
+  function tryRescue(reason) {
+    const sc = getScene();
+    const camObj = getCamera();
+    if (!sc || !camObj || !camObj.position) return false;
+
+    const p = findPlayerMesh(sc);
+    if (!p || !p.position) return false;
+
+    const px = p.position.x, py = p.position.y, pz = p.position.z;
+
+    try {
+      if (typeof THREE !== "undefined" && THREE && THREE.Vector3) {
+        // Nice stable third-person offset.
+        const off = new THREE.Vector3(0, 6, 12);
+        camObj.position.set(px + off.x, py + off.y, pz + off.z);
+        if (typeof camObj.lookAt === "function") camObj.lookAt(p.position);
+      } else {
+        camObj.position.x = px;
+        camObj.position.y = py + 6;
+        camObj.position.z = pz + 12;
+      }
+    } catch (_) {}
+
+    const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    lastRescueT = now;
+
+    if (typeof toast === "function") toast(`CAM RESCUE (${reason})`, 1200);
+    log("rescue:", reason);
+    return true;
+  }
+
+  function loop() {
+    const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    const camObj = getCamera();
+
+    if (camObj && camObj.position) {
+      if (!lastCamPos) lastCamPos = { x: camObj.position.x, y: camObj.position.y, z: camObj.position.z };
+
+      const camMoved = dist3(camObj.position, lastCamPos);
+      lastCamPos.x = camObj.position.x; lastCamPos.y = camObj.position.y; lastCamPos.z = camObj.position.z;
+
+      const inputRecent = (now - lastMoveKeyT) < 800;
+      const canRescue = (now - lastRescueT) > 1200;
+
+      // If you're trying to move, but camera isn't budging, rescue.
+      if (inputRecent && canRescue && camMoved < 0.001) {
+        tryRescue("stuck");
+      }
+    }
+
+    try { requestAnimationFrame(loop); } catch (_) { setTimeout(loop, 50); }
+  }
+
+  try { requestAnimationFrame(loop); } catch (_) { setTimeout(loop, 50); }
+})();
+
+
+
+
+/* APEX_DT_POLYFILL_V1
+   Provide a global 'dt' so any stray reference cannot crash the frame loop.
+   Also keep dt reasonably updated each animation frame.
+*/
+var dt = (typeof dt === "number" && isFinite(dt) && dt > 0) ? dt : (1/60);
+(() => {
+  let prev = performance.now();
+  function step(now){
+    let d = (now - prev) / 1000;
+    prev = now;
+    if (!isFinite(d) || d <= 0) d = 1/60;
+    if (d > 0.05) d = 0.05;
+    if (d < 0.001) d = 0.001;
+    dt = d;
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+})();
+
+
+
+
+/* APEX_UI_CLEAN1
+   UI mode toggle: default CLEAN, press U to toggle CLEAN/DEBUG.
+   URL override: ?ui=clean or ?ui=debug
+*/
+(() => {
+  try {
+    const params = new URLSearchParams(location.search);
+    const forced = (params.get("ui") || "").toLowerCase();
+    let mode = forced || (localStorage.getItem("apex_ui_mode") || "clean");
+    if (mode !== "clean" && mode !== "debug") mode = "clean";
+
+    // Style injection (safe even if some ids don't exist)
+    const style = document.createElement("style");
+    style.textContent = `
+      :root { --apex-ui-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+      #hud, #vitals, #toast, #status { font-family: var(--apex-ui-font); }
+      #hud, #vitals {
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 10px;
+        padding: 8px 10px;
+      }
+      #hud { max-width: 360px; }
+      :root[data-ui="clean"] #hud { display: none !important; }
+      :root[data-ui="clean"] .debug { display: none !important; }
+      :root[data-ui="clean"] #vitals { opacity: 0.88; }
+    `;
+    document.head.appendChild(style);
+
+    function toast(msg) {
+      try { if (typeof showToast === "function") showToast(msg); } catch(_) {}
+    }
+
+    function apply() {
+      document.documentElement.dataset.ui = mode;
+      try { localStorage.setItem("apex_ui_mode", mode); } catch(_) {}
+      toast(`UI: ${mode.toUpperCase()} (U to toggle)`);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.repeat) return;
+      const k = (e.key || "").toLowerCase();
+      if (k === "u") {
+        mode = (mode === "clean") ? "debug" : "clean";
+        apply();
+      }
+    }, true);
+
+    apply();
+  } catch(_) {}
 })();
 

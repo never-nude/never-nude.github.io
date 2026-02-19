@@ -1,4 +1,4 @@
-/* BUILD0006 overlay styles only */
+/* BUILD0053_EATFIX2_TROPHIC1 overlay styles only */
 #overlay.hidden { display: none; }
 
 #overlay {
@@ -84,7 +84,7 @@
   font-size: 12px;
 }
 
-/* BUILD0019_UIFIX1: pin HUD + lock scroll + show epoch in bottom status */
+/* BUILD0053_EATFIX2_TROPHIC1: pin HUD + lock scroll + show epoch in bottom status */
 html, body {
   height: 100%;
   overflow: hidden;
@@ -99,16 +99,16 @@ body { margin: 0; }
 #status[data-epoch=""]::after { content: ""; }
 
 
-/* BUILD0021_GRAZERS1: append grazers count to bottom status */
+/* BUILD0053_EATFIX2_TROPHIC1: append grazers count to bottom status */
 #status::after { content: " | epoch=" attr(data-epoch) " | grazers=" attr(data-grazers); }
 #status[data-epoch=""]::after { content: ""; }
 
 
-/* BUILD0023_PRESSURE_DIAL1: show pressure in bottom status */
+/* BUILD0053_EATFIX2_TROPHIC1: show pressure in bottom status */
 #status::after { content: " | epoch=" attr(data-epoch) " | grazers=" attr(data-grazers) " | press=" attr(data-press); }
 
 
-/* BUILD0024_HERD_BOON1: extend status truth probes */
+/* BUILD0053_EATFIX2_TROPHIC1: extend status truth probes */
 #status::after {
   content: " | epoch=" attr(data-epoch)
            " | grazers=" attr(data-grazers)
@@ -117,7 +117,7 @@ body { margin: 0; }
 }
 
 
-/* BUILD0025_STRAGGLERS1: status truth probes */
+/* BUILD0053_EATFIX2_TROPHIC1: status truth probes */
 #status::after{
   content: " | herd=" attr(data-herd)
            " | hNear=" attr(data-hnear)
@@ -126,7 +126,7 @@ body { margin: 0; }
 }
 
 
-/* BUILD0026_EATFIX1: status truth probes (override last definition) */
+/* BUILD0053_EATFIX2_TROPHIC1: status truth probes (override last definition) */
 #status::after{
   content: " | epoch=" attr(data-epoch)
            " | grazers=" attr(data-grazers)
@@ -139,7 +139,7 @@ body { margin: 0; }
 }
 
 
-/* BUILD0027_PREDATOR1: status truth probes (override last definition) */
+/* BUILD0053_EATFIX2_TROPHIC1: status truth probes (override last definition) */
 #status::after{
   content: " | epoch=" attr(data-epoch)
            " | grazers=" attr(data-grazers)
@@ -154,7 +154,7 @@ body { margin: 0; }
 }
 
 
-/* BUILD0028_PREYTIERS1: status truth probes (override last definition) */
+/* BUILD0053_EATFIX2_TROPHIC1: status truth probes (override last definition) */
 #status::after{
   content: " | epoch=" attr(data-epoch)
            " | grazers=" attr(data-grazers)
@@ -171,7 +171,7 @@ body { margin: 0; }
 }
 
 
-/* BUILD0029_APEX_UI1: HUD toggle button */
+/* BUILD0053_EATFIX2_TROPHIC1: HUD toggle button */
 #hudToggleBtn{
   position: fixed;
   top: 12px;
@@ -211,7 +211,7 @@ body.hudOff [data-hud="1"]{
 }
 
 
-/* BUILD0031_TROPHIC1: compact stage/diet/mass indicator */
+/* BUILD0053_EATFIX2_TROPHIC1: compact stage/diet/mass indicator */
 #status::before{
   content: "stage=" attr(data-stage) " diet=" attr(data-diet) " mass=" attr(data-mass);
   margin-right: 12px;
@@ -219,7 +219,7 @@ body.hudOff [data-hud="1"]{
 }
 
 
-/* BUILD0037_EVODRAFT1: Evo Draft overlay */
+/* BUILD0053_EATFIX2_TROPHIC1: Evo Draft overlay */
 #apexEvoOverlay{
   position: fixed;
   inset: 0;
