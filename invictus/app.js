@@ -164,56 +164,137 @@ function setupGame(layout, scenario) {
   }
 
   function drawUnitToken(u, g) {
-    // TOKEN_UI_V3 (quiet: type + hp only) TEXT_SCALE_0_72
-    const { cx, cy } = centerOf(u.r, u.c, g);
-    const R = g.s * 0.76;
-    const isSel = (selectedId === u.id);
+  // TOKEN_UI_V5_SHAPE_ABBR_HP: type=shape+abbr, hp=center, quality=outline style
+  const { cx, cy } = centerOf(u.r, u.c, g);
+  const R = g.s * 0.82;
+  const isSel = (selectedId === u.id);
 
-    // base
+  // 28% smaller text (same shrink you requested)
+  const S = 0.72;
+
+  const tUp = String(u.type || "").toUpperCase();
+  const MAP = {
+    "INF":"INF","INFANTRY":"INF",
+    "CAV":"CAV","CAVALRY":"CAV",
+    "SKR":"SKR","SKIRMISHER":"SKR","SKIRMISHERS":"SKR",
+    "ARC":"ARC","ARCHER":"ARC","ARCHERS":"ARC",
+    "SLG":"SLG","SLINGER":"SLG","SLINGERS":"SLG",
+    "GEN":"GEN","GENERAL":"GEN","GENERALS":"GEN"
+  };
+  const abbr = MAP[tUp] || tUp.replace(/[^A-Z]/g,"").slice(0,3) || "???";
+
+  function roundedRectPath(x, y, w, h, r) {
+    const rr = Math.max(2, Math.min(r, Math.min(w, h) / 2));
     ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = SIDE_FILL[u.side] || "#666";
-    ctx.fill();
-
-    // ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(255,255,255,0.95)";
-    ctx.stroke();
-
-    // selected ring
-    if (isSel) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, R + 2, 0, Math.PI * 2);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#111111";
-      ctx.stroke();
-    }
-
-    // subtle "general" extra ring (only for GEN, not for everyone)
-    if (u.type === "GEN") {
-      ctx.beginPath();
-      ctx.arc(cx, cy, R - 4, 0, Math.PI * 2);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(255,255,255,0.55)";
-      ctx.stroke();
-    }
-
-    // labels
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
-
-    const typeFont = Math.max(7, Math.round(g.s * 0.44 * TEXT_SCALE));
-    const hpFont   = Math.max(9, Math.round(g.s * 0.72 * TEXT_SCALE));
-
-    ctx.font = `800 ${typeFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-    ctx.fillText(u.type, cx, cy - R * 0.22);
-
-    ctx.font = `900 ${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-    ctx.fillText(String(u.hp), cx, cy + R * 0.22);
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
   }
+
+  function starPath(cx, cy, spikes, outerR, innerR) {
+    ctx.beginPath();
+    let rot = Math.PI / 2 * 3;
+    const step = Math.PI / spikes;
+    ctx.moveTo(cx, cy - outerR);
+    for (let i = 0; i < spikes; i++) {
+      ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+      rot += step;
+      ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerR);
+    ctx.closePath();
+  }
+
+  function makePath() {
+    if (abbr === "INF") {
+      roundedRectPath(cx - R*0.78, cy - R*0.58, R*1.56, R*1.16, R*0.22);
+      return;
+    }
+    if (abbr === "CAV") {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - R*0.88);
+      ctx.lineTo(cx + R*0.88, cy);
+      ctx.lineTo(cx, cy + R*0.88);
+      ctx.lineTo(cx - R*0.88, cy);
+      ctx.closePath();
+      return;
+    }
+    if (abbr === "SKR" || abbr === "SLG") {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - R*0.92);
+      ctx.lineTo(cx + R*0.86, cy + R*0.80);
+      ctx.lineTo(cx - R*0.86, cy + R*0.80);
+      ctx.closePath();
+      return;
+    }
+    if (abbr === "GEN") {
+      starPath(cx, cy, 5, R*0.92, R*0.42);
+      return;
+    }
+    // ARC + fallback
+    ctx.beginPath();
+    ctx.arc(cx, cy, R*0.82, 0, Math.PI * 2);
+    ctx.closePath();
+  }
+
+  // fill
+  makePath();
+  ctx.fillStyle = SIDE_FILL[u.side] || "#666";
+  ctx.fill();
+
+  // quality outline style (this is the "Green/Reg/Vet status" display)
+  const q = (u.quality || "Regular");
+  ctx.save();
+  if (q === "Green") {
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 2;
+  } else if (q === "Veteran") {
+    ctx.setLineDash([]);
+    ctx.lineWidth = 3;
+  } else {
+    ctx.setLineDash([]);
+    ctx.lineWidth = 2;
+  }
+  ctx.strokeStyle = "rgba(255,255,255,0.95)";
+  makePath();
+  ctx.stroke();
+  ctx.restore();
+
+  // selection outline
+  if (isSel) {
+    ctx.save();
+    ctx.setLineDash([]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#111111";
+    makePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // text: abbr (small) + HP (big)
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+
+  const abFont = Math.max(7, Math.round(g.s * 0.38 * S));
+  const hpFont = Math.max(9, Math.round(g.s * 0.84 * S));
+
+  ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"`;
+  ctx.fillText(abbr, cx, cy - R * 0.30);
+
+  ctx.font = `900 ${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+  ctx.fillText(String(u.hp), cx, cy + R * 0.20);
+}
+
+
 
   function render() {
     const dpr = window.devicePixelRatio || 1;
