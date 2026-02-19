@@ -10,15 +10,15 @@ async function fetchJSON(path) {
 }
 
 const SIDE_FILL = { Blue: "#2563eb", Red: "#dc2626" };
-const QUALITY_SHORT = { Green: "G", Regular: "R", Veteran: "V" };
-
-// TEXT_SCALE_0_72: shrink on-token text by 28%
-const TEXT_SCALE = 0.72;
-
-// GENERALS_V1: HP=5; attack=adjacent only; 1d6 hit on 6; morale radius default 3
-const DEFAULT_MORALE_RADIUS = 3;
-
 const key = (r, c) => `${r},${c}`;
+
+// TOKEN_UI: shape + 3-letter abbr + HP + quality outline
+// Font is 40% smaller than prior baseline: SCALE = 0.432
+const TOKEN_TEXT_SCALE = 0.432;
+
+// Movement milestone E
+const ACTIVATIONS_PER_TURN = 3;
+const MOVE_RANGE = { INF:2, ARC:2, GEN:2, CAV:3, SKR:3, SLG:3 };
 
 function oddrToCube(r, c) {
   const x = c - ((r - (r & 1)) / 2);
@@ -33,29 +33,80 @@ function hexDist(r1, c1, r2, c2) {
   return cubeDist(oddrToCube(r1, c1), oddrToCube(r2, c2));
 }
 
+// odd-r neighbor list (must match board generation)
+function neighbors6(r, c) {
+  if (r % 2 === 0) {
+    return [
+      [r, c-1], [r, c+1],
+      [r-1, c-1], [r-1, c],
+      [r+1, c-1], [r+1, c],
+    ];
+  } else {
+    return [
+      [r, c-1], [r, c+1],
+      [r-1, c], [r-1, c+1],
+      [r+1, c], [r+1, c+1],
+    ];
+  }
+}
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 function setupGame(layout, scenario) {
   const canvas = $("#hexCanvas");
   const ctx = canvas.getContext("2d");
 
-  const hoverEl = $("#hoverInfo");
-  const auraEl  = $("#auraInfo");
-  const selEl   = $("#selectedInfo");
+  const hoverEl  = $("#hoverInfo");
+  const auraEl   = $("#auraInfo");
+  const statusEl = $("#statusLine");
+
+  const turnEl   = $("#turnSide");
+  const actsEl   = $("#actsUsed");
+
+  const selEl    = $("#selectedInfo");
+  const endBtn   = $("#endTurnBtn");
+  const resetBtn = $("#resetBtn");
 
   $("#scenarioName").textContent = scenario?.name || "—";
-  $("#unitCount").textContent = String(scenario?.units?.length ?? 0);
 
-  const units = Array.isArray(scenario?.units) ? scenario.units : [];
-  const unitByHex = new Map();
-  for (const u of units) unitByHex.set(key(u.r, u.c), u);
+  const liveSet = new Set(layout.hexes.map(h => key(h.r, h.c)));
+
+  // State
+  const initialUnits = Array.isArray(scenario?.units) ? scenario.units : [];
+  let units = deepClone(initialUnits);
+
+  let turnSide = "Blue";
+  let activationsUsed = 0;
 
   let selectedId = null;
   let hover = null;
+
+  // derived per-render
   let drawn = [];
   let gLast = null;
 
-  // computed only when selection changes
-  let auraSet = null;  // Set<"r,c">
-  let auraSide = null;
+  // overlays
+  let auraSet = null;      // Set<"r,c">
+  let auraSide = null;     // "Blue"/"Red"/null
+  let moveSet = null;      // Set<"r,c"> reachable, empty
+
+  function unitById(id) {
+    return units.find(u => u.id === id) || null;
+  }
+  function unitAt(r, c) {
+    for (const u of units) if (u.r === r && u.c === c) return u;
+    return null;
+  }
+  function occupiedSet(exceptId=null) {
+    const s = new Set();
+    for (const u of units) {
+      if (exceptId && u.id === exceptId) continue;
+      s.add(key(u.r, u.c));
+    }
+    return s;
+  }
 
   function computeGeometry() {
     const cols = layout.cols;
@@ -102,7 +153,7 @@ function setupGame(layout, scenario) {
   }
 
   function isGeneral(u) {
-    return !!u && (u.type === "GEN" || u.isGeneral === true);
+    return !!u && String(u.type).toUpperCase() === "GEN";
   }
 
   function computeAuraForSelected() {
@@ -110,11 +161,10 @@ function setupGame(layout, scenario) {
     auraSide = null;
     auraEl.textContent = "";
 
-    if (!selectedId) return;
-    const u = units.find(x => x.id === selectedId);
+    const u = selectedId ? unitById(selectedId) : null;
     if (!u || !isGeneral(u)) return;
 
-    const radius = (typeof u.moraleRadius === "number") ? u.moraleRadius : DEFAULT_MORALE_RADIUS;
+    const radius = (typeof u.moraleRadius === "number") ? u.moraleRadius : 3;
     auraSide = u.side;
     auraEl.textContent = `aura: ${radius}`;
 
@@ -125,18 +175,64 @@ function setupGame(layout, scenario) {
     auraSet = set;
   }
 
-  function updateSelectedPanel() {
-    if (!selectedId) {
-      selEl.textContent = "Selected: —\n(click a unit token)";
-      auraSet = null; auraSide = null; auraEl.textContent = "";
-      return;
+  function computeMoveSetForSelected() {
+    moveSet = null;
+
+    const u = selectedId ? unitById(selectedId) : null;
+    if (!u) return;
+
+    // Only preview moves for current side, and only if you have activations left
+    if (u.side !== turnSide) return;
+    if (activationsUsed >= ACTIVATIONS_PER_TURN) return;
+
+    const t = String(u.type).toUpperCase();
+    const range = MOVE_RANGE[t] ?? 2;
+
+    const blocked = occupiedSet(u.id);
+
+    const seen = new Set([key(u.r, u.c)]);
+    const reachable = new Set();
+
+    // BFS: queue items [r,c,dist]
+    const q = [[u.r, u.c, 0]];
+    while (q.length) {
+      const [r, c, d] = q.shift();
+      if (d === range) continue;
+
+      for (const [nr, nc] of neighbors6(r, c)) {
+        const k = key(nr, nc);
+        if (seen.has(k)) continue;
+        seen.add(k);
+
+        if (!liveSet.has(k)) continue;         // must be on board
+        if (blocked.has(k)) continue;          // cannot enter or pass through units
+
+        reachable.add(k);
+        q.push([nr, nc, d + 1]);
+      }
     }
 
-    const u = units.find(x => x.id === selectedId);
+    moveSet = reachable;
+  }
+
+  function updateTopLeft() {
+    turnEl.textContent = turnSide;
+    actsEl.textContent = `${activationsUsed}/${ACTIVATIONS_PER_TURN}`;
+  }
+
+  function setStatus(msg) {
+    statusEl.textContent = msg || "";
+  }
+
+  function updateSelectedPanel() {
+    if (!selectedId) {
+      selEl.textContent = "Selected: —\n(click a unit)";
+      return;
+    }
+    const u = unitById(selectedId);
     if (!u) {
       selectedId = null;
-      selEl.textContent = "Selected: —\n(click a unit token)";
-      auraSet = null; auraSide = null; auraEl.textContent = "";
+      selEl.textContent = "Selected: —\n(click a unit)";
       return;
     }
 
@@ -151,148 +247,139 @@ function setupGame(layout, scenario) {
     ];
 
     if (isGeneral(u)) {
-      const radius = (typeof u.moraleRadius === "number") ? u.moraleRadius : DEFAULT_MORALE_RADIUS;
-      const atk = u.attack || {};
-      const hitOn = Array.isArray(atk.hitOn) ? atk.hitOn.join(",") : "6";
+      const radius = (typeof u.moraleRadius === "number") ? u.moraleRadius : 3;
       lines.push(`Morale radius: ${radius}`);
-      lines.push(`Attack: adjacent | 1d6 | hit on ${hitOn}`);
-      lines.push(`(attack rule recorded; combat not active yet)`);
+      lines.push(`Attack: adjacent | 1d6 | hit on 6 (recorded only)`);
     }
 
+    lines.push("");
+    lines.push(`Turn: ${turnSide}`);
+    lines.push(`Activations: ${activationsUsed}/${ACTIVATIONS_PER_TURN}`);
+
     selEl.textContent = lines.join("\n");
-    computeAuraForSelected();
+  }
+
+  function abbrFor(u) {
+    const tUp = String(u.type || "").toUpperCase();
+    const MAP = { INF:"INF", CAV:"CAV", SKR:"SKR", ARC:"ARC", SLG:"SLG", GEN:"GEN" };
+    return MAP[tUp] || (tUp.replace(/[^A-Z]/g,"").slice(0,3) || "???");
   }
 
   function drawUnitToken(u, g) {
-  // TOKEN_UI_V5_SHAPE_ABBR_HP: type=shape+abbr, hp=center, quality=outline style FONT_SCALE_0_432
-  const { cx, cy } = centerOf(u.r, u.c, g);
-  const R = g.s * 0.82;
-  const isSel = (selectedId === u.id);
+    // TOKEN_UI_V5_SHAPE_ABBR_HP + 40% smaller text
+    const { cx, cy } = centerOf(u.r, u.c, g);
+    const R = g.s * 0.82;
+    const isSel = (selectedId === u.id);
 
-  // 28% smaller text (same shrink you requested)
-  const S = 0.432; // 40% smaller (0.72 * 0.6)
-const tUp = String(u.type || "").toUpperCase();
-  const MAP = {
-    "INF":"INF","INFANTRY":"INF",
-    "CAV":"CAV","CAVALRY":"CAV",
-    "SKR":"SKR","SKIRMISHER":"SKR","SKIRMISHERS":"SKR",
-    "ARC":"ARC","ARCHER":"ARC","ARCHERS":"ARC",
-    "SLG":"SLG","SLINGER":"SLG","SLINGERS":"SLG",
-    "GEN":"GEN","GENERAL":"GEN","GENERALS":"GEN"
-  };
-  const abbr = MAP[tUp] || tUp.replace(/[^A-Z]/g,"").slice(0,3) || "???";
+    const abbr = abbrFor(u);
 
-  function roundedRectPath(x, y, w, h, r) {
-    const rr = Math.max(2, Math.min(r, Math.min(w, h) / 2));
-    ctx.beginPath();
-    ctx.moveTo(x + rr, y);
-    ctx.lineTo(x + w - rr, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
-    ctx.lineTo(x + w, y + h - rr);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
-    ctx.lineTo(x + rr, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
-    ctx.lineTo(x, y + rr);
-    ctx.quadraticCurveTo(x, y, x + rr, y);
-    ctx.closePath();
-  }
-
-  function starPath(cx, cy, spikes, outerR, innerR) {
-    ctx.beginPath();
-    let rot = Math.PI / 2 * 3;
-    const step = Math.PI / spikes;
-    ctx.moveTo(cx, cy - outerR);
-    for (let i = 0; i < spikes; i++) {
-      ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
-      rot += step;
-      ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
-      rot += step;
-    }
-    ctx.lineTo(cx, cy - outerR);
-    ctx.closePath();
-  }
-
-  function makePath() {
-    if (abbr === "INF") {
-      roundedRectPath(cx - R*0.78, cy - R*0.58, R*1.56, R*1.16, R*0.22);
-      return;
-    }
-    if (abbr === "CAV") {
+    function roundedRectPath(x, y, w, h, r) {
+      const rr = Math.max(2, Math.min(r, Math.min(w, h) / 2));
       ctx.beginPath();
-      ctx.moveTo(cx, cy - R*0.88);
-      ctx.lineTo(cx + R*0.88, cy);
-      ctx.lineTo(cx, cy + R*0.88);
-      ctx.lineTo(cx - R*0.88, cy);
+      ctx.moveTo(x + rr, y);
+      ctx.lineTo(x + w - rr, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+      ctx.lineTo(x + w, y + h - rr);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+      ctx.lineTo(x + rr, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+      ctx.lineTo(x, y + rr);
+      ctx.quadraticCurveTo(x, y, x + rr, y);
       ctx.closePath();
-      return;
     }
-    if (abbr === "SKR" || abbr === "SLG") {
+    function starPath(cx, cy, spikes, outerR, innerR) {
       ctx.beginPath();
-      ctx.moveTo(cx, cy - R*0.92);
-      ctx.lineTo(cx + R*0.86, cy + R*0.80);
-      ctx.lineTo(cx - R*0.86, cy + R*0.80);
+      let rot = Math.PI / 2 * 3;
+      const step = Math.PI / spikes;
+      ctx.moveTo(cx, cy - outerR);
+      for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerR);
       ctx.closePath();
-      return;
     }
-    if (abbr === "GEN") {
-      starPath(cx, cy, 5, R*0.92, R*0.42);
-      return;
+    function makePath() {
+      if (abbr === "INF") {
+        roundedRectPath(cx - R*0.78, cy - R*0.58, R*1.56, R*1.16, R*0.22);
+        return;
+      }
+      if (abbr === "CAV") {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - R*0.88);
+        ctx.lineTo(cx + R*0.88, cy);
+        ctx.lineTo(cx, cy + R*0.88);
+        ctx.lineTo(cx - R*0.88, cy);
+        ctx.closePath();
+        return;
+      }
+      if (abbr === "SKR" || abbr === "SLG") {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - R*0.92);
+        ctx.lineTo(cx + R*0.86, cy + R*0.80);
+        ctx.lineTo(cx - R*0.86, cy + R*0.80);
+        ctx.closePath();
+        return;
+      }
+      if (abbr === "GEN") {
+        starPath(cx, cy, 5, R*0.92, R*0.42);
+        return;
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, R*0.82, 0, Math.PI * 2);
+      ctx.closePath();
     }
-    // ARC + fallback
-    ctx.beginPath();
-    ctx.arc(cx, cy, R*0.82, 0, Math.PI * 2);
-    ctx.closePath();
-  }
 
-  // fill
-  makePath();
-  ctx.fillStyle = SIDE_FILL[u.side] || "#666";
-  ctx.fill();
+    // fill
+    makePath();
+    ctx.fillStyle = SIDE_FILL[u.side] || "#666";
+    ctx.fill();
 
-  // quality outline style (this is the "Green/Reg/Vet status" display)
-  const q = (u.quality || "Regular");
-  ctx.save();
-  if (q === "Green") {
-    ctx.setLineDash([4, 3]);
-    ctx.lineWidth = 2;
-  } else if (q === "Veteran") {
-    ctx.setLineDash([]);
-    ctx.lineWidth = 3;
-  } else {
-    ctx.setLineDash([]);
-    ctx.lineWidth = 2;
-  }
-  ctx.strokeStyle = "rgba(255,255,255,0.95)";
-  makePath();
-  ctx.stroke();
-  ctx.restore();
-
-  // selection outline
-  if (isSel) {
+    // quality outline style
+    const q = (u.quality || "Regular");
     ctx.save();
-    ctx.setLineDash([]);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#111111";
+    if (q === "Green") {
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 2;
+    } else if (q === "Veteran") {
+      ctx.setLineDash([]);
+      ctx.lineWidth = 3;
+    } else {
+      ctx.setLineDash([]);
+      ctx.lineWidth = 2;
+    }
+    ctx.strokeStyle = "rgba(255,255,255,0.95)";
     makePath();
     ctx.stroke();
     ctx.restore();
+
+    // selection outline
+    if (isSel) {
+      ctx.save();
+      ctx.setLineDash([]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#111111";
+      makePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // text
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
+
+    const abFont = Math.max(4, Math.round(g.s * 0.38 * TOKEN_TEXT_SCALE));
+    const hpFont = Math.max(5, Math.round(g.s * 0.84 * TOKEN_TEXT_SCALE));
+
+    ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"`;
+    ctx.fillText(abbr, cx, cy - R * 0.30);
+
+    ctx.font = `900 ${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.fillText(String(u.hp), cx, cy + R * 0.20);
   }
-
-  // text: abbr (small) + HP (big)
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#ffffff";
-
-  const abFont = Math.max(4, Math.round(g.s * 0.38 * S));
-const hpFont = Math.max(5, Math.round(g.s * 0.84 * S));
-ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"`;
-  ctx.fillText(abbr, cx, cy - R * 0.30);
-
-  ctx.font = `900 ${hpFont}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-  ctx.fillText(String(u.hp), cx, cy + R * 0.20);
-}
-
-
 
   function render() {
     const dpr = window.devicePixelRatio || 1;
@@ -318,10 +405,12 @@ ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consola
     // hexes
     ctx.lineWidth = 1;
     for (const h of drawn) {
+      const k = key(h.r, h.c);
       const isHover = hover && (hover.r === h.r) && (hover.c === h.c);
-      const inAura = auraSet && auraSet.has(key(h.r, h.c));
+      const inAura = auraSet && auraSet.has(k);
 
       hexPath(h.cx, h.cy, g.s);
+
       let fill = "#f7f7f7";
       if (inAura && auraFill) fill = auraFill;
       if (isHover) fill = "#e6f2ff";
@@ -330,6 +419,17 @@ ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consola
       ctx.strokeStyle = isHover ? "#2563eb" : "#b0b0b0";
       ctx.fill();
       ctx.stroke();
+
+      // movement preview (blue dashed outline)
+      if (moveSet && moveSet.has(k)) {
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(37,99,235,0.95)";
+        hexPath(h.cx, h.cy, g.s);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     // units
@@ -337,7 +437,7 @@ ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consola
 
     ctx.fillStyle = "#666";
     ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-    ctx.fillText(`Diadem: generals + aura (select GEN)`, 12, g.H - 12);
+    ctx.fillText(`Echelon: move + activations (no combat yet)`, 12, g.H - 12);
   }
 
   function pickHex(mx, my) {
@@ -355,14 +455,63 @@ ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consola
     return (best && bestD <= thresh) ? best : null;
   }
 
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.max(1, Math.round(rect.width * dpr));
-    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+  function refreshDerivedAndUI() {
+    computeAuraForSelected();
+    computeMoveSetForSelected();
+    updateTopLeft();
+    updateSelectedPanel();
     render();
   }
 
+  function tryMoveSelectedTo(r, c) {
+    const u = selectedId ? unitById(selectedId) : null;
+    if (!u) return;
+
+    const k = key(r, c);
+    if (!moveSet || !moveSet.has(k)) return;
+
+    if (u.side !== turnSide) {
+      setStatus("Not your turn.");
+      return;
+    }
+    if (activationsUsed >= ACTIVATIONS_PER_TURN) {
+      setStatus("No activations left. End Turn.");
+      return;
+    }
+    if (unitAt(r, c)) {
+      setStatus("Destination occupied.");
+      return;
+    }
+
+    const from = `(${u.r},${u.c})`;
+    u.r = r; u.c = c;
+    activationsUsed += 1;
+    setStatus(`Moved ${u.id} ${from} -> (${r},${c})`);
+
+    // After moving, keep selection and refresh
+    refreshDerivedAndUI();
+  }
+
+  function endTurn() {
+    turnSide = (turnSide === "Blue") ? "Red" : "Blue";
+    activationsUsed = 0;
+    selectedId = null;
+    hover = null;
+    setStatus(`Turn: ${turnSide}`);
+    refreshDerivedAndUI();
+  }
+
+  function resetGame() {
+    units = deepClone(initialUnits);
+    turnSide = "Blue";
+    activationsUsed = 0;
+    selectedId = null;
+    hover = null;
+    setStatus("Reset.");
+    refreshDerivedAndUI();
+  }
+
+  // Events
   canvas.addEventListener("mousemove", (ev) => {
     const rect = canvas.getBoundingClientRect();
     const mx = ev.clientX - rect.left;
@@ -389,23 +538,36 @@ ctx.font = `800 ${abFont}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consola
     const my = ev.clientY - rect.top;
 
     const h = pickHex(mx, my);
-    if (!h) {
-      selectedId = null;
-      updateSelectedPanel();
-      render();
+    if (!h) return;
+
+    // If clicked a legal move hex, move
+    if (moveSet && moveSet.has(key(h.r, h.c))) {
+      tryMoveSelectedTo(h.r, h.c);
       return;
     }
 
-    const u = unitByHex.get(key(h.r, h.c));
+    // Otherwise selection behavior
+    const u = unitAt(h.r, h.c);
     selectedId = u ? u.id : null;
-    updateSelectedPanel();
-    render();
+    setStatus(u ? `Selected ${u.id}` : "");
+    refreshDerivedAndUI();
   });
 
+  endBtn.addEventListener("click", endTurn);
+  resetBtn.addEventListener("click", resetGame);
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    refreshDerivedAndUI();
+  }
   window.addEventListener("resize", resize);
 
+  // init
   hoverEl.textContent = "hover: —";
-  updateSelectedPanel();
+  setStatus("Echelon ready.");
   resize();
 }
 
@@ -422,4 +584,5 @@ async function main() {
   setupGame(layout, scenario);
 }
 
+// MOVEMENT_V1 marker for proof
 main();
