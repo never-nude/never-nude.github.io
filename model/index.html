@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>model • AAL Brain Graph</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+      #build, #hud {
+        position: fixed; left: 12px;
+        color: #fff; font: 13px/1.2 system-ui, -apple-system, sans-serif;
+        background: rgba(0,0,0,0.55);
+        padding: 8px 10px; border-radius: 10px;
+        pointer-events: none;
+        max-width: 70vw;
+        white-space: pre-wrap;
+      }
+      #build { top: 12px; }
+      #hud   { top: 54px; }
+      #hud.error { color: #ff9b9b; }
+    </style>
+
+    <!-- Import map required because addons import from "three" -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="build">model • BUILD 1771460549</div>
+    <div id="hud">Loading…</div>
+    <script type="module" src="./main.js?v=1771460549"></script>
+  </body>
+</html>

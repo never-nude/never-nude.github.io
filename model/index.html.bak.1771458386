@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>three46 • AAL Brain Graph</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+      #build, #hud {
+        position: fixed; left: 12px;
+        color: #fff; font: 13px/1.2 system-ui, -apple-system, sans-serif;
+        background: rgba(0,0,0,0.55);
+        padding: 8px 10px; border-radius: 10px;
+        pointer-events: none;
+        max-width: 70vw;
+        white-space: pre-wrap;
+      }
+      #build { top: 12px; }
+      #hud   { top: 54px; }
+      #hud.error { color: #ff9b9b; }
+    </style>
+  </head>
+  <body>
+    <div id="build">three46 • BUILD 1771438292</div>
+    <div id="hud">Loading…</div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

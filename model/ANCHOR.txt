@@ -1,0 +1,5 @@
+three46 AAL viewer
+BUILD_ID: 1771458386
+Serve from: $HOME/dev/nn3d/evolve-lab
+Command: python3 -m http.server 1083
+URL: http://localhost:1083/three46/?v=1771458386
