@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
-const BUILD_ID = "1771460549";
+const BUILD_ID = "1771461662";
 
 const buildEl = document.getElementById("build");
 const hudEl = document.getElementById("hud");
