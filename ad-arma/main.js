@@ -19,21 +19,36 @@
 
   const UNIT_TYPES = ["Cavalry","Infantry","Slingers","Archers","General"];
   const QUALS = ["Green","Regular","Veteran"];
-  const SIDES = ["Blue","Red"];
 
-  // Hex axial neighbors
-  const DIRS = [
-    {dq: 1, dr: 0}, {dq: 1, dr:-1}, {dq: 0, dr:-1},
-    {dq:-1, dr: 0}, {dq:-1, dr: 1}, {dq: 0, dr: 1},
-  ];
+  // ===== HP / VP mappings (General HP = 4) =====
+  const MAX_HP = { Infantry:4, Cavalry:3, Slingers:2, Archers:2, General:4 };
+  const VP     = { General:10, Cavalry:8, Infantry:5, Archers:3, Slingers:3 };
 
-  // Geometry
+  function maxHpFor(type){ return MAX_HP[type] ?? 3; }
+  function vpFor(type){ return VP[type] ?? 0; }
+
+  function ensureUnitStats(u){
+    const mh = maxHpFor(u.type);
+    const hp0 = Number.isFinite(u.hp) ? u.hp : mh;
+    u.maxHp = mh;
+    u.hp = Math.max(0, Math.min(mh, hp0));
+    u.vp = vpFor(u.type);
+    return u;
+  }
+
+  // ===== movement (keep your current feel: Cavalry=2, everyone else=1) =====
+  function movePointsFor(u){
+    if (u.type === "Cavalry") return 2;
+    return 1;
+  }
+
+  // Pointy-top hex geometry
   const SIZE = 28;
   const SQRT3 = Math.sqrt(3);
   const toPixel = (q, r) => ({ x: SQRT3 * SIZE * (q + r/2), y: 1.5 * SIZE * r });
 
   const state = {
-    meta: { build, port, base: BASE, feature: "PLAY_MOVEMENT_V0" },
+    meta: { build, port, base: BASE, feature: "TOKEN_UI_V1_HP4_GENERAL" },
     board: {
       rowCounts: ROW_COUNTS,
       rows: ROWS,
@@ -99,7 +114,6 @@
       const r = row - rOffset;
       const count = ROW_COUNTS[row];
 
-      // Symmetry for this row-count pattern
       let qMin = -((r + (count - 1)) / 2);
       if (!Number.isInteger(qMin)) qMin = Math.round(qMin);
 
@@ -136,45 +150,20 @@
     state.board.cellMap = map;
     state.board.viewBox = `${vbX.toFixed(2)} ${vbY.toFixed(2)} ${vbW.toFixed(2)} ${vbH.toFixed(2)}`;
 
-    log(`[board] rows=${ROWS} total=${cells.length} (expected 157)`);
+    log(`[board] built rows=${ROWS} total=${cells.length} (expected 157)`);
   }
 
-  function cellExists(q,r){ return state.board.cellMap.has(`${q},${r}`); }
-  function cellById(id){ return state.board.cellMap.get(id) || null; }
+  const cellExists = (q,r) => state.board.cellMap.has(`${q},${r}`);
+  const cellById = (id) => state.board.cellMap.get(id) || null;
 
-  function unitAt(q,r){
-    return state.units.find(u => u.q === q && u.r === r) || null;
-  }
-  function unitById(id){
-    return state.units.find(u => u.id === id) || null;
-  }
+  const unitAt = (q,r) => state.units.find(u => u.q === q && u.r === r) || null;
+  const unitById = (id) => state.units.find(u => u.id === id) || null;
 
-  function typeLetter(t){
-    if (t === "Infantry") return "I";
-    if (t === "Cavalry")  return "C";
-    if (t === "Slingers") return "S";
-    if (t === "Archers")  return "A";
-    if (t === "General")  return "G";
-    // accept older synonym
-    if (t === "Missiles") return "S";
-    return "?";
-  }
-  function qualLetter(q){
-    if (q === "Green") return "G";
-    if (q === "Regular") return "R";
-    if (q === "Veteran") return "V";
-    return "?";
-  }
-
-  function movePointsFor(u){
-    if (u.type === "Cavalry") return 2;
-    return 1; // Infantry/Slingers/Archers/General
-  }
-
-  function movedSet(){ return new Set(state.turn.movedUnitIds); }
-  function reachableSet(){ return new Set(state.ui.reachableIds); }
-
-  function clearReachable(){ state.ui.reachableIds = []; }
+  // axial neighbors
+  const DIRS = [
+    {dq: 1, dr: 0}, {dq: 1, dr:-1}, {dq: 0, dr:-1},
+    {dq:-1, dr: 0}, {dq:-1, dr: 1}, {dq: 0, dr: 1},
+  ];
 
   function computeReachableForUnit(u){
     const mp = movePointsFor(u);
@@ -199,14 +188,111 @@
         visited.add(nid);
 
         if (!cellExists(nq,nr)) continue;
-        if (occ.has(nid) && nid !== startId) continue; // cannot enter/through occupied
+        if (occ.has(nid) && nid !== startId) continue;
 
         out.add(nid);
         q.push({q:nq, r:nr, d:cur.d + 1});
       }
     }
-
     return Array.from(out);
+  }
+
+  function typeLetter(t){
+    if (t === "Infantry") return "I";
+    if (t === "Cavalry")  return "C";
+    if (t === "Slingers") return "S";
+    if (t === "Archers")  return "A";
+    if (t === "General")  return "G";
+    return "?";
+  }
+  function qualLetter(q){
+    if (q === "Green") return "G";
+    if (q === "Regular") return "R";
+    if (q === "Veteran") return "V";
+    return "?";
+  }
+
+  // ===== shape helpers =====
+  function starPoints(outerR, innerR){
+    const pts = [];
+    const spikes = 5;
+    for (let i=0;i<spikes*2;i++){
+      const r = (i % 2 === 0) ? outerR : innerR;
+      const a = (Math.PI/2) + (i * Math.PI / spikes);
+      const x = Math.cos(a) * r;
+      const y = -Math.sin(a) * r;
+      pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    return pts.join(" ");
+  }
+
+  function unitShapeSvg(u, sideCls){
+    // centered at (0,0)
+    if (u.type === "Infantry"){
+      return `<rect class="unitShape ${sideCls}" x="-15" y="-12" width="30" height="24" rx="6" ry="6"></rect>`;
+    }
+    if (u.type === "Cavalry"){
+      return `<polygon class="unitShape ${sideCls}" points="0,-17 17,0 0,17 -17,0"></polygon>`;
+    }
+    if (u.type === "Archers"){
+      return `<polygon class="unitShape ${sideCls}" points="0,-18 17,14 -17,14"></polygon>`;
+    }
+    if (u.type === "Slingers"){
+      return `<circle class="unitShape ${sideCls}" r="15"></circle>`;
+    }
+    if (u.type === "General"){
+      return `<polygon class="unitShape ${sideCls}" points="${starPoints(18,8)}"></polygon>`;
+    }
+    return `<circle class="unitShape ${sideCls}" r="15"></circle>`;
+  }
+
+  function hpPipsSvg(u){
+    const mh = u.maxHp ?? maxHpFor(u.type);
+    const hp = (Number.isFinite(u.hp) ? u.hp : mh);
+    const spacing = 7;
+    const start = -((mh - 1) / 2) * spacing;
+    const parts = [];
+    for (let i=0;i<mh;i++){
+      const cls = (i < hp) ? "hpPipFull" : "hpPipEmpty";
+      const cx = start + i*spacing;
+      parts.push(`<circle class="${cls}" cx="${cx.toFixed(2)}" cy="-26" r="2.3"></circle>`);
+    }
+    return parts.join("");
+  }
+
+  function placeOrUpdateUnit(q,r){
+    const existing = unitAt(q,r);
+    if (existing){
+      existing.side = state.ui.side;
+      existing.type = state.ui.type;
+      existing.quality = state.ui.quality;
+      ensureUnitStats(existing);
+      state.board.selectedUnitId = existing.id;
+      log(`[edit] updated ${existing.id} @ ${q},${r} -> ${existing.side} ${existing.type} ${existing.quality} HP ${existing.hp}/${existing.maxHp} VP ${existing.vp}`);
+      return;
+    }
+    const u = ensureUnitStats({
+      id: `u${state.nextUnitId++}`,
+      q, r,
+      side: state.ui.side,
+      type: state.ui.type,
+      quality: state.ui.quality,
+    });
+    state.units.push(u);
+    state.board.selectedUnitId = u.id;
+    log(`[edit] placed ${u.id} @ ${q},${r} -> ${u.side} ${u.type} ${u.quality} HP ${u.hp}/${u.maxHp} VP ${u.vp}`);
+  }
+
+  function eraseUnit(q,r){
+    const before = state.units.length;
+    state.units = state.units.filter(u => !(u.q === q && u.r === r));
+    if (state.units.length !== before){
+      log(`[edit] erased unit @ ${q},${r}`);
+      if (state.board.selectedUnitId){
+        const still = state.units.some(u => u.id === state.board.selectedUnitId);
+        if (!still) state.board.selectedUnitId = null;
+      }
+    }
   }
 
   function renderBoard(){
@@ -214,9 +300,9 @@
     svg.setAttribute("viewBox", state.board.viewBox);
 
     const selCell = state.board.selectedCellId;
-    const selUnit = state.board.selectedUnitId;
-    const reach = reachableSet();
-    const moved = movedSet();
+    const selUnitId = state.board.selectedUnitId;
+    const moved = new Set(state.turn.movedUnitIds);
+    const reach = new Set(state.ui.reachableIds);
 
     const parts = [];
     parts.push('<g id="hexes">');
@@ -231,25 +317,25 @@
     parts.push("</g>");
 
     parts.push('<g id="units">');
-    for (const u of state.units){
+    for (const raw of state.units){
+      const u = ensureUnitStats(raw);
       const cell = cellById(`${u.q},${u.r}`);
       if (!cell) continue;
 
-      const isSel = (u.id === selUnit);
-      const clsSide = (u.side === "Red") ? "unitRed" : "unitBlue";
+      const isSel = (u.id === selUnitId);
+      const sideCls = (u.side === "Red") ? "unitRed" : "unitBlue";
 
       const gcls = [];
       if (isSel) gcls.push("unitSelected");
       if (!state.ui.editMode && u.side === state.turn.side && moved.has(u.id)) gcls.push("unitMoved");
 
-      const rTok = (u.type === "General") ? 16 : 14;
-
       parts.push(
         `<g data-unit-id="${u.id}" transform="translate(${cell.x.toFixed(2)} ${cell.y.toFixed(2)})" class="${gcls.join(" ")}">` +
-          `<circle class="unitCircle ${clsSide}" r="${rTok}"></circle>` +
+          hpPipsSvg(u) +
+          unitShapeSvg(u, sideCls) +
           `<text class="unitTextMain" y="-2">${typeLetter(u.type)}</text>` +
-          `<text class="unitTextQual" y="11">${qualLetter(u.quality)}</text>` +
-          `<title>${u.side} ${u.type} ${u.quality} (${u.id})</title>` +
+          `<text class="unitTextQual" y="14">${qualLetter(u.quality)}</text>` +
+          `<title>${u.side} ${u.type} ${u.quality} | HP ${u.hp}/${u.maxHp} | VP ${u.vp} | @ ${u.q},${u.r} | ${u.id}</title>` +
         `</g>`
       );
     }
@@ -258,8 +344,19 @@
     svg.innerHTML = parts.join("");
 
     $("#unitCount").textContent = String(state.units.length);
-    $("#selected").textContent = selCell || "none";
     $("#loadedScenario").textContent = state.scenarios.loadedLabel || "none";
+
+    // Selected display becomes a truth meter (unit details if unit selected)
+    let selectedText = selCell ? selCell : "none";
+    if (selUnitId){
+      const u = unitById(selUnitId);
+      if (u){
+        ensureUnitStats(u);
+        selectedText = `${u.side} ${u.type} ${u.quality} | HP ${u.hp}/${u.maxHp} | VP ${u.vp} | @ ${u.q},${u.r}`;
+      }
+    }
+    $("#selected").textContent = selectedText;
+
     $("#boardMeta").textContent =
       `board: rows=${ROWS} total=${state.board.cells.length} (expected 157) units=${state.units.length} base=${BASE}`;
   }
@@ -268,7 +365,7 @@
     try{
       const res = await fetch(url(`TRUTH.txt?ts=${Date.now()}`), { cache: "no-store" });
       $("#truth").textContent = (await res.text()).trim();
-      log(`[truth] ok @ ${stamp()}`);
+      log(`[truth] loaded @ ${stamp()} base=${BASE}`);
     }catch(e){
       $("#truth").textContent = "TRUTH fetch failed";
       log(`[truth] ERROR: ${String(e)}`);
@@ -280,9 +377,9 @@
     sel.innerHTML = `<option>loading…</option>`;
     try{
       const res = await fetch(url(`scenarios/index.json?ts=${Date.now()}`), { cache: "no-store" });
-      if (!res.ok) throw new Error(`index status ${res.status}`);
+      if (!res.ok) throw new Error(`index fetch status ${res.status}`);
       const arr = await res.json();
-      if (!Array.isArray(arr) || !arr.length) throw new Error("index json empty/not array");
+      if (!Array.isArray(arr) || !arr.length) throw new Error("index json empty or not array");
       state.scenarios.index = arr;
 
       sel.innerHTML = "";
@@ -296,13 +393,8 @@
     }catch(e){
       state.scenarios.index = [];
       sel.innerHTML = `<option value="">scenario index missing</option>`;
-      log(`[scenario] ERROR index: ${String(e)}`);
+      log(`[scenario] ERROR loading index: ${String(e)}`);
     }
-  }
-
-  function normalizeUnit(u){
-    const q = Number(u.q), r = Number(u.r);
-    if (!Number.isFinite(q) || !Number.isFinite(r)) return None;
   }
 
   async function loadScenarioById(id){
@@ -310,34 +402,44 @@
     if (!entry){ log(`[scenario] missing id=${id}`); return; }
     try{
       const res = await fetch(url(`scenarios/${entry.file}?ts=${Date.now()}`), { cache: "no-store" });
-      if (!res.ok) throw new Error(`scenario status ${res.status}`);
+      if (!res.ok) throw new Error(`scenario fetch status ${res.status}`);
       const data = await res.json();
 
       state.units = [];
       state.nextUnitId = 1;
 
-      const unitsRaw = Array.isArray(data.units) ? data.units : [];
-      for (const u of unitsRaw){
+      for (const u of (data.units || [])){
         if (!u) continue;
         const q = Number(u.q), r = Number(u.r);
-        const side = (u.side === "Red") ? "Red" : "Blue";
-        const type = UNIT_TYPES.includes(u.type) ? u.type : (u.type === "Missiles" ? "Slingers" : "Infantry");
-        const quality = QUALS.includes(u.quality) ? u.quality : "Regular";
         if (!Number.isFinite(q) || !Number.isFinite(r)) continue;
-        if (!cellExists(q,r)) continue;
-        state.units.push({ id:`u${state.nextUnitId++}`, q, r, side, type, quality });
+
+        const type = UNIT_TYPES.includes(u.type) ? u.type : "Infantry";
+        const quality = QUALS.includes(u.quality) ? u.quality : "Regular";
+        const side = (u.side === "Red") ? "Red" : "Blue";
+
+        const mh = maxHpFor(type);
+        const hp0 = Number.isFinite(u.hp) ? Number(u.hp) : mh;
+
+        state.units.push(ensureUnitStats({
+          id: `u${state.nextUnitId++}`,
+          q, r,
+          side,
+          type,
+          quality,
+          hp: hp0,
+        }));
       }
 
       state.scenarios.loadedId = entry.id;
       state.scenarios.loadedLabel = entry.label || entry.id;
 
-      // Reset turn state (important for legibility)
+      // Reset turn state (keeps play deterministic)
       state.turn.side = "Blue";
       state.turn.activationsUsed = 0;
       state.turn.movedUnitIds = [];
       state.board.selectedCellId = null;
       state.board.selectedUnitId = null;
-      clearReachable();
+      state.ui.reachableIds = [];
 
       log(`[scenario] loaded ${state.scenarios.loadedLabel} units=${state.units.length}`);
       renderBoard();
@@ -355,39 +457,46 @@
     state.ui.quality = $("#qualSel").value;
   }
 
-  function placeOrUpdateUnit(q,r){
-    const existing = unitAt(q,r);
-    if (existing){
-      existing.side = state.ui.side;
-      existing.type = state.ui.type;
-      existing.quality = state.ui.quality;
-      state.board.selectedUnitId = existing.id;
-      log(`[edit] updated ${existing.id} @ ${q},${r} -> ${existing.side} ${existing.type} ${existing.quality}`);
-      return;
-    }
-    const u = { id:`u${state.nextUnitId++}`, q, r, side: state.ui.side, type: state.ui.type, quality: state.ui.quality };
-    state.units.push(u);
-    state.board.selectedUnitId = u.id;
-    log(`[edit] placed ${u.id} @ ${q},${r} -> ${u.side} ${u.type} ${u.quality}`);
+  function endTurn(){
+    state.turn.side = (state.turn.side === "Blue") ? "Red" : "Blue";
+    state.turn.activationsUsed = 0;
+    state.turn.movedUnitIds = [];
+    state.ui.reachableIds = [];
+    state.board.selectedUnitId = null;
+    state.board.selectedCellId = null;
+    log(`[turn] now ${state.turn.side}`);
+    renderBoard();
+    updateHUD();
   }
 
-  function eraseUnit(q,r){
-    const before = state.units.length;
-    state.units = state.units.filter(u => !(u.q===q && u.r===r));
-    if (state.units.length !== before){
-      log(`[edit] erased unit @ ${q},${r}`);
-      if (state.board.selectedUnitId){
-        const still = state.units.some(u => u.id === state.board.selectedUnitId);
-        if (!still) state.board.selectedUnitId = null;
-      }
-    }
+  function tryMoveSelectedTo(q,r){
+    const u = unitById(state.board.selectedUnitId);
+    if (!u) return;
+
+    const targetId = `${q},${r}`;
+    const reach = new Set(state.ui.reachableIds);
+    if (!reach.has(targetId)){ log(`[play] not reachable: ${targetId}`); return; }
+    if (unitAt(q,r)){ log(`[play] blocked: occupied ${targetId}`); return; }
+    if (u.side !== state.turn.side){ log(`[play] not your turn (turn=${state.turn.side})`); return; }
+    if (state.turn.activationsUsed >= state.turn.activationLimit){ log(`[play] no activations left`); return; }
+    if (new Set(state.turn.movedUnitIds).has(u.id)){ log(`[play] ${u.id} already moved`); return; }
+
+    u.q = q; u.r = r;
+    state.turn.activationsUsed += 1;
+    state.turn.movedUnitIds = state.turn.movedUnitIds.concat([u.id]);
+
+    state.board.selectedCellId = targetId;
+    state.ui.reachableIds = [];
+    log(`[play] moved ${u.id} -> ${targetId} (acts ${state.turn.activationsUsed}/${state.turn.activationLimit})`);
+    renderBoard();
+    updateHUD();
   }
 
   function selectUnitForPlay(u){
     state.board.selectedUnitId = u.id;
     state.board.selectedCellId = `${u.q},${u.r}`;
 
-    const moved = movedSet();
+    const moved = new Set(state.turn.movedUnitIds);
     const canAct = (u.side === state.turn.side) &&
                    (!moved.has(u.id)) &&
                    (state.turn.activationsUsed < state.turn.activationLimit);
@@ -396,68 +505,17 @@
       state.ui.reachableIds = computeReachableForUnit(u);
       log(`[play] selected ${u.id} ${u.side} ${u.type} mp=${movePointsFor(u)} reachable=${state.ui.reachableIds.length}`);
     }else{
-      clearReachable();
+      state.ui.reachableIds = [];
       if (u.side !== state.turn.side) log(`[play] selected enemy unit (turn=${state.turn.side})`);
       else if (moved.has(u.id)) log(`[play] ${u.id} already moved this turn`);
       else log(`[play] no activations left`);
     }
   }
 
-  function tryMoveSelectedTo(q,r){
-    const u = unitById(state.board.selectedUnitId);
-    if (!u) return;
-
-    const targetId = `${q},${r}`;
-    const reach = reachableSet();
-    if (!reach.has(targetId)){
-      log(`[play] not reachable: ${targetId}`);
-      return;
-    }
-    if (unitAt(q,r)){
-      log(`[play] blocked: occupied ${targetId}`);
-      return;
-    }
-    if (u.side !== state.turn.side){
-      log(`[play] not your turn (turn=${state.turn.side})`);
-      return;
-    }
-    if (state.turn.activationsUsed >= state.turn.activationLimit){
-      log(`[play] no activations left`);
-      return;
-    }
-    const moved = movedSet();
-    if (moved.has(u.id)){
-      log(`[play] ${u.id} already moved`);
-      return;
-    }
-
-    u.q = q; u.r = r;
-    state.turn.activationsUsed += 1;
-    state.turn.movedUnitIds = state.turn.movedUnitIds.concat([u.id]);
-
-    state.board.selectedCellId = targetId;
-    clearReachable();
-
-    log(`[play] moved ${u.id} -> ${targetId} (acts ${state.turn.activationsUsed}/${state.turn.activationLimit})`);
-    renderBoard();
-    updateHUD();
-  }
-
-  function endTurn(){
-    state.turn.side = (state.turn.side === "Blue") ? "Red" : "Blue";
-    state.turn.activationsUsed = 0;
-    state.turn.movedUnitIds = [];
-    clearReachable();
-    state.board.selectedUnitId = null;
-    state.board.selectedCellId = null;
-    log(`[turn] now ${state.turn.side}`);
-    renderBoard();
-    updateHUD();
-  }
-
   function init(){
     $("#build").textContent = `Ad Arma v2 — BUILD ${build} — PORT ${port}`;
 
+    // Truth toggle
     let truthOpen = false;
     $("#truthToggle").addEventListener("click", () => {
       truthOpen = !truthOpen;
@@ -472,14 +530,12 @@
 
     $("#controls").addEventListener("change", () => {
       syncUIFromControls();
-      clearReachable();
+      state.ui.reachableIds = [];
       renderBoard();
       updateHUD();
     });
 
     $("#board").addEventListener("click", (e) => {
-      syncUIFromControls();
-
       const unitG = e.target.closest("g[data-unit-id]");
       if (unitG){
         const uid = unitG.getAttribute("data-unit-id");
@@ -487,17 +543,24 @@
         if (!u) return;
 
         if (state.ui.editMode){
-          // In edit mode, clicking the token behaves like clicking its cell
+          state.board.selectedUnitId = uid;
           state.board.selectedCellId = `${u.q},${u.r}`;
-          if (state.ui.tool === "erase") eraseUnit(u.q,u.r);
-          if (state.ui.tool === "place") placeOrUpdateUnit(u.q,u.r);
-          renderBoard(); updateHUD();
+          renderBoard();
           return;
         }
 
-        // Play mode selection
+        if (u.side !== state.turn.side){
+          state.board.selectedUnitId = uid;
+          state.board.selectedCellId = `${u.q},${u.r}`;
+          state.ui.reachableIds = [];
+          renderBoard();
+          log(`[play] selected enemy (turn=${state.turn.side})`);
+          return;
+        }
+
         selectUnitForPlay(u);
-        renderBoard(); updateHUD();
+        renderBoard();
+        updateHUD();
         return;
       }
 
@@ -505,40 +568,43 @@
       if (!poly){
         state.board.selectedCellId = null;
         state.board.selectedUnitId = null;
-        clearReachable();
-        renderBoard(); updateHUD();
+        state.ui.reachableIds = [];
+        renderBoard();
+        updateHUD();
         return;
       }
 
       const id = poly.getAttribute("data-cell-id");
       const [qs, rs] = id.split(",");
       const q = Number(qs), r = Number(rs);
-
       state.board.selectedCellId = id;
+
+      syncUIFromControls();
 
       if (state.ui.editMode){
         if (state.ui.tool === "place") placeOrUpdateUnit(q,r);
         if (state.ui.tool === "erase") eraseUnit(q,r);
-        renderBoard(); updateHUD();
+        renderBoard();
+        updateHUD();
         return;
       }
 
-      // Play mode: if clicking empty reachable cell, move
       const clickedUnit = unitAt(q,r);
       if (clickedUnit){
         selectUnitForPlay(clickedUnit);
-        renderBoard(); updateHUD();
+        renderBoard();
+        updateHUD();
         return;
       }
 
-      // empty cell
       if (state.board.selectedUnitId){
         tryMoveSelectedTo(q,r);
         return;
-      }else{
-        clearReachable();
-        renderBoard(); updateHUD();
       }
+
+      state.ui.reachableIds = [];
+      renderBoard();
+      updateHUD();
     });
 
     $("#ping").addEventListener("click", () => {
@@ -556,7 +622,7 @@
 
     loadTruth();
     loadScenarioIndex();
-    log(`[boot] init @ ${stamp()} base=${BASE}`);
+    log(`[boot] init @ ${stamp()} base=${BASE} feature=${state.meta.feature}`);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

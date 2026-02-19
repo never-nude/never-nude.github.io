@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ad Arma v2 — 20260219-111724</title>
-  <link rel="stylesheet" href="style.css?v=20260219-111724">
+  <title>Ad Arma v2 — 20260219-154002</title>
+  <link rel="stylesheet" href="style.css?v=20260219-163801">
 </head>
 <body>
   <div id="topbar">
-    <div id="build">Ad Arma v2 — BUILD 20260219-111724 — PORT 9981</div>
+    <div id="build">Ad Arma v2 — BUILD 20260219-154002 — PORT 9981</div>
     <div id="tagline">Instrument for thinking in formations.</div>
     <button id="truthToggle" type="button">Truth ▸</button>
     <pre id="truth">loading truth…</pre>
@@ -24,6 +24,7 @@
             <select id="scenarioSel"><option>loading…</option></select>
           </label>
           <button id="loadScenario" type="button">Load</button>
+          <div>loaded: <span id="loadedScenario">none</span></div>
 
           <span style="opacity:.35">|</span>
 
@@ -69,7 +70,6 @@
           <div>pings: <span id="pings">0</span></div>
           <div>units: <span id="unitCount">0</span></div>
           <div>selected: <span id="selected">none</span></div>
-          <div>loaded: <span id="loadedScenario">none</span></div>
         </div>
       </div>
 
@@ -81,8 +81,7 @@
     </div>
   </div>
 
-  <!-- relative paths (work locally + under /ad-arma/build/<id>/) -->
-  <script src="build.js?v=20260219-111724"></script>
-  <script src="main.js?v=20260219-111724"></script>
+  <script src="build.js?v=20260219-163801"></script>
+  <script src="main.js?v=20260219-163801"></script>
 </body>
 </html>
