@@ -11,7 +11,7 @@
     <div class="topline">
       <div>
         <div class="title">DBD Lab</div>
-        <div class="subtitle">Scenario pipeline + editor (v0.1)</div>
+        <div class="subtitle">Scenario pipeline + editor (v0.1) — Play mode: melee + retreat + standards</div>
       </div>
       <pre id="truth" class="truth">Loading…</pre>
     </div>
@@ -30,7 +30,7 @@
         Mode
         <select id="modeSelect">
           <option value="EDIT">Edit</option>
-          <option value="PLAY">Play (select-only)</option>
+          <option value="PLAY">Play (melee + retreat)</option>
         </select>
       </label>
 
@@ -49,6 +49,34 @@
 
   <main class="layout">
     <aside class="panel">
+      <section class="card">
+        <div class="cardTitle">Play</div>
+
+        <div class="playGrid">
+          <div><span class="muted">Turn</span> <span id="turnSide" class="pill">BLUE</span></div>
+          <div><span class="muted">Activations</span> <span id="actsLeft" class="pill">3</span></div>
+          <div><span class="muted">Standards</span> <span id="scoreLine" class="mono">BLUE 0 / RED 0 (to win 6)</span></div>
+          <div><span class="muted">Dice</span> <span class="mono">5–6 HIT · 4 RETREAT · 1–3 MISS</span></div>
+        </div>
+
+        <div class="row">
+          <button id="endTurnBtn" type="button">End Turn</button>
+          <button id="resetScoreBtn" type="button">Reset Score</button>
+          <button id="clearLogBtn" type="button">Clear Log</button>
+        </div>
+
+        <div class="hint">
+          Hotseat: only the active side can attack.
+          Attack by selecting your unit, then clicking a red-outlined adjacent enemy.
+          If retreats happen, the defender chooses by clicking cyan-highlighted retreat hexes.
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardTitle">Combat Log</div>
+        <pre id="combatLog" class="mono log">(log starts here)</pre>
+      </section>
+
       <section class="card">
         <div class="cardTitle">Edit Tools</div>
 
@@ -79,7 +107,7 @@
               <option value="WATER">WATER</option>
             </select>
           </label>
-          <div class="hint">Click hex to paint. CLEAR removes terrain entry.</div>
+          <div class="hint">Click hex to paint. CLEAR removes the terrain entry.</div>
         </div>
 
         <div id="unitControls" class="subcard hidden">
@@ -139,6 +167,8 @@
           </label>
           <button id="applyHpBtn" type="button" disabled>Apply</button>
         </div>
+
+        <div class="hint">Edit mode only: delete units / edit HP.</div>
       </section>
 
       <section class="card">
@@ -151,8 +181,8 @@
         <div class="cardTitle">Quick Help</div>
         <div class="help">
           <div><span class="kbd">Edit</span>: choose a tool, then click hexes.</div>
-          <div><span class="kbd">Play</span>: selection only (combat comes next).</div>
-          <div><span class="kbd">Truth badge</span> always shows boardId, counts, connectivity.</div>
+          <div><span class="kbd">Play</span>: melee-only combat + retreats + standards.</div>
+          <div><span class="kbd">Truth badge</span> always shows boardId, counts, connectivity, score, turn.</div>
         </div>
       </section>
     </aside>

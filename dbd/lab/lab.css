@@ -12,6 +12,7 @@
 
   --blue:#2f81f7;
   --red:#f85149;
+  --cyan:#22d3ee;
 
   --woods:#1f6f3a;
   --rough:#6b4f2a;
@@ -28,6 +29,7 @@ body{
 }
 
 .mono{ font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+.muted{ color:var(--muted); }
 
 .hdr{
   padding:14px 16px;
@@ -116,6 +118,31 @@ body{
   margin-bottom:8px;
 }
 
+.playGrid{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:13px;
+}
+
+.pill{
+  display:inline-block;
+  padding:2px 8px;
+  border:1px solid #2b3542;
+  border-radius:999px;
+  background:var(--panel2);
+}
+
+.log{
+  height: 180px;
+  overflow:auto;
+  padding:8px;
+  border-radius:10px;
+  border:1px solid #2b3542;
+  background:var(--panel2);
+  white-space:pre-wrap;
+}
+
 .toolRow{
   display:flex;
   gap:10px;
@@ -185,6 +212,7 @@ body{
   display:flex;
   gap:10px;
   align-items:center;
+  flex-wrap: wrap;
 }
 
 .inline{
@@ -195,17 +223,10 @@ body{
   font-size:12px;
 }
 
-button:disabled{
-  opacity:.5;
-}
+button:disabled{ opacity:.5; }
 
-.stageWrap{
-  padding:12px;
-}
-
-.stage{
-  padding:12px;
-}
+.stageWrap{ padding:12px; }
+.stage{ padding:12px; }
 
 svg{
   width:100%;
@@ -229,6 +250,16 @@ svg{
 .hex.neighbor{
   stroke:#d7ba7d;
   stroke-width:2;
+}
+
+.hex.attackable{
+  stroke: var(--red);
+  stroke-width: 2.75;
+}
+
+.hex.retreatable{
+  stroke: var(--cyan);
+  stroke-width: 2.75;
 }
 
 .hex.t-WOODS{ fill: rgba(31,111,58,0.35); }
