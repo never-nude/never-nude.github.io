@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hex Tactics — BUILD 20260219-215259</title>
+  <link rel="stylesheet" href="style.css?v=20260219-215259">
+</head>
+<body>
+  <div id="topbar">
+    <div id="title">Hex Tactics — BUILD 20260219-215259 — PORT 9977</div>
+    <div id="subtitle">Tokens + scenarios. Still zero drift.</div>
+
+    <div class="row">
+      <button id="reanchor" type="button" title="Reload from the base URL (avoids drift)">Re-anchor</button>
+      <span id="status">loading…</span>
+    </div>
+
+    <details id="truthDetails">
+      <summary>Truth</summary>
+      <pre id="truth">loading truth…</pre>
+    </details>
+  </div>
+
+  <main id="main">
+    <div id="panel">
+      <div id="meta">board: loading…</div>
+
+      <div id="controls">
+        <div class="row">
+          <label><input type="checkbox" id="editMode" checked> Edit</label>
+          <label><input type="radio" name="tool" value="place" checked> Place</label>
+          <label><input type="radio" name="tool" value="erase"> Erase</label>
+
+          <label>Side
+            <select id="sideSel"><option>Blue</option><option>Red</option></select>
+          </label>
+
+          <label>Type
+            <select id="typeSel">
+              <option>Infantry</option>
+              <option>Cavalry</option>
+              <option>Skirmishers</option>
+              <option>Archers</option>
+              <option>General</option>
+            </select>
+          </label>
+
+          <label>Quality
+            <select id="qualSel">
+              <option>Green</option>
+              <option selected>Regular</option>
+              <option>Veteran</option>
+            </select>
+          </label>
+
+          <button id="clearUnits" type="button">Clear units</button>
+
+          <span class="sep">|</span>
+
+          <label>Scenario
+            <select id="scenarioSel"></select>
+          </label>
+          <button id="loadScenario" type="button">Load</button>
+
+          <span class="sep">|</span>
+
+          <div>loaded: <span id="loadedScenario">none</span></div>
+          <div>units: <span id="unitCount">0</span></div>
+          <div>selected: <span id="selected">none</span></div>
+        </div>
+      </div>
+
+      <div id="boardWrap">
+        <svg id="board" preserveAspectRatio="xMidYMid meet" aria-label="Hex board"></svg>
+      </div>
+
+      <pre id="log"></pre>
+    </div>
+  </main>
+
+  <script>window.HEX_TACTICS_BUILD_ID = "20260219-215259";</script>
+  <script src="game.js?v=20260219-215259"></script>
+</body>
+</html>
