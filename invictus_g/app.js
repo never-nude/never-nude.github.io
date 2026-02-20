@@ -1,3 +1,10 @@
+function qualityOutline(q) {
+  const s = String(q || "Regular").toLowerCase();
+  if (s.startsWith("g")) return { color: "rgba(48,209,88,0.95)", w: 3 };   // Green
+  if (s.startsWith("v")) return { color: "rgba(255,193,7,0.95)", w: 4 };   // Veteran
+  return { color: "rgba(230,230,230,0.55)", w: 2 };                        // Regular
+}
+
 // MOVE_RESET_LAB_V1
 (() => {
   const ACTIVATIONS_PER_TURN = 3;
@@ -158,8 +165,8 @@
       } else if (u.type === "GEN") {
         // GEN_STAR_V1
         shape = document.createElementNS("http://www.w3.org/2000/svg","polygon");
-        shape.setAttribute("points","0.0,-14.0 3.5,-4.9 13.3,-4.3 5.7,1.9 8.2,11.3 0.0,6.0 -8.2,11.3 -5.7,1.9 -13.3,-4.3 -3.5,-4.9");
-      } else {
+        shape.setAttribute("points","0.0,-16.1 4.0,-5.6 15.3,-5.0 6.6,2.2 9.4,13.0 0.0,6.9 -9.4,13.0 -6.6,2.2 -15.3,-5.0 -4.0,-5.6");
+} else {
         shape = document.createElementNS("http://www.w3.org/2000/svg","circle");
         shape.setAttribute("r","13"); // SKR/SLG etc
       }
@@ -173,16 +180,16 @@
       tType.setAttribute("class","uText uType");
       tType.setAttribute("text-anchor","middle");
       tType.setAttribute("dominant-baseline","central");
-      tType.setAttribute("y","-5");
-      tType.textContent = `${u.type}`;
+      tType.setAttribute("y", u.type === "GEN" ? "-6" : (u.type === "ARC" ? "-2" : "-5"));
+tType.textContent = `${u.type}`;
       g.appendChild(tType);
 
       const tHP = document.createElementNS("http://www.w3.org/2000/svg","text");
       tHP.setAttribute("class","uText uHP");
       tHP.setAttribute("text-anchor","middle");
       tHP.setAttribute("dominant-baseline","central");
-      tHP.setAttribute("y","7");
-      tHP.textContent = `${u.hp}`;
+      tHP.setAttribute("y", u.type === "GEN" ? "4" : "7");
+tHP.textContent = `${u.hp}`;
       g.appendChild(tHP);
 
       board.appendChild(g);
@@ -381,3 +388,7 @@
 // GEN_STAR_V1_PROOF
 
 // QUALITY_OUTLINE_V1_PROOF
+
+// GEN_HP_CENTER_V1_PROOF
+
+// GEN_ARC_LABEL_LOWER_V1_PROOF
