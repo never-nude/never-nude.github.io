@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DBD Lab (Scenario + Editor)</title>
+  <link rel="stylesheet" href="lab.css" />
+</head>
+<body>
+  <header class="hdr">
+    <div class="topline">
+      <div>
+        <div class="title">DBD Lab</div>
+        <div class="subtitle">Scenario pipeline + editor (v0.1)</div>
+      </div>
+      <pre id="truth" class="truth">Loading…</pre>
+    </div>
+
+    <div class="controls">
+      <label>
+        Board
+        <select id="boardSelect">
+          <option value="DBD-157-v1">DBD-157-v1 (Default Oval)</option>
+          <option value="DBD-157-PASS-v1">DBD-157-PASS-v1 (Mountain Pass)</option>
+          <option value="DBD-157-CORRIDOR-v1">DBD-157-CORRIDOR-v1 (Narrow Corridor)</option>
+        </select>
+      </label>
+
+      <label>
+        Mode
+        <select id="modeSelect">
+          <option value="EDIT">Edit</option>
+          <option value="PLAY">Play (select-only)</option>
+        </select>
+      </label>
+
+      <label class="chk">
+        <input type="checkbox" id="showIds" />
+        Show metacaps
+      </label>
+
+      <button id="newBtn" type="button">New Scenario</button>
+      <button id="exportBtn" type="button">Export JSON</button>
+      <button id="importBtn" type="button">Import JSON</button>
+      <button id="validateBtn" type="button">Validate</button>
+      <button id="copyBtn" type="button">Copy JSON</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <section class="card">
+        <div class="cardTitle">Edit Tools</div>
+
+        <div class="toolRow">
+          <label class="radio">
+            <input type="radio" name="tool" value="INSPECT" checked />
+            Inspect
+          </label>
+          <label class="radio">
+            <input type="radio" name="tool" value="TERRAIN" />
+            Terrain
+          </label>
+          <label class="radio">
+            <input type="radio" name="tool" value="UNIT" />
+            Unit
+          </label>
+        </div>
+
+        <div id="terrainControls" class="subcard hidden">
+          <div class="subTitle">Terrain Brush</div>
+          <label>
+            Type
+            <select id="terrainSelect">
+              <option value="CLEAR">CLEAR (erase)</option>
+              <option value="WOODS">WOODS</option>
+              <option value="ROUGH">ROUGH</option>
+              <option value="HILL">HILL</option>
+              <option value="WATER">WATER</option>
+            </select>
+          </label>
+          <div class="hint">Click hex to paint. CLEAR removes terrain entry.</div>
+        </div>
+
+        <div id="unitControls" class="subcard hidden">
+          <div class="subTitle">Unit Placer</div>
+
+          <div class="grid2">
+            <label>
+              Side
+              <select id="sideSelect">
+                <option value="BLUE">BLUE</option>
+                <option value="RED">RED</option>
+              </select>
+            </label>
+
+            <label>
+              Type
+              <select id="typeSelect">
+                <option value="INF">INF</option>
+                <option value="CAV">CAV</option>
+                <option value="SKR">SKR</option>
+                <option value="ARC">ARC</option>
+                <option value="GEN">GEN</option>
+              </select>
+            </label>
+
+            <label>
+              Quality
+              <select id="qualitySelect">
+                <option value="GREEN">GREEN</option>
+                <option value="REGULAR" selected>REGULAR</option>
+                <option value="VETERAN">VETERAN</option>
+              </select>
+            </label>
+
+            <label>
+              HP (defaults to max)
+              <input id="hpPlace" type="number" min="1" step="1" value="1" />
+            </label>
+          </div>
+
+          <div id="placeHint" class="hint">Click empty hex to place. Click occupied hex to select (no stacking).</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardTitle">Selection</div>
+        <pre id="selectionInfo" class="mono">Nothing selected.</pre>
+
+        <div class="row">
+          <button id="deleteUnitBtn" type="button" disabled>Delete selected unit</button>
+        </div>
+
+        <div class="row">
+          <label class="inline">
+            Set HP
+            <input id="hpEdit" type="number" min="1" step="1" value="1" />
+          </label>
+          <button id="applyHpBtn" type="button" disabled>Apply</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardTitle">Scenario JSON</div>
+        <textarea id="jsonBox" spellcheck="false" class="mono" placeholder="Export fills this. Import reads from this."></textarea>
+        <div id="errors" class="errors mono"></div>
+      </section>
+
+      <section class="card">
+        <div class="cardTitle">Quick Help</div>
+        <div class="help">
+          <div><span class="kbd">Edit</span>: choose a tool, then click hexes.</div>
+          <div><span class="kbd">Play</span>: selection only (combat comes next).</div>
+          <div><span class="kbd">Truth badge</span> always shows boardId, counts, connectivity.</div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="stageWrap">
+      <div id="stage" class="stage"></div>
+    </section>
+  </main>
+
+  <script src="lab.js"></script>
+</body>
+</html>
