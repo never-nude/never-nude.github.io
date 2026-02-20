@@ -27,3 +27,6 @@ _local_backups/
 ballpit/*.bak.*
 ballpit/*.bak_truthbadge_*
 *.bak_*
+
+# local backups
+**/*.bak.*
