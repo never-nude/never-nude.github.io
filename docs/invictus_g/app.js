@@ -147,8 +147,9 @@
         shape = document.createElementNS("http://www.w3.org/2000/svg","polygon");
         shape.setAttribute("points","0,-15 15,12 -15,12");
       } else if (u.type === "GEN") {
-        shape = document.createElementNS("http://www.w3.org/2000/svg","circle");
-        shape.setAttribute("r","14");
+        // GEN_STAR_V1
+        shape = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+        shape.setAttribute("points","0.0,-14.0 3.5,-4.9 13.3,-4.3 5.7,1.9 8.2,11.3 0.0,6.0 -8.2,11.3 -5.7,1.9 -13.3,-4.3 -3.5,-4.9");
       } else {
         shape = document.createElementNS("http://www.w3.org/2000/svg","circle");
         shape.setAttribute("r","13"); // SKR/SLG etc
@@ -178,6 +179,7 @@
       board.appendChild(g);
     }
   }
+
 
 
   function occupiedSet() {
@@ -366,3 +368,5 @@
 // UNIT_UI_PADDING_V2_PROOF
 
 // UNIT_UI_PADDING_V3_PROOF
+
+// GEN_STAR_V1_PROOF
