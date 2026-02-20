@@ -23,3 +23,7 @@ backup_ballpit/
 
 # local safety backups
 _local_backups/
+
+# Local backups
+*.bak
+*.bak.*
