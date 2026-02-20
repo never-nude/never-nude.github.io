@@ -216,10 +216,41 @@ function computeStats() {
   return { bCount, rCount, bHp, rHp };
 }
 
+
+function updateEndTurnButton() {
+  if (!elEndTurn) return;
+
+  if (mode !== "PLAY") {
+    elEndTurn.disabled = true;
+    elEndTurn.textContent = "End Turn";
+    elEndTurn.title = "Switch to Play mode to end turns.";
+    return;
+  }
+
+  if (gameOver) {
+    elEndTurn.disabled = true;
+    elEndTurn.textContent = "Game Over";
+    elEndTurn.title = "Game over.";
+    return;
+  }
+
+  if (phase === "RETREAT") {
+    elEndTurn.disabled = true;
+    elEndTurn.textContent = "Finish Retreat";
+    elEndTurn.title = "Retreat in progress: click a cyan retreat hex to continue.";
+    return;
+  }
+
+  elEndTurn.disabled = false;
+  elEndTurn.textContent = "End Turn";
+  elEndTurn.title = "End your turn (you may end early).";
+}
+
 function updatePlayHUD() {
   elTurnSide.textContent = scenario.turn.side;
   elActsLeft.textContent = String(scenario.turn.activationsLeft);
   elScoreLine.textContent = `BLUE ${getScore("BLUE")} / RED ${getScore("RED")} (to win ${scenario.standardsToWin})`;
+  updateEndTurnButton();
 }
 
 function updateTruth() {
@@ -831,6 +862,7 @@ function beginRetreat(defenderId, attackerHex, attackerSide, steps) {
   }
 
   pushLog(`RETREAT: ${def.side} ${def.type}(${def.id}) must retreat ${steps} step(s) away from attacker @${attackerHex}. Defender chooses.`);
+  pushLog("Finish retreat: click a cyan-highlighted hex (End Turn is disabled).");
   stepRetreatOrAuto();
 }
 
@@ -1075,6 +1107,7 @@ function endTurn() {
 
   if (phase === "RETREAT") {
     setErrors(["Cannot end turn during retreat. Finish the retreat steps first."]);
+    pushLog("End Turn blocked: retreat in progress — click a cyan retreat hex.");
     return;
   }
 

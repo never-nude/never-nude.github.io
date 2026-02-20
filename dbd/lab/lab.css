@@ -223,7 +223,7 @@ body{
   font-size:12px;
 }
 
-button:disabled{ opacity:.5; }
+button:disabled{ opacity:.5; cursor:not-allowed; }
 
 .stageWrap{ padding:12px; }
 .stage{ padding:12px; }
