@@ -1,3 +1,10 @@
+function qualityOutline(q) {
+  const s = String(q || "Regular").toLowerCase();
+  if (s.startsWith("g")) return { color: "rgba(48,209,88,0.95)", w: 3 };   // Green
+  if (s.startsWith("v")) return { color: "rgba(255,193,7,0.95)", w: 4 };   // Veteran
+  return { color: "rgba(230,230,230,0.55)", w: 2 };                        // Regular
+}
+
 // MOVE_RESET_LAB_V1
 (() => {
   const ACTIVATIONS_PER_TURN = 3;
@@ -131,6 +138,15 @@
       const g = document.createElementNS("http://www.w3.org/2000/svg","g");
       g.setAttribute("class", "unit");
       g.dataset.unitId = u.id;
+
+      // QUALITY_DATASET_V1
+      // Normalize quality strings so CSS selectors stay stable
+      const qRaw = (u.quality || "Regular").toString().toLowerCase();
+      let q = "Regular";
+      if (qRaw.startsWith("g")) q = "Green";
+      else if (qRaw.startsWith("v")) q = "Veteran";
+      g.dataset.quality = q;
+
       g.setAttribute("transform", `translate(${cx.toFixed(2)},${cy.toFixed(2)})`);
 
       // Slightly larger shapes for breathing room
@@ -370,3 +386,5 @@
 // UNIT_UI_PADDING_V3_PROOF
 
 // GEN_STAR_V1_PROOF
+
+// QUALITY_OUTLINE_V1_PROOF
