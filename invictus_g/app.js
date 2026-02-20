@@ -114,8 +114,8 @@
   }
 
   function renderUnits() {
+    // UNIT_UI_PADDING_V3 (single-owner token rendering)
     // Remove old units (we'll re-add)
-    // Keep hex polys intact.
     const olds = board.querySelectorAll("g.unit");
     olds.forEach(n => n.remove());
 
@@ -133,37 +133,37 @@
       g.dataset.unitId = u.id;
       g.setAttribute("transform", `translate(${cx.toFixed(2)},${cy.toFixed(2)})`);
 
-      // Simple shape by type
+      // Slightly larger shapes for breathing room
       let shape;
       if (u.type === "INF") {
         shape = document.createElementNS("http://www.w3.org/2000/svg","rect");
-        shape.setAttribute("x","-14"); shape.setAttribute("y","-11");
-        shape.setAttribute("width","28"); shape.setAttribute("height","22");
+        shape.setAttribute("x","-15"); shape.setAttribute("y","-12");
+        shape.setAttribute("width","30"); shape.setAttribute("height","24");
         shape.setAttribute("rx","5");
       } else if (u.type === "CAV") {
         shape = document.createElementNS("http://www.w3.org/2000/svg","polygon");
-        shape.setAttribute("points","0,-13 13,0 0,13 -13,0");
+        shape.setAttribute("points","0,-15 15,0 0,15 -15,0");
       } else if (u.type === "ARC") {
         shape = document.createElementNS("http://www.w3.org/2000/svg","polygon");
-        shape.setAttribute("points","0,-13 13,11 -13,11");
+        shape.setAttribute("points","0,-15 15,12 -15,12");
       } else if (u.type === "GEN") {
         shape = document.createElementNS("http://www.w3.org/2000/svg","circle");
-        shape.setAttribute("r","13");
-      } else { // SKR/SLG default
+        shape.setAttribute("r","14");
+      } else {
         shape = document.createElementNS("http://www.w3.org/2000/svg","circle");
-        shape.setAttribute("r","12");
+        shape.setAttribute("r","13"); // SKR/SLG etc
       }
 
       shape.setAttribute("class","unitShape");
       shape.setAttribute("fill", u.side === "Blue" ? "#dbeafe" : "#fee2e2");
       g.appendChild(shape);
 
-      // UNIT_UI_STACK_V1 (type above, hp below)
+      // Two-line label (type above, hp below) with more margin
       const tType = document.createElementNS("http://www.w3.org/2000/svg","text");
       tType.setAttribute("class","uText uType");
       tType.setAttribute("text-anchor","middle");
       tType.setAttribute("dominant-baseline","central");
-      tType.setAttribute("y","-3");
+      tType.setAttribute("y","-5");
       tType.textContent = `${u.type}`;
       g.appendChild(tType);
 
@@ -171,13 +171,14 @@
       tHP.setAttribute("class","uText uHP");
       tHP.setAttribute("text-anchor","middle");
       tHP.setAttribute("dominant-baseline","central");
-      tHP.setAttribute("y","6");
+      tHP.setAttribute("y","7");
       tHP.textContent = `${u.hp}`;
       g.appendChild(tHP);
 
       board.appendChild(g);
     }
   }
+
 
   function occupiedSet() {
     const occ = new Set();
@@ -363,3 +364,5 @@
 // UNIT_UI_STACK_V1_PROOF
 
 // UNIT_UI_PADDING_V2_PROOF
+
+// UNIT_UI_PADDING_V3_PROOF
