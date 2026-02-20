@@ -1,5 +1,6 @@
-model AAL viewer (Aang + iPhone CSS)
-BUILD_ID: 1771539535
-Local dev URL: http://localhost:1099/model/?v=1771539535
-Live URL (www): https://www.digitalbrain.live/model/?v=1771539535
-Live URL (gh):  https://never-nude.github.io/model/?v=1771539535
+model AAL viewer
+BUILD_ID: 1771549511
+JS path: main.1771549511.js
+Local dev URL: http://localhost:1099/model/?v=1771549511
+Live URL (www): https://www.digitalbrain.live/model/?v=1771549511
+Live URL (gh):  https://never-nude.github.io/model/?v=1771549511
