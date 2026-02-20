@@ -1,9 +1,0 @@
-INVICTUS_MOVE_LAB
-MILESTONE=G_MOVEMENT_RESET_LAB
-DEV_PORT=6657
-BUILD_ID=20260220-105201
-RULE=One unit may move at most once per turn
-ACTIVATIONS_PER_TURN=3
-MOVE_RANGES=INF1 ARC1 SLG2 SKR2 CAV3 GEN3
-SOURCE=invictus/board_layout.json + invictus/scenario.json
-FEATURE=unit_ui_stack_v1_type_above_hp_below
