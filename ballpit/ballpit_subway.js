@@ -17,34 +17,65 @@ const __AAL_ABBREV__ = {
   Tri:  "Triangular",
  VTA: "Ventral Tegmental Area",};
 
-function __prettyRegionLabel__(raw) {
-  if (raw == null) return "";
-  let s = String(raw).trim();
-  if (!s || s === "none") return s;
-  if (s.startsWith("ERROR")) return s;
+function __prettyRegionLabel__(s) {
+  if (s == null) return "";
+  let x = String(s).trim();
+  if (!x) return "";
 
-  // Preserve trailing "(rest)" / "(visual)" etc, but format nicer.
-  let suffix = "";
-  const m = s.match(/^(.*?)(\s*\([^)]*\))$/);
-  if (m) { s = m[1].trim(); suffix = m[2]; }
+  // If caller passes "REGION (rest)" keep the "(rest)" part unchanged.
+  let stim = "";
+  const m = x.match(/^(.*?)(\s*\((rest|visual|motor|auditory)\)\s*)$/i);
+  if (m) { x = m[1].trim(); stim = m[2]; }
 
-  const sufCore = suffix.replace(/[()]/g, "").trim().toLowerCase();
-  if (sufCore in {rest:1, visual:1, motor:1, auditory:1}) {
-    suffix = " · " + sufCore;
+  // Side suffix
+  let side = "";
+  if (/_L$/i.test(x)) { side = "Left"; x = x.replace(/_L$/i, ""); }
+  else if (/_R$/i.test(x)) { side = "Right"; x = x.replace(/_R$/i, ""); }
+
+  // Normalize separators
+  x = x.replace(/[\-_]+/g, " ").replace(/\s+/g, " ").trim();
+
+  // Expand common AAL-ish abbreviations
+  const tok = {
+    "Inf": "Inferior",
+    "Sup": "Superior",
+    "Mid": "Middle",
+    "Med": "Medial",
+    "Lat": "Lateral",
+    "Ant": "Anterior",
+    "Post": "Posterior",
+    "Orb": "Orbital",
+    "Oper": "Opercular",
+    "Triang": "Triangular",
+    "Rect": "Rectus",
+  };
+
+  // Expand common acronyms we actually see in practice
+  const acr = {
+    "VTA": "Ventral Tegmental Area",
+    "ACC": "Anterior Cingulate Cortex",
+    "PCC": "Posterior Cingulate Cortex",
+    "PFC": "Prefrontal Cortex",
+    "SMA": "Supplementary Motor Area",
+    "PAG": "Periaqueductal Gray",
+    "SN":  "Substantia Nigra",
+    "NAc": "Nucleus Accumbens",
+  };
+
+  let parts = x.split(" ").filter(Boolean).map(t => tok[t] || acr[t] || t);
+
+  // Tiny readability tweak: "Parietal Inferior" -> "Inferior Parietal" (same for other lobes)
+  if (parts.length >= 2) {
+    const lobes = new Set(["Frontal","Parietal","Temporal","Occipital"]);
+    const dirs  = new Set(["Inferior","Superior","Middle"]);
+    if (lobes.has(parts[0]) && dirs.has(parts[1])) parts = [parts[1], parts[0], ...parts.slice(2)];
   }
 
-  // Hemisphere suffix
-  let hemi = "";
-  if (s.endsWith("_L")) { hemi = "Left";  s = s.slice(0, -2); }
-  else if (s.endsWith("_R")) { hemi = "Right"; s = s.slice(0, -2); }
-
-  // Tokenize on underscores and expand common AAL abbrevs.
-  const toks = s.split("_").filter(Boolean).map(t => __AAL_ABBREV__[t] || t);
-  let out = toks.join(" ");
-
-  if (hemi) out = out + " (" + hemi + ")";
-  return (out + suffix).trim();
+  let out = parts.join(" ").replace(/\s+/g, " ").trim();
+  if (side) out += ` (${side})`;
+  return stim ? `${out}${stim}` : out;
 }
+
 
 function __attachPrettyHover__() {
   const hoverEl = document.getElementById("hoverName");
