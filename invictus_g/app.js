@@ -131,6 +131,15 @@
       const g = document.createElementNS("http://www.w3.org/2000/svg","g");
       g.setAttribute("class", "unit");
       g.dataset.unitId = u.id;
+
+      // QUALITY_DATASET_V1
+      // Normalize quality strings so CSS selectors stay stable
+      const qRaw = (u.quality || "Regular").toString().toLowerCase();
+      let q = "Regular";
+      if (qRaw.startsWith("g")) q = "Green";
+      else if (qRaw.startsWith("v")) q = "Veteran";
+      g.dataset.quality = q;
+
       g.setAttribute("transform", `translate(${cx.toFixed(2)},${cy.toFixed(2)})`);
 
       // Slightly larger shapes for breathing room
@@ -370,3 +379,5 @@
 // UNIT_UI_PADDING_V3_PROOF
 
 // GEN_STAR_V1_PROOF
+
+// QUALITY_OUTLINE_V1_PROOF
