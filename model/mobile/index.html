@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
       <base href="../">
 <title>model • AAL Brain Graph • mobile</title>
     <style>
@@ -60,58 +60,75 @@
         }
       }
     </script>
-    <style id="iphone-css">
-  :root{
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-right: env(safe-area-inset-right, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-left: env(safe-area-inset-left, 0px);
-  }
+      <style id="iphone-css">
+/* iPhone UI: 20260220-115408 */
+/* iPhone legibility + touch */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
 
-  html, body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
-    -webkit-text-size-adjust: 100%;
-    background: #000;
-  }
+canvas {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  canvas { display: block; touch-action: none; }
+/* Safe-area padding for top-left HUD-ish elements */
+#build, #hud, #overlay, #info {
+  font-size: 15px;
+  line-height: 1.35;
+  max-width: calc(100vw - 24px);
+  padding-top: calc(10px + env(safe-area-inset-top));
+  padding-left: calc(10px + env(safe-area-inset-left));
+}
 
-  /* Safe-area aware overlay positioning (no-op if ids don't exist) */
-  #build, #hud {
-    left: calc(var(--safe-left) + 12px);
-    top:  calc(var(--safe-top) + 12px);
-    max-width: calc(100vw - var(--safe-left) - var(--safe-right) - 24px);
-  }
+/* Safe-area padding + larger touch targets for the controls panel */
+#controls, #panel, #ui, #controlsPanel, .controls, .panel {
+  font-size: 16px;
+  line-height: 1.35;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  padding-right: calc(10px + env(safe-area-inset-right));
+  padding-left: 10px;
+  padding-bottom: 10px;
+}
 
-  #panel {
-    right: calc(var(--safe-right) + 12px);
-    top:   calc(var(--safe-top) + 12px);
-    max-width: calc(100vw - var(--safe-left) - var(--safe-right) - 24px);
-  }
+button, input, select {
+  font-size: 16px; /* iOS: prevents auto-zoom on focus */
+}
 
-  /* iPhone-ish: panel becomes bottom sheet, bigger touch targets */
-  @media (max-width: 520px), (pointer: coarse) {
-    #build, #hud { font-size: 12px; line-height: 1.25; }
-    #panel {
-      left: calc(var(--safe-left) + 12px);
-      right: calc(var(--safe-right) + 12px);
-      top: auto;
-      bottom: calc(var(--safe-bottom) + 12px);
-      width: auto;
-      max-width: none;
-    }
-    #panel label, #panel button { font-size: 14px; }
-    #panel input[type="checkbox"] { transform: scale(1.25); transform-origin: left center; }
-    #panel input[type="range"] { width: 100%; }
-  }
-</style>
+button {
+  padding: 10px 12px;
+  border-radius: 10px;
+}
 
+input[type="checkbox"] {
+  transform: scale(1.35);
+  margin-right: 10px;
+}
+
+input[type="range"] {
+  height: 32px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  width: 28px;
+  height: 28px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+}
+  </style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
   <body>
-    <div id="build">model • AAL viewer • mobile • BUILD 1771549511</div>
+    <div id="build">model • AAL viewer • mobile • UI 20260220-115408 • BUILD 1771549511</div>
     <div id="hud">Loading…</div>
 
     <div id="panel">
