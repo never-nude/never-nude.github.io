@@ -1,6 +1,9 @@
 PROJECT=Invictus
-MILESTONE=E_ECHELON_MOVEMENT
+MILESTONE=F_FOOTFALL_DISCIPLINE
+LAST_VERIFIED_BUILD_ID=20260219-195531
 REPO_ROOT=/Users/michael/dev/never-nude.github.io
 SERVE_CMD=python3 -m http.server 6657 --bind 127.0.0.1
-LOCAL_URL=http://127.0.0.1:6657/invictus/?ts=20260219-135515
-PUBLISH_URL=https://digitalbrain.live/invictus/
+LOCAL_URL=http://127.0.0.1:6657/invictus/?ts=20260219-195531
+PUBLISH_ROOT=https://digitalbrain.live/invictus/
+PUBLISH_VERSIONED=https://digitalbrain.live/invictus/build/20260219-195531/
+NEXT_RULE=G_CAV_CAN_ATTACK_SAME_ACTIVATION_ONLY_IF_FLANK_OR_REAR
