@@ -69,6 +69,10 @@
       <button data-stim="visual">Visual</button>
       <button data-stim="motor">Motor</button>
       <button data-stim="auditory">Auditory</button>
+  <button data-stim="sensory">Sensory</button>
+  <button data-stim="task">Task</button>
+  <button data-stim="all">All</button>
+
     </div>
     <div class="row dim">Mouse: drag to orbit • wheel: zoom • right-drag: pan</div>
     <div class="row">hover — <b id="hoverName">none</b></div>
@@ -119,6 +123,101 @@
 })();
 </script>
 <!-- /View toggle -->
+
+
+<!-- HOVER_PRETTY_BEGIN -->
+<script>
+(() => {
+  // Expand common AAL abbreviations for display only (data stays unchanged).
+  const ABBR = {
+    sup: "Superior",
+    inf: "Inferior",
+    mid: "Middle",
+    med: "Medial",
+    orb: "Orbital",
+    oper: "Opercular",
+    tri: "Triangular",
+    ant: "Anterior",
+    post: "Posterior",
+    lat: "Lateral",
+    supp: "Supplementary"
+  };
+
+  const prettyToken = (tok) => {
+    let s = String(tok || "").trim();
+    if (!s) return s;
+
+    // Strip "aal_" prefix if present
+    s = s.replace(/^aal_/i, "");
+
+    // Only prettify region-like tokens: Foo_Bar_L, N_Accumbens_R, etc.
+    if (!/^[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*_[LRlr]$/.test(s)) return tok;
+
+    const parts = s.split(/_+/).filter(Boolean);
+    if (!parts.length) return tok;
+
+    let hemi = "";
+    const last = parts[parts.length - 1];
+    if (/^[LRlr]$/.test(last)) {
+      hemi = last.toLowerCase() === "l" ? " (Left)" : " (Right)";
+      parts.pop();
+    }
+
+    let words = parts.map((p) => {
+      const k = p.toLowerCase();
+      return ABBR[k] || (p.charAt(0).toUpperCase() + p.slice(1));
+    });
+
+    // Reorder: "Frontal Superior" -> "Superior Frontal", "Cingulum Anterior" -> "Anterior Cingulum"
+    const adj = new Set(["Superior","Inferior","Middle","Medial","Anterior","Posterior","Lateral","Orbital","Opercular","Triangular","Supplementary"]);
+    if (words.length >= 2 && adj.has(words[1]) && !adj.has(words[0])) {
+      words = [words[1], words[0], ...words.slice(2)];
+    }
+
+    return words.join(" ") + hemi;
+  };
+
+  // Replace only region-like tokens inside text (leave other HUD text alone).
+  const regionTokenRe = /\b(?:aal_)?[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*_[LRlr]\b/g;
+
+  const candidateIds = ["hud","HUD","hover","hoverLabel","hudHover","hud-hover","topLeft","top-left","info","legend","stats"];
+  const findHud = () => {
+    for (const id of candidateIds) {
+      const el = document.getElementById(id);
+      if (el) return el;
+    }
+    // fallback: fixed element near top-left that mentions hover/region
+    const els = Array.from(document.querySelectorAll("div,span,p"));
+    for (const el of els) {
+      const st = getComputedStyle(el);
+      if (st.position !== "fixed") continue;
+      const left = parseFloat(st.left || "9999");
+      const top  = parseFloat(st.top  || "9999");
+      if (left > 60 || top > 80) continue;
+      const txt = (el.textContent || "");
+      if (/hover|region/i.test(txt)) return el;
+    }
+    return null;
+  };
+
+  let hud = null;
+  let last = "";
+
+  setInterval(() => {
+    if (!hud) hud = findHud();
+    if (!hud) return;
+
+    const txt = hud.textContent || "";
+    if (txt === last) return;
+
+    const next = txt.replace(regionTokenRe, (m) => prettyToken(m));
+    if (next !== txt) hud.textContent = next;
+
+    last = hud.textContent || "";
+  }, 100);
+})();
+</script>
+<!-- HOVER_PRETTY_END -->
 
 </body>
 </html>

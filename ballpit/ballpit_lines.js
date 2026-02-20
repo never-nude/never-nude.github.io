@@ -78,8 +78,7 @@ if (document.readyState === "loading") {
 }
 const VERSION = 'lines2';
 const BUILD_ID = `BALLPIT-LINES2-${new Date().toISOString()}`;
-const STIMS = ['rest','visual','motor','auditory'];
-
+const STIMS = ["rest", "visual", "motor", "auditory", "sensory", "task", "all"];
 const UI = {
   buildId: document.getElementById('buildId'),
   stimName: document.getElementById('stimName'),

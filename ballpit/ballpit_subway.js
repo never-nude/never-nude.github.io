@@ -147,8 +147,7 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(999, 999);
 
 let currentStim = 'rest';
-const STIMS = ['rest','visual','motor','auditory'];
-
+const STIMS = ["rest", "visual", "motor", "auditory", "sensory", "task", "all"];
 const nodeMeshes = [];
 const nodeByVal = new Map();   // aal_value -> {val,label,net,hub,pos,color}
 const meshByVal = new Map();   // aal_value -> mesh
@@ -285,6 +284,14 @@ function makeRNG(seedStr) {
 }
 
 function buildStimulusGroup(stim, allEdges) {
+  // --- Derived stimulus unions (no new data files needed) ---
+  const STIM_UNION = {
+    sensory: ["visual","auditory"],
+    task: ["visual","motor","auditory"],
+    all: ["rest","visual","motor","auditory"],
+  };
+  const WANT_STIMS = new Set(STIM_UNION[stim] || [stim]);
+
   const group = new THREE.Group();
   group.name = `stim_${stim}`;
 
@@ -549,7 +556,72 @@ const clock = new THREE.Clock();
     stimGroups.set(stim, g);
   }
 
-  setStimulus('rest');
+  // --- Composite stimuli (UI-only): Sensory / Task / All ---
+const __STIM_COMPOSITES__ = {
+  sensory: ["visual", "auditory"],
+  task: ["visual", "motor", "auditory"],
+  all: ["rest", "visual", "motor", "auditory"],
+};
+
+function __stimKeys__(stim) {
+  const k = String(stim || "").trim().toLowerCase();
+  return __STIM_COMPOSITES__[k] || [k];
+}
+
+function setStimulusAny(stim) {
+  const requested = String(stim || "").trim().toLowerCase();
+  const keys = __stimKeys__(requested);
+
+  // Let the original handler do its normal work for a real base stim
+  try { setStimulus(keys[0]); } catch (e) {}
+
+  // Make groups match composite selection
+  const wanted = new Set(keys);
+  for (const [s, g] of stimGroups) {
+    if (g && g.group) g.group.visible = wanted.has(s);
+  }
+
+  // Update HUD label + active button styling
+  if (typeof el === "object" && el && el.stim) el.stim.textContent = requested;
+
+  const btns = document.querySelectorAll(".buttons button");
+  for (const b of btns) {
+    const k = (b.dataset && b.dataset.stim) ? b.dataset.stim : b.textContent.trim().toLowerCase();
+    b.classList.toggle("active", k === requested);
+  }
+
+  // Best-effort counts for composite keys only (so we don't stomp base-stim counts)
+  if (__STIM_COMPOSITES__[requested] && typeof el === "object" && el) {
+    let edges = 0, lines = 0, trains = 0;
+    for (const k of keys) {
+      const g = stimGroups.get(k);
+      if (!g) continue;
+      if (Array.isArray(g.edges)) edges += g.edges.length
+      if (Array.isArray(g.lines)) lines += g.lines.length
+      if (Array.isArray(g.trains)) trains += g.trains.length
+      if (Array.isArray(g.tracks)) trains += g.tracks.length
+    }
+    if (el.edgeCount)  el.edgeCount.textContent  = String(edges);
+    if (el.lineCount)  el.lineCount.textContent  = String(lines);
+    if (el.trainCount) el.trainCount.textContent = String(trains);
+  }
+}
+
+{
+  const __btnWrap = document.querySelector(".buttons");
+  if (__btnWrap) {
+    __btnWrap.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      const key = (b.dataset && b.dataset.stim) ? b.dataset.stim : b.textContent.trim().toLowerCase();
+      if (!key) return;
+      setStimulusAny(key);
+    });
+  }
+}
+// --- End composite stimuli ---
+
+setStimulusAny('rest');
   animate();
 })().catch(err => {
   console.error(err);
