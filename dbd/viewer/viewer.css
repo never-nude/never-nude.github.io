@@ -1,0 +1,104 @@
+:root {
+  --pad: 16px;
+  --stroke: #444;
+  --stroke-soft: #888;
+  --bg: #0b0d10;
+  --panel: #12161c;
+  --text: #e6edf3;
+  --muted: #a8b3bf;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  padding: var(--pad);
+  background: var(--panel);
+  border-bottom: 1px solid #222a33;
+}
+
+.topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+}
+
+.truth {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  white-space: pre-wrap;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.controls label, .controls button {
+  font-size: 14px;
+}
+
+.controls select, .controls button {
+  background: #0f1318;
+  color: var(--text);
+  border: 1px solid #2b3542;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.selection {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.stage {
+  padding: var(--pad);
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  border: 1px solid #1f2630;
+  border-radius: 10px;
+  background: #07090c;
+}
+
+.hex {
+  fill: transparent;
+  stroke: var(--stroke-soft);
+  stroke-width: 1;
+}
+
+.hex.selected {
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+
+.hex.neighbor {
+  stroke: #d7ba7d;
+  stroke-width: 2;
+}
+
+.hexlabel {
+  font-size: 10px;
+  fill: #c9d1d9;
+  user-select: none;
+  pointer-events: none;
+}

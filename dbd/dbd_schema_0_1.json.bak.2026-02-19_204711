@@ -6,14 +6,7 @@
   "required": ["schema", "board", "standardsToWin", "terrain", "units", "turn"],
   "properties": {
     "schema": { "const": "dbd-scn-0.1" },
-
-    "board": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 64,
-      "pattern": "^DBD-[A-Za-z0-9_-]+$",
-      "examples": ["DBD-157-v1", "DBD-157-PASS-v1", "DBD-157-CORRIDOR-v1"]
-    },
+    "board": { "const": "DBD-157-v1" },
 
     "standardsToWin": {
       "type": "integer",
@@ -25,10 +18,10 @@
       "type": "object",
       "additionalProperties": false,
       "propertyNames": {
-        "pattern": "^(?:0|[1-9][0-9]?|1[0-4][0-9]|15[0-6])$"
+        "pattern": "^(0|[1-9][0-9]{0,2})$"
       },
       "patternProperties": {
-        "^(?:0|[1-9][0-9]?|1[0-4][0-9]|15[0-6])$": {
+        "^(0|[1-9][0-9]{0,2})$": {
           "type": "string",
           "enum": ["CLEAR", "WOODS", "ROUGH", "HILL", "WATER"]
         }

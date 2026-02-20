@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DBD Board Viewer (Calibration)</title>
+  <link rel="stylesheet" href="viewer.css" />
+</head>
+<body>
+  <header>
+    <div class="topline">
+      <h1>DBD Board Viewer</h1>
+      <div id="truth" class="truth">Loading…</div>
+    </div>
+
+    <div class="controls">
+      <label>
+        Board:
+        <select id="boardSelect">
+          <option value="DBD-157-v1">DBD-157-v1 (Default Oval)</option>
+          <option value="DBD-157-PASS-v1">DBD-157-PASS-v1 (Mountain Pass)</option>
+          <option value="DBD-157-CORRIDOR-v1">DBD-157-CORRIDOR-v1 (Narrow Corridor)</option>
+        </select>
+      </label>
+
+      <label>
+        <input type="checkbox" id="showIds" />
+        Show metacaps
+      </label>
+
+      <button id="reloadBtn" type="button">Reload (cache-bust)</button>
+    </div>
+
+    <div id="selection" class="selection">Click a hex to inspect neighbors.</div>
+  </header>
+
+  <main>
+    <div id="stage" class="stage"></div>
+  </main>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

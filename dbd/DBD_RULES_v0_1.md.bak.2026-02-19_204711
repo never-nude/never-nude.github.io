@@ -7,7 +7,7 @@ This is the v0.1 rules pack for **Death Before Dishonor**, a 2‑player hex tact
 ## Version anchors
 
 - Rules: **v0.1**
-- Board: **DBD-157-v1** (default) + optional board templates (still 157 hexes)
+- Board: **DBD-157-v1** (157 hexes, fixed silhouette)
 - Scenario schema: **dbd-scn-0.1**
 
 These anchors exist to prevent drift. If code and rules disagree, code must change or the version must bump.
@@ -16,13 +16,9 @@ These anchors exist to prevent drift. If code and rules disagree, code must chan
 
 ## 1) Core invariants (do not drift)
 
-- The default battlefield silhouette is fixed (DBD-157-v1):
+- The battlefield silhouette is fixed:
   - 11 rows with lengths: `12, 13, 14, 15, 16, 17, 16, 15, 14, 13, 12`
   - Total playable hexes: **157**
-- The engine may load alternative **board templates** (e.g., PASS, CORRIDOR) as long as:
-  - The template has exactly **157** playable hexes (metacaps 0..156)
-  - The scenario’s `board` value namespaces metacap meaning (hex 73 is stable *within that board*)
-
 - Every hex has a stable internal ID (“metacap”):
   - IDs are integers **0..156** and never change meaning.
 - Two sides: **BLUE** and **RED**.
@@ -40,13 +36,7 @@ These anchors exist to prevent drift. If code and rules disagree, code must chan
 
 ---
 
-## 2) Board + metacaps (DBD-157 family)
-
-Official templates (all 157 hexes):
-- **DBD-157-v1** (default oval): 12,13,14,15,16,17,16,15,14,13,12
-- **DBD-157-PASS-v1** (pass-like constrictions): 16,15,14,13,14,13,14,13,14,15,16
-- **DBD-157-CORRIDOR-v1** (narrow corridor): 14,15,14,15,14,13,14,15,14,15,14
-
+## 2) Board + metacaps (DBD-157-v1)
 
 ### 2.1 Metacap numbering (row-major)
 Row 0 starts at 0 and proceeds left-to-right; then row 1 continues, etc.
