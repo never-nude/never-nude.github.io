@@ -60,9 +60,10 @@
         }
       }
     </script>
-        <style id="iphone-css">
-/* iPhone UI: 20260220-145258 */
-/* iPhone legibility + touch */
+          <style id="iphone-css">
+/* iPhone UI (layout v2): 20260220-161735 */
+
+/* Keep the page from scrolling/bouncing; keep gestures inside the canvas */
 html, body {
   margin: 0;
   padding: 0;
@@ -77,40 +78,97 @@ canvas {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Safe-area padding for top-left HUD-ish elements */
-#build, #hud, #overlay, #info {
-  font-size: 15px;
-  line-height: 1.35;
-  max-width: calc(100vw - 24px);
-  padding-top: calc(10px + env(safe-area-inset-top));
-  padding-left: calc(10px + env(safe-area-inset-left));
+:root {
+  --glass-bg: rgba(0, 0, 0, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
 }
 
-/* Safe-area padding + larger touch targets for the controls panel */
-#controls, #panel, #ui, #controlsPanel, .controls, .panel {
-  font-size: 16px;
+/* Left: BUILD marker */
+#build {
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top) + 8px) !important;
+  left: calc(env(safe-area-inset-left) + 8px) !important;
+  z-index: 60 !important;
+
+  max-width: calc(50vw - 14px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  backdrop-filter: blur(8px);
+
+  font-size: 15px;
   line-height: 1.35;
-  padding-top: calc(10px + env(safe-area-inset-top));
-  padding-right: calc(10px + env(safe-area-inset-right));
-  padding-left: 10px;
-  padding-bottom: 10px;
+}
+
+/* Left: HUD/status block (below BUILD marker) */
+#hud, #overlay, #info {
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top) + 60px) !important;
+  left: calc(env(safe-area-inset-left) + 8px) !important;
+  z-index: 50 !important;
+
+  max-width: calc(50vw - 14px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  backdrop-filter: blur(8px);
+
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+/* Right: Controls panel */
+#controls, #panel, #controlsPanel, .controls, .panel {
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top) + 8px) !important;
+  right: calc(env(safe-area-inset-right) + 8px) !important;
+  left: auto !important;
+  z-index: 70 !important;
+
+  max-width: calc(50vw - 14px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px;
+  backdrop-filter: blur(8px);
+
+  font-size: 15px;
+  line-height: 1.35;
+
+  max-height: calc(70vh - env(safe-area-inset-top));
+  overflow: auto;
+}
+
+#controls h3, #panel h3, #controlsPanel h3, .controls h3, .panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+#controls label, #panel label, #controlsPanel label, .controls label, .panel label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 button, input, select {
-  font-size: 16px; /* iOS: prevents auto-zoom on focus */
+  font-size: 16px; /* prevents iOS input zoom */
 }
 
 button {
   padding: 10px 12px;
   border-radius: 10px;
+  width: 100%;
 }
 
 input[type="checkbox"] {
-  transform: scale(1.35);
-  margin-right: 10px;
+  transform: scale(1.25);
 }
 
 input[type="range"] {
+  width: 100%;
+  max-width: 240px;
   height: 32px;
 }
 
@@ -128,7 +186,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
   <body>
-    <div id="build">model • AAL viewer • mobile • UI 20260220-145258 • BUILD 1771549511</div>
+    <div id="build">model • AAL viewer • mobile • UI 20260220-161735 • BUILD 1771549511</div>
     <div id="hud">Loading…</div>
 
     <div id="panel">
