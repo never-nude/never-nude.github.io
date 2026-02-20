@@ -1,0 +1,27 @@
+[
+  {
+    "id": "empty",
+    "label": "Empty (sandbox)",
+    "file": "empty.json"
+  },
+  {
+    "id": "symmetric_line",
+    "label": "Symmetric Line",
+    "file": "symmetric_line.json"
+  },
+  {
+    "id": "refused_flank",
+    "label": "Refused Flank",
+    "file": "refused_flank.json"
+  },
+  {
+    "id": "cavalry_hammer",
+    "label": "Cavalry Hammer Wing",
+    "file": "cavalry_hammer.json"
+  },
+  {
+    "id": "deep_center",
+    "label": "Deep Center vs Thin Line",
+    "file": "deep_center.json"
+  }
+]

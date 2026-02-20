@@ -1,0 +1,241 @@
+{
+  "schema": "dbd-scn-0.1",
+  "board": "DBD-157-v1",
+  "standardsToWin": 5,
+  "terrain": {},
+  "units": [
+    {
+      "id": "B_SKR_A",
+      "side": "BLUE",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 93
+    },
+    {
+      "id": "R_SKR_A",
+      "side": "RED",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 60
+    },
+    {
+      "id": "B_SKR_B",
+      "side": "BLUE",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 94
+    },
+    {
+      "id": "R_SKR_B",
+      "side": "RED",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 61
+    },
+    {
+      "id": "B_SKR_C",
+      "side": "BLUE",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 95
+    },
+    {
+      "id": "R_SKR_C",
+      "side": "RED",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 62
+    },
+    {
+      "id": "B_SKR_D",
+      "side": "BLUE",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 96
+    },
+    {
+      "id": "R_SKR_D",
+      "side": "RED",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 63
+    },
+    {
+      "id": "B_INF_A",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 108
+    },
+    {
+      "id": "R_INF_A",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 44
+    },
+    {
+      "id": "B_INF_B",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 109
+    },
+    {
+      "id": "R_INF_B",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 45
+    },
+    {
+      "id": "B_INF_C",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 110
+    },
+    {
+      "id": "R_INF_C",
+      "side": "RED",
+      "type": "INF",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 46
+    },
+    {
+      "id": "B_INF_D",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 111
+    },
+    {
+      "id": "R_INF_D",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 47
+    },
+    {
+      "id": "B_INF_E",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 112
+    },
+    {
+      "id": "R_INF_E",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 48
+    },
+    {
+      "id": "B_ARC_A",
+      "side": "BLUE",
+      "type": "ARC",
+      "quality": "REGULAR",
+      "hp": 2,
+      "hex": 124
+    },
+    {
+      "id": "R_ARC_A",
+      "side": "RED",
+      "type": "ARC",
+      "quality": "REGULAR",
+      "hp": 2,
+      "hex": 31
+    },
+    {
+      "id": "B_ARC_B",
+      "side": "BLUE",
+      "type": "ARC",
+      "quality": "REGULAR",
+      "hp": 2,
+      "hex": 125
+    },
+    {
+      "id": "R_ARC_B",
+      "side": "RED",
+      "type": "ARC",
+      "quality": "REGULAR",
+      "hp": 2,
+      "hex": 32
+    },
+    {
+      "id": "B_CAV_A",
+      "side": "BLUE",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 104
+    },
+    {
+      "id": "R_CAV_A",
+      "side": "RED",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 40
+    },
+    {
+      "id": "B_CAV_B",
+      "side": "BLUE",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 116
+    },
+    {
+      "id": "R_CAV_B",
+      "side": "RED",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 52
+    },
+    {
+      "id": "B_GEN_A",
+      "side": "BLUE",
+      "type": "GEN",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 138
+    },
+    {
+      "id": "R_GEN_A",
+      "side": "RED",
+      "type": "GEN",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 18
+    }
+  ],
+  "turn": {
+    "side": "BLUE",
+    "turnNumber": 1,
+    "activationsLeft": 3
+  },
+  "meta": {
+    "id": "symmetric_screen",
+    "label": "Sym: Faceoff Screen"
+  }
+}

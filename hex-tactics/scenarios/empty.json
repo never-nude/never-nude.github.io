@@ -1,0 +1,16 @@
+{
+  "schema": "dbd-scn-0.1",
+  "board": "DBD-157-v1",
+  "standardsToWin": 5,
+  "terrain": {},
+  "units": [],
+  "turn": {
+    "side": "BLUE",
+    "turnNumber": 1,
+    "activationsLeft": 3
+  },
+  "meta": {
+    "id": "empty",
+    "label": "Empty (sandbox)"
+  }
+}

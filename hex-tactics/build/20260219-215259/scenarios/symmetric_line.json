@@ -1,0 +1,177 @@
+{
+  "schema": "dbd-scn-0.1",
+  "board": "DBD-157-v1",
+  "standardsToWin": 5,
+  "terrain": {},
+  "units": [
+    {
+      "id": "B_INF_1",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 109
+    },
+    {
+      "id": "B_INF_2",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 110
+    },
+    {
+      "id": "B_INF_3",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 111
+    },
+    {
+      "id": "B_INF_4",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 112
+    },
+    {
+      "id": "B_INF_5",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 113
+    },
+    {
+      "id": "B_CAV_L",
+      "side": "BLUE",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 121
+    },
+    {
+      "id": "B_CAV_R",
+      "side": "BLUE",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 131
+    },
+    {
+      "id": "B_SKR_1",
+      "side": "BLUE",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 126
+    },
+    {
+      "id": "B_ARC_1",
+      "side": "BLUE",
+      "type": "ARC",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 139
+    },
+    {
+      "id": "B_GEN_1",
+      "side": "BLUE",
+      "type": "GEN",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 140
+    },
+    {
+      "id": "R_INF_1",
+      "side": "RED",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 43
+    },
+    {
+      "id": "R_INF_2",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 44
+    },
+    {
+      "id": "R_INF_3",
+      "side": "RED",
+      "type": "INF",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 45
+    },
+    {
+      "id": "R_INF_4",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 46
+    },
+    {
+      "id": "R_INF_5",
+      "side": "RED",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 47
+    },
+    {
+      "id": "R_CAV_L",
+      "side": "RED",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 25
+    },
+    {
+      "id": "R_CAV_R",
+      "side": "RED",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 35
+    },
+    {
+      "id": "R_SKR_1",
+      "side": "RED",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 30
+    },
+    {
+      "id": "R_ARC_1",
+      "side": "RED",
+      "type": "ARC",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 15
+    },
+    {
+      "id": "R_GEN_1",
+      "side": "RED",
+      "type": "GEN",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 16
+    }
+  ],
+  "turn": {
+    "side": "BLUE",
+    "turnNumber": 1,
+    "activationsLeft": 3
+  },
+  "meta": {
+    "id": "symmetric_line",
+    "label": "Symmetric Line"
+  }
+}

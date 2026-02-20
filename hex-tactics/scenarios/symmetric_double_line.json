@@ -1,0 +1,241 @@
+{
+  "schema": "dbd-scn-0.1",
+  "board": "DBD-157-v1",
+  "standardsToWin": 5,
+  "terrain": {},
+  "units": [
+    {
+      "id": "B_F1",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 108
+    },
+    {
+      "id": "R_F1",
+      "side": "RED",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 44
+    },
+    {
+      "id": "B_F2",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 109
+    },
+    {
+      "id": "R_F2",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 45
+    },
+    {
+      "id": "B_F3",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 110
+    },
+    {
+      "id": "R_F3",
+      "side": "RED",
+      "type": "INF",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 46
+    },
+    {
+      "id": "B_F4",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 111
+    },
+    {
+      "id": "R_F4",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 47
+    },
+    {
+      "id": "B_F5",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 112
+    },
+    {
+      "id": "R_F5",
+      "side": "RED",
+      "type": "INF",
+      "quality": "GREEN",
+      "hp": 4,
+      "hex": 48
+    },
+    {
+      "id": "B_R1",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 123
+    },
+    {
+      "id": "R_R1",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 30
+    },
+    {
+      "id": "B_R2",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 124
+    },
+    {
+      "id": "R_R2",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 31
+    },
+    {
+      "id": "B_R3",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 125
+    },
+    {
+      "id": "R_R3",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 32
+    },
+    {
+      "id": "B_R4",
+      "side": "BLUE",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 126
+    },
+    {
+      "id": "R_R4",
+      "side": "RED",
+      "type": "INF",
+      "quality": "REGULAR",
+      "hp": 4,
+      "hex": 33
+    },
+    {
+      "id": "B_S1",
+      "side": "BLUE",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 94
+    },
+    {
+      "id": "R_S1",
+      "side": "RED",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 61
+    },
+    {
+      "id": "B_S2",
+      "side": "BLUE",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 95
+    },
+    {
+      "id": "R_S2",
+      "side": "RED",
+      "type": "SKR",
+      "quality": "GREEN",
+      "hp": 2,
+      "hex": 62
+    },
+    {
+      "id": "B_C1",
+      "side": "BLUE",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 104
+    },
+    {
+      "id": "R_C1",
+      "side": "RED",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 40
+    },
+    {
+      "id": "B_C2",
+      "side": "BLUE",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 116
+    },
+    {
+      "id": "R_C2",
+      "side": "RED",
+      "type": "CAV",
+      "quality": "REGULAR",
+      "hp": 3,
+      "hex": 52
+    },
+    {
+      "id": "B_GEN",
+      "side": "BLUE",
+      "type": "GEN",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 139
+    },
+    {
+      "id": "R_GEN",
+      "side": "RED",
+      "type": "GEN",
+      "quality": "VETERAN",
+      "hp": 4,
+      "hex": 19
+    }
+  ],
+  "turn": {
+    "side": "BLUE",
+    "turnNumber": 1,
+    "activationsLeft": 3
+  },
+  "meta": {
+    "id": "symmetric_double_line",
+    "label": "Sym: Double Line"
+  }
+}
