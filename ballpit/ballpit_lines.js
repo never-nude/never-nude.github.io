@@ -2,6 +2,15 @@ import * as THREE from 'https://unpkg.com/three@0.161.0/build/three.module.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js';
 
 
+// BP_LINES_COMPOSITES_V1
+const __STIM_COMPOSITES__ = {
+  sensory: ["visual","auditory"],
+  task: ["visual","motor","auditory"],
+  all: ["rest","visual","motor","auditory"],
+};
+
+
+
 /* PRETTY_REGION_LABELS_V1
    Display-only: keeps raw IDs for joins; only prettifies what humans see.
 */
@@ -199,6 +208,53 @@ function setActiveButton(stim) {
   UI.buttons.forEach(b => b.classList.toggle('active', b.dataset.stim === stim));
 }
 function setStimulus(stim, nodesUsedSet) {
+  // --- composite stimuli handling (sensory/task/all) ---
+  const __req = String(stim ?? "").trim().toLowerCase();
+  const __keys = (typeof __STIM_COMPOSITES__ === "object" && __STIM_COMPOSITES__[__req]) ? __STIM_COMPOSITES__[__req] : null;
+  if (__keys) {
+    const __want = new Set(__keys.map(x => String(x).toLowerCase()));
+
+    let __lineCount = 0;
+    let __trainCount = 0;
+
+    try {
+
+      for (const [s, g] of lineGroups.entries()) {
+        const on = __want.has(String(s).toLowerCase());
+        if (g) g.visible = on;
+        if (on && g && g.children) __lineCount += g.children.length;
+      }
+      for (const [s, arr] of trainsByStim.entries()) {
+        const on = __want.has(String(s).toLowerCase());
+        if (Array.isArray(arr)) {
+          for (const t of arr) {
+            const m = t && (t.mesh || t);
+            if (m && typeof m === "object") m.visible = on;
+          }
+          if (on) __trainCount += arr.length;
+        }
+      }
+
+    } catch (e) {
+      console.warn("composite stim toggle failed", e);
+    }
+
+    // HUD label + counts (robust to different IDs)
+    const stimEl = document.getElementById("stimName") || document.getElementById("stimulusName");
+    if (stimEl) stimEl.textContent = __req;
+
+    const lc = document.getElementById("lineCount"); if (lc) lc.textContent = String(__lineCount);
+    const tc = document.getElementById("trainCount"); if (tc) tc.textContent = String(__trainCount);
+
+    // Active button highlight
+    document.querySelectorAll("button[data-stim]").forEach(btn => {
+      btn.classList.toggle("active", String(btn.dataset.stim || "").toLowerCase() === __req);
+    });
+
+    return;
+  }
+  // --- end composite stimuli handling ---
+
   currentStim = stim;
   UI.stimName.textContent = stim;
   setActiveButton(stim);
@@ -428,3 +484,16 @@ function layoutPositions(regions) {
   setStatus(`ERROR: ${err?.message || err}`);
   UI.hoverName.textContent = 'ERROR (see console)';
 });
+
+
+
+// BP_LINES_WIREALL_V1
+(() => {
+  document.querySelectorAll("button[data-stim]").forEach((btn) => {
+    if (btn.dataset && btn.dataset._bpBound === "1") return;
+    if (btn.dataset) btn.dataset._bpBound = "1";
+    btn.addEventListener("click", () => {
+      try { setStimulus(btn.dataset.stim); } catch (e) { console.warn("stim click failed", e); }
+    });
+  });
+})();

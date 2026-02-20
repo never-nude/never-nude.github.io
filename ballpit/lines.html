@@ -80,7 +80,7 @@
   </div>
 
   <canvas id="c"></canvas>
-  <div id="marker">Ball Pit • lines2</div>
+  <div id="marker">Ball Pit • linesStimFix1</div>
 
   <script type="importmap">
 {
@@ -92,7 +92,7 @@
 }
 </script>
 
-<script type="module" src="./ballpit_lines.js?v=lines2"></script>
+<script type="module" src="./ballpit_lines.js?v=linesStimFix1"></script>
 
 <!-- View toggle (subway ↔ lines) -->
 <div id="viewToggle" style="position:fixed; top:12px; right:12px; z-index:9999; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:6px 10px; font:12px ui-sans-serif,system-ui; color:rgba(255,255,255,0.92);">
@@ -125,6 +125,7 @@
 <!-- /View toggle -->
 
 
+<<<<<<< Updated upstream
 <!-- HOVER_PRETTY_BEGIN -->
 <script>
 (() => {
@@ -218,6 +219,26 @@
 })();
 </script>
 <!-- HOVER_PRETTY_END -->
+=======
+<!-- TRUTH_BADGE_BEGIN -->
+<div id="truth-badge" style="position:fixed; right:10px; bottom:10px; z-index:9999; font:11px/1.3 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif; padding:6px 8px; border-radius:10px; background:rgba(0,0,0,0.55); color:rgba(255,255,255,0.85); pointer-events:none; max-width: 52vw; white-space: nowrap; overflow:hidden; text-overflow: ellipsis;">
+  loading…
+</div>
+<script>
+(async () => {
+  const el = document.getElementById('truth-badge');
+  if (!el) return;
+  const cb = new URL(location.href).searchParams.get('cb') || '';
+  let lm = '';
+  try {
+    const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+    lm = r.headers.get('Last-Modified') || '';
+  } catch (e) {}
+  el.textContent = `${location.pathname}${cb ? ' · cb=' + cb : ''}${lm ? ' · LM=' + lm : ''}`;
+})();
+</script>
+<!-- TRUTH_BADGE_END -->
+>>>>>>> Stashed changes
 
 </body>
 </html>
