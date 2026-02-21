@@ -290,8 +290,8 @@ tHP.textContent = `${u.hp}`;
         state.legalAttacks = adj; // adjacent only
         setStatus("Engaged: attack only (no voluntary retreat).", "good");
       } else {
-        state.legalMoves = legalMovesFor(u);
-        state.legalAttacks = attackablesFor(u);
+        state.legalMoves = safeLegalMovesFor(u);
+        state.legalAttacks = safeAttackablesFor(u);
         if (state.legalAttacks.size > 0) setStatus("Move (blue) or attack (red).", "good");
         else setStatus("Select a highlighted hex to move.", "good");
       }
@@ -659,3 +659,17 @@ function withdrawMovesFor(u) {
   return out;
 }
 // /ENGAGED_WITHDRAW_V1
+// SAFE_SELECT_V1
+function _safeLog(msg, err) {
+  try { if (typeof pushLog === "function") pushLog(msg); } catch (e) {}
+  try { console.error(msg); if (err) console.error(err); } catch (e) {}
+}
+function safeLegalMovesFor(u) {
+  try { return legalMovesFor(u); }
+  catch (e) { _safeLog(`ERROR: legalMovesFor failed for ${u && u.id ? u.id : "?"}: ${e && e.message ? e.message : e}`, e); return new Set(); }
+}
+function safeAttackablesFor(u) {
+  try { return attackablesFor(u); }
+  catch (e) { _safeLog(`ERROR: attackablesFor failed for ${u && u.id ? u.id : "?"}: ${e && e.message ? e.message : e}`, e); return new Set(); }
+}
+// /SAFE_SELECT_V1
