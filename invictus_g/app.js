@@ -29,7 +29,8 @@ function qualityOutline(q) {
     activationsUsed: 0,
     actedIds: new Set(),     // stable, keyed by unit.id
     selectedId: null,
-    legalMoves: new Set(),   // keys
+    legalMoves: new Set(),
+    legalAttacks: new Map(),   // key -> target unit id   // keys
     units: [],               // mutable unit objects
     unitsById: new Map(),
     liveSet: new Set(),
@@ -103,22 +104,46 @@ function qualityOutline(q) {
       state.hexByKey.set(key(r,c), poly);
     }
 
-    // Click handling (hex clicks OR unit clicks)
+    // HAMMERFALL_V1: unit clicks can become attacks when a friendly is selected
     board.addEventListener("click", (e) => {
       const unitEl = e.target.closest("[data-unit-id]");
       if (unitEl) {
-        selectUnit(unitEl.dataset.unitId);
+        const clickedId = unitEl.dataset.unitId;
+
+        // If we have a selected friendly, and clicked is an attackable enemy, attack.
+        if (state.selectedId) {
+          const a = state.unitsById.get(state.selectedId);
+          const t = state.unitsById.get(clickedId);
+          if (a && t && a.side === state.turnSide && t.side !== a.side) {
+            const k = key(t.r, t.c);
+            if (state.legalAttacks && state.legalAttacks.get(k) === t.id) {
+              tryAttackSelectedOn(t.id);
+              return;
+            }
+          }
+        }
+
+        selectUnit(clickedId);
         return;
       }
+
       const hexEl = e.target.closest("polygon[data-r][data-c]");
       if (!hexEl) return;
-
       if (!state.selectedId) return;
+
       const r = parseInt(hexEl.dataset.r, 10);
       const c = parseInt(hexEl.dataset.c, 10);
+      const k = key(r,c);
+
+      if (state.legalAttacks && state.legalAttacks.has(k)) {
+        tryAttackSelectedOn(state.legalAttacks.get(k));
+        return;
+      }
+
       tryMoveSelectedTo(r,c);
     });
   }
+
 
   function renderUnits() {
     // UNIT_UI_PADDING_V3 (single-owner token rendering)
@@ -231,18 +256,20 @@ tHP.textContent = `${u.hp}`;
 
   function clearHexHighlights() {
     for (const poly of state.hexByKey.values()) {
-      poly.classList.remove("legal","sel");
+      poly.classList.remove("legal","sel","atk");
     }
   }
+
 
   function selectUnit(unitId) {
     const u = state.unitsById.get(unitId);
     if (!u) return;
 
     state.selectedId = unitId;
-
-    // Compute legal moves only if eligible this turn
     state.legalMoves = new Set();
+    state.legalAttacks = new Map();
+
+    // Compute legal moves/attacks only if eligible this turn
     if (u.side !== state.turnSide) {
       setStatus("Not your turn for that unit.", "bad");
     } else if (state.activationsUsed >= ACTIVATIONS_PER_TURN) {
@@ -251,12 +278,18 @@ tHP.textContent = `${u.hp}`;
       setStatus("This unit already acted this turn.", "bad");
     } else {
       state.legalMoves = legalMovesFor(u);
-      setStatus("Select a highlighted hex to move.", "good");
+      state.legalAttacks = attackablesFor(u);
+      if (state.legalAttacks.size > 0) {
+        setStatus("Move (blue) or attack (red).", "good");
+      } else {
+        setStatus("Select a highlighted hex to move.", "good");
+      }
     }
 
     renderSelectionPanel();
     renderHighlights();
   }
+
 
   function renderSelectionPanel() {
     const u = state.selectedId ? state.unitsById.get(state.selectedId) : null;
@@ -266,16 +299,20 @@ tHP.textContent = `${u.hp}`;
     }
     const acted = state.actedIds.has(u.id) ? "YES" : "NO";
     const rng = MOVE_RANGE[u.type] ?? 1;
+    const atkN = state.legalAttacks ? state.legalAttacks.size : 0;
     selectedBox.textContent =
       `id: ${u.id}\n`+
       `side: ${u.side}\n`+
       `type: ${u.type}\n`+
+      `quality: ${u.quality}\n`+
       `hp: ${u.hp}/${u.maxHp}\n`+
       `acted this turn: ${acted}\n`+
       `move range: ${rng}\n`+
+      `attackable targets: ${atkN}\n`+
       `pos: (${u.r},${u.c})\n`+
       `legal moves: ${state.legalMoves.size}\n`;
   }
+
 
   function renderHighlights() {
     clearHexHighlights();
@@ -291,9 +328,99 @@ tHP.textContent = `${u.hp}`;
       const poly = state.hexByKey.get(k);
       if (poly) poly.classList.add("legal");
     }
+
+    if (state.legalAttacks) {
+      for (const k of state.legalAttacks.keys()) {
+        const poly = state.hexByKey.get(k);
+        if (poly) poly.classList.add("atk");
+      }
+    }
   }
 
-  function tryMoveSelectedTo(r,c) {
+
+  
+  // HAMMERFALL_V1: adjacent melee combat scaffold (hits only, no retreat yet)
+  const ATTACK_DICE = { INF:3, CAV:3, SKR:2, SLG:2, ARC:2, GEN:1 };
+
+  function unitAt(r,c) {
+    for (const u of state.units) {
+      if (u.r === r && u.c === c) return u;
+    }
+    return null;
+  }
+
+  function attackablesFor(u) {
+    const m = new Map(); // hexKey -> targetId
+    for (const [nr,nc] of neighbors(u.r,u.c)) {
+      const t = unitAt(nr,nc);
+      if (t && t.side !== u.side) {
+        m.set(key(nr,nc), t.id);
+      }
+    }
+    return m;
+  }
+
+  function rollHits(attackerType, diceN) {
+    const rolls = [];
+    let hits = 0;
+    for (let i=0; i<diceN; i++) {
+      const d = 1 + Math.floor(Math.random() * 6);
+      rolls.push(d);
+      if (attackerType === "GEN") {
+        if (d === 6) hits += 1; // GEN: only hits on 6
+      } else {
+        if (d >= 5) hits += 1;  // others: hits on 5-6
+      }
+    }
+    return { rolls, hits };
+  }
+
+  function tryAttackSelectedOn(targetId) {
+    const attacker = state.selectedId ? state.unitsById.get(state.selectedId) : null;
+    const defender = state.unitsById.get(targetId);
+    if (!attacker || !defender) return;
+
+    // Hard invariants
+    if (attacker.side !== state.turnSide) { setStatus("Not your turn.", "bad"); return; }
+    if (state.activationsUsed >= ACTIVATIONS_PER_TURN) { setStatus("No activations left. End Turn.", "bad"); return; }
+    if (state.actedIds.has(attacker.id)) { setStatus("This unit already acted this turn.", "bad"); return; }
+    if (defender.side === attacker.side) { setStatus("Can't attack friendly.", "bad"); return; }
+
+    // Recompute adjacency (avoid stale UI)
+    const atkMap = attackablesFor(attacker);
+    const k = key(defender.r, defender.c);
+    if (!atkMap.has(k) || atkMap.get(k) !== defender.id) {
+      setStatus("Target not attackable (must be adjacent).", "bad");
+      return;
+    }
+
+    const diceN = ATTACK_DICE[attacker.type] ?? 2;
+    const {rolls, hits} = rollHits(attacker.type, diceN);
+
+    // Spend activation regardless of result
+    state.activationsUsed += 1;
+    state.actedIds.add(attacker.id);
+
+    // Apply hits
+    const before = defender.hp;
+    defender.hp = Math.max(0, defender.hp - hits);
+
+    log(`ATTACK ${attacker.id}(${attacker.type}) -> ${defender.id}(${defender.type}) dice=${diceN} rolls=[${rolls.join(",")}] hits=${hits} HP ${before}->${defender.hp}`);
+
+    // Kill check
+    if (defender.hp <= 0) {
+      log(`KILL ${defender.id}`);
+      state.units = state.units.filter(u => u.id !== defender.id);
+      state.unitsById.delete(defender.id);
+      if (state.selectedId === defender.id) state.selectedId = attacker.id;
+    }
+
+    updateTopbar();
+    renderUnits();
+    selectUnit(attacker.id); // re-select to show lockout this turn
+  }
+
+function tryMoveSelectedTo(r,c) {
     const u = state.selectedId ? state.unitsById.get(state.selectedId) : null;
     if (!u) return;
 
@@ -324,12 +451,14 @@ tHP.textContent = `${u.hp}`;
     state.activationsUsed = 0;
     state.actedIds = new Set();
     state.legalMoves = new Set();
+    state.legalAttacks = new Map();
     setStatus(`Turn switched. Now: ${state.turnSide}`, "good");
     log(`END TURN -> ${state.turnSide}`);
     updateTopbar();
     renderHighlights();
     renderSelectionPanel();
   }
+
 
   function resetGame() {
     // Reload scenario units fresh
@@ -344,6 +473,7 @@ tHP.textContent = `${u.hp}`;
     state.actedIds = new Set();
     state.selectedId = null;
     state.legalMoves = new Set();
+    state.legalAttacks = new Map();
 
     renderUnits();
     clearHexHighlights();
@@ -352,6 +482,7 @@ tHP.textContent = `${u.hp}`;
     setStatus("Reset complete. Blue to act.", "good");
     log("RESET");
   }
+
 
   async function boot() {
     // TRUTH (lab)
@@ -394,3 +525,5 @@ tHP.textContent = `${u.hp}`;
 // GEN_ARC_LABEL_LOWER_V1_PROOF
 
 // GEN_LABEL_DOWN_V2_PROOF
+
+// HAMMERFALL_V1_PROOF
