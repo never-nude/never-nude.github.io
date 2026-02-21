@@ -145,6 +145,7 @@ function qualityOutline(q) {
   }
 
 
+
   function renderUnits() {
     // UNIT_UI_PADDING_V3 (single-owner token rendering)
     // Remove old units (we'll re-add)
@@ -230,6 +231,9 @@ tHP.textContent = `${u.hp}`;
   }
 
   function legalMovesFor(u) {
+    // ENGAGEMENT_LOCK_V1_MOVES_GUARD
+    if (adjacentEnemiesFor(u).size > 0) return new Set();
+
     const range = MOVE_RANGE[u.type] ?? 1;
     const start = key(u.r,u.c);
     const occ = occupiedSet();
@@ -261,6 +265,7 @@ tHP.textContent = `${u.hp}`;
   }
 
 
+
   function selectUnit(unitId) {
     const u = state.unitsById.get(unitId);
     if (!u) return;
@@ -269,7 +274,6 @@ tHP.textContent = `${u.hp}`;
     state.legalMoves = new Set();
     state.legalAttacks = new Map();
 
-    // Compute legal moves/attacks only if eligible this turn
     if (u.side !== state.turnSide) {
       setStatus("Not your turn for that unit.", "bad");
     } else if (state.activationsUsed >= ACTIVATIONS_PER_TURN) {
@@ -277,18 +281,25 @@ tHP.textContent = `${u.hp}`;
     } else if (state.actedIds.has(u.id)) {
       setStatus("This unit already acted this turn.", "bad");
     } else {
-      state.legalMoves = legalMovesFor(u);
-      state.legalAttacks = attackablesFor(u);
-      if (state.legalAttacks.size > 0) {
-        setStatus("Move (blue) or attack (red).", "good");
+      const adj = adjacentEnemiesFor(u);
+      if (adj.size > 0) {
+        // Hard lock: no voluntary retreat/move while engaged.
+        state.legalMoves = new Set();
+        state.legalAttacks = adj; // adjacent only
+        setStatus("Engaged: attack only (no voluntary retreat).", "good");
       } else {
-        setStatus("Select a highlighted hex to move.", "good");
+        state.legalMoves = legalMovesFor(u);
+        state.legalAttacks = attackablesFor(u);
+        if (state.legalAttacks.size > 0) setStatus("Move (blue) or attack (red).", "good");
+        else setStatus("Select a highlighted hex to move.", "good");
       }
     }
 
     renderSelectionPanel();
     renderHighlights();
   }
+
+
 
 
   function renderSelectionPanel() {
@@ -299,7 +310,10 @@ tHP.textContent = `${u.hp}`;
     }
     const acted = state.actedIds.has(u.id) ? "YES" : "NO";
     const rng = MOVE_RANGE[u.type] ?? 1;
+    const adjN = adjacentEnemiesFor(u).size;
+    const engaged = adjN > 0 ? "YES" : "NO";
     const atkN = state.legalAttacks ? state.legalAttacks.size : 0;
+
     selectedBox.textContent =
       `id: ${u.id}\n`+
       `side: ${u.side}\n`+
@@ -307,11 +321,14 @@ tHP.textContent = `${u.hp}`;
       `quality: ${u.quality}\n`+
       `hp: ${u.hp}/${u.maxHp}\n`+
       `acted this turn: ${acted}\n`+
+      `engaged: ${engaged} (adjacent enemies: ${adjN})\n`+
       `move range: ${rng}\n`+
       `attackable targets: ${atkN}\n`+
       `pos: (${u.r},${u.c})\n`+
       `legal moves: ${state.legalMoves.size}\n`;
   }
+
+
 
 
   function renderHighlights() {
@@ -338,6 +355,7 @@ tHP.textContent = `${u.hp}`;
   }
 
 
+
   
     // IMPETUS_V1: combat + retreats (hits: 5-6, retreats: 4; blocked retreat => +1 HP per blocked step)
   // IMPETUS_V1_PROOF
@@ -351,7 +369,18 @@ tHP.textContent = `${u.hp}`;
     return null;
   }
 
-  function attackablesFor(u) {
+  
+  // ENGAGEMENT_LOCK_V1: adjacency = contact. No voluntary break-away.
+  function adjacentEnemiesFor(u) {
+    const m = new Map(); // hexKey -> targetId
+    for (const [nr,nc] of neighbors(u.r,u.c)) {
+      const t = unitAt(nr,nc);
+      if (t && t.side !== u.side) m.set(key(nr,nc), t.id);
+    }
+    return m;
+  }
+
+function attackablesFor(u) {
     const m = new Map(); // hexKey -> targetId
     for (const [nr,nc] of neighbors(u.r,u.c)) {
       const t = unitAt(nr,nc);
@@ -518,6 +547,7 @@ function tryMoveSelectedTo(r,c) {
   }
 
 
+
   function resetGame() {
     // Reload scenario units fresh
     const base = JSON.parse(JSON.stringify(state.scenario));
@@ -540,6 +570,7 @@ function tryMoveSelectedTo(r,c) {
     setStatus("Reset complete. Blue to act.", "good");
     log("RESET");
   }
+
 
 
   async function boot() {
@@ -585,3 +616,5 @@ function tryMoveSelectedTo(r,c) {
 // GEN_LABEL_DOWN_V2_PROOF
 
 // HAMMERFALL_V1_PROOF
+
+// ENGAGEMENT_LOCK_V1_PROOF
