@@ -1,4 +1,12 @@
 (function(){
+
+// --- Quality outlines (emerald/silver/gold) ---
+function qualityOutlineStyle(q) {
+  const s = String(q || "Regular").toLowerCase();
+  if (s.startsWith("g")) return { color: "rgba(46,204,113,0.95)", w: 3 };
+  if (s.startsWith("v")) return { color: "rgba(255,215,0,0.95)",    w: 3 };
+  return { color: "rgba(192,192,192,0.95)",  w: 3 };
+}
   const $ = (sel) => document.querySelector(sel);
   const build = window.AD_ARMA_BUILD_ID || "UNKNOWN";
   const port  = Number(window.location.port) || 9981;
@@ -17,12 +25,12 @@
   const ROWS = ROW_COUNTS.length;
   const TOTAL = ROW_COUNTS.reduce((a,b)=>a+b,0);
 
-  const UNIT_TYPES = ["Cavalry","Infantry","Slingers","Archers","General"];
+  const UNIT_TYPES = ["Cavalry","Infantry","Missile","Archers","General"];
   const QUALS = ["Green","Regular","Veteran"];
 
   // ===== HP / VP mappings (General HP = 4) =====
-  const MAX_HP = { Infantry:4, Cavalry:3, Slingers:2, Archers:2, General:4 };
-  const VP     = { General:10, Cavalry:8, Infantry:5, Archers:3, Slingers:3 };
+  const MAX_HP = { Infantry:4, Cavalry:3, Missile:2, Archers:2, General:4 };
+  const VP     = { General:10, Cavalry:8, Infantry:5, Archers:3, Missile:3 };
 
   function maxHpFor(type){ return MAX_HP[type] ?? 3; }
   function vpFor(type){ return VP[type] ?? 0; }
@@ -200,7 +208,7 @@
   function typeLetter(t){
     if (t === "Infantry") return "I";
     if (t === "Cavalry")  return "C";
-    if (t === "Slingers") return "S";
+    if (t === "Missile") return "S";
     if (t === "Archers")  return "A";
     if (t === "General")  return "G";
     return "?";
@@ -237,7 +245,7 @@
     if (u.type === "Archers"){
       return `<polygon class="unitShape ${sideCls}" points="0,-18 17,14 -17,14"></polygon>`;
     }
-    if (u.type === "Slingers"){
+    if (u.type === "Missile"){
       return `<circle class="unitShape ${sideCls}" r="15"></circle>`;
     }
     if (u.type === "General"){

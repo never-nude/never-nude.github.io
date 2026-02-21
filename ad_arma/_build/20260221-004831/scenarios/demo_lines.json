@@ -63,7 +63,7 @@
       "q": -1,
       "r": 3,
       "side": "Blue",
-      "type": "Slingers",
+      "type": "Missile",
       "quality": "Green"
     },
     {
@@ -71,7 +71,7 @@
       "q": 1,
       "r": 3,
       "side": "Blue",
-      "type": "Slingers",
+      "type": "Missile",
       "quality": "Green"
     },
     {

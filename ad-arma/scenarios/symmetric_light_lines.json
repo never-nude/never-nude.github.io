@@ -95,7 +95,7 @@
       "q": 0,
       "r": 4,
       "side": "Blue",
-      "type": "Slingers",
+      "type": "Missile",
       "quality": "Regular"
     },
     {
@@ -199,7 +199,7 @@
       "q": 4,
       "r": -4,
       "side": "Red",
-      "type": "Slingers",
+      "type": "Missile",
       "quality": "Regular"
     },
     {
