@@ -231,6 +231,8 @@ tHP.textContent = `${u.hp}`;
   }
 
   function legalMovesFor(u) {
+  if (isEngaged(u)) return withdrawMovesFor(u);
+
     // ENGAGEMENT_LOCK_V1_MOVES_GUARD
     if (adjacentEnemiesFor(u).size > 0) return new Set();
 
@@ -618,3 +620,42 @@ function tryMoveSelectedTo(r,c) {
 // HAMMERFALL_V1_PROOF
 
 // ENGAGEMENT_LOCK_V1_PROOF
+
+// ENGAGED_WITHDRAW_V1
+function _nn_neighbors(r,c) {
+  if (typeof neighbors === "function") return neighbors(r,c);
+  if (typeof nbrs === "function") return nbrs(r,c);
+  if (typeof getNeighbors === "function") return getNeighbors(r,c);
+  throw new Error("No neighbors() function found for engaged-withdraw.");
+}
+function _nn_key(r,c) {
+  if (typeof key === "function") return key(r,c);
+  return `${r},${c}`;
+}
+function _nn_unitAt(r,c) {
+  if (typeof unitAt === "function") return unitAt(r,c);
+  if (typeof getUnitAt === "function") return getUnitAt(r,c);
+  throw new Error("No unitAt() function found for engaged-withdraw.");
+}
+function isEngaged(u) {
+  for (const [nr,nc] of _nn_neighbors(u.r,u.c)) {
+    const t = _nn_unitAt(nr,nc);
+    if (t && t.side !== u.side) return true;
+  }
+  return false;
+}
+function withdrawMovesFor(u) {
+  // One-step disengage: must end NOT adjacent to any enemy.
+  const out = new Set();
+  for (const [nr,nc] of _nn_neighbors(u.r,u.c)) {
+    if (_nn_unitAt(nr,nc)) continue; // occupied
+    let adjEnemy = false;
+    for (const [ar,ac] of _nn_neighbors(nr,nc)) {
+      const t = _nn_unitAt(ar,ac);
+      if (t && t.side !== u.side) { adjEnemy = true; break; }
+    }
+    if (!adjEnemy) out.add(_nn_key(nr,nc));
+  }
+  return out;
+}
+// /ENGAGED_WITHDRAW_V1

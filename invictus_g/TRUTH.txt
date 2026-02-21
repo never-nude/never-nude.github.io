@@ -1,12 +1,12 @@
 INVICTUS_MOVE_LAB
-MILESTONE=H_HAMMERFALL
-MILESTONE_TITLE=H — Hammerfall
+MILESTONE=K_KNOT
+MILESTONE_TITLE=K — Knot
 DEV_PORT=6657
-BUILD_ID=20260220-225547
-RULE=Move OR Attack once per unit per turn (actedIds); engaged => attack only (no voluntary disengage)
+BUILD_ID=20260220-231708
+RULE=Move OR Attack once per unit per turn (actedIds); engaged => attack only (no voluntary disengage); engaged => attack or withdraw 1 (break adjacency)
 ACTIVATIONS_PER_TURN=3
 MOVE_RANGES=INF1 ARC1 SLG2 SKR2 CAV3 GEN3
 SOURCE=invictus/board_layout.json + invictus/scenario.json
-FEATURE=quality_outline_v1_emerald_silver_gold + hex_dirt_v2_lighter + dark_mode_v1_full_ui + gen_hp_center_v1 + gen_arc_label_lower_v1 + gen_label_down_v2 + combat_scaffold_v1_adjacent_hits_only + retreats_v1_4_is_retreat + roster_v1_single_light_unit_skr + movement_v2_engaged_withdraw + engagement_lock_v1_no_voluntary_disengage
-NEXT=I_IMPETUS_RETREATS
+FEATURE=quality_outline_v1_emerald_silver_gold + hex_dirt_v2_lighter + dark_mode_v1_full_ui + gen_hp_center_v1 + gen_arc_label_lower_v1 + gen_label_down_v2 + combat_scaffold_v1_adjacent_hits_only + retreats_v1_4_is_retreat + roster_v1_single_light_unit_skr + movement_v2_engaged_withdraw + engagement_lock_v1_no_voluntary_disengage + movement_v2_engaged_withdraw_fix + milestone_k_knot_engagement_lock
+NEXT=L_LEGION_LINE_MOVE
 ROSTER=INF CAV ARC SKR GEN
