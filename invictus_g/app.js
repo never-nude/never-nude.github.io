@@ -339,7 +339,9 @@ tHP.textContent = `${u.hp}`;
 
 
   
-  // HAMMERFALL_V1: adjacent melee combat scaffold (hits only, no retreat yet)
+    // IMPETUS_V1: combat + retreats (hits: 5-6, retreats: 4; blocked retreat => +1 HP per blocked step)
+  // IMPETUS_V1_PROOF
+
   const ATTACK_DICE = { INF:3, CAV:3, SKR:2, SLG:2, ARC:2, GEN:1 };
 
   function unitAt(r,c) {
@@ -353,26 +355,72 @@ tHP.textContent = `${u.hp}`;
     const m = new Map(); // hexKey -> targetId
     for (const [nr,nc] of neighbors(u.r,u.c)) {
       const t = unitAt(nr,nc);
-      if (t && t.side !== u.side) {
-        m.set(key(nr,nc), t.id);
-      }
+      if (t && t.side !== u.side) m.set(key(nr,nc), t.id);
     }
     return m;
   }
 
-  function rollHits(attackerType, diceN) {
+  // Odd-r offset -> cube coords for real hex distance
+  function oddrToCube(r,c) {
+    const x = c - ((r - (r & 1)) / 2);
+    const z = r;
+    const y = -x - z;
+    return {x,y,z};
+  }
+  function hexDist(r1,c1,r2,c2) {
+    const a = oddrToCube(r1,c1);
+    const b = oddrToCube(r2,c2);
+    return (Math.abs(a.x-b.x) + Math.abs(a.y-b.y) + Math.abs(a.z-b.z)) / 2;
+  }
+
+  function chooseRetreatHex(attacker, defender) {
+    const occ = new Set(state.units.map(u => key(u.r,u.c)));
+    occ.delete(key(defender.r, defender.c));
+
+    let best = null;
+    let bestD = -1;
+
+    for (const [nr,nc] of neighbors(defender.r, defender.c)) {
+      const k = key(nr,nc);
+      if (occ.has(k)) continue;
+      const d = hexDist(attacker.r, attacker.c, nr, nc);
+      if (d > bestD) { bestD = d; best = [nr,nc]; }
+    }
+    return best; // may be null
+  }
+
+  function applyRetreats(attacker, defender, retreatCount) {
+    let moved = 0;
+    let blocked = 0;
+
+    for (let i=0; i<retreatCount; i++) {
+      const dest = chooseRetreatHex(attacker, defender);
+      if (!dest) { blocked += 1; continue; }
+      defender.r = dest[0];
+      defender.c = dest[1];
+      moved += 1;
+    }
+    return {moved, blocked};
+  }
+
+  function rollCombat(attackerType, diceN) {
     const rolls = [];
     let hits = 0;
+    let retreats = 0;
+
     for (let i=0; i<diceN; i++) {
       const d = 1 + Math.floor(Math.random() * 6);
       rolls.push(d);
+
       if (attackerType === "GEN") {
-        if (d === 6) hits += 1; // GEN: only hits on 6
+        // GEN: only a 6 is a hit; no retreat pressure (keeps it faithful to "only hits on 6")
+        if (d === 6) hits += 1;
       } else {
-        if (d >= 5) hits += 1;  // others: hits on 5-6
+        if (d >= 5) hits += 1;
+        else if (d === 4) retreats += 1;
       }
     }
-    return { rolls, hits };
+    return {rolls, hits, retreats};
   }
 
   function tryAttackSelectedOn(targetId) {
@@ -380,7 +428,7 @@ tHP.textContent = `${u.hp}`;
     const defender = state.unitsById.get(targetId);
     if (!attacker || !defender) return;
 
-    // Hard invariants
+    // Hard invariants (stop bleeding)
     if (attacker.side !== state.turnSide) { setStatus("Not your turn.", "bad"); return; }
     if (state.activationsUsed >= ACTIVATIONS_PER_TURN) { setStatus("No activations left. End Turn.", "bad"); return; }
     if (state.actedIds.has(attacker.id)) { setStatus("This unit already acted this turn.", "bad"); return; }
@@ -395,17 +443,27 @@ tHP.textContent = `${u.hp}`;
     }
 
     const diceN = ATTACK_DICE[attacker.type] ?? 2;
-    const {rolls, hits} = rollHits(attacker.type, diceN);
+    const {rolls, hits, retreats} = rollCombat(attacker.type, diceN);
 
     // Spend activation regardless of result
     state.activationsUsed += 1;
     state.actedIds.add(attacker.id);
 
-    // Apply hits
-    const before = defender.hp;
+    const hp0 = defender.hp;
+
+    // Apply hits first
     defender.hp = Math.max(0, defender.hp - hits);
 
-    log(`ATTACK ${attacker.id}(${attacker.type}) -> ${defender.id}(${defender.type}) dice=${diceN} rolls=[${rolls.join(",")}] hits=${hits} HP ${before}->${defender.hp}`);
+    // Apply retreats (and blocked-retreat damage) if still alive
+    let moved = 0, blocked = 0;
+    if (defender.hp > 0 && retreats > 0) {
+      const rr = applyRetreats(attacker, defender, retreats);
+      moved = rr.moved;
+      blocked = rr.blocked;
+      if (blocked > 0) defender.hp = Math.max(0, defender.hp - blocked);
+    }
+
+    log(`ATTACK ${attacker.id}(${attacker.type}) -> ${defender.id}(${defender.type}) dice=${diceN} rolls=[${rolls.join(",")}] hits=${hits} retreats=${retreats} moved=${moved} blocked=${blocked} HP ${hp0}->${defender.hp}`);
 
     // Kill check
     if (defender.hp <= 0) {
