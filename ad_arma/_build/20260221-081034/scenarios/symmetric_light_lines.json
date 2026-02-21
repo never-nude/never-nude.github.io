@@ -1,0 +1,216 @@
+{
+  "id": "demo_lines",
+  "label": "Demo lines",
+  "units": [
+    {
+      "id": "B_INF_1",
+      "q": -3,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_2",
+      "q": -2,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_3",
+      "q": -1,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_4",
+      "q": 0,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_5",
+      "q": 1,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_6",
+      "q": 2,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_7",
+      "q": 3,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_CAV_1",
+      "q": -4,
+      "r": 2,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_CAV_2",
+      "q": 4,
+      "r": 2,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_ARC_1",
+      "q": -1,
+      "r": 4,
+      "side": "Blue",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_ARC_2",
+      "q": 1,
+      "r": 4,
+      "side": "Blue",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_SLI_1",
+      "q": 0,
+      "r": 4,
+      "side": "Blue",
+      "type": "Missile",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_GEN_1",
+      "q": 0,
+      "r": 5,
+      "side": "Blue",
+      "type": "General",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_1",
+      "q": -1,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_2",
+      "q": 0,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_3",
+      "q": 1,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_4",
+      "q": 2,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_5",
+      "q": 3,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_6",
+      "q": 4,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_7",
+      "q": 5,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_CAV_1",
+      "q": -2,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_CAV_2",
+      "q": 6,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_ARC_1",
+      "q": 3,
+      "r": -4,
+      "side": "Red",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_ARC_2",
+      "q": 5,
+      "r": -4,
+      "side": "Red",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_SLI_1",
+      "q": 4,
+      "r": -4,
+      "side": "Red",
+      "type": "Missile",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_GEN_1",
+      "q": 5,
+      "r": -5,
+      "side": "Red",
+      "type": "General",
+      "quality": "Regular"
+    }
+  ],
+  "name": "Symmetric Light Lines",
+  "title": "Symmetric Light Lines"
+}
