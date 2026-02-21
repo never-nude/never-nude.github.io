@@ -2,10 +2,11 @@ INVICTUS_MOVE_LAB
 MILESTONE=I_IMPETUS
 MILESTONE_TITLE=I — Impetus
 DEV_PORT=6657
-BUILD_ID=20260220-205448
+BUILD_ID=20260220-214549
 RULE=5-6 Hit, 4 Retreat; blocked retreat => +1 HP per blocked step
 ACTIVATIONS_PER_TURN=3
 MOVE_RANGES=INF1 ARC1 SLG2 SKR2 CAV3 GEN3
 SOURCE=invictus/board_layout.json + invictus/scenario.json
-FEATURE=quality_outline_v1_emerald_silver_gold + hex_dirt_v2_lighter + dark_mode_v1_full_ui + gen_hp_center_v1 + gen_arc_label_lower_v1 + gen_label_down_v2 + combat_scaffold_v1_adjacent_hits_only + retreats_v1_4_is_retreat
+FEATURE=quality_outline_v1_emerald_silver_gold + hex_dirt_v2_lighter + dark_mode_v1_full_ui + gen_hp_center_v1 + gen_arc_label_lower_v1 + gen_label_down_v2 + combat_scaffold_v1_adjacent_hits_only + retreats_v1_4_is_retreat + roster_v1_single_light_unit_skr
 NEXT=J_JAVELINS_RANGED
+ROSTER=INF CAV ARC SKR GEN

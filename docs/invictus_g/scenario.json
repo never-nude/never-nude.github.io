@@ -7,9 +7,9 @@
   "standards": [],
   "units": [
     {
-      "id": "B_SLG_1",
+      "id": "B_SKR_1",
       "side": "Blue",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
@@ -17,9 +17,9 @@
       "c": 9
     },
     {
-      "id": "B_SLG_2",
+      "id": "B_SKR_2",
       "side": "Blue",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
@@ -27,9 +27,9 @@
       "c": 12
     },
     {
-      "id": "B_SLG_3",
+      "id": "B_SKR_3",
       "side": "Blue",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
@@ -37,9 +37,9 @@
       "c": 14
     },
     {
-      "id": "B_SLG_4",
+      "id": "B_SKR_4",
       "side": "Blue",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
@@ -256,9 +256,9 @@
       }
     },
     {
-      "id": "R_SLG_1",
+      "id": "R_SKR_1",
       "side": "Red",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
@@ -266,9 +266,9 @@
       "c": 9
     },
     {
-      "id": "R_SLG_2",
+      "id": "R_SKR_2",
       "side": "Red",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
@@ -276,9 +276,9 @@
       "c": 12
     },
     {
-      "id": "R_SLG_3",
+      "id": "R_SKR_3",
       "side": "Red",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
@@ -286,9 +286,9 @@
       "c": 14
     },
     {
-      "id": "R_SLG_4",
+      "id": "R_SKR_4",
       "side": "Red",
-      "type": "SLG",
+      "type": "SKR",
       "quality": "Green",
       "hp": 3,
       "maxHp": 3,
