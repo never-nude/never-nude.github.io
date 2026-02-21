@@ -1,0 +1,488 @@
+{
+  "id": "demo_lines",
+  "label": "Demo lines",
+  "units": [
+    {
+      "id": "B_INF_20",
+      "q": -4,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_21",
+      "q": -3,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_22",
+      "q": -2,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_23",
+      "q": -1,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_24",
+      "q": 0,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_25",
+      "q": 1,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_26",
+      "q": 2,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_27",
+      "q": 3,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_28",
+      "q": 4,
+      "r": 2,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_29",
+      "q": -4,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_30",
+      "q": -3,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_31",
+      "q": -2,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_32",
+      "q": -1,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_33",
+      "q": 0,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_34",
+      "q": 1,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_35",
+      "q": 2,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_36",
+      "q": 3,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_INF_37",
+      "q": 4,
+      "r": 3,
+      "side": "Blue",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_CAV_5",
+      "q": -5,
+      "r": 2,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_CAV_6",
+      "q": 5,
+      "r": 2,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_CAV_7",
+      "q": -5,
+      "r": 3,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_CAV_8",
+      "q": 5,
+      "r": 3,
+      "side": "Blue",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_ARC_5",
+      "q": -2,
+      "r": 4,
+      "side": "Blue",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_ARC_6",
+      "q": 0,
+      "r": 4,
+      "side": "Blue",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_ARC_7",
+      "q": 2,
+      "r": 4,
+      "side": "Blue",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_SLI_4",
+      "q": -1,
+      "r": 4,
+      "side": "Blue",
+      "type": "Slingers",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_SLI_5",
+      "q": 1,
+      "r": 4,
+      "side": "Blue",
+      "type": "Slingers",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_GEN_4",
+      "q": -2,
+      "r": 5,
+      "side": "Blue",
+      "type": "General",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_GEN_5",
+      "q": 0,
+      "r": 5,
+      "side": "Blue",
+      "type": "General",
+      "quality": "Regular"
+    },
+    {
+      "id": "B_GEN_6",
+      "q": 2,
+      "r": 5,
+      "side": "Blue",
+      "type": "General",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_20",
+      "q": -2,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_21",
+      "q": -1,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_22",
+      "q": 0,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_23",
+      "q": 1,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_24",
+      "q": 2,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_25",
+      "q": 3,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_26",
+      "q": 4,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_27",
+      "q": 5,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_28",
+      "q": 6,
+      "r": -2,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_29",
+      "q": -1,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_30",
+      "q": 0,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_31",
+      "q": 1,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_32",
+      "q": 2,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_33",
+      "q": 3,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_34",
+      "q": 4,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_35",
+      "q": 5,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_36",
+      "q": 6,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_INF_37",
+      "q": 7,
+      "r": -3,
+      "side": "Red",
+      "type": "Infantry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_CAV_5",
+      "q": -3,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_CAV_6",
+      "q": 7,
+      "r": -2,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_CAV_7",
+      "q": -2,
+      "r": -3,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_CAV_8",
+      "q": 8,
+      "r": -3,
+      "side": "Red",
+      "type": "Cavalry",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_ARC_5",
+      "q": 2,
+      "r": -4,
+      "side": "Red",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_ARC_6",
+      "q": 4,
+      "r": -4,
+      "side": "Red",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_ARC_7",
+      "q": 6,
+      "r": -4,
+      "side": "Red",
+      "type": "Archers",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_SLI_4",
+      "q": 3,
+      "r": -4,
+      "side": "Red",
+      "type": "Slingers",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_SLI_5",
+      "q": 5,
+      "r": -4,
+      "side": "Red",
+      "type": "Slingers",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_GEN_4",
+      "q": 3,
+      "r": -5,
+      "side": "Red",
+      "type": "General",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_GEN_5",
+      "q": 5,
+      "r": -5,
+      "side": "Red",
+      "type": "General",
+      "quality": "Regular"
+    },
+    {
+      "id": "R_GEN_6",
+      "q": 7,
+      "r": -5,
+      "side": "Red",
+      "type": "General",
+      "quality": "Regular"
+    }
+  ],
+  "name": "Symmetric Heavy Lines",
+  "title": "Symmetric Heavy Lines"
+}

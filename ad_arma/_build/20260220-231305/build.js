@@ -1,0 +1,2 @@
+window.AD_ARMA_BUILD_ID = "20260219-163801";
+window.AD_ARMA_PROJECT  = "Ad Arma v2";

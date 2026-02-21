@@ -5,6 +5,21 @@
     "file": "empty.json"
   },
   {
+    "id": "symmetric_light_lines",
+    "label": "Symmetric Light Lines",
+    "file": "symmetric_light_lines.json"
+  },
+  {
+    "id": "symmetric_medium_lines",
+    "label": "Symmetric Medium Lines",
+    "file": "symmetric_medium_lines.json"
+  },
+  {
+    "id": "symmetric_heavy_lines",
+    "label": "Symmetric Heavy Lines",
+    "file": "symmetric_heavy_lines.json"
+  },
+  {
     "id": "demo_lines",
     "label": "Demo lines",
     "file": "demo_lines.json"
