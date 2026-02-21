@@ -180,7 +180,7 @@ function qualityOutline(q) {
       tType.setAttribute("class","uText uType");
       tType.setAttribute("text-anchor","middle");
       tType.setAttribute("dominant-baseline","central");
-      tType.setAttribute("y", u.type === "GEN" ? "-8" : "-5");
+      tType.setAttribute("y", u.type === "GEN" ? "-4" : (u.type === "ARC" ? "-2" : "-5"));
 tType.textContent = `${u.type}`;
       g.appendChild(tType);
 
@@ -390,3 +390,7 @@ tHP.textContent = `${u.hp}`;
 // QUALITY_OUTLINE_V1_PROOF
 
 // GEN_HP_CENTER_V1_PROOF
+
+// GEN_ARC_LABEL_LOWER_V1_PROOF
+
+// GEN_LABEL_DOWN_V2_PROOF
