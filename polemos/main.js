@@ -111,7 +111,7 @@
 
     // Visual toggles
     showCommand: true,
-    terrainTheme: 'dusk',
+    terrainTheme: 'vivid',
 
     selectedKey: null,
 
@@ -394,40 +394,65 @@
   }
 
   // --- Rendering
-  const TERRAIN_PALETTES = {
-    // "bright" was the original look (kept as a fallback / toggle).
-    bright: {
-      clear: '#f4f2ea',
-      hills: '#f0efe6',
-      woods: '#ecefe8',
-      rough: '#f2ede9',
-      water: '#e8eef2',
-      grid: '#111',
+  // Terrain is intentionally a *tint* over a shared base, not a repaint.
+  // That keeps the board calm while still making woods/hills/rough/water read instantly.
+  const TERRAIN_THEMES = {
+    // Classic tabletop parchment: subtle but readable.
+    classic: {
+      base: '#f4f2ea',
+      grid: 'rgba(0,0,0,0.35)',
+      tint: {
+        hills: 'rgba(183, 131, 43, 0.18)',  // warm ochre
+        woods: 'rgba(36, 122, 63, 0.20)',   // deep green
+        rough: 'rgba(107, 84, 70, 0.16)',   // brown-grey
+        water: 'rgba(30, 90, 170, 0.20)',   // river blue
+      },
     },
-    // "dusk" is calmer + less glaring in dark UI chrome, but terrain reads more distinctly.
+    // Vivid Dusk: more saturation without turning the map into a neon quilt.
+    vivid: {
+      base: '#f4f2ea',
+      grid: 'rgba(0,0,0,0.35)',
+      tint: {
+        hills: 'rgba(183, 131, 43, 0.26)',
+        woods: 'rgba(36, 122, 63, 0.28)',
+        rough: 'rgba(107, 84, 70, 0.22)',
+        water: 'rgba(30, 90, 170, 0.28)',
+      },
+    },
+    // Dark UI chrome option (kept because some people love it).
     dusk: {
-      clear: '#2f2d28',
-      hills: '#3a352c',
-      woods: '#273424',
-      rough: '#32302c',
-      water: '#273244',
+      base: '#2f2d28',
       grid: 'rgba(255,255,255,0.14)',
+      tint: {
+        hills: 'rgba(183, 131, 43, 0.14)',
+        woods: 'rgba(36, 122, 63, 0.16)',
+        rough: 'rgba(107, 84, 70, 0.13)',
+        water: 'rgba(30, 90, 170, 0.16)',
+      },
     },
   };
 
-  function terrainFill(t) {
-    const theme = state.terrainTheme || 'bright';
-    const pal = TERRAIN_PALETTES[theme] || TERRAIN_PALETTES.bright;
-    return pal[t] || pal.clear;
+  const TERRAIN_THEME_ORDER = ['vivid', 'classic', 'dusk'];
+
+  function terrainTheme() {
+    const theme = state.terrainTheme || 'vivid';
+    return TERRAIN_THEMES[theme] || TERRAIN_THEMES.vivid;
+  }
+
+  function terrainBaseFill() {
+    return terrainTheme().base || '#f4f2ea';
+  }
+
+  function terrainTint(t) {
+    if (!t || t === 'clear') return null;
+    const pal = terrainTheme();
+    return (pal.tint && pal.tint[t]) ? pal.tint[t] : null;
   }
 
   function gridStroke() {
-    const theme = state.terrainTheme || 'bright';
-    const pal = TERRAIN_PALETTES[theme] || TERRAIN_PALETTES.bright;
-    return pal.grid || '#111';
+    return terrainTheme().grid || '#111';
   }
-
-  function unitColors(side) {
+function unitColors(side) {
     return side === 'blue'
       ? { fill: '#0b3d91', stroke: '#8fb4ff', text: '#eaf2ff' }
       : { fill: '#7a1111', stroke: '#ff9a9a', text: '#ffecec' };
@@ -451,8 +476,14 @@
     // Hexes
     for (const h of board.active) {
       const p = hexPath(h.cx, h.cy);
-      ctx.fillStyle = terrainFill(h.terrain);
+      ctx.fillStyle = terrainBaseFill();
       ctx.fill(p);
+
+      const tint = terrainTint(h.terrain);
+      if (tint) {
+        ctx.fillStyle = tint;
+        ctx.fill(p);
+      }
 
       // Outline
       ctx.strokeStyle = gridStroke();
@@ -550,16 +581,19 @@
         ctx.strokeStyle = '#fff';
         ctx.stroke();
       }
-
       // Text (BIG)
       const def = UNIT_BY_ID.get(u.type);
-      const fontPx = Math.floor(R * 0.55);
+      // Make 3-letter blocks (INF/CAV/SKR) ~15–20% smaller for better balance
+      // against single-glyph tokens (2605, 27b6).
+      const textScale = (u.type === 'inf' || u.type === 'cav' || u.type === 'skr') ? 0.83 : 1.0;
+      const glyphScale = (u.type === 'arc') ? 2.5 : 1.0;
+      const fontPx = Math.floor(R * 0.55 * textScale * glyphScale);
       ctx.font = `700 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = c.text;
-      ctx.fillText(def.symbol, h.cx, h.cy + 1);
-
+      const glyphY = h.cy + ((u.type === 'arc') ? -Math.floor(R * 0.10) : 1);
+      ctx.fillText(def.symbol, h.cx, glyphY);
       // HP pips (tiny)
       const pipR = Math.max(2, Math.floor(R * 0.07));
       const startX = h.cx - (pipR * 2) * (def.hp - 1) * 0.5;
@@ -626,7 +660,7 @@
     const mode = state.mode.toUpperCase();
     const meta = [
       `MODE=${mode}`,
-      `TERRAIN=${(state.terrainTheme || 'bright').toUpperCase()}`,
+      `TERRAIN=${(state.terrainTheme || 'vivid').toUpperCase()}`,
       `TURN=${state.side.toUpperCase()}#${state.turn}`,
       `ACT=${state.actsUsed}/${ACT_LIMIT}`,
       `ACTIVE=${board.active.length}`,
@@ -1455,7 +1489,9 @@
     }
     // Toggle terrain palette (visual only)
     if (e.key === 't' || e.key === 'T') {
-      state.terrainTheme = (state.terrainTheme === 'dusk') ? 'bright' : 'dusk';
+      const cur = state.terrainTheme || 'vivid';
+      const i = TERRAIN_THEME_ORDER.indexOf(cur);
+      state.terrainTheme = TERRAIN_THEME_ORDER[(i + 1) % TERRAIN_THEME_ORDER.length];
       log(`Terrain palette: ${state.terrainTheme.toUpperCase()}.`);
       updateHud();
     }
