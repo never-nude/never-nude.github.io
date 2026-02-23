@@ -1,32 +1,30 @@
-(function () {
+(() => {
   'use strict';
 
-  const GAME_NAME = 'Polemos';
-  const BUILD_ID = window.POLEMOS_BUILD_ID || window.HEX_ANCIENTS_BUILD_ID || 'UNKNOWN';
-  const PORT = 9225;
+  // ===== Warfare (D-Day baseline → RB01 rules engine alignment) =====
+  // This build intentionally keeps the "Warfare" UI calm/legible while
+  // tightening the mechanics to the rules spec you provided.
 
-  // Canvas (odd-r offset)
-  const CANVAS = { qMin: -6, qMax: 20, rMin: 0, rMax: 10 }; // inclusive
-  const CANVAS_W = (CANVAS.qMax - CANVAS.qMin + 1);
-  const CANVAS_H = (CANVAS.rMax - CANVAS.rMin + 1);
+  const GAME_NAME = 'Warfare';
+  const BUILD_ID = (window.POLEMO_BUILD_ID || window.POLEMO_BUILD || 'DEV');
 
-  // Default island + one extra far-left hex in middle row (r=5)
-  const DEFAULT_SHAPE_NAME = 'AEGEAN-FIELD-SYM-MIDLEFT1';
+  // --- Board shape (157-hex "island")
+  // Rows are r=0..10, each row is a contiguous run of q.
   const DEFAULT_ROWS = [
-    { qStart:  2, len: 12 }, // r=0
-    { qStart:  1, len: 13 }, // r=1
-    { qStart:  1, len: 14 }, // r=2
-    { qStart:  0, len: 15 }, // r=3
-    { qStart:  0, len: 16 }, // r=4
+    { qStart: 2, len: 12 }, // r=0
+    { qStart: 1, len: 13 }, // r=1
+    { qStart: 1, len: 14 }, // r=2
+    { qStart: 0, len: 15 }, // r=3
+    { qStart: 0, len: 16 }, // r=4
     { qStart: -1, len: 17 }, // r=5
-    { qStart:  0, len: 16 }, // r=6
-    { qStart:  0, len: 15 }, // r=7
-    { qStart:  1, len: 14 }, // r=8
-    { qStart:  1, len: 13 }, // r=9
-    { qStart:  2, len: 12 }, // r=10
+    { qStart: 0, len: 16 }, // r=6
+    { qStart: 0, len: 15 }, // r=7
+    { qStart: 1, len: 14 }, // r=8
+    { qStart: 1, len: 13 }, // r=9
+    { qStart: 2, len: 12 }, // r=10
   ];
 
-  // Terrain
+  // --- Terrain
   const TERRAIN_DEFS = [
     { id: 'clear', label: 'Clear' },
     { id: 'hills', label: 'Hills' },
@@ -34,1646 +32,1521 @@
     { id: 'rough', label: 'Rough' },
     { id: 'water', label: 'Water' },
   ];
-  const TERRAIN_BY_ID = new Map(TERRAIN_DEFS.map(t => [t.id, t]));
-  const TERRAIN_CLASSES = TERRAIN_DEFS.map(t => 'terrain-' + t.id);
 
-  // Units
+  // --- Core rules constants
+  const ACT_LIMIT = 3; // activations per turn
+  const COMMAND_RADIUS = 3; // hex distance
+
+  // Dice faces: 5–6 = Hit, 4 = Retreat.
+  const DIE_HIT = new Set([5, 6]);
+  const DIE_RETREAT = 4;
+
+  // --- Units (RB01 canonical)
+  // HP is mutable; UP is fixed strategic value.
+  // Quality affects COMMAND DEPENDENCE only (no dice bonuses in RB01).
   const UNIT_DEFS = [
-    { id: 'inf', label: 'Infantry', abbrev: 'INF', glyph: 'rect' },
-    { id: 'cav', label: 'Cavalry',  abbrev: 'CAV', glyph: 'diamond' },
-    { id: 'skr', label: 'Skirm',    abbrev: 'SKR', glyph: 'circle' },
-    { id: 'arc', label: 'Archers',  abbrev: 'ARC', glyph: 'hex' },
+    // id, label, abbrev, symbol, MP, maxHP, UP
+    { id: 'inf', label: 'Infantry', abbrev: 'INF', symbol: 'INF', move: 1, hp: 3, up: 3, meleeDice: 2, ranged: null },
+    { id: 'cav', label: 'Cavalry', abbrev: 'CAV', symbol: 'CAV', move: 2, hp: 2, up: 4, meleeDice: 3, ranged: null },
+    { id: 'skr', label: 'Skirmishers', abbrev: 'SKR', symbol: 'SKR', move: 2, hp: 2, up: 2, meleeDice: 2, ranged: { 2: 1 } }, // fixed range 2
+    { id: 'arc', label: 'Archers', abbrev: 'ARC', symbol: '➶', move: 1, hp: 2, up: 2, meleeDice: 1, ranged: { 2: 2, 3: 1 } }, // range 2–3 only
+    { id: 'gen', label: 'General', abbrev: 'GEN', symbol: '★', move: 2, hp: 2, up: 5, meleeDice: 1, ranged: null },
   ];
+
   const UNIT_BY_ID = new Map(UNIT_DEFS.map(u => [u.id, u]));
 
-  // Turn / Movement
-  const ACTIVATION_LIMIT = 3;
-  const MOVE_POINTS = { inf: 1, cav: 2, skr: 2, arc: 1 };
+  const QUALITY_ORDER = ['green', 'regular', 'veteran'];
 
-  // Combat
-  const HP_BY_TYPE = { inf: 3, cav: 2, skr: 2, arc: 2 };
-  const MELEE_DICE = { inf: 2, cav: 3, skr: 2, arc: 1 };
-
-  // Win condition (Standards)
-  const DEFAULT_STANDARD_TARGET = 6;
-
-  // Odd-r neighbors (adjacency)
+  // Odd-r offset neighbors (pointy-top).
   const NEIGH_EVEN = [[+1, 0], [0, -1], [-1, -1], [-1, 0], [-1, +1], [0, +1]];
-  const NEIGH_ODD  = [[+1, 0], [+1, -1], [0, -1], [-1, 0], [0, +1], [+1, +1]];
+  const NEIGH_ODD = [[+1, 0], [+1, -1], [0, -1], [-1, 0], [0, +1], [+1, +1]];
 
-  // Axial directions (retreat)
-  const AX_DIRS = [
-    { dq: +1, dr:  0 },
-    { dq: +1, dr: -1 },
-    { dq:  0, dr: -1 },
-    { dq: -1, dr:  0 },
-    { dq: -1, dr: +1 },
-    { dq:  0, dr: +1 },
-  ];
+  // --- DOM
+  const elCanvas = document.getElementById('c');
+  const ctx = elCanvas.getContext('2d');
 
-  // DOM
-  const elBuild = document.getElementById('buildId');
-  const elTruth = document.getElementById('truthProbe');
+  const elHudTitle = document.getElementById('hudTitle');
+  const elHudMeta = document.getElementById('hudMeta');
+  const elHudLast = document.getElementById('hudLast');
 
-  const elLastAction = document.getElementById('lastAction');
-  const elHudLastAction = document.getElementById('hudLastAction');
+  const elModeBtn = document.getElementById('modeBtn');
+  const elToolUnits = document.getElementById('toolUnits');
+  const elToolTerrain = document.getElementById('toolTerrain');
 
-  const elScoreBlue = document.getElementById('scoreBlue');
-  const elScoreRed = document.getElementById('scoreRed');
-  const elScoreTarget = document.getElementById('scoreTarget');
-  const elForceBlue = document.getElementById('forceBlue');
-  const elForceRed = document.getElementById('forceRed');
-  const elGameOverBanner = document.getElementById('gameOverBanner');
+  const elSideBlue = document.getElementById('sideBlue');
+  const elSideRed = document.getElementById('sideRed');
 
-  const elSelected = document.getElementById('selected');
-  const elHover = document.getElementById('hover');
-  const elSelectedUnit = document.getElementById('selectedUnit');
-  const elLog = document.getElementById('log');
-  const elUA = document.getElementById('ua');
+  const elTypeBtns = document.getElementById('typeBtns');
+  const elEraseBtn = document.getElementById('eraseBtn');
 
-  const elModeLabel = document.getElementById('modeLabel');
-  const elModeToggle = document.getElementById('modeToggle');
+  const elQualityGreen = document.getElementById('qGreen');
+  const elQualityRegular = document.getElementById('qRegular');
+  const elQualityVeteran = document.getElementById('qVeteran');
 
-  const elToolLabel = document.getElementById('toolLabel');
-  const elToolShapeBtn = document.getElementById('toolShapeBtn');
-  const elToolTerrainBtn = document.getElementById('toolTerrainBtn');
-  const elToolUnitsBtn = document.getElementById('toolUnitsBtn');
+  const elTerrainBtns = document.getElementById('terrainBtns');
 
-  const elActiveCount = document.getElementById('activeCount');
-  const elPaintedCount = document.getElementById('paintedCount');
-  const elUnitsCount = document.getElementById('unitsCount');
-
-  const elPresetSelect = document.getElementById('presetSelect');
-  const elLoadPresetBtn = document.getElementById('loadPresetBtn');
-  const elResetDefaultBtn = document.getElementById('resetDefaultBtn');
-  const elClearShapeBtn = document.getElementById('clearShapeBtn');
-
-  const elBrushLabel = document.getElementById('brushLabel');
-  const elResetTerrainBtn = document.getElementById('resetTerrainBtn');
-  const elTerrainPalette = document.getElementById('terrainPalette');
-
-  const elSideBlueBtn = document.getElementById('sideBlueBtn');
-  const elSideRedBtn = document.getElementById('sideRedBtn');
-  const elUInfBtn = document.getElementById('uInfBtn');
-  const elUCavBtn = document.getElementById('uCavBtn');
-  const elUSkrBtn = document.getElementById('uSkrBtn');
-  const elUArcBtn = document.getElementById('uArcBtn');
-  const elUEraseBtn = document.getElementById('uEraseBtn');
-  const elQGreenBtn = document.getElementById('qGreenBtn');
-  const elQRegBtn = document.getElementById('qRegBtn');
-  const elQVetBtn = document.getElementById('qVetBtn');
-  const elDemoUnitsBtn = document.getElementById('demoUnitsBtn');
+  const elScenarioSel = document.getElementById('scenarioSel');
+  const elLoadScenarioBtn = document.getElementById('loadScenarioBtn');
   const elClearUnitsBtn = document.getElementById('clearUnitsBtn');
 
-  const elExportBtn = document.getElementById('exportBtn');
-  const elCopyBtn = document.getElementById('copyBtn');
-  const elImportBtn = document.getElementById('importBtn');
-  const elClearJsonBtn = document.getElementById('clearJsonBtn');
-  const elJson = document.getElementById('mapJson');
-
-  const elTurnNumber = document.getElementById('turnNumber');
-  const elTurnSide = document.getElementById('turnSide');
-  const elActCount = document.getElementById('actCount');
+  const elVictorySel = document.getElementById('victorySel');
   const elEndTurnBtn = document.getElementById('endTurnBtn');
 
-  document.title = GAME_NAME + ' • ' + BUILD_ID;
-  if (elBuild) elBuild.textContent = BUILD_ID;
-  if (elUA) elUA.textContent = navigator.userAgent;
+  // --- State
+  const state = {
+    mode: 'edit', // 'edit' | 'play'
+    tool: 'units', // 'units' | 'terrain'
 
-  // Helpers
-  function keyOf(q, r) { return q + ',' + r; }
-  function parseKey(k) { const p = k.split(','); return { q: Number(p[0]), r: Number(p[1]) }; }
-  function withinCanvas(q, r) { return q >= CANVAS.qMin && q <= CANVAS.qMax && r >= CANVAS.rMin && r <= CANVAS.rMax; }
-  function clampMin1(n) { return n < 1 ? 1 : n; }
-  function terrainLabel(id) { return (TERRAIN_BY_ID.get(id) || { label: id }).label; }
-  function unitAbbrev(id) { return (UNIT_BY_ID.get(id) || { abbrev: id }).abbrev; }
+    editSide: 'blue',
+    editType: 'inf',
+    editQuality: 'green',
+    editErase: false,
+    editTerrain: 'clear',
 
-  function normalizeQuality(q) {
-    q = String(q || '').toLowerCase();
-    if (q === 'v' || q === 'vet' || q === 'veteran') return 'veteran';
-    if (q === 'g' || q === 'green') return 'green';
-    return 'regular';
-  }
+    // Play
+    turn: 1,
+    side: 'blue',
+    actsUsed: 0,
+    actedUnitIds: new Set(),
 
-  function qualLabel(q) {
-    q = normalizeQuality(q);
-    return (q === 'veteran') ? 'Veteran' : (q === 'green') ? 'Green' : 'Regular';
-  }
+    // Visual toggles
+    showCommand: true,
+    terrainTheme: 'dusk',
 
-  function qualAbbrev(q) {
-    q = normalizeQuality(q);
-    return (q === 'veteran') ? 'V' : (q === 'green') ? 'G' : 'R';
-  }
+    selectedKey: null,
 
-  // odd-r offset <-> axial
-  function offsetToAxial(q, r) {
-    const aq = q - ((r - (r & 1)) / 2);
-    const ar = r;
-    return { aq, ar };
-  }
-  function axialToOffset(aq, ar) {
-    const q = aq + ((ar - (ar & 1)) / 2);
-    const r = ar;
-    return { q, r };
-  }
+    // Current activation context (only while a unit is selected in Play)
+    act: null, // { unitId, committed, moved, attacked, inCommandStart }
 
-  // Cube distance via axial conversion
-  function hexDistanceKeys(k1, k2) {
-    const a = parseKey(k1);
-    const b = parseKey(k2);
+    victoryMode: 'clear',
+    initialUP: { blue: 0, red: 0 },
+    capturedUP: { blue: 0, red: 0 },
 
-    const ax = a.q - ((a.r - (a.r & 1)) / 2);
-    const az = a.r;
-    const ay = -ax - az;
+    gameOver: false,
+    winner: null,
 
-    const bx = b.q - ((b.r - (b.r & 1)) / 2);
-    const bz = b.r;
-    const by = -bx - bz;
+    // Minimal "event trace" (future UI can display this without changing rules)
+    events: [],
 
-    const dx = Math.abs(ax - bx);
-    const dy = Math.abs(ay - by);
-    const dz = Math.abs(az - bz);
-    return (dx + dy + dz) / 2;
-  }
+    last: 'Booting…',
+  };
 
-  function activeSetFromRows(rows) {
-    const s = new Set();
+  // --- Board model
+  function key(q, r) { return `${q},${r}`; }
+
+  function buildBoardFromRows(rows) {
+    const active = [];
+    const activeSet = new Set();
+    let minQ = Infinity, maxQ = -Infinity, minR = Infinity, maxR = -Infinity;
+
     for (let r = 0; r < rows.length; r++) {
       const row = rows[r];
       for (let q = row.qStart; q < row.qStart + row.len; q++) {
-        if (withinCanvas(q, r)) s.add(keyOf(q, r));
+        const k = key(q, r);
+        active.push({ q, r, k, terrain: 'clear', cx: 0, cy: 0, neigh: [] });
+        activeSet.add(k);
+        minQ = Math.min(minQ, q);
+        maxQ = Math.max(maxQ, q);
+        minR = Math.min(minR, r);
+        maxR = Math.max(maxR, r);
       }
     }
-    return s;
+
+    const byKey = new Map(active.map(h => [h.k, h]));
+
+    // Precompute ACTIVE neighbors (movement & adjacency checks)
+    for (const h of active) {
+      const deltas = (h.r & 1) ? NEIGH_ODD : NEIGH_EVEN;
+      h.neigh = [];
+      for (const [dq, dr] of deltas) {
+        const nk = key(h.q + dq, h.r + dr);
+        if (activeSet.has(nk)) h.neigh.push(nk);
+      }
+    }
+
+    return { active, activeSet, byKey, minQ, maxQ, minR, maxR };
   }
 
-  function buildCanvasKeys() {
-    const keys = [];
-    for (let r = CANVAS.rMin; r <= CANVAS.rMax; r++) for (let q = CANVAS.qMin; q <= CANVAS.qMax; q++) keys.push(keyOf(q, r));
-    return keys;
-  }
+  const board = buildBoardFromRows(DEFAULT_ROWS);
 
-  const CANVAS_KEYS = buildCanvasKeys();
-  const DEFAULT_ACTIVE = activeSetFromRows(DEFAULT_ROWS);
+  // Units live in a Map keyed by hex key.
+  const unitsByHex = new Map();
+  let nextUnitId = 1;
 
-  // State
-  const state = {
-    milestone: 'M9',
-    feature: 'QUALITY_TAGS',
-    mode: 'play',
-    tool: 'shape',
-    brush: 'clear',
-
-    active: new Set(DEFAULT_ACTIVE),
-    terrain: new Map(), // key -> terrainId (store only non-clear)
-
-    units: new Map(),   // key -> unit {id,type,side,q,r,hp}
-    nextUnitId: 1,
-
-    unitSide: 'blue',
-    unitType: 'inf',
-    unitQuality: 'regular',
-
-    turn: {
-      side: 'blue',
-      turnNumber: 1,
-      activationLimit: ACTIVATION_LIMIT,
-      activationsUsed: 0,
-      movedUnitIds: new Set(), // activated ids
+  // --- Scenarios (tiny demos)
+  // We keep the existing demos as placeholders; we can retune them into
+  // "Even Lines / Encirclement / Corridor" once RB01 feels solid.
+  const SCENARIOS = {
+    'Empty (Island)': {
+      terrain: [],
+      units: [],
     },
+    'Demo A — Line Clash': {
+      terrain: [],
+      units: [
+        // Blue
+        { q: 2, r: 5, side: 'blue', type: 'gen', quality: 'green' },
+        { q: 3, r: 4, side: 'blue', type: 'inf', quality: 'green' },
+        { q: 3, r: 6, side: 'blue', type: 'inf', quality: 'green' },
+        { q: 4, r: 5, side: 'blue', type: 'cav', quality: 'regular' },
+        { q: 2, r: 4, side: 'blue', type: 'arc', quality: 'green' },
+        { q: 2, r: 6, side: 'blue', type: 'skr', quality: 'green' },
 
-    score: {
-      blue: 0,
-      red: 0,
-      target: DEFAULT_STANDARD_TARGET,
-      gameOver: false,
-      winner: null, // 'blue' | 'red'
+        // Red
+        { q: 13, r: 5, side: 'red', type: 'gen', quality: 'green' },
+        { q: 12, r: 4, side: 'red', type: 'inf', quality: 'green' },
+        { q: 12, r: 6, side: 'red', type: 'inf', quality: 'green' },
+        { q: 11, r: 5, side: 'red', type: 'cav', quality: 'regular' },
+        { q: 13, r: 4, side: 'red', type: 'arc', quality: 'green' },
+        { q: 13, r: 6, side: 'red', type: 'skr', quality: 'green' },
+      ],
     },
+    'Demo B — Center Push': {
+      terrain: [],
+      units: [
+        { q: 4, r: 4, side: 'blue', type: 'gen', quality: 'green' },
+        { q: 4, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 5, r: 6, side: 'blue', type: 'cav', quality: 'green' },
+        { q: 3, r: 6, side: 'blue', type: 'arc', quality: 'green' },
 
-    lastAction: '—',
+        { q: 11, r: 6, side: 'red', type: 'gen', quality: 'green' },
+        { q: 10, r: 5, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 9, r: 4, side: 'red', type: 'cav', quality: 'green' },
+        { q: 12, r: 4, side: 'red', type: 'arc', quality: 'green' },
+      ],
+    },
+    'Demo C — Skirmisher Screen': {
+      terrain: [],
+      units: [
+        { q: 2, r: 5, side: 'blue', type: 'gen', quality: 'green' },
+        { q: 3, r: 5, side: 'blue', type: 'inf', quality: 'green' },
+        { q: 4, r: 5, side: 'blue', type: 'cav', quality: 'green' },
+        { q: 3, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
+        { q: 3, r: 6, side: 'blue', type: 'skr', quality: 'regular' },
+        { q: 1, r: 5, side: 'blue', type: 'arc', quality: 'green' },
 
-    selectedKey: null,
-    selectedEl: null,
-    selectedUnitKey: null,
-
-    actionFromKey: null,
-    moveTargets: new Map(),   // key -> cost
-    attackTargets: new Set(), // keys with enemy units
-
-    log: [],
+        { q: 13, r: 5, side: 'red', type: 'gen', quality: 'green' },
+        { q: 12, r: 5, side: 'red', type: 'inf', quality: 'green' },
+        { q: 11, r: 5, side: 'red', type: 'cav', quality: 'green' },
+        { q: 12, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+        { q: 12, r: 6, side: 'red', type: 'skr', quality: 'regular' },
+        { q: 14, r: 5, side: 'red', type: 'arc', quality: 'green' },
+      ],
+    },
   };
 
-  function sideName(side) { return side === 'red' ? 'Red' : 'Blue'; }
-  function currentSideName() { return sideName(state.turn.side); }
-
-  function setLastAction(msg) {
-    state.lastAction = msg || '—';
-    if (elLastAction) elLastAction.textContent = state.lastAction;
-    if (elHudLastAction) elHudLastAction.textContent = state.lastAction;
+  // --- Geometry helpers
+  function toAxial(q, r) {
+    // Convert odd-r offset (q=col, r=row) to axial (x,z) where z=r.
+    const x = q - ((r - (r & 1)) / 2);
+    const z = r;
+    return { x, z };
   }
 
-  // Logging
-  function addLog(msg) {
-    const t = new Date();
-    const hh = String(t.getHours()).padStart(2, '0');
-    const mm = String(t.getMinutes()).padStart(2, '0');
-    const ss = String(t.getSeconds()).padStart(2, '0');
-    state.log.unshift(hh + ':' + mm + ':' + ss + ' — ' + msg);
-    if (state.log.length > 80) state.log.pop();
-    renderLog();
+  function axialDistance(aq, ar, bq, br) {
+    const a = toAxial(aq, ar);
+    const b = toAxial(bq, br);
+    const dx = a.x - b.x;
+    const dz = a.z - b.z;
+    const dy = (-a.x - a.z) - (-b.x - b.z);
+    return Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz));
   }
 
-  function renderLog() {
-    if (!elLog) return;
-    elLog.innerHTML = '';
-    for (const line of state.log) {
-      const div = document.createElement('div');
-      div.className = 'logEntry';
-      div.textContent = line;
-      elLog.appendChild(div);
+  // --- Canvas layout
+  let R = 28; // will be recalculated
+  let HEX_W = 0;
+  let HEX_H = 0;
+  let STEP_Y = 0;
+  let ORIGIN_X = 0;
+  let ORIGIN_Y = 0;
+
+  function resize() {
+    // Canvas fills left pane.
+    const wrap = document.getElementById('canvasWrap');
+    const rect = wrap.getBoundingClientRect();
+    elCanvas.width = Math.floor(rect.width * devicePixelRatio);
+    elCanvas.height = Math.floor(rect.height * devicePixelRatio);
+    elCanvas.style.width = `${Math.floor(rect.width)}px`;
+    elCanvas.style.height = `${Math.floor(rect.height)}px`;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+    // Fit board.
+    const cols = (board.maxQ - board.minQ + 1);
+    const rows = (board.maxR - board.minR + 1);
+    const availW = rect.width;
+    const availH = rect.height;
+
+    // For pointy-top hexes with odd-r offset:
+    // width ≈ sqrt(3)*R*(cols + 0.5)
+    // height ≈ R*((rows-1)*1.5 + 2)
+    const rByW = availW / (Math.sqrt(3) * (cols + 0.5));
+    const rByH = availH / (((rows - 1) * 1.5) + 2);
+    R = Math.max(18, Math.min(42, Math.floor(Math.min(rByW, rByH))));
+
+    HEX_W = Math.sqrt(3) * R;
+    HEX_H = 2 * R;
+    STEP_Y = 1.5 * R;
+
+    const boardW = HEX_W * (cols + 0.5);
+    const boardH = R * (((rows - 1) * 1.5) + 2);
+
+    ORIGIN_X = (availW - boardW) / 2 + HEX_W / 2;
+    ORIGIN_Y = (availH - boardH) / 2 + R;
+
+    for (const h of board.active) {
+      const x = ORIGIN_X + (h.q - board.minQ) * HEX_W + ((h.r & 1) ? (HEX_W / 2) : 0);
+      const y = ORIGIN_Y + (h.r - board.minR) * STEP_Y;
+      h.cx = x;
+      h.cy = y;
     }
+
+    draw();
   }
 
-  // Terrain
-  function terrainAtKey(k) { return state.terrain.get(k) || 'clear'; }
-  function paintedCountActive() {
-    let n = 0;
-    for (const [k, t] of state.terrain.entries()) if (t !== 'clear' && state.active.has(k)) n++;
-    return n;
-  }
-
-  // Units
-  function unitAtKey(k) { return state.units.get(k) || null; }
-  function unitsCountActive() {
-    let n = 0;
-    for (const k of state.units.keys()) if (state.active.has(k)) n++;
-    return n;
-  }
-  function defaultHpFor(type) { return HP_BY_TYPE[type] ?? 2; }
-
-  function computeForces() {
-    const out = {
-      blue: { units: 0, hp: 0 },
-      red:  { units: 0, hp: 0 },
-    };
-    for (const [k, u0] of state.units.entries()) {
-      if (!state.active.has(k) || !u0) continue;
-      const u = u0;
-      const hp = Number.isFinite(u.hp) ? u.hp : defaultHpFor(u.type);
-      if (u.side === 'red') { out.red.units++; out.red.hp += hp; }
-      else { out.blue.units++; out.blue.hp += hp; }
+  function hexPath(cx, cy) {
+    const p = new Path2D();
+    for (let i = 0; i < 6; i++) {
+      const ang = (Math.PI / 180) * (60 * i - 30); // pointy top
+      const x = cx + R * Math.cos(ang);
+      const y = cy + R * Math.sin(ang);
+      if (i === 0) p.moveTo(x, y);
+      else p.lineTo(x, y);
     }
-    return out;
+    p.closePath();
+    return p;
   }
 
-  function fmtCell(k) {
-    const p = parseKey(k);
-    const a = state.active.has(k) ? 'active' : 'inactive';
-    const t = terrainLabel(terrainAtKey(k));
-    return 'q=' + p.q + ', r=' + p.r + ' (' + a + ', ' + t + ')';
-  }
-  function fmtUnit(u) {
-    if (!u) return 'none';
-    return sideName(u.side) + ' ' + unitAbbrev(u.type) + ' #' + u.id + ' [' + qualAbbrev(u.quality) + '] (HP ' + u.hp + ') @ q=' + u.q + ', r=' + u.r;
-  }
-
-  function setHoverKey(k) {
-    if (!elHover) return;
-    elHover.textContent = k ? fmtCell(k) : '—';
-  }
-
-  function clearSelection() {
-    if (state.selectedEl) state.selectedEl.classList.remove('selected');
-    state.selectedEl = null;
-    state.selectedKey = null;
-    if (elSelected) elSelected.textContent = 'none';
-  }
-
-  function selectCell(k, el) {
-    if (state.selectedEl) state.selectedEl.classList.remove('selected');
-    state.selectedEl = el;
-    state.selectedKey = k;
-    if (el) el.classList.add('selected');
-    if (elSelected) elSelected.textContent = fmtCell(k);
-  }
-
-  function clearUnitSelection() {
-    state.selectedUnitKey = null;
-    if (elSelectedUnit) elSelectedUnit.textContent = 'none';
-  }
-
-  function selectUnitAtKey(k) {
-    const u = unitAtKey(k);
-    if (!u) { clearUnitSelection(); return; }
-    state.selectedUnitKey = k;
-    if (elSelectedUnit) elSelectedUnit.textContent = fmtUnit(u);
-  }
-
-  function applyModeClasses() {
-    document.body.classList.toggle('mode-play', state.mode === 'play');
-    document.body.classList.toggle('mode-edit', state.mode === 'edit');
-  }
-
-  // ---------- SVG Board ----------
-  const boardHost = document.getElementById('board');
-  if (!boardHost) return;
-
-  const cfg = { size: 34, margin: 14 };
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('class', 'boardSvg');
-  svg.setAttribute('xmlns', svgNS);
-
-  boardHost.innerHTML = '';
-  boardHost.appendChild(svg);
-
-  const gHex = document.createElementNS(svgNS, 'g');
-  const gUnits = document.createElementNS(svgNS, 'g');
-  svg.appendChild(gHex);
-  svg.appendChild(gUnits);
-
-  const SQRT3 = Math.sqrt(3);
-
-  function gridToPixel(q, r, size) {
-    const x = size * (SQRT3 * (q + 0.5 * (r & 1)));
-    const y = size * (3 / 2 * r);
-    return { x, y };
-  }
-
-  function hexCorner(cx, cy, size, i) {
-    const angle = (Math.PI / 180) * (60 * i - 30);
-    return { x: cx + size * Math.cos(angle), y: cy + size * Math.sin(angle) };
-  }
-
-  function hexPoints(cx, cy, size) {
+  function hexCorners(cx, cy) {
+    // Corner order matches hexPath (i=0..5, angle = 60*i - 30)
     const pts = [];
     for (let i = 0; i < 6; i++) {
-      const c = hexCorner(cx, cy, size, i);
-      pts.push(c.x + ',' + c.y);
+      const ang = (Math.PI / 180) * (60 * i - 30);
+      pts.push({
+        x: cx + R * Math.cos(ang),
+        y: cy + R * Math.sin(ang),
+      });
     }
-    return pts.join(' ');
+    return pts;
   }
 
-  const polyByKey = new Map();
-  const boundsByKey = new Map();
-  const centerByKey = new Map();
-
-  function computeBoundsFor(q, r) {
-    const p = gridToPixel(q, r, cfg.size);
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (let i = 0; i < 6; i++) {
-      const c = hexCorner(p.x, p.y, cfg.size, i);
-      if (c.x < minX) minX = c.x;
-      if (c.y < minY) minY = c.y;
-      if (c.x > maxX) maxX = c.x;
-      if (c.y > maxY) maxY = c.y;
+  function edgeCornerIdx(dir) {
+    // Neighbor order is [E, NE, NW, W, SW, SE]
+    switch (dir) {
+      case 0: return [0, 1]; // E
+      case 1: return [5, 0]; // NE
+      case 2: return [4, 5]; // NW
+      case 3: return [3, 4]; // W
+      case 4: return [2, 3]; // SW
+      case 5: return [1, 2]; // SE
+      default: return [0, 1];
     }
-    return { p, minX, minY, maxX, maxY };
   }
 
-  function setPolyActiveClass(poly, isActive) {
-    poly.classList.toggle('active', isActive);
-    poly.classList.toggle('inactive', !isActive);
-  }
+  function commandOutlinePath(genKey) {
+    const g = board.byKey.get(genKey);
+    if (!g) return null;
 
-  function applyTerrainClass(poly, terrainId) {
-    for (const c of TERRAIN_CLASSES) poly.classList.remove(c);
-    const id = TERRAIN_BY_ID.has(terrainId) ? terrainId : 'clear';
-    poly.classList.add('terrain-' + id);
-  }
-
-  function updateViewBox() {
-    let keys = (state.mode === 'edit') ? CANVAS_KEYS : Array.from(state.active);
-    if (!keys.length) keys = CANVAS_KEYS;
-
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const k of keys) {
-      const b = boundsByKey.get(k);
-      if (!b) continue;
-      if (b.minX < minX) minX = b.minX;
-      if (b.minY < minY) minY = b.minY;
-      if (b.maxX > maxX) maxX = b.maxX;
-      if (b.maxY > maxY) maxY = b.maxY;
+    // Command area = all active hexes within COMMAND_RADIUS.
+    const inside = new Set();
+    for (const h of board.active) {
+      if (axialDistance(h.q, h.r, g.q, g.r) <= COMMAND_RADIUS) inside.add(h.k);
     }
 
-    const vbX = minX - cfg.margin;
-    const vbY = minY - cfg.margin;
-    const vbW = (maxX - minX) + cfg.margin * 2;
-    const vbH = (maxY - minY) + cfg.margin * 2;
-    svg.setAttribute('viewBox', vbX + ' ' + vbY + ' ' + vbW + ' ' + vbH);
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  }
+    const path = new Path2D();
 
-  function clearSvgChildren(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+    for (const h of board.active) {
+      if (!inside.has(h.k)) continue;
 
-  function unitGlyphPoints(cx, cy, size) {
-    const pts = [];
-    for (let i = 0; i < 6; i++) {
-      const angle = (Math.PI / 180) * (60 * i);
-      const x = cx + size * Math.cos(angle);
-      const y = cy + size * Math.sin(angle);
-      pts.push(x + ',' + y);
+      const corners = hexCorners(h.cx, h.cy);
+      const deltas = (h.r & 1) ? NEIGH_ODD : NEIGH_EVEN;
+
+      for (let dir = 0; dir < 6; dir++) {
+        const [dq, dr] = deltas[dir];
+        const nk = key(h.q + dq, h.r + dr);
+
+        // Only draw boundary edges: inside → outside.
+        if (inside.has(nk)) continue;
+
+        const [a, b] = edgeCornerIdx(dir);
+        path.moveTo(corners[a].x, corners[a].y);
+        path.lineTo(corners[b].x, corners[b].y);
+      }
     }
-    return pts.join(' ');
+
+    return path;
   }
 
-  function rebuildUnitsLayer() {
-    clearSvgChildren(gUnits);
+  function pickHex(px, py) {
+    let best = null;
+    let bestD2 = Infinity;
+    for (const h of board.active) {
+      const dx = px - h.cx;
+      const dy = py - h.cy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        best = h;
+      }
+    }
+    if (!best) return null;
+    if (bestD2 > (R * R * 0.95)) return null;
+    return best;
+  }
 
-    for (const [k, u0] of state.units.entries()) {
-      if (!state.active.has(k)) continue;
+  // --- Rendering
+  const TERRAIN_PALETTES = {
+    // "bright" was the original look (kept as a fallback / toggle).
+    bright: {
+      clear: '#f4f2ea',
+      hills: '#f0efe6',
+      woods: '#ecefe8',
+      rough: '#f2ede9',
+      water: '#e8eef2',
+      grid: '#111',
+    },
+    // "dusk" is calmer + less glaring in dark UI chrome, but terrain reads more distinctly.
+    dusk: {
+      clear: '#2f2d28',
+      hills: '#3a352c',
+      woods: '#273424',
+      rough: '#32302c',
+      water: '#273244',
+      grid: 'rgba(255,255,255,0.14)',
+    },
+  };
 
-      const c = centerByKey.get(k);
-      if (!c) continue;
+  function terrainFill(t) {
+    const theme = state.terrainTheme || 'bright';
+    const pal = TERRAIN_PALETTES[theme] || TERRAIN_PALETTES.bright;
+    return pal[t] || pal.clear;
+  }
 
-      const def = UNIT_BY_ID.get(u0.type);
-      if (!def) continue;
+  function gridStroke() {
+    const theme = state.terrainTheme || 'bright';
+    const pal = TERRAIN_PALETTES[theme] || TERRAIN_PALETTES.bright;
+    return pal.grid || '#111';
+  }
 
-      const u = u0;
-      if (!u.quality) u.quality = 'regular';
-      if (!Number.isFinite(u.hp)) u.hp = defaultHpFor(u.type);
+  function unitColors(side) {
+    return side === 'blue'
+      ? { fill: '#0b3d91', stroke: '#8fb4ff', text: '#eaf2ff' }
+      : { fill: '#7a1111', stroke: '#ff9a9a', text: '#ffecec' };
+  }
 
-      const exhausted = state.turn.movedUnitIds.has(u.id) && u.side === state.turn.side && state.mode === 'play';
+  function qualityStroke(q) {
+    switch (q) {
+      case 'veteran': return '#d7b84b';
+      case 'regular': return '#d0d0d0';
+      default: return '#57d26a';
+    }
+  }
 
-      const group = document.createElementNS(svgNS, 'g');
-      group.setAttribute('class',
-        'unit-token side-' + u.side
-        + (state.selectedUnitKey === k ? ' selectedUnit' : '')
-        + (exhausted ? ' exhausted' : '')
-      );
-      group.setAttribute('transform', 'translate(' + c.x + ',' + c.y + ')');
+  function draw() {
+    ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
-      if (def.glyph === 'rect') {
-        const r = document.createElementNS(svgNS, 'rect');
-        r.setAttribute('class', 'u-bg');
-        r.setAttribute('x', '-12');
-        r.setAttribute('y', '-8');
-        r.setAttribute('width', '24');
-        r.setAttribute('height', '16');
-        r.setAttribute('rx', '3');
-        group.appendChild(r);
-      } else if (def.glyph === 'diamond') {
-        const p = document.createElementNS(svgNS, 'polygon');
-        p.setAttribute('class', 'u-bg');
-        p.setAttribute('points', '0,-10 12,0 0,10 -12,0');
-        group.appendChild(p);
-      } else if (def.glyph === 'circle') {
-        const c0 = document.createElementNS(svgNS, 'circle');
-        c0.setAttribute('class', 'u-bg');
-        c0.setAttribute('cx', '0');
-        c0.setAttribute('cy', '0');
-        c0.setAttribute('r', '10');
-        group.appendChild(c0);
-      } else {
-        const p = document.createElementNS(svgNS, 'polygon');
-        p.setAttribute('class', 'u-bg');
-        p.setAttribute('points', unitGlyphPoints(0, 0, 10));
-        group.appendChild(p);
+    // Background
+    ctx.fillStyle = '#0b0b0d';
+    ctx.fillRect(0, 0, elCanvas.width, elCanvas.height);
+
+    // Hexes
+    for (const h of board.active) {
+      const p = hexPath(h.cx, h.cy);
+      ctx.fillStyle = terrainFill(h.terrain);
+      ctx.fill(p);
+
+      // Outline
+      ctx.strokeStyle = gridStroke();
+      ctx.lineWidth = 2;
+      ctx.stroke(p);
+
+      // Overlays
+      const k = h.k;
+      if (state.mode === 'play' && state.selectedKey) {
+        if (state._moveTargets?.has(k)) {
+          ctx.strokeStyle = '#4aa3ff';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([6, 6]);
+          ctx.stroke(p);
+          ctx.setLineDash([]);
+        }
+        if (state._attackTargets?.has(k)) {
+          ctx.strokeStyle = '#ff5050';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([6, 6]);
+          ctx.stroke(p);
+          ctx.setLineDash([]);
+        }
       }
 
-      const t = document.createElementNS(svgNS, 'text');
-      t.setAttribute('class', 'u-text');
-      t.setAttribute('x', '0');
-      t.setAttribute('y', '0');
-      t.textContent = def.abbrev;
-      group.appendChild(t);
+      // Hover
+      if (state._hoverKey === k) {
+        ctx.strokeStyle = '#ffffff55';
+        ctx.lineWidth = 3;
+        ctx.stroke(p);
+      }
+    }
 
-      const hp = document.createElementNS(svgNS, 'text');
-      hp.setAttribute('class', 'u-hp');
-      hp.setAttribute('x', '11');
-      hp.setAttribute('y', '-6');
-      hp.textContent = String(u.hp);
-      group.appendChild(hp);
+    // Command radius outlines (truthy, but calm): dotted orange perimeter.
+    if (state.mode === 'play' && state.showCommand) {
+      for (const [hk, u] of unitsByHex) {
+        if (u.type !== 'gen') continue;
 
-      const ql = document.createElementNS(svgNS, 'text');
-      ql.setAttribute('class', 'u-q');
-      ql.setAttribute('x', '-11');
-      ql.setAttribute('y', '-6');
-      ql.textContent = qualAbbrev(u.quality);
-      group.appendChild(ql);
+        const p = commandOutlinePath(hk);
+        if (!p) continue;
 
-      gUnits.appendChild(group);
+        const isSel = (state.selectedKey === hk);
+        const isTurnSide = (u.side === state.side);
+        const alpha = isSel ? 0.95 : (isTurnSide ? 0.80 : 0.30);
+        // Thicker + slightly darker so the command perimeter reads clearly.
+        const lw = (isSel ? 3 : (isTurnSide ? 2.25 : 1.75)) * 2;
+
+        ctx.save();
+        ctx.strokeStyle = `rgba(210, 118, 0, ${alpha})`;
+        ctx.lineWidth = lw;
+        ctx.setLineDash([4, 6]);
+        ctx.lineCap = 'round';
+        ctx.stroke(p);
+        ctx.restore();
+      }
+    }
+
+    // Units
+    for (const [hk, u] of unitsByHex) {
+      const h = board.byKey.get(hk);
+      if (!h) continue;
+
+      const isPlay = (state.mode === 'play') && !state.gameOver;
+      const isTurnSide = isPlay && (u.side === state.side);
+      const isSpent = isTurnSide && state.actedUnitIds.has(u.id);
+      const isCmdLocked = isTurnSide && !isSpent && (state.actsUsed < ACT_LIMIT) &&
+        (!unitIgnoresCommand(u)) && (u.quality === 'green') && (!inCommandAt(hk, u.side));
+
+      // Visual friction: spent units and unorderable greens read as "not available".
+      // - spent: dim
+      // - green out-of-command: dim + dashed orange ring
+      const alpha = isSpent ? 0.38 : (isCmdLocked ? 0.48 : 1.0);
+
+      const c = unitColors(u.side);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Token disc
+      ctx.beginPath();
+      ctx.arc(h.cx, h.cy, R * 0.55, 0, Math.PI * 2);
+      ctx.fillStyle = c.fill;
+      ctx.fill();
+
+      // Token ring (quality)
+      ctx.lineWidth = Math.max(2, Math.floor(R * 0.12));
+      ctx.strokeStyle = qualityStroke(u.quality);
+      ctx.stroke();
+
+      // Selection ring
+      if (state.selectedKey === hk) {
+        ctx.beginPath();
+        ctx.arc(h.cx, h.cy, R * 0.70, 0, Math.PI * 2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+      }
+
+      // Text (BIG)
+      const def = UNIT_BY_ID.get(u.type);
+      const fontPx = Math.floor(R * 0.55);
+      ctx.font = `700 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = c.text;
+      ctx.fillText(def.symbol, h.cx, h.cy + 1);
+
+      // HP pips (tiny)
+      const pipR = Math.max(2, Math.floor(R * 0.07));
+      const startX = h.cx - (pipR * 2) * (def.hp - 1) * 0.5;
+      const y = h.cy + R * 0.78;
+      for (let i = 0; i < def.hp; i++) {
+        ctx.beginPath();
+        ctx.arc(startX + i * (pipR * 2), y, pipR, 0, Math.PI * 2);
+        ctx.fillStyle = (i < u.hp) ? '#fff' : '#ffffff33';
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Extra indicator: green out-of-command can't be activated (dashed orange ring).
+      if (isCmdLocked) {
+        ctx.beginPath();
+        ctx.arc(h.cx, h.cy, R * 0.64, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255, 157, 0, 0.9)';
+        ctx.setLineDash([3, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
   }
 
-  // ---------- Targets ----------
-  function clearMoveTargets() {
-    for (const k of state.moveTargets.keys()) {
-      const poly = polyByKey.get(k);
-      if (poly) poly.classList.remove('moveTarget');
+  // --- UI helpers
+  function setActive(btn, isActive) {
+    btn.classList.toggle('active', isActive);
+  }
+
+  function log(msg) {
+    state.last = msg;
+    elHudLast.textContent = msg;
+
+    state.events.push({ t: Date.now(), msg });
+    if (state.events.length > 50) state.events.shift();
+  }
+
+  function totals(side) {
+    let up = 0;
+    let hp = 0;
+    let gens = 0;
+    let units = 0;
+
+    for (const u of unitsByHex.values()) {
+      if (u.side !== side) continue;
+      const def = UNIT_BY_ID.get(u.type);
+      up += def.up;
+      hp += u.hp;
+      units += 1;
+      if (u.type === 'gen') gens += 1;
     }
-    state.moveTargets = new Map();
+
+    return { up, hp, gens, units };
   }
 
-  function clearAttackTargets() {
-    for (const k of state.attackTargets.values()) {
-      const poly = polyByKey.get(k);
-      if (poly) poly.classList.remove('attackTarget');
+  function updateHud() {
+    const blue = totals('blue');
+    const red = totals('red');
+
+    elHudTitle.textContent = `${GAME_NAME}  BUILD ${BUILD_ID}`;
+
+    const mode = state.mode.toUpperCase();
+    const meta = [
+      `MODE=${mode}`,
+      `TERRAIN=${(state.terrainTheme || 'bright').toUpperCase()}`,
+      `TURN=${state.side.toUpperCase()}#${state.turn}`,
+      `ACT=${state.actsUsed}/${ACT_LIMIT}`,
+      `ACTIVE=${board.active.length}`,
+      `UNITS=${unitsByHex.size}`,
+      `FORCES: B ${blue.up}u/${blue.hp}hp • R ${red.up}u/${red.hp}hp`,
+      `CAP: B ${state.capturedUP.blue}u • R ${state.capturedUP.red}u`,
+      `VICTORY=${state.victoryMode.toUpperCase()}`,
+    ];
+    elHudMeta.textContent = meta.join('  ·  ');
+
+    elModeBtn.textContent = state.mode === 'edit' ? 'To Play' : 'To Edit';
+    setActive(elToolUnits, state.tool === 'units');
+    setActive(elToolTerrain, state.tool === 'terrain');
+
+    setActive(elSideBlue, state.editSide === 'blue');
+    setActive(elSideRed, state.editSide === 'red');
+
+    // Type buttons
+    for (const b of elTypeBtns.querySelectorAll('button[data-type]')) {
+      setActive(b, state.editType === b.dataset.type);
     }
-    state.attackTargets = new Set();
-  }
+    setActive(elEraseBtn, state.editErase);
 
-  function clearActionTargets() {
-    state.actionFromKey = null;
-    clearMoveTargets();
-    clearAttackTargets();
-  }
+    // Quality buttons
+    setActive(elQualityGreen, state.editQuality === 'green');
+    setActive(elQualityRegular, state.editQuality === 'regular');
+    setActive(elQualityVeteran, state.editQuality === 'veteran');
 
-  function setMoveTargets(targetsMap) {
-    clearMoveTargets();
-    state.moveTargets = targetsMap;
-    for (const k of targetsMap.keys()) {
-      const poly = polyByKey.get(k);
-      if (poly) poly.classList.add('moveTarget');
+    // Terrain buttons
+    for (const b of elTerrainBtns.querySelectorAll('button[data-terrain]')) {
+      setActive(b, state.editTerrain === b.dataset.terrain);
     }
+
+    elEndTurnBtn.disabled = (state.mode !== 'play') || state.gameOver;
+
+    draw();
   }
 
-  function setAttackTargets(targetSet) {
-    clearAttackTargets();
-    state.attackTargets = targetSet;
-    for (const k of targetSet.values()) {
-      const poly = polyByKey.get(k);
-      if (poly) poly.classList.add('attackTarget');
-    }
+  // --- Rules helpers
+  function isOccupied(hk) {
+    return unitsByHex.has(hk);
   }
-
-  // ---------- Neighbors / ZoC ----------
-  function neighborKeysOf(k) {
-    const p = parseKey(k);
-    const dirs = (p.r & 1) ? NEIGH_ODD : NEIGH_EVEN;
-    const out = [];
-    for (const d of dirs) out.push(keyOf(p.q + d[0], p.r + d[1]));
-    return out;
-  }
-
-  function isEngagedKey(unitKey, unitSide) {
-    for (const nk of neighborKeysOf(unitKey)) {
-      const du = unitAtKey(nk);
-      if (du && du.side !== unitSide) return true;
-    }
-    return false;
-  }
-
-  function movePointsFor(unitType) { return MOVE_POINTS[unitType] ?? 1; }
 
   function terrainMoveCost(unitType, terrainId) {
     if (terrainId === 'water') return Infinity;
     if (terrainId === 'clear') return 1;
-    if (terrainId === 'hills') return 2;
-    if (terrainId === 'woods') return 2;
-    if (terrainId === 'rough') return (unitType === 'skr') ? 1 : 2;
-    return 1;
+
+    // hills/woods/rough
+    return (unitType === 'cav') ? 3 : 2;
   }
 
-  function computeMoveTargets(fromKey, unit) {
-    let mp = movePointsFor(unit.type);
+  function isEngaged(hexKey, side) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return false;
 
-    const engaged = isEngagedKey(fromKey, unit.side);
-    if (engaged && unit.type !== 'skr') return new Map();
-    if (engaged && unit.type === 'skr') mp = Math.max(1, mp - 1);
-
-    const dist = new Map();
-    dist.set(fromKey, 0);
-
-    const frontier = [[0, fromKey]];
-    while (frontier.length) {
-      frontier.sort((a, b) => a[0] - b[0]);
-      const [d, k] = frontier.shift();
-
-      const best = dist.get(k);
-      if (best === undefined || d !== best) continue;
-
-      for (const nk of neighborKeysOf(k)) {
-        if (!state.active.has(nk)) continue;
-        if (state.units.has(nk)) continue;
-
-        const terr = terrainAtKey(nk);
-        const c = terrainMoveCost(unit.type, terr);
-        if (!isFinite(c)) continue;
-
-        const nd = d + c;
-        if (nd > mp) continue;
-
-        const prev = dist.get(nk);
-        if (prev === undefined || nd < prev) {
-          dist.set(nk, nd);
-          frontier.push([nd, nk]);
-        }
-      }
+    for (const nk of h.neigh) {
+      const u = unitsByHex.get(nk);
+      if (u && u.side !== side) return true;
     }
 
-    dist.delete(fromKey);
-    return dist;
+    return false;
   }
 
-  // ---------- Combat ----------
-  function meleeDiceCount(attacker, defenderKey) {
-    let n = MELEE_DICE[attacker.type] ?? 2;
-    const terr = terrainAtKey(defenderKey);
-    if (terr === 'woods' || terr === 'rough') n -= 1;
-    if (terr === 'hills' && attacker.type === 'cav') n -= 1;
-    return clampMin1(n);
-  }
-
-  function rollDice(n) {
+  function friendlyGeneralKeys(side) {
     const out = [];
-    for (let i = 0; i < n; i++) out.push(1 + Math.floor(Math.random() * 6));
+    for (const [hk, u] of unitsByHex) {
+      if (u.side === side && u.type === 'gen') out.push(hk);
+    }
     return out;
   }
 
-  function hasFriendlySupport(defKey, defSide, attackerKey) {
-    for (const nk of neighborKeysOf(defKey)) {
-      if (nk === attackerKey) continue;
-      const u = unitAtKey(nk);
-      if (u && u.side === defSide) return true;
+  function inCommandAt(hexKey, side) {
+    const gens = friendlyGeneralKeys(side);
+    if (gens.length === 0) return false;
+
+    const h = board.byKey.get(hexKey);
+    if (!h) return false;
+
+    for (const gk of gens) {
+      const gh = board.byKey.get(gk);
+      if (!gh) continue;
+      const d = axialDistance(h.q, h.r, gh.q, gh.r);
+      if (d <= COMMAND_RADIUS) return true;
     }
     return false;
   }
 
-  function findAxialDir(attKey, defKey) {
-    const a0 = parseKey(attKey);
-    const d0 = parseKey(defKey);
-    const a = offsetToAxial(a0.q, a0.r);
-    const d = offsetToAxial(d0.q, d0.r);
-    const diff = { dq: d.aq - a.aq, dr: d.ar - a.ar };
-    for (const dir of AX_DIRS) {
-      if (dir.dq === diff.dq && dir.dr === diff.dr) return dir;
-    }
-    return null;
+  function unitIgnoresCommand(u) {
+    if (u.type === 'gen') return true;
+    if (u.type === 'cav') return true;
+    if (u.quality === 'veteran') return true;
+    return false;
   }
 
-  function tryRetreatStep(attKey, defKey, dir) {
-    const def0 = parseKey(defKey);
-    const defAx = offsetToAxial(def0.q, def0.r);
-    const nextAx = { aq: defAx.aq + dir.dq, ar: defAx.ar + dir.dr };
-    const nextOff = axialToOffset(nextAx.aq, nextAx.ar);
-    const nk = keyOf(nextOff.q, nextOff.r);
+  function unitCanActivate(u, hexKey) {
+    if (state.mode !== 'play') return false;
+    if (state.gameOver) return false;
+    if (u.side !== state.side) return false;
+    if (state.actsUsed >= ACT_LIMIT) return false;
+    if (state.actedUnitIds.has(u.id)) return false;
 
-    if (!withinCanvas(nextOff.q, nextOff.r)) return { ok: false, key: nk, reason: 'off-canvas' };
-    if (!state.active.has(nk)) return { ok: false, key: nk, reason: 'inactive' };
-    if (state.units.has(nk)) return { ok: false, key: nk, reason: 'occupied' };
-    if (terrainAtKey(nk) === 'water') return { ok: false, key: nk, reason: 'water' };
-
-    const u = unitAtKey(defKey);
-    if (!u) return { ok: false, key: nk, reason: 'missing-unit' };
-
-    state.units.delete(defKey);
-    u.q = nextOff.q; u.r = nextOff.r;
-    state.units.set(nk, u);
-    return { ok: true, key: nk, reason: '' };
-  }
-
-  function applyDamage(defKey, hits) {
-    const u = unitAtKey(defKey);
-    if (!u) return { removed: false, hp: 0 };
-    u.hp = (Number.isFinite(u.hp) ? u.hp : defaultHpFor(u.type)) - hits;
-    if (u.hp <= 0) {
-      state.units.delete(defKey);
-      return { removed: true, hp: 0, unit: u };
-    }
-    return { removed: false, hp: u.hp, unit: u };
-  }
-
-  function awardStandard(side, why) {
-    if (state.score.gameOver) return;
-    if (side !== 'blue' && side !== 'red') return;
-
-    state.score[side] += 1;
-
-    const msg = sideName(side) + ' gains 1 Standard' + (why ? (' (' + why + ')') : '');
-    addLog(msg);
-    setLastAction(msg);
-
-    if (state.score[side] >= state.score.target) {
-      state.score.gameOver = true;
-      state.score.winner = side;
-      const winMsg = 'GAME OVER: ' + sideName(side) + ' wins (' + state.score[side] + '/' + state.score.target + ')';
-      addLog(winMsg);
-      setLastAction(winMsg);
+    // Green INF/ARC/SKR out-of-command cannot be activated at all.
+    if (!unitIgnoresCommand(u) && u.quality === 'green') {
+      const cmd = inCommandAt(hexKey, u.side);
+      if (!cmd) return false;
     }
 
-    updateStatusText();
-  }
-
-  function attack(defKey) {
-    if (!state.actionFromKey) return;
-    const attKey = state.actionFromKey;
-
-    const attacker = unitAtKey(attKey);
-    const defender = unitAtKey(defKey);
-
-    if (!attacker || !defender) return;
-    if (state.score.gameOver) { addLog('Game over. Reset or load a preset to play again.'); return; }
-    if (attacker.side !== state.turn.side) { addLog('Not your unit.'); return; }
-    if (defender.side === attacker.side) return;
-
-    if (state.turn.activationsUsed >= state.turn.activationLimit) { addLog('No activations left. End Turn.'); return; }
-    if (state.turn.movedUnitIds.has(attacker.id)) { addLog('Unit already activated this turn.'); return; }
-
-    const dist = hexDistanceKeys(attKey, defKey);
-    const melee = (dist === 1);
-
-    let isRanged = false;
-    let diceN = 0;
-
-    if (melee) {
-      diceN = meleeDiceCount(attacker, defKey);
-    } else {
-      // Ranged attack
-      const engaged = isEngagedKey(attKey, attacker.side);
-      if (engaged) { addLog('Engaged: cannot make ranged attacks.'); return; }
-
-      const range = (attacker.type === 'arc') ? 3 : (attacker.type === 'skr') ? 2 : 0;
-      if (range === 0) { addLog('This unit has no ranged attack.'); return; }
-      if (dist < 2 || dist > range) { addLog('Target out of ranged range.'); return; }
-      if (attacker.type === 'skr' && dist !== 2) { addLog('Skirmishers range is 2 only.'); return; }
-
-      isRanged = true;
-
-      // Dice by type + distance
-      if (attacker.type === 'arc') diceN = (dist === 2) ? 2 : 1;
-      else diceN = 1;
-
-      // Cover reduces ranged dice
-      const terr = terrainAtKey(defKey);
-      if (terr === 'woods' || terr === 'rough') diceN = clampMin1(diceN - 1);
-    }
-
-    const dice = rollDice(diceN);
-
-    let hits = 0, retreats = 0;
-    for (const d of dice) {
-      if (d >= 5) hits++;
-      else if (d === 4) retreats++;
-    }
-
-    // Defender support cancels 1 retreat
-    if (retreats > 0 && hasFriendlySupport(defKey, defender.side, attKey)) {
-      retreats -= 1;
-      addLog('Support: defender cancels 1 retreat');
-    }
-
-    // Ranged: convert retreats into hits (suppression)
-    if (isRanged && retreats > 0) {
-      hits += retreats;
-      addLog('Ranged suppression: converting ' + retreats + ' retreat(s) to hit(s)');
-      retreats = 0;
-    }
-
-    const atkTag = sideName(attacker.side) + ' ' + unitAbbrev(attacker.type) + '#' + attacker.id;
-    const defTag = sideName(defender.side) + ' ' + unitAbbrev(defender.type) + '#' + defender.id;
-
-    const modeTag = melee ? 'MELEE' : ('RANGED d=' + dist);
-    const summary = atkTag + ' ' + modeTag + ' → ' + defTag + ' | dice=' + diceN + ' [' + dice.join(',') + '] hits=' + hits + ' ret=' + retreats;
-    addLog(summary);
-    setLastAction(summary);
-
-    let defKeyLive = defKey;
-
-    // Apply hits first
-    if (hits > 0) {
-      const res = applyDamage(defKeyLive, hits);
-      if (res.removed) {
-        addLog('Defender destroyed.');
-        awardStandard(attacker.side, 'destroyed ' + defTag);
-
-        // spend activation
-        state.turn.movedUnitIds.add(attacker.id);
-        state.turn.activationsUsed = state.turn.movedUnitIds.size;
-
-        clearActionTargets();
-        rebuildUnitsLayer();
-        updateStatusText();
-        return;
-      } else {
-        addLog('Defender HP now ' + res.hp);
-      }
-    }
-
-    // Melee retreats only (ranged already converted)
-    if (melee && retreats > 0) {
-      const dir = findAxialDir(attKey, defKeyLive);
-      if (dir) {
-        for (let i = 0; i < retreats; i++) {
-          const step = tryRetreatStep(attKey, defKeyLive, dir);
-          if (step.ok) {
-            defKeyLive = step.key;
-            addLog('Defender retreats to ' + fmtCell(defKeyLive));
-          } else {
-            addLog('Retreat blocked (' + step.reason + ') → 1 hit');
-            const res2 = applyDamage(defKeyLive, 1);
-            if (res2.removed) {
-              addLog('Defender destroyed (blocked retreat casualty).');
-              awardStandard(attacker.side, 'blocked retreat destroyed ' + defTag);
-              break;
-            } else {
-              addLog('Defender HP now ' + res2.hp);
-            }
-          }
-        }
-      } else {
-        addLog('Retreat direction error; no retreat applied.');
-      }
-    }
-
-    // Spend activation
-    state.turn.movedUnitIds.add(attacker.id);
-    state.turn.activationsUsed = state.turn.movedUnitIds.size;
-
-    clearActionTargets();
-    rebuildUnitsLayer();
-    updateStatusText();
-
-    if (state.turn.activationsUsed >= state.turn.activationLimit) addLog('No activations left. End Turn.');
-  }
-
-  // ---------- Movement / Turn ----------
-  function moveTo(destKey) {
-    if (!state.actionFromKey) return;
-    const fromKey = state.actionFromKey;
-
-    const u = unitAtKey(fromKey);
-    if (!u) { clearActionTargets(); return; }
-
-    if (state.score.gameOver) { addLog('Game over. Reset or load a preset to play again.'); return; }
-
-    if (u.side !== state.turn.side) { addLog('Not your unit.'); clearActionTargets(); return; }
-    if (state.turn.activationsUsed >= state.turn.activationLimit) { addLog('No activations left. End Turn.'); clearActionTargets(); return; }
-    if (state.turn.movedUnitIds.has(u.id)) { addLog('Unit already activated this turn.'); clearActionTargets(); return; }
-
-    const engaged = isEngagedKey(fromKey, u.side);
-    if (engaged && u.type !== 'skr') { addLog('Engaged: cannot move (melee only).'); clearActionTargets(); rebuildUnitsLayer(); updateStatusText(); return; }
-
-    const cost = state.moveTargets.get(destKey);
-    if (cost === undefined) return;
-
-    state.units.delete(fromKey);
-    const p = parseKey(destKey);
-    u.q = p.q; u.r = p.r;
-    state.units.set(destKey, u);
-
-    state.turn.movedUnitIds.add(u.id);
-    state.turn.activationsUsed = state.turn.movedUnitIds.size;
-
-    state.selectedUnitKey = destKey;
-    if (elSelectedUnit) elSelectedUnit.textContent = fmtUnit(u);
-
-    const msg = sideName(u.side) + ' moved ' + unitAbbrev(u.type) + '#' + u.id + ' to q=' + p.q + ',r=' + p.r + ' (cost ' + cost + ')';
-    addLog(msg);
-    setLastAction(msg);
-
-    clearActionTargets();
-    rebuildUnitsLayer();
-    updateStatusText();
-
-    if (state.turn.activationsUsed >= state.turn.activationLimit) addLog('No activations left. End Turn.');
-  }
-
-  function endTurn() {
-    if (state.score.gameOver) { addLog('Game over. Reset or load a preset to play again.'); return; }
-
-    clearActionTargets();
-    clearSelection();
-    clearUnitSelection();
-
-    state.turn.side = (state.turn.side === 'blue') ? 'red' : 'blue';
-    state.turn.turnNumber += 1;
-    state.turn.movedUnitIds.clear();
-    state.turn.activationsUsed = 0;
-
-    rebuildUnitsLayer();
-    updateStatusText();
-
-    const msg = 'Turn ' + state.turn.turnNumber + ': ' + currentSideName() + ' to act';
-    addLog(msg);
-    setLastAction(msg);
-  }
-
-  function prepareActionsFromUnit(unitKey) {
-    const u = unitAtKey(unitKey);
-    if (!u) return;
-
-    if (state.score.gameOver) {
-      addLog('Game over. Reset or load a preset to play again.');
-      clearActionTargets();
-      rebuildUnitsLayer();
-      updateStatusText();
-      return;
-    }
-
-    if (state.mode !== 'play') { addLog('Not in Play mode'); return; }
-    if (u.side !== state.turn.side) { addLog('Not your unit'); return; }
-    if (state.turn.activationsUsed >= state.turn.activationLimit) { addLog('No activations left (End Turn)'); return; }
-    if (state.turn.movedUnitIds.has(u.id)) { addLog('Unit already activated this turn'); return; }
-
-    state.actionFromKey = unitKey;
-
-    const moves = computeMoveTargets(unitKey, u);
-    setMoveTargets(moves);
-
-    const attacks = new Set();
-
-    // Melee adjacency targets
-    for (const nk of neighborKeysOf(unitKey)) {
-      const du = unitAtKey(nk);
-      if (du && du.side !== u.side) attacks.add(nk);
-    }
-
-    // Ranged targets (no LOS yet). Disabled while engaged.
-    if (!isEngagedKey(unitKey, u.side)) {
-      const range = (u.type === 'arc') ? 3 : (u.type === 'skr') ? 2 : 0;
-      if (range > 0) {
-        for (const [ek, eu] of state.units.entries()) {
-          if (!eu || eu.side === u.side) continue;
-          const d = hexDistanceKeys(unitKey, ek);
-          if (d < 2 || d > range) continue;
-          if (u.type === 'skr' && d !== 2) continue;
-          attacks.add(ek);
-        }
-      }
-    }
-
-    setAttackTargets(attacks);
-
-    rebuildUnitsLayer();
-    updateStatusText();
-
-    addLog('Action ready: ' + fmtUnit(u) + ' | moves=' + moves.size + ' | attacks=' + attacks.size);
-  }
-
-  // ---------- Editing ----------
-  function resetScore(opts) {
-    state.score.blue = 0;
-    state.score.red = 0;
-    state.score.target = DEFAULT_STANDARD_TARGET;
-    state.score.gameOver = false;
-    state.score.winner = null;
-    if (!opts || opts.log !== false) {
-      addLog('Score reset (Standards 0–0 / ' + state.score.target + ')');
-      setLastAction('Score reset (Standards 0–0 / ' + state.score.target + ')');
-    }
-    updateStatusText();
-  }
-
-  function resetTerrain(opts) {
-    state.terrain.clear();
-    for (const [, poly] of polyByKey.entries()) applyTerrainClass(poly, 'clear');
-    if (!opts || opts.log !== false) addLog('Terrain reset (all Clear)');
-  }
-
-  function setTerrainAtKey(k, terrainId, opts) {
-    const poly = polyByKey.get(k);
-    if (!poly) return false;
-    if (!TERRAIN_BY_ID.has(terrainId)) terrainId = 'clear';
-
-    if (terrainId === 'water' && state.units.has(k)) {
-      if (!opts || opts.log !== false) addLog('Blocked: cannot paint Water under a unit. Remove unit first.');
-      return false;
-    }
-
-    if (terrainId === 'clear') state.terrain.delete(k);
-    else state.terrain.set(k, terrainId);
-
-    applyTerrainClass(poly, terrainId);
-    if (!opts || opts.log !== false) addLog('Painted ' + terrainLabel(terrainId) + ' at ' + fmtCell(k));
     return true;
   }
 
-  function clearUnits(opts) {
-    state.units.clear();
-    state.nextUnitId = 1;
-    state.selectedUnitKey = null;
-    rebuildUnitsLayer();
-    if (!opts || opts.log !== false) addLog('Units cleared');
+  function activationBlockReason(u, hexKey) {
+    if (state.mode !== 'play') return 'Not in Play mode.';
+    if (state.gameOver) return 'Game over.';
+    if (u.side !== state.side) return null; // stay calm; don’t narrate enemy clicks
+    if (state.actsUsed >= ACT_LIMIT) return 'No activations left — End Turn.';
+    if (state.actedUnitIds.has(u.id)) return 'Already acted this turn.';
+
+    if (!unitIgnoresCommand(u) && u.quality === 'green') {
+      const cmd = inCommandAt(hexKey, u.side);
+      if (!cmd) return `Out of command: Green units need a GEN within ${COMMAND_RADIUS}.`;
+    }
+
+    return null;
   }
 
-  function removeUnitAtKey(k, opts) {
-    const had = state.units.delete(k);
-    if (had) {
-      if (state.selectedUnitKey === k) clearUnitSelection();
-      rebuildUnitsLayer();
-      if (!opts || opts.log !== false) addLog('Removed unit at ' + fmtCell(k));
+  function unitCanMoveThisActivation(u, actCtx, startKey) {
+    // Engagement makes the line sticky.
+    const engaged = isEngaged(startKey, u.side);
+
+    // Skirmishers have a special disengage.
+    if (engaged) {
+      return u.type === 'skr';
+    }
+
+    // Command dependence
+    if (unitIgnoresCommand(u)) return true;
+
+    // Regular INF/ARC/SKR require command to move.
+    if (u.quality === 'regular') return !!actCtx.inCommandStart;
+
+    // Green INF/ARC/SKR require command to move (but if green, activation gating already enforced).
+    return !!actCtx.inCommandStart;
+  }
+
+  // --- Movement (MP + terrain costs)
+  function computeMoveTargets(fromKey, u, actCtx) {
+    const def = UNIT_BY_ID.get(u.type);
+    const mp = def.move;
+
+    // If movement isn't allowed, return empty set.
+    if (!unitCanMoveThisActivation(u, actCtx, fromKey)) return new Set();
+
+    const engaged = isEngaged(fromKey, u.side);
+
+    // Skirmisher disengage: exactly 1 hex to a destination not adjacent to ANY enemy.
+    if (u.type === 'skr' && engaged) {
+      const out = new Set();
+      const h = board.byKey.get(fromKey);
+      if (!h) return out;
+
+      for (const nk of h.neigh) {
+        if (isOccupied(nk)) continue;
+        const nh = board.byKey.get(nk);
+        if (!nh) continue;
+
+        const cost = terrainMoveCost(u.type, nh.terrain);
+        if (!Number.isFinite(cost) || cost > mp) continue;
+
+        // Must end NOT adjacent to any enemy.
+        if (isEngaged(nk, u.side)) continue;
+
+        out.add(nk);
+      }
+
+      return out;
+    }
+
+    // Normal movement: least-cost reachability within MP budget.
+    const out = new Set();
+    const best = new Map();
+
+    // Tiny board → a simple priority queue is fine.
+    const pq = [{ k: fromKey, c: 0 }];
+    best.set(fromKey, 0);
+
+    while (pq.length) {
+      // pop min cost
+      pq.sort((a, b) => a.c - b.c);
+      const cur = pq.shift();
+      if (!cur) break;
+
+      const h = board.byKey.get(cur.k);
+      if (!h) continue;
+
+      for (const nk of h.neigh) {
+        if (isOccupied(nk)) continue;
+        const nh = board.byKey.get(nk);
+        if (!nh) continue;
+
+        const stepCost = terrainMoveCost(u.type, nh.terrain);
+        if (!Number.isFinite(stepCost)) continue; // water/impassable
+
+        const nc = cur.c + stepCost;
+        if (nc > mp) continue;
+
+        const prevBest = best.get(nk);
+        if (prevBest !== undefined && nc >= prevBest) continue;
+
+        best.set(nk, nc);
+        out.add(nk);
+        pq.push({ k: nk, c: nc });
+      }
+    }
+
+    return out;
+  }
+
+  // --- Attacks (melee + ranged)
+  function attackDiceFor(attackerKey, defenderKey, attackerUnit) {
+    const atkHex = board.byKey.get(attackerKey);
+    const defHex = board.byKey.get(defenderKey);
+    if (!atkHex || !defHex) return null;
+
+    const dist = axialDistance(atkHex.q, atkHex.r, defHex.q, defHex.r);
+    if (dist < 1) return null;
+
+    const engaged = isEngaged(attackerKey, attackerUnit.side);
+    const atkDef = UNIT_BY_ID.get(attackerUnit.type);
+
+    // Melee at range 1 is always possible.
+    if (dist === 1) {
+      return { kind: 'melee', dist, dice: atkDef.meleeDice };
+    }
+
+    // Beyond range 1 requires ranged capability and NOT being engaged.
+    if (engaged) return null;
+    if (!atkDef.ranged) return null;
+
+    const dice = atkDef.ranged[dist];
+    if (!dice) return null;
+
+    return { kind: 'ranged', dist, dice };
+  }
+
+  function computeAttackTargets(attackerKey, u) {
+    const targets = new Set();
+
+    for (const [hk, enemy] of unitsByHex) {
+      if (enemy.side === u.side) continue;
+      const prof = attackDiceFor(attackerKey, hk, u);
+      if (prof) targets.add(hk);
+    }
+
+    return targets;
+  }
+
+  // --- Combat resolution
+  function rollD6() {
+    return 1 + Math.floor(Math.random() * 6);
+  }
+
+  function retreatPick(attackerKey, defenderKey) {
+    // Choose retreat direction purely by geometry (maximizes distance), then
+    // if the chosen hex is invalid (off-board/water/occupied), retreat converts to a hit.
+
+    const aHex = board.byKey.get(attackerKey);
+    const dHex = board.byKey.get(defenderKey);
+    if (!aHex || !dHex) return null;
+
+    const curDist = axialDistance(aHex.q, aHex.r, dHex.q, dHex.r);
+
+    const deltas = (dHex.r & 1) ? NEIGH_ODD : NEIGH_EVEN;
+
+    let bestKey = null;
+    let bestDist = curDist;
+
+    for (const [dq, dr] of deltas) {
+      const nq = dHex.q + dq;
+      const nr = dHex.r + dr;
+      const nd = axialDistance(aHex.q, aHex.r, nq, nr);
+      if (nd > bestDist) {
+        bestDist = nd;
+        bestKey = key(nq, nr);
+      }
+    }
+
+    if (!bestKey) return null;
+
+    // Validate the chosen retreat hex.
+    if (!board.activeSet.has(bestKey)) return null;
+
+    const bh = board.byKey.get(bestKey);
+    if (!bh) return null;
+
+    if (bh.terrain === 'water') return null;
+    if (isOccupied(bestKey)) return null;
+
+    return bestKey;
+  }
+
+  function consumeActivation(unitId) {
+    state.actsUsed = Math.min(ACT_LIMIT, state.actsUsed + 1);
+    state.actedUnitIds.add(unitId);
+  }
+
+  function destroyUnit(defenderKey, defenderUnit, attackerSide) {
+    const defDef = UNIT_BY_ID.get(defenderUnit.type);
+
+    unitsByHex.delete(defenderKey);
+
+    state.capturedUP[attackerSide] += defDef.up;
+
+    log(`☠️ ${defenderUnit.side.toUpperCase()} ${defDef.abbrev} destroyed (+${defDef.up}u).`);
+  }
+
+  function resolveAttack(attackerKey, defenderKey) {
+    const atk = unitsByHex.get(attackerKey);
+    const defU = unitsByHex.get(defenderKey);
+    if (!atk || !defU) return;
+    if (state.gameOver) return;
+
+    const prof = attackDiceFor(attackerKey, defenderKey, atk);
+    if (!prof) {
+      log('Illegal attack.');
+      return;
+    }
+
+    // Terrain defensive modifier: defender in woods => -1 die (min 1)
+    const defHex = board.byKey.get(defenderKey);
+    let dice = prof.dice;
+    if (defHex && defHex.terrain === 'woods') {
+      dice = Math.max(1, dice - 1);
+    }
+
+    const rolls = [];
+    for (let i = 0; i < dice; i++) rolls.push(rollD6());
+
+    const atkDef = UNIT_BY_ID.get(atk.type);
+    const defDef = UNIT_BY_ID.get(defU.type);
+
+    const hits = rolls.filter(v => DIE_HIT.has(v)).length;
+    const retreats = rolls.filter(v => v === DIE_RETREAT).length;
+
+    const tag = `${atk.side.toUpperCase()} ${atkDef.abbrev}`;
+    const vs = `${defU.side.toUpperCase()} ${defDef.abbrev}`;
+    log(`${tag} ${prof.kind}→${vs} (d${prof.dist}) [${rolls.join(', ')}]`);
+
+    // Pass 1: apply hits
+    if (hits > 0) {
+      defU.hp -= hits;
+      log(`Hits: ${hits} → ${vs} HP=${Math.max(0, defU.hp)}.`);
+    }
+
+    if (defU.hp <= 0) {
+      destroyUnit(defenderKey, defU, atk.side);
+      checkVictory();
+      updateHud();
+      return;
+    }
+
+    // Pass 2: resolve retreats one at a time
+    for (let i = 0; i < retreats; i++) {
+      const curDef = unitsByHex.get(defenderKey);
+      if (!curDef) break;
+
+      const step = retreatPick(attackerKey, defenderKey);
+      if (!step) {
+        curDef.hp -= 1;
+        log(`Retreat blocked → 1 hit. ${vs} HP=${Math.max(0, curDef.hp)}.`);
+        if (curDef.hp <= 0) {
+          destroyUnit(defenderKey, curDef, atk.side);
+          break;
+        }
+      } else {
+        unitsByHex.delete(defenderKey);
+        unitsByHex.set(step, curDef);
+        defenderKey = step;
+        log(`Retreat → ${step}`);
+      }
+    }
+
+    checkVictory();
+    updateHud();
+  }
+
+  // --- Victory
+  function checkVictory() {
+    if (state.mode !== 'play') return;
+
+    const b = totals('blue');
+    const r = totals('red');
+
+    let blueWins = false;
+    let redWins = false;
+
+    if (state.victoryMode === 'annihilation') {
+      blueWins = r.units === 0;
+      redWins = b.units === 0;
+    } else if (state.victoryMode === 'decapitation') {
+      blueWins = r.gens === 0;
+      redWins = b.gens === 0;
+    } else {
+      // Clear victory: capture at least half of opponent starting UP, rounded up.
+      const needBlue = Math.ceil(state.initialUP.red / 2);
+      const needRed = Math.ceil(state.initialUP.blue / 2);
+
+      blueWins = state.capturedUP.blue >= needBlue;
+      redWins = state.capturedUP.red >= needRed;
+    }
+
+    if (blueWins && redWins) {
+      // If multiple victory conditions ever trigger simultaneously, the acting player wins.
+      state.gameOver = true;
+      state.winner = state.side;
+      log(`Game over: ${state.side.toUpperCase()} wins (simultaneous victory).`);
+    } else if (blueWins) {
+      state.gameOver = true;
+      state.winner = 'blue';
+      log('Game over: BLUE wins.');
+    } else if (redWins) {
+      state.gameOver = true;
+      state.winner = 'red';
+      log('Game over: RED wins.');
     }
   }
 
-  function placeUnitAtKey(k, opts) {
-    if (!state.active.has(k)) { addLog('Cannot place unit on inactive hex: ' + fmtCell(k)); return; }
-    if (terrainAtKey(k) === 'water') { addLog('Cannot place unit on Water: ' + fmtCell(k)); return; }
+  // --- Mode transitions
+  function clearSelection() {
+    state.selectedKey = null;
+    state.act = null;
+    state._moveTargets = null;
+    state._attackTargets = null;
+  }
 
-    if (state.unitType === 'erase') { removeUnitAtKey(k, opts); return; }
+  function enterEdit() {
+    state.mode = 'edit';
+    state.tool = 'units';
 
-    const def = UNIT_BY_ID.get(state.unitType);
+    state.gameOver = false;
+    state.winner = null;
+
+    clearSelection();
+
+    log('Edit: place units / paint terrain.');
+    updateHud();
+  }
+
+  function enterPlay() {
+    state.mode = 'play';
+    state.turn = 1;
+    state.side = 'blue';
+    state.actsUsed = 0;
+    state.actedUnitIds = new Set();
+
+    state.gameOver = false;
+    state.winner = null;
+
+    // Lock initial UP for Clear Victory.
+    state.initialUP.blue = totals('blue').up;
+    state.initialUP.red = totals('red').up;
+
+    // Reset capture tally.
+    state.capturedUP.blue = 0;
+    state.capturedUP.red = 0;
+
+    clearSelection();
+
+    log('Play: click a friendly unit. Blue goes first.');
+    updateHud();
+  }
+
+  // --- Editing actions
+  function normalizeQuality(type, quality) {
+    // Baseline: generals display as Green.
+    if (type === 'gen') return 'green';
+    if (!QUALITY_ORDER.includes(quality)) return 'green';
+    return quality;
+  }
+
+  function placeOrReplaceUnit(hexKey) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return;
+
+    if (state.editErase) {
+      if (unitsByHex.delete(hexKey)) log(`Erased unit at ${hexKey}`);
+      updateHud();
+      return;
+    }
+
+    const type = state.editType;
+    const def = UNIT_BY_ID.get(type);
     if (!def) return;
 
-    const p = parseKey(k);
-    const unit = { id: state.nextUnitId++, type: state.unitType, side: state.unitSide, quality: normalizeQuality(state.unitQuality), q: p.q, r: p.r, hp: defaultHpFor(state.unitType) };
-    state.units.set(k, unit);
-    rebuildUnitsLayer();
-    if (!opts || opts.log !== false) addLog('Placed ' + fmtUnit(unit));
-  }
+    const quality = normalizeQuality(type, state.editQuality);
 
-  function demoSetupUnits() {
-    clearUnits({ log: false });
-    resetScore({ log: false });
-
-    // EVEN LINES: Red INF at r=4, Blue INF at r=6 (one empty row between at r=5).
-    // Total 24 units: 14 INF (7/side), 4 CAV (2/side), 6 ARC (3/side).
-    const placements = [];
-
-    // Infantry lines
-    for (let q = 4; q <= 10; q++) placements.push({ side: 'red',  type: 'inf', q, r: 4 });
-    for (let q = 4; q <= 10; q++) placements.push({ side: 'blue', type: 'inf', q, r: 6 });
-
-    // Cavalry wings
-    placements.push({ side: 'red',  type: 'cav', q: 3,  r: 4 });
-    placements.push({ side: 'red',  type: 'cav', q: 11, r: 4 });
-    placements.push({ side: 'blue', type: 'cav', q: 3,  r: 6 });
-    placements.push({ side: 'blue', type: 'cav', q: 11, r: 6 });
-
-    // Archers behind lines
-    for (let q = 6; q <= 8; q++) placements.push({ side: 'red',  type: 'arc', q, r: 3 });
-    for (let q = 6; q <= 8; q++) placements.push({ side: 'blue', type: 'arc', q, r: 7 });
-
-    let maxId = 0;
-    let placed = 0;
-
-    for (const it of placements) {
-      const k = keyOf(it.q, it.r);
-      if (!state.active.has(k)) continue;
-      if (!UNIT_BY_ID.has(it.type)) continue;
-      if (terrainAtKey(k) === 'water') continue;
-
-      const unit = { id: ++maxId, type: it.type, side: it.side, quality: 'regular', q: it.q, r: it.r, hp: defaultHpFor(it.type) };
-      state.units.set(k, unit);
-      placed++;
-    }
-    state.nextUnitId = maxId + 1;
-
-    clearActionTargets();
-    state.turn.side = 'blue';
-    state.turn.turnNumber = 1;
-    state.turn.movedUnitIds.clear();
-    state.turn.activationsUsed = 0;
-
-    rebuildUnitsLayer();
-    updateStatusText();
-
-    const msg = 'Demo setup: even lines (Red r=4, Blue r=6). Units=' + placed + '. Standards 0–0.';
-    addLog(msg);
-    setLastAction(msg);
-  }
-
-  // ---------- Shape / Presets ----------
-  function toggleActive(k) {
-    const poly = polyByKey.get(k);
-    if (!poly) return;
-
-    if (state.active.has(k)) {
-      state.active.delete(k);
-      setPolyActiveClass(poly, false);
-
-      if (state.terrain.has(k)) state.terrain.delete(k);
-      applyTerrainClass(poly, 'clear');
-
-      if (state.units.has(k)) state.units.delete(k);
-
-      addLog('Deactivated ' + fmtCell(k) + ' (cleared terrain/unit)');
+    const existing = unitsByHex.get(hexKey);
+    if (existing) {
+      existing.side = state.editSide;
+      existing.type = type;
+      existing.quality = quality;
+      existing.hp = def.hp;
+      log(`Replaced at ${hexKey} → ${state.editSide} ${def.abbrev}`);
     } else {
-      state.active.add(k);
-      setPolyActiveClass(poly, true);
-      addLog('Activated ' + fmtCell(k));
+      unitsByHex.set(hexKey, {
+        id: nextUnitId++,
+        side: state.editSide,
+        type,
+        quality,
+        hp: def.hp,
+      });
+      log(`Placed ${state.editSide} ${def.abbrev} at ${hexKey}`);
     }
 
-    clearActionTargets();
-    rebuildUnitsLayer();
-    updateStatusText();
-    if (state.mode === 'play') updateViewBox();
+    updateHud();
   }
 
-  function applyActiveSet(newSet, label) {
-    state.active = newSet;
+  function paintTerrain(hexKey) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return;
+    h.terrain = state.editTerrain;
+    log(`Terrain ${state.editTerrain} at ${hexKey}`);
+    updateHud();
+  }
 
-    for (const k of CANVAS_KEYS) {
-      const poly = polyByKey.get(k);
-      if (!poly) continue;
-      setPolyActiveClass(poly, state.active.has(k));
-      if (!state.active.has(k)) applyTerrainClass(poly, 'clear');
+  function clearUnits() {
+    unitsByHex.clear();
+    nextUnitId = 1;
+    log('Cleared all units.');
+    updateHud();
+  }
+
+  function resetTerrain() {
+    for (const h of board.active) h.terrain = 'clear';
+  }
+
+  function loadScenario(name) {
+    const sc = SCENARIOS[name];
+    if (!sc) return;
+
+    enterEdit();
+    clearUnits();
+    resetTerrain();
+
+    // Terrain paint
+    for (const t of (sc.terrain || [])) {
+      const k = key(t.q, t.r);
+      const h = board.byKey.get(k);
+      if (!h) continue;
+      h.terrain = t.terrain;
     }
 
-    for (const k of Array.from(state.terrain.keys())) if (!state.active.has(k)) state.terrain.delete(k);
-    for (const k of Array.from(state.units.keys())) if (!state.active.has(k)) state.units.delete(k);
-
-    clearActionTargets();
-    rebuildUnitsLayer();
-    updateStatusText();
-    addLog(label);
-
-    if (state.mode === 'play') updateViewBox();
-  }
-
-  function presetDefault() {
-    resetTerrain({ log: false });
-    clearUnits({ log: false });
-    resetScore({ log: false });
-
-    state.turn.side = 'blue';
-    state.turn.turnNumber = 1;
-    state.turn.movedUnitIds.clear();
-    state.turn.activationsUsed = 0;
-
-    applyActiveSet(new Set(DEFAULT_ACTIVE), 'Loaded preset: Default (Island) • ' + DEFAULT_SHAPE_NAME);
-    setMode('play');
-    setLastAction('Loaded preset: Default (Island)');
-  }
-
-  function presetCorridor() {
-    resetTerrain({ log: false });
-    clearUnits({ log: false });
-    resetScore({ log: false });
-
-    state.turn.side = 'blue';
-    state.turn.turnNumber = 1;
-    state.turn.movedUnitIds.clear();
-    state.turn.activationsUsed = 0;
-
-    const s = new Set();
-    const rows = [4, 5, 6, 7]; // wider
-    for (const r of rows) for (let q = CANVAS.qMin; q <= CANVAS.qMax; q++) s.add(keyOf(q, r));
-
-    applyActiveSet(s, 'Loaded preset: Corridor (wider)');
-    setMode('play');
-    setLastAction('Loaded preset: Corridor (wider)');
-  }
-
-  function presetPass() {
-    resetTerrain({ log: false });
-    clearUnits({ log: false });
-    resetScore({ log: false });
-
-    state.turn.side = 'blue';
-    state.turn.turnNumber = 1;
-    state.turn.movedUnitIds.clear();
-    state.turn.activationsUsed = 0;
-
-    const s = new Set();
-    for (let r = CANVAS.rMin; r <= CANVAS.rMax; r++) {
-      const wide = (r <= 2 || r >= 8);
-      const cols = wide ? [6, 7, 8, 9] : [7, 8];
-      for (const q of cols) if (withinCanvas(q, r)) s.add(keyOf(q, r));
+    // Units
+    for (const u of (sc.units || [])) {
+      const k = key(u.q, u.r);
+      if (!board.activeSet.has(k)) continue;
+      const def = UNIT_BY_ID.get(u.type);
+      if (!def) continue;
+      unitsByHex.set(k, {
+        id: nextUnitId++,
+        side: u.side,
+        type: u.type,
+        quality: normalizeQuality(u.type, u.quality || 'green'),
+        hp: def.hp,
+      });
     }
 
-    applyActiveSet(s, 'Loaded preset: Pass (wide ends, narrow middle)');
-    setMode('play');
-    setLastAction('Loaded preset: Pass (wide ends)');
+    log(`Loaded scenario: ${name}`);
+    updateHud();
   }
 
-  // ---------- JSON ----------
-  function exportJson(copyToClipboard) {
-    const active = Array.from(state.active).map(parseKey).sort((a, b) => (a.r - b.r) || (a.q - b.q));
+  // --- Turn handling
+  function endTurn() {
+    if (state.mode !== 'play') return;
+    if (state.gameOver) return;
 
-    const terrain = {};
-    for (const [k, t] of state.terrain.entries()) if (t !== 'clear' && state.active.has(k)) terrain[k] = t;
+    state.side = (state.side === 'blue') ? 'red' : 'blue';
+    if (state.side === 'blue') state.turn += 1;
 
-    const units = [];
-    for (const [k, u] of state.units.entries()) {
-      if (!state.active.has(k)) continue;
-      units.push({ id: u.id, type: u.type, side: u.side, quality: normalizeQuality(u.quality), q: u.q, r: u.r, hp: u.hp });
-    }
-    units.sort((a, b) => (a.r - b.r) || (a.q - b.q) || (a.id - b.id));
+    state.actsUsed = 0;
+    state.actedUnitIds = new Set();
 
-    const movedIds = Array.from(state.turn.movedUnitIds.values()).sort((a, b) => a - b);
+    clearSelection();
 
-    const data = {
-      game: GAME_NAME,
-      version: 8,
-      milestone: state.milestone,
-      feature: state.feature,
-      build: BUILD_ID,
-      canvas: CANVAS,
-      defaultShape: DEFAULT_SHAPE_NAME,
-      score: { ...state.score },
-      active,
-      terrain,
-      units,
-      turn: {
-        side: state.turn.side,
-        turnNumber: state.turn.turnNumber,
-        activationLimit: state.turn.activationLimit,
-        activationsUsed: state.turn.activationsUsed,
-        movedUnitIds: movedIds,
-      },
+    log(`Turn ${state.turn}: ${state.side.toUpperCase()}.`);
+    updateHud();
+  }
+
+  // --- Play interaction
+  function selectUnit(hexKey) {
+    const u = unitsByHex.get(hexKey);
+    if (!u) return;
+
+    if (!unitCanActivate(u, hexKey)) return;
+
+    const inCmd = unitIgnoresCommand(u) ? true : inCommandAt(hexKey, u.side);
+
+    state.selectedKey = hexKey;
+    state.act = {
+      unitId: u.id,
+      committed: false,
+      moved: false,
+      attacked: false,
+      inCommandStart: inCmd,
     };
 
-    const json = JSON.stringify(data, null, 2);
-    if (elJson) elJson.value = json;
-    addLog('Exported JSON (units=' + units.length + ', standards=' + state.score.blue + '-' + state.score.red + ')');
+    // Precompute targets
+    state._moveTargets = computeMoveTargets(hexKey, u, state.act);
+    state._attackTargets = computeAttackTargets(hexKey, u);
 
-    if (copyToClipboard && navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(json)
-        .then(() => addLog('Copied JSON to clipboard'))
-        .catch(() => addLog('Copy failed (clipboard permission). JSON is in the textbox.'));
-    } else if (copyToClipboard) {
-      addLog('Copy not available. JSON is in the textbox.');
-    }
-  }
+    const def = UNIT_BY_ID.get(u.type);
+    const engaged = isEngaged(hexKey, u.side);
+    const notes = [];
 
-  function importJson() {
-    if (!elJson) return;
-    const raw = (elJson.value || '').trim();
-    if (!raw) { addLog('Import blocked: JSON box empty'); return; }
-
-    let obj;
-    try { obj = JSON.parse(raw); }
-    catch { addLog('Import failed: invalid JSON'); return; }
-
-    const list = Array.isArray(obj.active) ? obj.active : [];
-    const s = new Set();
-    for (const it of list) {
-      const q = Number(it && it.q);
-      const r = Number(it && it.r);
-      if (!Number.isFinite(q) || !Number.isFinite(r) || !withinCanvas(q, r)) continue;
-      s.add(keyOf(q, r));
-    }
-    applyActiveSet(s, 'Imported JSON (active=' + s.size + ')');
-
-    resetTerrain({ log: false });
-    const terr = (obj && typeof obj.terrain === 'object' && obj.terrain) ? obj.terrain : {};
-    for (const k of Object.keys(terr)) {
-      const t = String(terr[k] || '');
-      if (!state.active.has(k)) continue;
-      if (!TERRAIN_BY_ID.has(t)) continue;
-      setTerrainAtKey(k, t, { log: false });
+    if (engaged) {
+      if (u.type === 'skr') notes.push('Engaged: SKR may disengage 1 hex.');
+      else notes.push('Engaged: cannot move.');
+    } else if (!unitIgnoresCommand(u) && u.quality === 'regular' && !inCmd) {
+      notes.push('Out of command: cannot move (can attack).');
     }
 
-    clearUnits({ log: false });
-    const ulist = Array.isArray(obj.units) ? obj.units : [];
-    let maxId = 0;
-
-    for (const it of ulist) {
-      const q = Number(it && it.q);
-      const r = Number(it && it.r);
-      const type = String(it && it.type || '');
-      const side = (String(it && it.side || 'blue') === 'red') ? 'red' : 'blue';
-      const id = Number(it && it.id);
-      const hp = Number(it && it.hp);
-      const qualityRaw = String(it && it.quality || 'regular');
-      const quality = normalizeQuality(qualityRaw);
-
-      if (!Number.isFinite(q) || !Number.isFinite(r) || !withinCanvas(q, r)) continue;
-      const k = keyOf(q, r);
-      if (!state.active.has(k)) continue;
-      if (!UNIT_BY_ID.has(type)) continue;
-      if (terrainAtKey(k) === 'water') continue;
-
-      const uid = Number.isFinite(id) ? id : (maxId + 1);
-      const uhp = Number.isFinite(hp) ? hp : defaultHpFor(type);
-
-      state.units.set(k, { id: uid, type, side, quality, q, r, hp: uhp });
-      if (uid > maxId) maxId = uid;
-    }
-    state.nextUnitId = maxId + 1;
-
-    const t = obj && typeof obj.turn === 'object' && obj.turn ? obj.turn : null;
-    state.turn.side = t && (t.side === 'red' || t.side === 'blue') ? t.side : 'blue';
-    state.turn.turnNumber = t && Number.isFinite(Number(t.turnNumber)) ? Number(t.turnNumber) : 1;
-    state.turn.activationLimit = t && Number.isFinite(Number(t.activationLimit)) ? Number(t.activationLimit) : ACTIVATION_LIMIT;
-
-    const movedList = t && Array.isArray(t.movedUnitIds) ? t.movedUnitIds : [];
-    const moved = new Set();
-    for (const id0 of movedList) { const n = Number(id0); if (Number.isFinite(n)) moved.add(n); }
-    state.turn.movedUnitIds = moved;
-    state.turn.activationsUsed = state.turn.movedUnitIds.size;
-
-    // score
-    const sc = obj && typeof obj.score === 'object' && obj.score ? obj.score : null;
-    state.score.blue = sc && Number.isFinite(Number(sc.blue)) ? Number(sc.blue) : 0;
-    state.score.red = sc && Number.isFinite(Number(sc.red)) ? Number(sc.red) : 0;
-    state.score.target = sc && Number.isFinite(Number(sc.target)) ? Number(sc.target) : DEFAULT_STANDARD_TARGET;
-    state.score.gameOver = sc && !!sc.gameOver;
-    state.score.winner = sc && (sc.winner === 'blue' || sc.winner === 'red') ? sc.winner : null;
-
-    clearActionTargets();
-    rebuildUnitsLayer();
-    updateStatusText();
-    addLog('Imported JSON. Turn ' + state.turn.turnNumber + ': ' + currentSideName());
-    setMode('play');
-
-    if (state.score.gameOver && state.score.winner) {
-      const msg = 'GAME OVER: ' + sideName(state.score.winner) + ' wins';
-      setLastAction(msg);
-      addLog(msg);
-    }
+    log(`Selected ${u.side.toUpperCase()} ${def.abbrev}.${notes.length ? ' ' + notes.join(' ') : ''}`);
+    updateHud();
   }
 
-  // ---------- UI update ----------
-  function updateTruthProbe() {
-    const modeStr = (state.mode === 'edit')
-      ? ('EDIT_' + (state.tool === 'terrain' ? 'TERRAIN' : (state.tool === 'units' ? 'UNITS' : 'SHAPE')))
-      : 'PLAY';
+  function moveSelectedTo(destKey) {
+    const fromKey = state.selectedKey;
+    if (!fromKey || !state.act) return;
 
-    const activeCount = state.active.size;
-    const painted = paintedCountActive();
-    const units = unitsCountActive();
-    const act = state.turn.activationsUsed + '/' + state.turn.activationLimit;
-    const std = 'STD=B' + state.score.blue + '-R' + state.score.red + '/' + state.score.target;
+    const u = unitsByHex.get(fromKey);
+    if (!u) return;
 
-    const mark = GAME_NAME.toUpperCase() + ' ' + state.milestone
-      + ' • ' + state.feature
-      + ' • ' + std
-      + ' • MODE=' + modeStr
-      + ' • TURN=' + currentSideName().toUpperCase()
-      + ' • ACT=' + act
-      + ' • ACTIVE=' + activeCount
-      + ' • PAINTED=' + painted
-      + ' • UNITS=' + units
-      + ' • CANVAS=' + CANVAS_W + 'x' + CANVAS_H
-      + ' • PORT=' + PORT;
-
-    if (elTruth) elTruth.textContent = mark + ' • ' + BUILD_ID;
-  }
-
-  function updateStatusText() {
-    if (elModeLabel) elModeLabel.textContent = (state.mode === 'edit') ? 'Edit' : 'Play';
-    if (elModeToggle) elModeToggle.textContent = (state.mode === 'edit') ? 'To Play' : 'To Edit';
-
-    const toolLabel = (state.tool === 'terrain') ? 'Terrain' : (state.tool === 'units' ? 'Units' : 'Shape');
-    if (elToolLabel) elToolLabel.textContent = toolLabel;
-
-    if (elToolShapeBtn) elToolShapeBtn.classList.toggle('active', state.tool === 'shape');
-    if (elToolTerrainBtn) elToolTerrainBtn.classList.toggle('active', state.tool === 'terrain');
-    if (elToolUnitsBtn) elToolUnitsBtn.classList.toggle('active', state.tool === 'units');
-
-    if (elBrushLabel) elBrushLabel.textContent = terrainLabel(state.brush);
-    if (elActiveCount) elActiveCount.textContent = String(state.active.size);
-    if (elPaintedCount) elPaintedCount.textContent = String(paintedCountActive());
-    if (elUnitsCount) elUnitsCount.textContent = String(unitsCountActive());
-
-    if (elSideBlueBtn) elSideBlueBtn.classList.toggle('active', state.unitSide === 'blue');
-    if (elSideRedBtn) elSideRedBtn.classList.toggle('active', state.unitSide === 'red');
-
-    const isType = (t) => state.unitType === t;
-    if (elUInfBtn) elUInfBtn.classList.toggle('active', isType('inf'));
-    if (elUCavBtn) elUCavBtn.classList.toggle('active', isType('cav'));
-    if (elUSkrBtn) elUSkrBtn.classList.toggle('active', isType('skr'));
-    if (elUArcBtn) elUArcBtn.classList.toggle('active', isType('arc'));
-    if (elUEraseBtn) elUEraseBtn.classList.toggle('active', isType('erase'));
-
-    const isQ = (q) => normalizeQuality(state.unitQuality) === normalizeQuality(q);
-    if (elQGreenBtn) elQGreenBtn.classList.toggle('active', isQ('green'));
-    if (elQRegBtn) elQRegBtn.classList.toggle('active', isQ('regular'));
-    if (elQVetBtn) elQVetBtn.classList.toggle('active', isQ('veteran'));
-
-    if (elTurnNumber) elTurnNumber.textContent = String(state.turn.turnNumber);
-    if (elTurnSide) elTurnSide.textContent = currentSideName();
-    if (elActCount) elActCount.textContent = String(state.turn.activationsUsed) + '/' + String(state.turn.activationLimit);
-    if (elEndTurnBtn) elEndTurnBtn.disabled = (state.mode !== 'play') || state.score.gameOver;
-
-    if (elScoreBlue) elScoreBlue.textContent = String(state.score.blue);
-    if (elScoreRed) elScoreRed.textContent = String(state.score.red);
-    if (elScoreTarget) elScoreTarget.textContent = String(state.score.target);
-
-    const forces = computeForces();
-    if (elForceBlue) elForceBlue.textContent = forces.blue.units + 'u/' + forces.blue.hp + 'hp';
-    if (elForceRed) elForceRed.textContent = forces.red.units + 'u/' + forces.red.hp + 'hp';
-
-    if (elGameOverBanner) {
-      if (state.score.gameOver && state.score.winner) {
-        elGameOverBanner.style.display = 'block';
-        elGameOverBanner.textContent = 'GAME OVER — ' + sideName(state.score.winner) + ' wins (' +
-          state.score[state.score.winner] + '/' + state.score.target + ')';
-      } else {
-        elGameOverBanner.style.display = 'none';
-        elGameOverBanner.textContent = '';
-      }
+    if (state.act.moved || state.act.attacked) {
+      log('Illegal move (already acted).');
+      return;
     }
 
-    setLastAction(state.lastAction);
-    updateTruthProbe();
-  }
-
-  function renderTerrainPalette() {
-    if (!elTerrainPalette) return;
-    elTerrainPalette.innerHTML = '';
-
-    for (const t of TERRAIN_DEFS) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'palBtn' + (t.id === state.brush ? ' active' : '');
-
-      const sw = document.createElement('span');
-      sw.className = 'swatch';
-      sw.style.background = 'var(--terrain-' + t.id + ')';
-
-      const label = document.createElement('span');
-      label.textContent = t.label;
-
-      btn.appendChild(sw);
-      btn.appendChild(label);
-      btn.addEventListener('click', function () {
-        state.brush = t.id;
-        renderTerrainPalette();
-        updateStatusText();
-        addLog('Brush set to ' + terrainLabel(t.id));
-        setLastAction('Brush: ' + terrainLabel(t.id));
-      });
-
-      elTerrainPalette.appendChild(btn);
+    if (!state._moveTargets || !state._moveTargets.has(destKey)) {
+      log('Illegal move.');
+      return;
     }
+
+    // Commit activation on the FIRST real action.
+    if (!state.act.committed) {
+      consumeActivation(u.id);
+      state.act.committed = true;
+    }
+
+    unitsByHex.delete(fromKey);
+    unitsByHex.set(destKey, u);
+    state.selectedKey = destKey;
+    state.act.moved = true;
+
+    log(`Moved to ${destKey}.`);
+
+    // After moving, you may make at most ONE attack (same activation).
+    state._moveTargets = null;
+    state._attackTargets = computeAttackTargets(destKey, u);
+
+    updateHud();
   }
 
-  function setMode(newMode) {
-    state.mode = newMode;
-    applyModeClasses();
-    clearActionTargets();
-    updateViewBox();
-    rebuildUnitsLayer();
-    updateStatusText();
-    const msg = 'Mode set to ' + (state.mode === 'edit' ? 'Edit' : 'Play');
-    addLog(msg);
-    setLastAction(msg);
-  }
+  function attackFromSelection(targetKey) {
+    const attackerKey = state.selectedKey;
+    if (!attackerKey || !state.act) return;
 
-  function setTool(newTool) {
-    state.tool = newTool;
-    updateStatusText();
-    const msg = 'Tool set to ' + (state.tool === 'terrain' ? 'Terrain' : (state.tool === 'units' ? 'Units' : 'Shape'));
-    addLog(msg);
-    setLastAction(msg);
-  }
+    const atk = unitsByHex.get(attackerKey);
+    if (!atk) return;
 
-  function setUnitSide(side) {
-    state.unitSide = (side === 'red') ? 'red' : 'blue';
-    updateStatusText();
-    const msg = 'Unit side = ' + sideName(state.unitSide);
-    addLog(msg);
-    setLastAction(msg);
-  }
+    if (state.act.attacked) {
+      log('Illegal attack (already attacked).');
+      return;
+    }
 
-  function setUnitType(type) {
-    state.unitType = type;
-    updateStatusText();
-    const msg = 'Unit type = ' + (type === 'erase' ? 'Erase' : (UNIT_BY_ID.get(type)?.label || type));
-    addLog(msg);
-    setLastAction(msg);
-  }
+    // Validate target exists and is enemy.
+    const enemy = unitsByHex.get(targetKey);
+    if (!enemy || enemy.side === atk.side) {
+      log('Illegal attack target.');
+      return;
+    }
 
-  function setUnitQuality(q) {
-    state.unitQuality = normalizeQuality(q);
-    updateStatusText();
-    const msg = 'Unit quality = ' + qualLabel(state.unitQuality);
-    addLog(msg);
-    setLastAction(msg);
-  }
+    if (!state._attackTargets || !state._attackTargets.has(targetKey)) {
+      log('Illegal attack.');
+      return;
+    }
 
+    // Commit activation on the FIRST real action.
+    if (!state.act.committed) {
+      consumeActivation(atk.id);
+      state.act.committed = true;
+    }
 
-  // Build polygons
-  for (const k of CANVAS_KEYS) {
-    const { q, r } = parseKey(k);
-    const b = computeBoundsFor(q, r);
-    boundsByKey.set(k, { minX: b.minX, minY: b.minY, maxX: b.maxX, maxY: b.maxY });
-    centerByKey.set(k, { x: b.p.x, y: b.p.y });
+    resolveAttack(attackerKey, targetKey);
 
-    const poly = document.createElementNS(svgNS, 'polygon');
-    poly.setAttribute('points', hexPoints(b.p.x, b.p.y, cfg.size));
-    poly.setAttribute('class', 'hex');
-    poly.dataset.key = k;
+    state.act.attacked = true;
 
-    setPolyActiveClass(poly, state.active.has(k));
-    applyTerrainClass(poly, 'clear');
-
-    poly.addEventListener('click', function () {
-      const key = poly.dataset.key;
-      if (state.mode === 'play' && !state.active.has(key)) return;
-
-      // Move target click
-      if (state.mode === 'play' && state.moveTargets.has(key)) {
-        moveTo(key);
-        return;
-      }
-
-      // Attack target click
-      if (state.mode === 'play' && state.attackTargets.has(key)) {
-        attack(key);
-        return;
-      }
-
-      selectCell(key, poly);
-
-      if (state.mode === 'edit') {
-        if (state.tool === 'shape') {
-          toggleActive(key);
-        } else if (state.tool === 'terrain') {
-          if (!state.active.has(key)) { addLog('Cannot paint inactive hex: ' + fmtCell(key)); return; }
-          setTerrainAtKey(key, state.brush);
-        } else {
-          if (!state.active.has(key)) { addLog('Cannot place unit on inactive hex: ' + fmtCell(key)); return; }
-          placeUnitAtKey(key);
-        }
-      } else {
-        const u = unitAtKey(key);
-        if (u) {
-          selectUnitAtKey(key);
-          if (u.side === state.turn.side) {
-            prepareActionsFromUnit(key);
-          } else {
-            clearActionTargets();
-            addLog('Enemy selected: ' + fmtUnit(u));
-            setLastAction('Enemy selected: ' + sideName(u.side) + ' ' + unitAbbrev(u.type) + '#' + u.id + ' (HP ' + u.hp + ')');
-          }
-        } else {
-          clearUnitSelection();
-          clearActionTargets();
-          addLog('Selected ' + fmtCell(key));
-          setLastAction('Selected ' + fmtCell(key));
-        }
-      }
-
-      updateStatusText();
-    });
-
-    poly.addEventListener('mouseenter', function () { setHoverKey(poly.dataset.key); });
-    poly.addEventListener('mouseleave', function () { setHoverKey(null); });
-
-    gHex.appendChild(poly);
-    polyByKey.set(k, poly);
-  }
-
-  // Wire UI
-  if (elModeToggle) elModeToggle.addEventListener('click', function () { setMode(state.mode === 'play' ? 'edit' : 'play'); });
-  if (elToolShapeBtn) elToolShapeBtn.addEventListener('click', function () { setTool('shape'); });
-  if (elToolTerrainBtn) elToolTerrainBtn.addEventListener('click', function () { setTool('terrain'); });
-  if (elToolUnitsBtn) elToolUnitsBtn.addEventListener('click', function () { setTool('units'); });
-
-  if (elLoadPresetBtn) elLoadPresetBtn.addEventListener('click', function () {
-    const v = elPresetSelect ? elPresetSelect.value : 'default';
-    if (v === 'corridor') presetCorridor();
-    else if (v === 'pass') presetPass();
-    else presetDefault();
-  });
-
-  if (elResetDefaultBtn) elResetDefaultBtn.addEventListener('click', presetDefault);
-
-  if (elClearShapeBtn) elClearShapeBtn.addEventListener('click', function () {
-    resetTerrain({ log: false });
-    clearUnits({ log: false });
-    resetScore({ log: false });
-
-    state.turn.side = 'blue';
-    state.turn.turnNumber = 1;
-    state.turn.movedUnitIds.clear();
-    state.turn.activationsUsed = 0;
-
-    applyActiveSet(new Set(), 'Cleared shape (0 active)');
+    // End activation after attack.
     clearSelection();
-    clearUnitSelection();
-    clearActionTargets();
-    setMode('edit');
-    setTool('shape');
-    setLastAction('Cleared shape');
+    updateHud();
+  }
+
+  function passSelected() {
+    if (state.mode !== 'play') return;
+    if (!state.selectedKey || !state.act) return;
+
+    const u = unitsByHex.get(state.selectedKey);
+    if (!u) return;
+
+    if (state.act.committed) {
+      log('Pass not available (already committed).');
+      return;
+    }
+
+    consumeActivation(u.id);
+    state.act.committed = true;
+    log(`Pass: ${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type).abbrev}.`);
+
+    clearSelection();
+    updateHud();
+  }
+
+  function clickPlay(hexKey) {
+    const clickedUnit = unitsByHex.get(hexKey);
+
+    // If nothing selected: try to select.
+    if (!state.selectedKey) {
+      if (clickedUnit) {
+        const reason = activationBlockReason(clickedUnit, hexKey);
+        if (reason) {
+          log(reason);
+          updateHud();
+          return;
+        }
+        if (unitCanActivate(clickedUnit, hexKey)) selectUnit(hexKey);
+      }
+      return;
+    }
+
+    const selKey = state.selectedKey;
+    const selUnit = unitsByHex.get(selKey);
+    if (!selUnit) {
+      clearSelection();
+      updateHud();
+      return;
+    }
+
+    // Clicking the selected hex toggles deselect.
+    if (hexKey === selKey) {
+      clearSelection();
+      log('Deselected.');
+      updateHud();
+      return;
+    }
+
+    // Attack
+    if (clickedUnit && clickedUnit.side !== selUnit.side && state._attackTargets?.has(hexKey)) {
+      attackFromSelection(hexKey);
+      return;
+    }
+
+    // Move
+    if (!clickedUnit && state._moveTargets?.has(hexKey)) {
+      moveSelectedTo(hexKey);
+      return;
+    }
+
+    // Switch selection to another friendly (forfeits any optional post-move attack)
+    if (clickedUnit && clickedUnit.side === state.side) {
+      clearSelection();
+      const reason = activationBlockReason(clickedUnit, hexKey);
+      if (reason) {
+        log(reason);
+        updateHud();
+        return;
+      }
+      if (unitCanActivate(clickedUnit, hexKey)) selectUnit(hexKey);
+      return;
+    }
+  }
+
+  // --- Events
+  elCanvas.addEventListener('mousemove', (e) => {
+    const rect = elCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const h = pickHex(x, y);
+    state._hoverKey = h ? h.k : null;
+    draw();
   });
 
-  if (elResetTerrainBtn) elResetTerrainBtn.addEventListener('click', function () { resetTerrain(); updateStatusText(); setLastAction('Terrain reset'); });
-
-  if (elSideBlueBtn) elSideBlueBtn.addEventListener('click', function () { setUnitSide('blue'); });
-  if (elSideRedBtn) elSideRedBtn.addEventListener('click', function () { setUnitSide('red'); });
-
-  if (elUInfBtn) elUInfBtn.addEventListener('click', function () { setUnitType('inf'); });
-  if (elUCavBtn) elUCavBtn.addEventListener('click', function () { setUnitType('cav'); });
-  if (elUSkrBtn) elUSkrBtn.addEventListener('click', function () { setUnitType('skr'); });
-  if (elUArcBtn) elUArcBtn.addEventListener('click', function () { setUnitType('arc'); });
-  if (elUEraseBtn) elUEraseBtn.addEventListener('click', function () { setUnitType('erase'); });
-  if (elQGreenBtn) elQGreenBtn.addEventListener('click', function () { setUnitQuality('green'); });
-  if (elQRegBtn) elQRegBtn.addEventListener('click', function () { setUnitQuality('regular'); });
-  if (elQVetBtn) elQVetBtn.addEventListener('click', function () { setUnitQuality('veteran'); });
-
-  if (elDemoUnitsBtn) elDemoUnitsBtn.addEventListener('click', function () {
-    demoSetupUnits();
-    if (state.mode !== 'play') setMode('play');
+  elCanvas.addEventListener('mouseleave', () => {
+    state._hoverKey = null;
+    draw();
   });
 
-  if (elClearUnitsBtn) elClearUnitsBtn.addEventListener('click', function () {
-    clearUnits();
-    clearActionTargets();
-    updateStatusText();
-    setLastAction('Units cleared');
+  elCanvas.addEventListener('click', (e) => {
+    const rect = elCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const h = pickHex(x, y);
+    if (!h) return;
+
+    if (state.mode === 'edit') {
+      if (state.tool === 'terrain') paintTerrain(h.k);
+      else placeOrReplaceUnit(h.k);
+    } else {
+      clickPlay(h.k);
+    }
   });
 
-  if (elExportBtn) elExportBtn.addEventListener('click', function () { exportJson(false); });
-  if (elCopyBtn) elCopyBtn.addEventListener('click', function () { exportJson(true); });
-  if (elImportBtn) elImportBtn.addEventListener('click', importJson);
-  if (elClearJsonBtn) elClearJsonBtn.addEventListener('click', function () { if (elJson) elJson.value = ''; addLog('Cleared JSON box'); setLastAction('Cleared JSON'); });
+  // Keyboard: P = pass with selected unit
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'p' || e.key === 'P') {
+      if (state.mode === 'play' && state.selectedKey) {
+        e.preventDefault();
+        passSelected();
+      }
+    }
 
-  if (elEndTurnBtn) elEndTurnBtn.addEventListener('click', endTurn);
+    // Toggle command radius overlay
+    if (e.key === 'c' || e.key === 'C') {
+      if (state.mode === 'play') {
+        state.showCommand = !state.showCommand;
+        log(`Command radius: ${state.showCommand ? 'ON' : 'OFF'}.`);
+        updateHud();
+      }
+    }
+    // Toggle terrain palette (visual only)
+    if (e.key === 't' || e.key === 'T') {
+      state.terrainTheme = (state.terrainTheme === 'dusk') ? 'bright' : 'dusk';
+      log(`Terrain palette: ${state.terrainTheme.toUpperCase()}.`);
+      updateHud();
+    }
+  });
 
-  // Init
-  applyModeClasses();
-  renderTerrainPalette();
-  updateViewBox();
-  rebuildUnitsLayer();
-  updateStatusText();
+  window.addEventListener('resize', resize);
 
-  const msg = GAME_NAME + ' loaded (M9 Quality Tags). Turn 1: Blue.';
-  addLog(msg);
-  setLastAction(msg);
-  console.log(GAME_NAME + ' loaded. Build:', BUILD_ID);
+  elModeBtn.addEventListener('click', () => {
+    if (state.mode === 'edit') enterPlay();
+    else enterEdit();
+  });
+
+  elToolUnits.addEventListener('click', () => { state.tool = 'units'; updateHud(); });
+  elToolTerrain.addEventListener('click', () => { state.tool = 'terrain'; updateHud(); });
+
+  elSideBlue.addEventListener('click', () => { state.editSide = 'blue'; updateHud(); });
+  elSideRed.addEventListener('click', () => { state.editSide = 'red'; updateHud(); });
+
+  elTypeBtns.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-type]');
+    if (!btn) return;
+    state.editType = btn.dataset.type;
+    state.editErase = false;
+    if (state.editType === 'gen') state.editQuality = 'green';
+    updateHud();
+  });
+
+  elEraseBtn.addEventListener('click', () => { state.editErase = !state.editErase; updateHud(); });
+
+  elQualityGreen.addEventListener('click', () => { state.editQuality = 'green'; updateHud(); });
+  elQualityRegular.addEventListener('click', () => { state.editQuality = 'regular'; updateHud(); });
+  elQualityVeteran.addEventListener('click', () => { state.editQuality = 'veteran'; updateHud(); });
+
+  elTerrainBtns.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-terrain]');
+    if (!btn) return;
+    state.editTerrain = btn.dataset.terrain;
+    updateHud();
+  });
+
+  elVictorySel.addEventListener('change', () => {
+    state.victoryMode = elVictorySel.value;
+    updateHud();
+  });
+
+  elEndTurnBtn.addEventListener('click', endTurn);
+
+  elClearUnitsBtn.addEventListener('click', () => { enterEdit(); clearUnits(); });
+
+  elLoadScenarioBtn.addEventListener('click', () => { loadScenario(elScenarioSel.value); });
+
+  // --- Populate scenario & victory dropdowns
+  function populateScenarioSelect() {
+    elScenarioSel.innerHTML = '';
+    for (const name of Object.keys(SCENARIOS)) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      elScenarioSel.appendChild(opt);
+    }
+    elScenarioSel.value = 'Empty (Island)';
+  }
+
+  function populateVictorySelect() {
+    elVictorySel.innerHTML = '';
+    const modes = [
+      { id: 'clear', label: 'Clear Victory (halve UP)' },
+      { id: 'decapitation', label: 'Decapitation (kill all generals)' },
+      { id: 'annihilation', label: 'Annihilation (kill all units)' },
+    ];
+    for (const m of modes) {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.label;
+      elVictorySel.appendChild(opt);
+    }
+    elVictorySel.value = 'clear';
+    state.victoryMode = 'clear';
+  }
+
+  function boot() {
+    populateScenarioSelect();
+    populateVictorySelect();
+
+    loadScenario('Empty (Island)');
+    enterEdit();
+
+    log(`Booted ${GAME_NAME}. Active hexes=${board.active.length}. Edit: place units. Then To Play.`);
+    updateHud();
+    resize();
+  }
+
+  boot();
 })();
