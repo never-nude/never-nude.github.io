@@ -1,0 +1,59 @@
+{
+  "added": [
+    {
+      "r": 3,
+      "c": 5,
+      "neighbors": 4
+    },
+    {
+      "r": 7,
+      "c": 5,
+      "neighbors": 4
+    },
+    {
+      "r": 1,
+      "c": 6,
+      "neighbors": 4
+    },
+    {
+      "r": 9,
+      "c": 6,
+      "neighbors": 4
+    },
+    {
+      "r": 5,
+      "c": 4,
+      "neighbors": 3
+    },
+    {
+      "r": 4,
+      "c": 21,
+      "neighbors": 4
+    },
+    {
+      "r": 6,
+      "c": 21,
+      "neighbors": 4
+    },
+    {
+      "r": 2,
+      "c": 20,
+      "neighbors": 4
+    },
+    {
+      "r": 8,
+      "c": 20,
+      "neighbors": 4
+    },
+    {
+      "r": 0,
+      "c": 19,
+      "neighbors": 3
+    },
+    {
+      "r": 10,
+      "c": 19,
+      "neighbors": 3
+    }
+  ]
+}

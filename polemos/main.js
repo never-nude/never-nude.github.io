@@ -168,7 +168,7 @@
 
     // Visual toggles
     showCommand: true,
-    terrainTheme: 'vivid',
+    terrainTheme: 'battlefield',
 
     selectedKey: null,
 
@@ -999,6 +999,120 @@
   // === END BERSERKER FORMATIONS ===
 };
 
+// === Terrain Pack (Berserker) ===
+// Adds terrain-focused variants of the existing Grand scenarios.
+// Safe: if a base scenario is missing, we skip that entry.
+(function addTerrainPack(){
+  const add = (name, baseName, terrainMaker) => {
+    const base = SCENARIOS[baseName];
+    if (!base) {
+      console.warn('[TerrainPack] Missing base scenario:', baseName);
+      return;
+    }
+    if (SCENARIOS[name]) return;
+    SCENARIOS[name] = {
+      terrain: terrainMaker(),
+      units: base.units || [],
+    };
+  };
+
+  // A: central ridge with two passes
+  add('Terrain A — Ridge Line (30v30, mirrored)', 'Grand A — Even Lines (30v30, mirrored)', () => {
+    const t = [];
+    for (let q=-30; q<=30; q++) {
+      if (q === -2 || q === 2) continue; // passes
+      t.push({q, r:0, terrain:'hills'});
+      if (q % 3 === 0) t.push({q, r:-1, terrain:'hills'});
+      if (q % 3 === 0) t.push({q, r:1, terrain:'hills'});
+    }
+    return t;
+  });
+
+  // B: wide woods belt with a clear road
+  add('Terrain B — Woods Belt (28v28, mirrored)', 'Grand B — Center Push (28v28, mirrored)', () => {
+    const t = [];
+    for (let q=-30; q<=30; q++) {
+      for (let r=-1; r<=1; r++) {
+        if (q === 0) continue; // road
+        t.push({q, r, terrain:'woods'});
+      }
+    }
+    for (let q=-12; q<=-6; q++) t.push({q, r:-3, terrain:'woods'});
+    for (let q=6; q<=12; q++) t.push({q, r:3, terrain:'woods'});
+    return t;
+  });
+
+  // C: rough patches that punish cavalry lanes
+  add('Terrain C — Broken Ground (30v30, mirrored)', 'Grand C — Double Envelopment (30v30, mirrored)', () => {
+    const t = [];
+    for (let q=-30; q<=30; q++) {
+      if (Math.abs(q) < 3) continue;
+      if (q % 2 === 0) {
+        t.push({q, r:-2, terrain:'rough'});
+        t.push({q, r:2, terrain:'rough'});
+      }
+    }
+    for (let q=-10; q<=10; q++) {
+      if (q % 3 === 0) t.push({q, r:0, terrain:'rough'});
+    }
+    return t;
+  });
+
+  // D: marshy edge (water) that anchors flanks
+  add('Terrain D — Marsh Edge (26v26, mirrored)', 'Grand D — Massive Screen (26v26, mirrored)', () => {
+    const t = [];
+    for (let q=-30; q<=30; q++) {
+      if (q % 5 === 0) continue;
+      t.push({q, r:-4, terrain:'water'});
+      t.push({q, r:4, terrain:'water'});
+    }
+    for (let q=-30; q<=30; q++) {
+      if (q % 2 === 0) {
+        t.push({q, r:-3, terrain:'rough'});
+        t.push({q, r:3, terrain:'rough'});
+      }
+    }
+    return t;
+  });
+
+  // E: mirrored river with three fords
+  add('Terrain E — River Fords (24v24, mirrored)', 'Grand E — River Fords (24v24, mirrored)', () => {
+    const t = [];
+    const fords = new Set([-6, 0, 6]);
+    for (let q=-30; q<=30; q++) {
+      if (fords.has(q)) continue;
+      t.push({q, r:0, terrain:'water'});
+    }
+    for (let q=-30; q<=30; q++) {
+      if (q % 3 === 0) {
+        t.push({q, r:-1, terrain:'rough'});
+        t.push({q, r:1, terrain:'rough'});
+      }
+    }
+    return t;
+  });
+
+  // F: a corridor of clear with rough walls
+  add('Terrain F — Corridor Pass (22v22, mirrored)', 'Grand F — Corridor Pass (22v22, mirrored)', () => {
+    const t = [];
+    for (let r=-30; r<=30; r++) {
+      for (let q=-30; q<=30; q++) {
+        const inCorridor = (q >= -1 && q <= 1);
+        if (!inCorridor && Math.abs(q) <= 8 && Math.abs(r) <= 4) {
+          if ((q + r) % 2 === 0) t.push({q, r, terrain:'rough'});
+        }
+      }
+    }
+    for (let q=-4; q<=4; q+=2) {
+      t.push({q, r:-2, terrain:'hills'});
+      t.push({q, r:2, terrain:'hills'});
+    }
+    return t;
+  });
+})();
+
+
+
   // --- Geometry helpers
   function toAxial(q, r) {
     // Convert odd-r offset (q=col, r=row) to axial (x,z) where z=r.
@@ -1161,6 +1275,16 @@
   // Terrain is intentionally a *tint* over a shared base, not a repaint.
   // That keeps the board calm while still making woods/hills/rough/water read instantly.
   const TERRAIN_THEMES = {
+  battlefield: {
+    base: '#c7c2a6',
+    grid: 'rgba(0,0,0,0.28)',
+    tint: {
+      hills: 'rgba(176, 120, 40, 0.24)',
+      woods: 'rgba(40, 120, 60, 0.22)',
+      rough: 'rgba(110, 85, 70, 0.20)',
+      water: 'rgba(30, 90, 170, 0.30)',
+    },
+  },
     // Classic tabletop parchment: subtle but readable.
     classic: {
       base: '#f4f2ea',

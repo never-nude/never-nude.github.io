@@ -1,0 +1,6 @@
+MILESTONE: Thor
+PROJECT: Warfare
+CREATED: Mon Feb 23 19:19:28 EST 2026
+PATH: /Users/michael/dev/never-nude.github.io/polemos
+BUILD/TRUTH: WARFARE_DDAY_UI5 20260223-215506
+LOCAL URL: http://127.0.0.1:9225/

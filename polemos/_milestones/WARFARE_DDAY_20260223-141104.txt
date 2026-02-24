@@ -1,0 +1,6 @@
+MILESTONE: D-Day
+VERSION: Warfare
+CREATED: Mon Feb 23 14:11:04 EST 2026
+PATH: /Users/michael/dev/never-nude.github.io/polemos
+URL: http://127.0.0.1:9225/
+GIT: 6a9a0f0

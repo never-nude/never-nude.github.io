@@ -1,0 +1,509 @@
+{
+  "name": "Grand Triplex \u2014 Echelon Default (24 per side)",
+  "victory": {
+    "mode": "standards",
+    "target": 6
+  },
+  "standards": [],
+  "units": [
+    {
+      "id": "B_SKR_1",
+      "side": "Blue",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 4,
+      "c": 9
+    },
+    {
+      "id": "B_SKR_2",
+      "side": "Blue",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 4,
+      "c": 12
+    },
+    {
+      "id": "B_SKR_3",
+      "side": "Blue",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 4,
+      "c": 14
+    },
+    {
+      "id": "B_SKR_4",
+      "side": "Blue",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 4,
+      "c": 17
+    },
+    {
+      "id": "B_CAV_1",
+      "side": "Blue",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 8
+    },
+    {
+      "id": "B_CAV_2",
+      "side": "Blue",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 18
+    },
+    {
+      "id": "B_INF_1",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 10
+    },
+    {
+      "id": "B_INF_2",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 11
+    },
+    {
+      "id": "B_INF_3",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 12
+    },
+    {
+      "id": "B_INF_4",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 13
+    },
+    {
+      "id": "B_INF_5",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 14
+    },
+    {
+      "id": "B_INF_6",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 15
+    },
+    {
+      "id": "B_INF_7",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 3,
+      "c": 16
+    },
+    {
+      "id": "B_INF_8",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 2,
+      "c": 10
+    },
+    {
+      "id": "B_INF_9",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 2,
+      "c": 11
+    },
+    {
+      "id": "B_INF_10",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 2,
+      "c": 12
+    },
+    {
+      "id": "B_INF_11",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 2,
+      "c": 14
+    },
+    {
+      "id": "B_INF_12",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 2,
+      "c": 15
+    },
+    {
+      "id": "B_INF_13",
+      "side": "Blue",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 2,
+      "c": 16
+    },
+    {
+      "id": "B_ARC_1",
+      "side": "Blue",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 1,
+      "c": 10
+    },
+    {
+      "id": "B_ARC_2",
+      "side": "Blue",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 1,
+      "c": 12
+    },
+    {
+      "id": "B_ARC_3",
+      "side": "Blue",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 1,
+      "c": 14
+    },
+    {
+      "id": "B_ARC_4",
+      "side": "Blue",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 1,
+      "c": 16
+    },
+    {
+      "id": "B_GEN_1",
+      "side": "Blue",
+      "type": "GEN",
+      "quality": "Veteran",
+      "hp": 5,
+      "maxHp": 5,
+      "r": 1,
+      "c": 13,
+      "moraleRadius": 3,
+      "attack": {
+        "range": 1,
+        "dice": "1d6",
+        "hitOn": [
+          6
+        ],
+        "notes": "Adjacent only; hits only on a 6."
+      }
+    },
+    {
+      "id": "R_SKR_1",
+      "side": "Red",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 9
+    },
+    {
+      "id": "R_SKR_2",
+      "side": "Red",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 12
+    },
+    {
+      "id": "R_SKR_3",
+      "side": "Red",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 14
+    },
+    {
+      "id": "R_SKR_4",
+      "side": "Red",
+      "type": "SKR",
+      "quality": "Green",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 6,
+      "c": 17
+    },
+    {
+      "id": "R_CAV_1",
+      "side": "Red",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 8
+    },
+    {
+      "id": "R_CAV_2",
+      "side": "Red",
+      "type": "CAV",
+      "quality": "Veteran",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 18
+    },
+    {
+      "id": "R_INF_1",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 10
+    },
+    {
+      "id": "R_INF_2",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 11
+    },
+    {
+      "id": "R_INF_3",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 12
+    },
+    {
+      "id": "R_INF_4",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 13
+    },
+    {
+      "id": "R_INF_5",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 14
+    },
+    {
+      "id": "R_INF_6",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 15
+    },
+    {
+      "id": "R_INF_7",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 7,
+      "c": 16
+    },
+    {
+      "id": "R_INF_8",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 8,
+      "c": 10
+    },
+    {
+      "id": "R_INF_9",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 8,
+      "c": 11
+    },
+    {
+      "id": "R_INF_10",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 8,
+      "c": 12
+    },
+    {
+      "id": "R_INF_11",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 8,
+      "c": 14
+    },
+    {
+      "id": "R_INF_12",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 8,
+      "c": 15
+    },
+    {
+      "id": "R_INF_13",
+      "side": "Red",
+      "type": "INF",
+      "quality": "Regular",
+      "hp": 4,
+      "maxHp": 4,
+      "r": 8,
+      "c": 16
+    },
+    {
+      "id": "R_ARC_1",
+      "side": "Red",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 9,
+      "c": 10
+    },
+    {
+      "id": "R_ARC_2",
+      "side": "Red",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 9,
+      "c": 12
+    },
+    {
+      "id": "R_ARC_3",
+      "side": "Red",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 9,
+      "c": 14
+    },
+    {
+      "id": "R_ARC_4",
+      "side": "Red",
+      "type": "ARC",
+      "quality": "Regular",
+      "hp": 3,
+      "maxHp": 3,
+      "r": 9,
+      "c": 16
+    },
+    {
+      "id": "R_GEN_1",
+      "side": "Red",
+      "type": "GEN",
+      "quality": "Veteran",
+      "hp": 5,
+      "maxHp": 5,
+      "r": 9,
+      "c": 13,
+      "moraleRadius": 3,
+      "attack": {
+        "range": 1,
+        "dice": "1d6",
+        "hitOn": [
+          6
+        ],
+        "notes": "Adjacent only; hits only on a 6."
+      }
+    }
+  ],
+  "notes": "Symmetric deep formation centered at col 13 (halfspan=5). Front=4 SLG. Main=2 CAV + 7 INF adjacent. Res=6 INF paired. Rear=4 ARC + GEN."
+}
