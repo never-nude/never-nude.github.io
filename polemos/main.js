@@ -55,6 +55,63 @@
 
   const UNIT_BY_ID = new Map(UNIT_DEFS.map(u => [u.id, u]));
 
+  // === UNIT ICONS (Berserker) ===
+  // White-on-transparent PNGs rendered over blue/red token fills.
+  // Cache-busted with BUILD_ID so Safari/GitHub Pages doesn’t haunt you.
+  const UNIT_ICON_SOURCES = {
+    arc: 'assets/icon_arc.png', // Archer  -> arrow
+    inf: 'assets/icon_inf.png', // Infantry -> sword
+    skr: 'assets/icon_skr.png', // Skirmisher -> sling
+    cav: 'assets/icon_cav.png', // Cavalry -> horse
+  };
+
+  const UNIT_ICONS = {};
+  let UNIT_ICONS_READY = false;
+
+  function loadUnitIcons() {
+    const entries = Object.entries(UNIT_ICON_SOURCES);
+    let remaining = entries.length;
+    UNIT_ICONS_READY = false;
+
+    for (const [type, src] of entries) {
+      const img = new Image();
+      img.onload = () => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          UNIT_ICONS_READY = true;
+          // Force a redraw once icons are in memory.
+          try { draw(); } catch (_) {}
+        }
+      };
+      img.onerror = () => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          // Even if some fail, we can still draw (fallback to text).
+          try { draw(); } catch (_) {}
+        }
+      };
+      img.src = `${src}?v=${encodeURIComponent(BUILD_ID)}`;
+      UNIT_ICONS[type] = img;
+    }
+  }
+
+  function unitIconReady(type) {
+    const img = UNIT_ICONS[type];
+    return !!(img && img.complete && img.naturalWidth > 0);
+  }
+
+  // Per-type tuning so icons feel proportional inside the token disc.
+  const UNIT_ICON_TUNE = {
+    arc: { scale: 1.12, y: -0.08 }, // a touch bigger + slightly up
+    inf: { scale: 0.95, y:  0.00 },
+    skr: { scale: 0.95, y:  0.00 },
+    cav: { scale: 0.95, y:  0.00 },
+  };
+
+  loadUnitIcons();
+  // === END UNIT ICONS ===
+
+
   const QUALITY_ORDER = ['green', 'regular', 'veteran'];
 
   // Odd-r offset neighbors (pointy-top).
@@ -1288,19 +1345,30 @@ function unitColors(side) {
         ctx.strokeStyle = '#fff';
         ctx.stroke();
       }
-      // Text (BIG)
+      // Unit mark (ICON preferred, text fallback)
       const def = UNIT_BY_ID.get(u.type);
-      // Make 3-letter blocks (INF/CAV/SKR) ~15–20% smaller for better balance
-      // against single-glyph tokens (2605, 27b6).
-      const textScale = (u.type === 'inf' || u.type === 'cav' || u.type === 'skr') ? 0.83 : 1.0;
-      const glyphScale = (u.type === 'arc') ? 2.5 : 1.0;
-      const fontPx = Math.floor(R * 0.55 * textScale * glyphScale);
-      ctx.font = `700 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = c.text;
-      const glyphY = h.cy + ((u.type === 'arc') ? -Math.floor(R * 0.10) : 1);
-      ctx.fillText(def.symbol, h.cx, glyphY);
+
+      const img = UNIT_ICONS && UNIT_ICONS[u.type];
+      const canIcon = (u.type !== 'gen') && unitIconReady && unitIconReady(u.type);
+
+      if (canIcon) {
+        const base = R * 0.95;
+        const tune = (UNIT_ICON_TUNE && UNIT_ICON_TUNE[u.type]) ? UNIT_ICON_TUNE[u.type] : { scale: 0.95, y: 0 };
+        const s = Math.floor(base * (tune.scale || 0.95));
+        const yOff = Math.floor(R * (tune.y || 0));
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(img, Math.floor(h.cx - s / 2), Math.floor(h.cy - s / 2 + yOff), s, s);
+      } else {
+        // Original text symbols (kept as a fallback)
+        const textScale = (u.type === 'inf' || u.type === 'cav' || u.type === 'skr') ? 0.83 : 1.0;
+        const fontPx = Math.floor(R * 0.55 * textScale);
+        ctx.font = `700 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = c.text;
+        ctx.fillText(def.symbol, h.cx, h.cy + 1);
+      }
       // HP pips (tiny)
       const pipR = Math.max(2, Math.floor(R * 0.07));
       const startX = h.cx - (pipR * 2) * (def.hp - 1) * 0.5;
