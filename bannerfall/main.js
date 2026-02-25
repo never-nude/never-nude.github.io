@@ -103,7 +103,7 @@
   // Per-type tuning so icons feel proportional inside the token disc.
   const UNIT_ICON_TUNE = {
     arc: { scale: 1.12, y: -0.08 }, // a touch bigger + slightly up
-    inf: { scale: 0.95, y:  0.00 },
+    inf: { scale: 0.95, y:  0.00, rot: -0.616 },
     skr: { scale: 0.95, y:  0.00 },
     cav: { scale: 0.95, y:  0.00 },
   };
@@ -1481,9 +1481,19 @@ function unitColors(side) {
         const s = Math.floor(base * (tune.scale || 0.95));
         const yOff = Math.floor(R * (tune.y || 0));
 
+        const rot = (typeof tune.rot === 'number') ? tune.rot : 0;
+
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(img, Math.floor(h.cx - s / 2), Math.floor(h.cy - s / 2 + yOff), s, s);
-      } else {
+        if (rot) {
+          ctx.save();
+          ctx.translate(Math.floor(h.cx), Math.floor(h.cy + yOff));
+          ctx.rotate(rot);
+          ctx.drawImage(img, Math.floor(-s / 2), Math.floor(-s / 2), s, s);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, Math.floor(h.cx - s / 2), Math.floor(h.cy - s / 2 + yOff), s, s);
+        }
+} else {
         // Original text symbols (kept as a fallback)
         const textScale = (u.type === 'inf' || u.type === 'cav' || u.type === 'skr') ? 0.83 : 1.0;
         const fontPx = Math.floor(R * 0.55 * textScale);
