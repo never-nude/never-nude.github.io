@@ -3396,6 +3396,12 @@ function unitColors(side) {
         }
       }
 
+      // Reinforcement visibility: soft tile shading reads faster than another dashed ring.
+      if (reinforcedKeys && reinforcedKeys.has(k)) {
+        ctx.fillStyle = 'rgba(0, 226, 214, 0.24)';
+        ctx.fill(p);
+      }
+
       // Hover
       if (state._hoverKey === k) {
         ctx.strokeStyle = '#ffffff55';
@@ -3471,15 +3477,6 @@ function unitColors(side) {
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#fff';
         ctx.stroke();
-      }
-      if (reinforcedKeys && reinforcedKeys.has(hk)) {
-        ctx.beginPath();
-        ctx.arc(h.cx, h.cy, R * 0.79, 0, Math.PI * 2);
-        ctx.lineWidth = 2.25;
-        ctx.strokeStyle = 'rgba(0, 226, 214, 0.95)';
-        ctx.setLineDash([3, 4]);
-        ctx.stroke();
-        ctx.setLineDash([]);
       }
       // Unit mark (ICON preferred, text fallback)
       const def = UNIT_BY_ID.get(u.type);
@@ -3630,7 +3627,7 @@ function unitColors(side) {
       : 'Edit mode preview values.';
     if (state.mode === 'play' && u.type === 'inf') {
       const reinforcedCount = reinforcedFormationKeys(selectedKey).size;
-      metaText += ` Reinforcement outline: ${reinforcedCount} infantry.`;
+      metaText += ` Reinforcement shading: ${reinforcedCount} infantry.`;
     }
 
     setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.abbrev} (${qualityText})`);
