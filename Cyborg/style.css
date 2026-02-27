@@ -589,6 +589,35 @@ body[data-mode="play"] #side{
   line-height:1.25;
 }
 
+.quickSheetGrid{
+  display:grid;
+  grid-template-columns:46px 78px minmax(0, 1fr);
+  column-gap:8px;
+  row-gap:4px;
+  align-items:center;
+}
+
+.quickSheetHead{
+  color:#f0ddae;
+  font-size:10px;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  font-weight:700;
+}
+
+.quickSheetCell{
+  color:#d9deea;
+  font-size:10px;
+  line-height:1.2;
+}
+
+.quickSheetNote{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.2;
+}
+
 .rulesModal{
   position:fixed;
   inset:0;
