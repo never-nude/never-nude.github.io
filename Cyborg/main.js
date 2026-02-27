@@ -74,6 +74,7 @@
   const SCENARIO_FILTER_IDS = Object.fromEntries(
     Object.entries(SCENARIO_FILTER_OPTIONS).map(([k, opts]) => [k, new Set(opts.map(o => o.id))])
   );
+  const HEX_DIRECTIONS = ['e', 'w', 'ur', 'ul', 'dr', 'dl'];
 
   // --- Core rules constants
   const ACT_LIMIT = 3; // activations per turn
@@ -89,6 +90,8 @@
   const AI_START_DELAY_MS = 300;
   const MOVE_ANIM_STEP_MS_HUMAN = 170;
   const MOVE_ANIM_STEP_MS_AI = 340;
+  const ACTION_PULSE_MOVE_MS = 480;
+  const ACTION_PULSE_ATTACK_MS = 560;
   const INF_SUPPORT_MAX_RANKS = 2;
   const INF_SUPPORT_DICE_PER_RANK = 1;
   const AI_DIFFICULTY_PROFILES = {
@@ -269,7 +272,7 @@
   }
 
   function adjacentDirection(fromKey, toKey) {
-    for (const d of ['e', 'w', 'ur', 'ul', 'dr', 'dl']) {
+    for (const d of HEX_DIRECTIONS) {
       if (stepKeyInDirection(fromKey, d) === toKey) return d;
     }
     return null;
@@ -514,6 +517,8 @@
     lastCombat: null,
     moveAnim: null,
     moveAnimRaf: null,
+    actionPulse: null,
+    actionPulseRaf: null,
 
     draft: {
       active: false,
@@ -3260,6 +3265,49 @@ function unitColors(side) {
     state.moveAnim = null;
   }
 
+  function stopActionPulse() {
+    if (state.actionPulseRaf) {
+      cancelAnimationFrame(state.actionPulseRaf);
+      state.actionPulseRaf = null;
+    }
+    state.actionPulse = null;
+  }
+
+  function startActionPulse({ type = 'attack', fromKey = null, toKey = null, durationMs = 500 } = {}) {
+    if (!fromKey && !toKey) return;
+
+    stopActionPulse();
+
+    const now = performance.now();
+    state.actionPulse = {
+      type,
+      fromKey,
+      toKey,
+      startedAt: now,
+      durationMs: Math.max(120, Number(durationMs) || 500),
+    };
+
+    const tick = (ts) => {
+      const pulse = state.actionPulse;
+      if (!pulse) {
+        state.actionPulseRaf = null;
+        return;
+      }
+      const t = (ts - pulse.startedAt) / pulse.durationMs;
+      if (t >= 1) {
+        state.actionPulse = null;
+        state.actionPulseRaf = null;
+        draw();
+        return;
+      }
+      draw();
+      state.actionPulseRaf = requestAnimationFrame(tick);
+    };
+
+    draw();
+    state.actionPulseRaf = requestAnimationFrame(tick);
+  }
+
   function moveAnimationPosition(anim) {
     if (!anim || !Array.isArray(anim.pathKeys) || anim.pathKeys.length < 2) return null;
     const totalSegments = anim.pathKeys.length - 1;
@@ -3340,13 +3388,90 @@ function unitColors(side) {
     ctx.restore();
   }
 
+  function drawActionPulseOverlay(pulse) {
+    if (!pulse) return;
+
+    const fromHex = pulse.fromKey ? board.byKey.get(pulse.fromKey) : null;
+    const toHex = pulse.toKey ? board.byKey.get(pulse.toKey) : null;
+    if (!fromHex && !toHex) return;
+
+    const now = performance.now();
+    const duration = Math.max(1, Number(pulse.durationMs) || 500);
+    const t = Math.max(0, Math.min(1, (now - pulse.startedAt) / duration));
+    const fade = 1 - t;
+
+    function glowHex(hex, intensity = 1) {
+      if (!hex) return;
+      const glow = (0.16 + (0.20 * fade)) * intensity;
+      const ring = (0.36 + (0.38 * fade)) * intensity;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(hex.cx, hex.cy, R * 0.64, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 76, 76, ${Math.max(0.08, glow)})`;
+      ctx.fill();
+      ctx.lineWidth = Math.max(2, R * 0.11);
+      ctx.strokeStyle = `rgba(255, 134, 134, ${Math.max(0.15, ring)})`;
+      ctx.shadowBlur = Math.max(8, Math.floor(R * 0.75));
+      ctx.shadowColor = `rgba(255, 70, 70, ${Math.max(0.18, 0.42 * fade)})`;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    glowHex(fromHex, 1.0);
+    if (!fromHex || !toHex || fromHex.k !== toHex.k) glowHex(toHex, 0.95);
+
+    if (fromHex && toHex && fromHex.k !== toHex.k) {
+      const dx = toHex.cx - fromHex.cx;
+      const dy = toHex.cy - fromHex.cy;
+      const len = Math.hypot(dx, dy);
+      if (len > 1) {
+        const ux = dx / len;
+        const uy = dy / len;
+        const pad = R * 0.64;
+        const sx = fromHex.cx + (ux * pad);
+        const sy = fromHex.cy + (uy * pad);
+        const ex = toHex.cx - (ux * pad);
+        const ey = toHex.cy - (uy * pad);
+
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineWidth = Math.max(3, R * 0.17);
+        ctx.strokeStyle = `rgba(255, 98, 98, ${0.30 + (0.50 * fade)})`;
+        ctx.shadowBlur = Math.max(8, Math.floor(R * 0.65));
+        ctx.shadowColor = `rgba(255, 70, 70, ${0.30 + (0.35 * fade)})`;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+
+        const ah = Math.max(8, R * 0.34);
+        const aw = Math.max(5, R * 0.20);
+        const px = -uy;
+        const py = ux;
+        ctx.fillStyle = `rgba(255, 124, 124, ${0.32 + (0.48 * fade)})`;
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - (ux * ah) + (px * aw), ey - (uy * ah) + (py * aw));
+        ctx.lineTo(ex - (ux * ah) - (px * aw), ey - (uy * ah) - (py * aw));
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
   function draw() {
     const activeMoveAnim = state.moveAnim;
+    const reinforceAnchorKey = (() => {
+      if (state.mode !== 'play') return null;
+      if (state.selectedKey && unitsByHex.get(state.selectedKey)?.type === 'inf') return state.selectedKey;
+      if (!state.selectedKey && state._hoverKey && unitsByHex.get(state._hoverKey)?.type === 'inf') return state._hoverKey;
+      return null;
+    })();
     const reinforcedKeys = (
       state.mode === 'play' &&
-      state.selectedKey &&
-      unitsByHex.get(state.selectedKey)?.type === 'inf'
-    ) ? reinforcedFormationKeys(state.selectedKey) : null;
+      reinforceAnchorKey
+    ) ? reinforcedFormationKeys(reinforceAnchorKey) : null;
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
     // Background
@@ -3543,6 +3668,10 @@ function unitColors(side) {
     if (activeMoveAnim && activeMoveAnim.unit) {
       const p = moveAnimationPosition(activeMoveAnim);
       if (p) drawTokenAt(activeMoveAnim.unit, p.cx, p.cy);
+    }
+
+    if (state.actionPulse) {
+      drawActionPulseOverlay(state.actionPulse);
     }
   }
 
@@ -5420,14 +5549,8 @@ function unitColors(side) {
     const out = new Set(line);
     if (line.length === 0) return out;
 
-    const frontDir = sideForwardDirection(anchor.side, state.forwardAxis);
-    const rearDir = oppositeDirection(frontDir);
-    const supportDirs = [];
-    if (frontDir) supportDirs.push(frontDir);
-    if (rearDir && rearDir !== frontDir) supportDirs.push(rearDir);
-
     for (const lk of line) {
-      for (const dir of supportDirs) {
+      for (const dir of HEX_DIRECTIONS) {
         let cur = lk;
         for (let i = 0; i < INF_SUPPORT_MAX_RANKS; i++) {
           const next = stepKeyInDirection(cur, dir);
@@ -6034,6 +6157,7 @@ function unitColors(side) {
   function enterEdit() {
     stopAiLoop();
     stopMoveAnimation();
+    stopActionPulse();
     state.mode = 'edit';
     state.tool = 'units';
 
@@ -6055,6 +6179,7 @@ function unitColors(side) {
 
     stopAiLoop();
     stopMoveAnimation();
+    stopActionPulse();
     state.mode = 'play';
     state.turn = 1;
     state.side = 'blue';
@@ -6886,6 +7011,7 @@ function unitColors(side) {
     const skipAiKick = !!options.skipAiKick;
     stopAiLoop();
     stopMoveAnimation();
+    stopActionPulse();
     resetDraftState({ keepBudget: true });
 
     const resolved = resolveImportPayload(raw);
@@ -7243,6 +7369,12 @@ function unitColors(side) {
     state.selectedKey = destKey;
     state.act.moved = true;
     startMoveAnimation(pathKeys, u, isAiControlledSide(u.side));
+    startActionPulse({
+      type: 'move',
+      fromKey,
+      toKey: destKey,
+      durationMs: ACTION_PULSE_MOVE_MS,
+    });
 
     if (isPostAttackWithdraw) {
       log(`Veteran CAV disengaged to ${destKey}.`);
@@ -7341,6 +7473,12 @@ function unitColors(side) {
       state.act.committed = true;
     }
 
+    startActionPulse({
+      type: 'attack',
+      fromKey: attackerKey,
+      toKey: targetKey,
+      durationMs: ACTION_PULSE_ATTACK_MS,
+    });
     resolveAttack(attackerKey, targetKey);
 
     state.act.attacked = true;
