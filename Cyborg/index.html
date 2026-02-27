@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bannerfall</title>
-  <link rel="stylesheet" href="style.css?v=20260227-line-advance-preview" />
+  <link rel="stylesheet" href="style.css?v=20260227-rules-reference" />
 </head>
 <body>
   <header id="hud">
@@ -214,46 +214,76 @@
 
       <div class="rulesBody">
         <div class="rulesSection">
-          <h3>Turn Structure</h3>
-          <p>Each side gets <b><span id="rulesActLimit">3</span> activations</b> per turn. A unit usually acts once per turn.</p>
-          <p>On activation: move, attack, or pass. Line Advance is a movement-only formation order.</p>
+          <h3>Turn And Activations</h3>
+          <p>Each side gets <b><span id="rulesActLimit">3</span> activations</b> per turn.</p>
+          <p>On activation, a unit may <b>move</b>, <b>attack</b>, or <b>pass</b>. <b>Line Advance</b> is a formation order for INF (movement-only).</p>
+          <p>A unit normally activates at most once per turn. End Turn swaps side, increments turn after Red, and resets activations/spent units.</p>
+        </div>
+
+        <div class="rulesSection">
+          <h3>Unit Stats (MP / HP / UP)</h3>
+          <div class="rulesGrid">
+            <div class="rulesKey">INF</div><div class="rulesVal">MP <span id="rulesInfMove">1</span> · HP G/R/V <span id="rulesInfHp">3/4/5</span> · UP G/R/V <span id="rulesInfUp">3/5/7</span></div>
+            <div class="rulesKey">CAV</div><div class="rulesVal">MP <span id="rulesCavMove">2</span> · HP G/R/V <span id="rulesCavHp">2/3/4</span> · UP G/R/V <span id="rulesCavUp">6/8/10</span></div>
+            <div class="rulesKey">SKR</div><div class="rulesVal">MP <span id="rulesSkrMove">2</span> · HP G/R/V <span id="rulesSkrHp">1/2/3</span> · UP G/R/V <span id="rulesSkrUp">2/3/4</span></div>
+            <div class="rulesKey">ARC</div><div class="rulesVal">MP <span id="rulesArcMove">1</span> · HP G/R/V <span id="rulesArcHp">1/2/3</span> · UP G/R/V <span id="rulesArcUp">2/4/6</span></div>
+            <div class="rulesKey">GEN</div><div class="rulesVal">MP <span id="rulesGenMove">2</span> · HP G/R/V <span id="rulesGenHp">2/3/4</span> · UP G/R/V <span id="rulesGenUp">8/10/12</span></div>
+            <div class="rulesKey">RUN</div><div class="rulesVal">MP <span id="rulesRunMove">4</span> · HP <span id="rulesRunHp">2</span> · UP <span id="rulesRunUp">1</span> · no attack</div>
+          </div>
+          <p><b>RUN</b> is always Green and works as a command relay piece.</p>
         </div>
 
         <div class="rulesSection">
           <h3>Command Network</h3>
           <p>General command radii: Green <b><span id="rulesCmdGreen">3</span></b>, Regular <b><span id="rulesCmdRegular">4</span></b>, Veteran <b><span id="rulesCmdVeteran">5</span></b>.</p>
-          <p>Runner relay: moves <b><span id="rulesRunMove">4</span></b>, command radius <b><span id="rulesRunCmd">1</span></b>, HP <b><span id="rulesRunHp">2</span></b>, UP <b><span id="rulesRunUp">1</span></b>, no attack.</p>
-          <p>Green command-dependent units out of command cannot activate. Regular command-dependent units out of command can attack but cannot move.</p>
+          <p>Runner relay command radius: <b><span id="rulesRunCmd">1</span></b> hex. RUN has no attack and uses the RUN stats shown above.</p>
+          <p>Command-independent units: <b>GEN</b>, <b>RUN</b>, <b>CAV</b>, and all <b>Veterans</b>.</p>
+          <p><b>Green</b> command-dependent units out of command cannot activate. <b>Regular</b> command-dependent units out of command may attack from current hex but cannot move.</p>
         </div>
 
         <div class="rulesSection">
           <h3>Movement And Engagement</h3>
-          <p>If adjacent to an enemy, a unit is engaged and usually cannot move.</p>
-          <p><b>SKR</b>, <b>RUN</b>, and <b>Veterans</b> may disengage 1 hex to a hex not adjacent to any enemy.</p>
-          <p>Terrain: Clear cost 1. Hills/Woods/Rough cost 2 (CAV cost 3). Water is impassable.</p>
+          <p>If adjacent to an enemy, a unit is <b>engaged</b> and usually cannot move.</p>
+          <p><b>SKR</b>, <b>RUN</b>, and <b>Veterans</b> may disengage 1 hex, but must end on a hex not adjacent to enemies.</p>
+          <div class="rulesGrid">
+            <div class="rulesKey">Clear</div><div class="rulesVal">Entry cost <span id="rulesMoveClear">1</span> for all unit types.</div>
+            <div class="rulesKey">Hills/Woods/Rough</div><div class="rulesVal">Entry cost <span id="rulesMoveDifficultFoot">2</span> for INF/ARC/SKR/GEN/RUN, and <span id="rulesMoveDifficultCav">3</span> for CAV.</div>
+            <div class="rulesKey">Water</div><div class="rulesVal">Impassable (cannot enter).</div>
+          </div>
+          <p><b>Line Advance</b>: select a friendly INF; the game previews contiguous eligible INF in line and forward destination arrows. Resolve as one activation, movement only, partial if blocked; all participants become spent.</p>
         </div>
 
         <div class="rulesSection">
-          <h3>Combat</h3>
-          <p>Die results: <b>5–6 hit</b>, <b>4 retreat</b>, <b>1–3 no effect</b>. Blocked retreat converts to 1 hit.</p>
+          <h3>Combat Resolution</h3>
+          <p>Each d6 result: <b>5–6 = Hit</b> (−1 HP), <b>4 = Retreat</b>, <b>1–3 = No effect</b>.</p>
           <div class="rulesGrid">
             <div class="rulesKey">Melee Dice</div><div class="rulesVal">INF <span id="rulesInfMelee">2</span>, CAV <span id="rulesCavMelee">3</span>, SKR <span id="rulesSkrMelee">2</span>, ARC <span id="rulesArcMelee">1</span>, GEN <span id="rulesGenMelee">1</span>, RUN 0</div>
-            <div class="rulesKey">Ranged</div><div class="rulesVal">ARC: range 2 (<span id="rulesArcRange2">2</span> dice), range 3 (<span id="rulesArcRange3">1</span> die). SKR: range 2 (<span id="rulesSkrRange2">1</span> die).</div>
+            <div class="rulesKey">Ranged Dice</div><div class="rulesVal">ARC: range 2 (<span id="rulesArcRange2">2</span> dice), range 3 (<span id="rulesArcRange3">1</span> die). SKR: range 2 only (<span id="rulesSkrRange2">1</span> die).</div>
+            <div class="rulesKey">Ranged Limits</div><div class="rulesVal">Only ARC/SKR have ranged attacks; engaged units cannot make ranged attacks.</div>
             <div class="rulesKey">Woods Defense</div><div class="rulesVal">Attacker rolls −1 die (minimum 1).</div>
+            <div class="rulesKey">Retreat Rule</div><div class="rulesVal">Retreat pushes defender to a neighboring hex that increases distance from attacker. If retreat hex is off-board, water, or occupied, that retreat converts to 1 hit.</div>
+            <div class="rulesKey">Retreat Chain</div><div class="rulesVal">Multiple retreat results resolve one step at a time; each step can retreat or convert to hit.</div>
           </div>
         </div>
 
         <div class="rulesSection">
-          <h3>Victory And Controls</h3>
-          <p>Victory modes: <b>Annihilation</b>, <b>Decapitation</b>, <b>Clear Victory</b> (capture at least half enemy starting UP).</p>
+          <h3>Victory Modes</h3>
+          <p><b>Annihilation</b>: destroy all enemy units (including generals).</p>
+          <p><b>Decapitation</b>: destroy all enemy generals.</p>
+          <p><b>Clear Victory (UP)</b>: capture enemy UP at least equal to <b>ceil(enemy starting UP / 2)</b>. UP is gained when an enemy unit is destroyed.</p>
+        </div>
+
+        <div class="rulesSection">
+          <h3>Controls And Hotkeys</h3>
           <p>Hotkeys: <b>P</b> pass, <b>L</b> line advance, <b>C</b> command overlay, <b>T</b> terrain palette, <b>Esc</b> close rules.</p>
+          <p>Online mode: Host controls setup/rules/start, plays Blue. Guest joins as Red.</p>
         </div>
       </div>
     </section>
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260227-line-advance-preview"></script>
-  <script src="main.js?v=20260227-line-advance-preview"></script>
+  <script src="build.js?v=20260227-rules-reference"></script>
+  <script src="main.js?v=20260227-rules-reference"></script>
 </body>
 </html>

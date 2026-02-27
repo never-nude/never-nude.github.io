@@ -1889,6 +1889,11 @@ function unitColors(side) {
   }
 
   function populateRulesReference() {
+    const qualityTriplet = (type, valueFn) => {
+      return `${valueFn(type, 'green')}/${valueFn(type, 'regular')}/${valueFn(type, 'veteran')}`;
+    };
+    const moveFor = (type) => UNIT_BY_ID.get(type)?.move ?? '-';
+
     setRulesValue('rulesActLimit', ACT_LIMIT);
     setRulesValue('rulesCmdGreen', COMMAND_RADIUS_BY_QUALITY.green);
     setRulesValue('rulesCmdRegular', COMMAND_RADIUS_BY_QUALITY.regular);
@@ -1899,6 +1904,25 @@ function unitColors(side) {
     setRulesValue('rulesRunCmd', RUNNER_COMMAND_RADIUS);
     setRulesValue('rulesRunHp', unitMaxHp('run', 'green'));
     setRulesValue('rulesRunUp', unitUpValue('run', 'green'));
+
+    setRulesValue('rulesInfMove', moveFor('inf'));
+    setRulesValue('rulesCavMove', moveFor('cav'));
+    setRulesValue('rulesSkrMove', moveFor('skr'));
+    setRulesValue('rulesArcMove', moveFor('arc'));
+    setRulesValue('rulesGenMove', moveFor('gen'));
+    setRulesValue('rulesInfHp', qualityTriplet('inf', unitMaxHp));
+    setRulesValue('rulesCavHp', qualityTriplet('cav', unitMaxHp));
+    setRulesValue('rulesSkrHp', qualityTriplet('skr', unitMaxHp));
+    setRulesValue('rulesArcHp', qualityTriplet('arc', unitMaxHp));
+    setRulesValue('rulesGenHp', qualityTriplet('gen', unitMaxHp));
+    setRulesValue('rulesInfUp', qualityTriplet('inf', unitUpValue));
+    setRulesValue('rulesCavUp', qualityTriplet('cav', unitUpValue));
+    setRulesValue('rulesSkrUp', qualityTriplet('skr', unitUpValue));
+    setRulesValue('rulesArcUp', qualityTriplet('arc', unitUpValue));
+    setRulesValue('rulesGenUp', qualityTriplet('gen', unitUpValue));
+    setRulesValue('rulesMoveClear', terrainMoveCost('inf', 'clear'));
+    setRulesValue('rulesMoveDifficultFoot', terrainMoveCost('inf', 'hills'));
+    setRulesValue('rulesMoveDifficultCav', terrainMoveCost('cav', 'hills'));
 
     setRulesValue('rulesInfMelee', UNIT_BY_ID.get('inf')?.meleeDice ?? '-');
     setRulesValue('rulesCavMelee', UNIT_BY_ID.get('cav')?.meleeDice ?? '-');
