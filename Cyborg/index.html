@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-ui-clean-v39" />
+  <link rel="stylesheet" href="style.css?v=20260228-ui-layout-v42" />
 </head>
 <body>
   <header id="hud">
@@ -22,81 +22,29 @@
     </section>
 
     <aside id="side">
-      <div class="panel">
-        <div class="panelTitle">Turn & Orders</div>
-        <div class="row">
-          <div class="label">Mode</div>
-          <button id="modeBtn" class="btn">To Play</button>
-        </div>
-
-        <div class="row">
-          <div class="label">Game</div>
-          <select id="gameModeSel" class="select">
-            <option value="hvh">Human vs Human</option>
-            <option value="hvai" selected>Human vs AI</option>
-            <option value="online">Online (Host/Guest)</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <div class="label">Difficulty</div>
-          <select id="aiDifficultySel" class="select">
-            <option value="levy">Levy (Easy)</option>
-            <option value="cohort">Cohort (Standard)</option>
-            <option value="legion">Legion (Hard)</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <div class="label">Victory</div>
-          <select id="victorySel" class="select"></select>
-        </div>
-
-        <div class="row">
-          <button id="endTurnBtn" class="btn wide">End Turn</button>
-        </div>
-        <div class="row">
-          <button id="lineAdvanceBtn" class="btn wide">Line Advance</button>
-        </div>
-      </div>
-
       <div id="defensePanel" class="panel">
         <div class="panelTitle">Unit Quick Sheet</div>
-        <div class="quickSheetGrid">
-          <div class="quickSheetHead">Type</div>
-          <div class="quickSheetHead">HP (G/R/V)</div>
-          <div class="quickSheetHead">Dice</div>
-
-          <div class="quickSheetCell">INF</div>
-          <div class="quickSheetCell">3 / 4 / 5</div>
-          <div class="quickSheetCell">2 melee</div>
-
-          <div class="quickSheetCell">CAV</div>
-          <div class="quickSheetCell">2 / 3 / 4</div>
-          <div class="quickSheetCell">3 melee</div>
-
-          <div class="quickSheetCell">SKR</div>
-          <div class="quickSheetCell">1 / 2 / 3</div>
-          <div class="quickSheetCell">2 melee, 1 @ r2</div>
-
-          <div class="quickSheetCell">ARC</div>
-          <div class="quickSheetCell">1 / 2 / 3</div>
-          <div class="quickSheetCell">1 melee, 2 @ r2, 1 @ r3</div>
-
-          <div class="quickSheetCell">GEN</div>
-          <div class="quickSheetCell">2 / 3 / 4</div>
-          <div class="quickSheetCell">1 melee</div>
-
-          <div class="quickSheetCell">RUN</div>
-          <div class="quickSheetCell">2 / 2 / 2</div>
-          <div class="quickSheetCell">0 attack</div>
-
-          <div class="quickSheetCell">MED</div>
-          <div class="quickSheetCell">1 / 1 / 1</div>
-          <div class="quickSheetCell">0 attack, heal +1 adjacent</div>
+        <div class="quickUnitList">
+          <div class="quickUnit"><span class="uType">INF</span><span class="uStat">M1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">2 melee</span></div>
+          <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">3 melee</span></div>
+          <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">M2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">2 melee, 1@r2</span></div>
+          <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">M1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">1 melee, 2@r2, 1@r3</span></div>
+          <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">1 melee</span></div>
+          <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">M3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack</span></div>
+          <div class="quickUnit"><span class="uType">MED</span><span class="uStat">M1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4</span><span class="uAtk">Heal +1 adjacent</span></div>
         </div>
         <div class="quickSheetNote">d6: 5-6 hit, 4 retreat, 1-3 miss.</div>
-        <div id="combatTerrain" hidden></div>
+      </div>
+      <div id="terrainGuidePanel" class="panel">
+        <div class="panelTitle">Terrain Guide</div>
+        <div class="terrainGuideGrid">
+          <div class="terrainHead">Terrain</div><div class="terrainHead">Move Cost</div><div class="terrainHead">Combat</div>
+          <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No modifier</div>
+          <div class="terrainCell">Woods</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">Defender gives attacker -1 die; ARC can fire only from tree-line</div>
+          <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
+          <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
+          <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
+        </div>
       </div>
 
       <div id="setupPanel" class="panel">
@@ -159,22 +107,6 @@
           </div>
         </div>
 
-        <details class="details">
-          <summary>Player quick rules</summary>
-          <div class="note">
-            In <b>Edit</b>, click to place units/terrain. In <b>Play</b>, click a friendly unit to see legal moves (blue) and attacks (red).<br><br>
-            Activations: <b>3</b> per turn, and each unit usually acts once.<br>
-            Command: units need a friendly <b>General</b> (range 3/4/5 by quality) or <b>Runner</b> relay (range 1).<br>
-            Engaged units cannot move, except <b>Skirmishers</b>, <b>Runners</b>, and <b>Veterans</b> may disengage safely by 1 hex.<br>
-            <b>Medic</b>: move 1, no attack, 1 HP (always Regular). Heal one adjacent friendly unit for +1 HP as its action.<br>
-            <b>Line Advance</b>: select Infantry and press <b>Line Advance</b> (or <b>L</b>) to push a contiguous line one step forward.<br>
-            Dice: <b>5–6 hit</b>, <b>4 retreat</b>, <b>1–3 miss</b>.<br>
-            <b>Tree-line</b>: Archers in Woods can fire only if that woods hex is adjacent to Clear terrain.<br>
-            Hover or select Infantry: light cyan = reinforced unit, darker cyan = reinforcing adjacent units (one line deep only).<br>
-            Action flash: red glow + arrow briefly marks move/attack direction.<br>
-            Hotkeys: <b>P</b> pass, <b>C</b> command overlay.
-          </div>
-        </details>
       </div>
     </aside>
   </main>
@@ -184,7 +116,43 @@
       <div class="combatColTitle">Combat Breakdown</div>
       <div id="combatSummary" class="combatSummary">No combat yet. Select a unit and attack to see exact dice math.</div>
       <div id="combatMath" class="combatMeta">Dice math: -</div>
+      <div id="combatTerrain" class="combatMeta">Defense modifiers: -</div>
+      <div id="combatSupport" class="combatSupport na">Infantry support: -</div>
+      <div id="modifierPreview" class="modifierPreview">Modifier preview: hover or select a unit.</div>
       <div id="combatHint" class="combatHint">Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Archers in Woods can fire only from tree-line woods (woods hex adjacent to clear). Reinforcement: two adjacent friendly INF touching defender brace opposite attack sides for -1 die (one line deep only).</div>
+    </div>
+    <div id="turnOrdersPanel" class="combatCol combatColTurn">
+      <div class="combatColTitle">Turn & Orders</div>
+      <div class="row">
+        <div class="label">Mode</div>
+        <button id="modeBtn" class="btn">To Play</button>
+      </div>
+      <div class="row">
+        <div class="label">Game</div>
+        <select id="gameModeSel" class="select">
+          <option value="hvh">Human vs Human</option>
+          <option value="hvai" selected>Human vs AI</option>
+          <option value="online">Online (Host/Guest)</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="label">Difficulty</div>
+        <select id="aiDifficultySel" class="select">
+          <option value="levy">Levy (Easy)</option>
+          <option value="cohort">Cohort (Standard)</option>
+          <option value="legion">Legion (Hard)</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="label">Victory</div>
+        <select id="victorySel" class="select"></select>
+      </div>
+      <div class="row">
+        <button id="endTurnBtn" class="btn wide">End Turn</button>
+      </div>
+      <div class="row">
+        <button id="lineAdvanceBtn" class="btn wide">Line Advance</button>
+      </div>
     </div>
     <div id="selectedUnitPanel" class="combatCol combatColInspector">
       <div class="combatColTitle">Selected Unit</div>
@@ -267,7 +235,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-ui-clean-v40"></script>
-  <script src="main.js?v=20260228-ui-clean-v40"></script>
+  <script src="build.js?v=20260228-ui-layout-v42"></script>
+  <script src="main.js?v=20260228-ui-layout-v42"></script>
 </body>
 </html>
