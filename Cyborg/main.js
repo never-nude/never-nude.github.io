@@ -74,7 +74,7 @@
   const SCENARIO_FILTER_IDS = Object.fromEntries(
     Object.entries(SCENARIO_FILTER_OPTIONS).map(([k, opts]) => [k, new Set(opts.map(o => o.id))])
   );
-  const HEX_DIRECTIONS = ['up', 'down', 'e', 'w', 'ur', 'ul', 'dr', 'dl'];
+  const HEX_DIRECTIONS = ['e', 'w', 'ur', 'ul', 'dr', 'dl'];
 
   // --- Core rules constants
   const ACT_LIMIT = 3; // activations per turn
@@ -465,7 +465,7 @@
   const elRulesModalBody = document.getElementById('rulesModalBody');
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Reinforcement needs a gapless rear rank and more infantry behind than front; attacker always rolls at least 1 die.';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
     <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
@@ -474,7 +474,7 @@
     <p>Out of command: Green INF/ARC/SKR cannot activate. Regular INF/ARC/SKR can attack but cannot move. Veterans and CAV ignore command limits.</p>
     <h4>Combat</h4>
     <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1).</p>
-    <p>Infantry reinforcement: only if the rear rank is gapless and total infantry behind the front line is greater than infantry in front. Then attacker loses -1 die per depth behind the defender (max 2).</p>
+    <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
   `;
@@ -492,8 +492,8 @@
     <p>Ranged: ARC range 2-3 (2 dice at 2, 1 die at 3). SKR range 2 (1 die). Engaged units cannot make ranged attacks.</p>
     <p>Retreats push away from attacker. If retreat is blocked/off-board/water/occupied, that retreat converts to 1 hit.</p>
     <h4>Support & Feedback</h4>
-    <p>Reinforcement requires: (1) gapless first rear rank behind the front line, and (2) more infantry behind than in the front line. If active, attacker takes up to -2 dice based on depth directly behind defender.</p>
-    <p>Light cyan shows reinforced front units; darker cyan shows reinforcing rear units. Red glow+arrow briefly shows move/attack direction.</p>
+    <p>Reinforcement requires a touching adjacent INF pair around defender. If attack enters from the pair’s opposite two hex sides, attacker gets -1 die. No stacking and one line deep only.</p>
+    <p>Light cyan shows reinforced unit; darker cyan shows reinforcing adjacent units. Red glow+arrow briefly shows move/attack direction.</p>
     <h4>Victory Modes</h4>
     <p>Clear Victory uses UP captured toward half-opponent-UP target. Decapitation tracks generals left. Annihilation tracks units left.</p>
   `;
@@ -3805,9 +3805,10 @@ function unitColors(side) {
     if (state.mode === 'play' && u.type === 'inf') {
       const preview = reinforcementPreviewForAnchor(selectedKey);
       if (preview && preview.active) {
-        metaText += ` Reinforcement active (front ${preview.frontCount}, behind ${preview.behindCount}, defense -${preview.penaltyRanks} die).`;
-      } else if (preview) {
-        metaText += ` Reinforcement inactive (front ${preview.frontCount}, behind ${preview.behindCount}; needs gapless rear and behind > front).`;
+        const dirText = preview.braceDirs.map(d => d.toUpperCase()).join('/');
+        metaText += ` Reinforcement active: adjacent brace pair gives defense -1 die vs attacks from ${dirText}.`;
+      } else {
+        metaText += ' Reinforcement inactive: needs two adjacent friendly infantry touching each other.';
       }
     }
 
@@ -3943,22 +3944,18 @@ function unitColors(side) {
     }
 
     const profile = reinforcementPreviewForAnchor(previewKey);
-    const reinfMod = (profile && profile.active) ? -profile.penaltyRanks : 0;
+    const reinfMod = (profile && profile.active) ? -1 : 0;
     if (profile && profile.active) {
+      const dirText = profile.braceDirs.map(d => d.toUpperCase()).join('/');
       elModifierPreview.textContent =
         `Modifier preview (front attack): ${terrainText}, reinforcement ${reinfMod} ` +
-        `(front ${profile.frontCount}, behind ${profile.behindCount}), minimum 1 die.`;
+        `(adjacent brace pair), active vs attacks from ${dirText}, minimum 1 die.`;
       return;
     }
 
-    if (profile) {
-      elModifierPreview.textContent =
-        `Modifier preview (front attack): ${terrainText}, reinforcement 0 ` +
-        `(needs gapless rear rank and behind > front; currently front ${profile.frontCount}, behind ${profile.behindCount}), minimum 1 die.`;
-      return;
-    }
-
-    elModifierPreview.textContent = `Modifier preview: ${terrainText}, reinforcement 0, minimum 1 die.`;
+    elModifierPreview.textContent =
+      `Modifier preview (front attack): ${terrainText}, reinforcement 0 ` +
+      `(needs two adjacent friendly infantry touching each other), minimum 1 die.`;
   }
 
   function setCombatSupportStatus(text, cls = 'na') {
@@ -3971,9 +3968,9 @@ function unitColors(side) {
   function supportStatusForCombat(info) {
     const ranks = Math.max(0, Number(info?.supportRanks || 0));
     const dicePenalty = Math.abs(Number(info?.supportDiceMod || 0));
-    const frontCount = Math.max(0, Number(info?.supportFrontCount || 0));
-    const behindCount = Math.max(0, Number(info?.supportBehindCount || 0));
-    const gapless = !!info?.supportGapless;
+    const pairCount = Math.max(0, Number(info?.supportPairCount || 0));
+    const matchingCount = Math.max(0, Number(info?.supportMatchingCount || 0));
+    const attackDir = String(info?.supportAttackDir || '').toUpperCase();
 
     if (!info || info.kind !== 'melee' || info.defenderType !== 'inf') {
       return {
@@ -3985,15 +3982,15 @@ function unitColors(side) {
     if (ranks > 0 && dicePenalty > 0) {
       return {
         text:
-          `Infantry support ACTIVE: front ${frontCount}, behind ${behindCount}, ` +
-          `gapless rear rank yes. Attacker -${dicePenalty} die${dicePenalty === 1 ? '' : 's'}.`,
+          `Infantry support ACTIVE: adjacent brace pair matched attack direction ${attackDir}. ` +
+          `Attacker -${dicePenalty} die${dicePenalty === 1 ? '' : 's'}.`,
         cls: 'active',
       };
     }
 
-    const reason = !gapless
-      ? 'rear rank has gaps'
-      : `behind (${behindCount}) is not greater than front (${frontCount})`;
+    const reason = pairCount === 0
+      ? 'no adjacent friendly INF pair on defender'
+      : `attack direction ${attackDir || '?'} did not match braced sides (${matchingCount} matches)`;
     return {
       text: `Infantry support not active: ${reason}.`,
       cls: 'inactive',
@@ -4025,14 +4022,15 @@ function unitColors(side) {
     const terrainDelta = Number(info.terrainDiceMod || 0);
     const supportDelta = Number(info.supportDiceMod || 0);
     const supportRanks = Math.max(0, Number(info.supportRanks || 0));
-    const supportFrontCount = Math.max(0, Number(info.supportFrontCount || 0));
-    const supportBehindCount = Math.max(0, Number(info.supportBehindCount || 0));
+    const supportPairCount = Math.max(0, Number(info.supportPairCount || 0));
+    const supportMatchingCount = Math.max(0, Number(info.supportMatchingCount || 0));
+    const supportAttackDir = String(info.supportAttackDir || '').toUpperCase();
     const terrainMath = terrainDelta
       ? `${terrainName} ${terrainDelta > 0 ? `+${terrainDelta}` : `${terrainDelta}`} die`
       : `${terrainName}: no dice change`;
     const supportMath = supportDelta
-      ? `${supportRanks} rank${supportRanks === 1 ? '' : 's'} ${supportDelta > 0 ? `+${supportDelta}` : `${supportDelta}`} dice (front ${supportFrontCount}, behind ${supportBehindCount})`
-      : `none (front ${supportFrontCount}, behind ${supportBehindCount})`;
+      ? `${supportRanks} line ${supportDelta > 0 ? `+${supportDelta}` : `${supportDelta}`} die (matched pairs ${supportMatchingCount}, attack ${supportAttackDir})`
+      : `none (available pairs ${supportPairCount}, attack ${supportAttackDir || '?'})`;
     const flankText = info.flankBonus ? ` + flank ${info.flankBonus}` : '';
     const rearText = info.rearBonus ? ` + rear ${info.rearBonus}` : '';
     const terrainText = terrainDelta ? ` ${terrainDelta > 0 ? '+' : '-'} terrain ${Math.abs(terrainDelta)}` : '';
@@ -4071,11 +4069,12 @@ function unitColors(side) {
     const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
     const terrainName = terrainLabel(info.defenderTerrain || 'clear');
     const terrainText = info.terrainDiceMod ? `, ${terrainName.toLowerCase()} ${info.terrainDiceMod > 0 ? '+' : ''}${info.terrainDiceMod}` : `, ${terrainName.toLowerCase()} 0`;
-    const supportFrontCount = Math.max(0, Number(info.supportFrontCount || 0));
-    const supportBehindCount = Math.max(0, Number(info.supportBehindCount || 0));
+    const supportPairCount = Math.max(0, Number(info.supportPairCount || 0));
+    const supportMatchingCount = Math.max(0, Number(info.supportMatchingCount || 0));
+    const supportAttackDir = String(info.supportAttackDir || '').toUpperCase();
     const supportText = info.supportDiceMod
-      ? `, support ${info.supportDiceMod > 0 ? '+' : ''}${info.supportDiceMod} (${Math.max(0, Number(info.supportRanks || 0))} rank${Math.max(0, Number(info.supportRanks || 0)) === 1 ? '' : 's'}, front ${supportFrontCount}, behind ${supportBehindCount})`
-      : `, support 0 (front ${supportFrontCount}, behind ${supportBehindCount})`;
+      ? `, support ${info.supportDiceMod > 0 ? '+' : ''}${info.supportDiceMod} (${Math.max(0, Number(info.supportRanks || 0))} line, match ${supportMatchingCount}/${supportPairCount}, atk ${supportAttackDir})`
+      : `, support 0 (pairs ${supportPairCount}, atk ${supportAttackDir || '?'})`;
     const finalSummary =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
       `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${terrainText}${supportText}) · ` +
@@ -5716,130 +5715,74 @@ function unitColors(side) {
     return !!u && u.side === side && u.type === 'inf';
   }
 
-  function directionAxisId(dir) {
-    if (dir === 'up' || dir === 'down') return 3;
-    if (dir === 'e' || dir === 'w') return 0;
-    if (dir === 'ur' || dir === 'dl') return 1;
-    if (dir === 'ul' || dir === 'dr') return 2;
-    return -1;
-  }
+  function infantryBracePairs(defenderKey, side) {
+    if (!isFriendlyInfAt(defenderKey, side)) return [];
+    const ring = ['e', 'ur', 'ul', 'w', 'dl', 'dr'];
+    const pairs = [];
 
-  function frontlineDirectionPairsForAttack(attackDir) {
-    const axis = directionAxisId(attackDir);
-    if (axis === 3) return [['e', 'w']];
-    if (axis === 0) return [['ur', 'dl'], ['ul', 'dr']];
-    if (axis === 1) return [['e', 'w'], ['ul', 'dr']];
-    if (axis === 2) return [['e', 'w'], ['ur', 'dl']];
-    return [];
-  }
-
-  function collectInfantryLineByPair(anchorKey, side, dirA, dirB) {
-    if (!isFriendlyInfAt(anchorKey, side)) return [];
-    const before = [];
-    const after = [];
-
-    function walk(dir, out) {
-      let cur = anchorKey;
-      while (true) {
-        const next = stepKeyInDirection(cur, dir);
-        if (!next || !isFriendlyInfAt(next, side)) break;
-        out.push(next);
-        cur = next;
-      }
+    for (let i = 0; i < ring.length; i++) {
+      const d1 = ring[i];
+      const d2 = ring[(i + 1) % ring.length];
+      const k1 = stepKeyInDirection(defenderKey, d1);
+      const k2 = stepKeyInDirection(defenderKey, d2);
+      if (!k1 || !k2) continue;
+      if (!isFriendlyInfAt(k1, side) || !isFriendlyInfAt(k2, side)) continue;
+      const b1 = oppositeDirection(d1);
+      const b2 = oppositeDirection(d2);
+      if (!b1 || !b2) continue;
+      pairs.push({
+        dirs: [d1, d2],
+        keys: [k1, k2],
+        braceDirs: [b1, b2],
+      });
     }
-
-    walk(dirA, before);
-    walk(dirB, after);
-    before.reverse();
-    return [...before, anchorKey, ...after];
-  }
-
-  function buildReinforcementProfileForLine(lineKeys, side, backDir, defenderKey) {
-    const frontSet = new Set(lineKeys);
-    const supportSet = new Set();
-
-    let gaplessFirstRank = true;
-    let defenderDepth = 0;
-
-    for (const fk of lineKeys) {
-      let cur = fk;
-      let depth = 0;
-      for (let i = 0; i < INF_SUPPORT_MAX_RANKS; i++) {
-        const next = stepKeyInDirection(cur, backDir);
-        if (!next || !isFriendlyInfAt(next, side)) break;
-        supportSet.add(next);
-        depth += 1;
-        cur = next;
-      }
-      if (depth === 0) gaplessFirstRank = false;
-      if (fk === defenderKey) defenderDepth = depth;
-    }
-
-    const frontCount = frontSet.size;
-    const behindCount = supportSet.size;
-    const active = gaplessFirstRank && behindCount > frontCount && defenderDepth > 0;
-    const penaltyRanks = active ? Math.min(INF_SUPPORT_MAX_RANKS, defenderDepth) : 0;
-
-    return {
-      active,
-      frontSet,
-      supportSet,
-      frontCount,
-      behindCount,
-      gaplessFirstRank,
-      defenderDepth,
-      penaltyRanks,
-    };
-  }
-
-  function bestReinforcementProfile(defenderKey, side, attackDir) {
-    if (!isFriendlyInfAt(defenderKey, side)) return null;
-    const backDir = oppositeDirection(attackDir);
-    if (!backDir) return null;
-
-    const candidates = frontlineDirectionPairsForAttack(attackDir);
-    if (!candidates.length) return null;
-
-    let best = null;
-    for (const [dirA, dirB] of candidates) {
-      const line = collectInfantryLineByPair(defenderKey, side, dirA, dirB);
-      if (!line.length) continue;
-      const prof = buildReinforcementProfileForLine(line, side, backDir, defenderKey);
-      prof.attackDir = attackDir;
-      prof.backDir = backDir;
-      prof.frontDirs = [dirA, dirB];
-
-      if (!best) {
-        best = prof;
-        continue;
-      }
-      const scoreA = (prof.penaltyRanks * 1000) + (prof.active ? 100 : 0) + (prof.behindCount - prof.frontCount);
-      const scoreB = (best.penaltyRanks * 1000) + (best.active ? 100 : 0) + (best.behindCount - best.frontCount);
-      if (scoreA > scoreB) best = prof;
-    }
-    return best;
+    return pairs;
   }
 
   function reinforcementSupportForAttack(defenderKey, attackerKey, defenderUnit) {
     if (!defenderUnit || defenderUnit.type !== 'inf') {
-      return { supportRanks: 0, active: false, profile: null };
+      return { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
     }
     const attackDir = adjacentDirection(defenderKey, attackerKey);
-    if (!attackDir) return { supportRanks: 0, active: false, profile: null };
-    const profile = bestReinforcementProfile(defenderKey, defenderUnit.side, attackDir);
-    if (!profile) return { supportRanks: 0, active: false, profile: null };
+    if (!attackDir) {
+      return { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
+    }
+
+    const pairs = infantryBracePairs(defenderKey, defenderUnit.side);
+    const matching = pairs.filter(p => p.braceDirs.includes(attackDir));
+    const supportSet = new Set();
+    for (const p of matching) {
+      for (const k of p.keys) supportSet.add(k);
+    }
+
+    const active = matching.length > 0;
     return {
-      supportRanks: profile.penaltyRanks,
-      active: profile.active,
-      profile,
+      supportRanks: active ? 1 : 0, // one-line deep only
+      active,
+      pairs,
+      matching,
+      supportSet,
+      attackDir,
     };
   }
 
   function reinforcementPreviewForAnchor(anchorKey) {
     const anchor = unitsByHex.get(anchorKey);
     if (!anchor || anchor.type !== 'inf') return null;
-    const previewAttackDir = sideForwardDirection(anchor.side, state.forwardAxis);
-    return bestReinforcementProfile(anchorKey, anchor.side, previewAttackDir);
+    const pairs = infantryBracePairs(anchorKey, anchor.side);
+    const supportSet = new Set();
+    const braceDirSet = new Set();
+    for (const p of pairs) {
+      for (const k of p.keys) supportSet.add(k);
+      for (const d of p.braceDirs) braceDirSet.add(d);
+    }
+    return {
+      active: pairs.length > 0,
+      frontSet: new Set([anchorKey]),
+      supportSet,
+      pairs,
+      braceDirs: Array.from(braceDirSet),
+    };
   }
 
   function canLineAdvanceInfAt(hexKey, u) {
@@ -6225,7 +6168,7 @@ function unitColors(side) {
     const terrainDiceMod = (defenderTerrain === 'woods') ? -1 : 0;
     const supportEval = (prof.kind === 'melee')
       ? reinforcementSupportForAttack(defenderKey, attackerKey, defU)
-      : { supportRanks: 0, active: false, profile: null };
+      : { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
     const supportRanks = supportEval.supportRanks || 0;
     const supportDiceMod = supportRanks > 0
       ? -(Math.min(INF_SUPPORT_MAX_RANKS, supportRanks) * INF_SUPPORT_DICE_PER_RANK)
@@ -6286,9 +6229,9 @@ function unitColors(side) {
       supportRanks,
       supportDiceMod,
       defenseDiceMod,
-      supportFrontCount: supportEval.profile ? supportEval.profile.frontCount : 0,
-      supportBehindCount: supportEval.profile ? supportEval.profile.behindCount : 0,
-      supportGapless: !!(supportEval.profile && supportEval.profile.gaplessFirstRank),
+      supportPairCount: Array.isArray(supportEval.pairs) ? supportEval.pairs.length : 0,
+      supportMatchingCount: Array.isArray(supportEval.matching) ? supportEval.matching.length : 0,
+      supportAttackDir: supportEval.attackDir || '',
       defenderTerrain,
       terrainRuleText,
       hits,
@@ -6307,22 +6250,18 @@ function unitColors(side) {
     log(`Rolls: [${rollTokens.join(' ')}] => hits=${hits}, retreats=${retreats}, misses=${misses}.`);
     if (prof.kind === 'melee' && defU.type === 'inf') {
       if (supportRanks > 0 && supportDiceMod < 0) {
-        const frontCount = supportEval.profile ? supportEval.profile.frontCount : 0;
-        const behindCount = supportEval.profile ? supportEval.profile.behindCount : 0;
+        const ad = String(supportEval.attackDir || '').toUpperCase();
         log(
-          `Infantry support ACTIVE: front ${frontCount}, behind ${behindCount}, ` +
+          `Infantry support ACTIVE: adjacent brace pair matched attack ${ad}, ` +
           `attacker -${Math.abs(supportDiceMod)} die.`
         );
       } else {
-        const frontCount = supportEval.profile ? supportEval.profile.frontCount : 0;
-        const behindCount = supportEval.profile ? supportEval.profile.behindCount : 0;
-        const gapless = !!(supportEval.profile && supportEval.profile.gaplessFirstRank);
-        if (!supportEval.profile) {
-          log('Infantry support inactive: no valid front/rear line from this attack angle.');
-        } else if (!gapless) {
-          log(`Infantry support inactive: rear rank has gaps (front ${frontCount}, behind ${behindCount}).`);
+        const pairCount = Array.isArray(supportEval.pairs) ? supportEval.pairs.length : 0;
+        const ad = String(supportEval.attackDir || '').toUpperCase();
+        if (pairCount === 0) {
+          log('Infantry support inactive: defender has no adjacent friendly INF brace pair.');
         } else {
-          log(`Infantry support inactive: behind (${behindCount}) is not greater than front (${frontCount}).`);
+          log(`Infantry support inactive: attack ${ad} not on braced opposite sides.`);
         }
       }
     }
