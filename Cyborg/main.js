@@ -296,6 +296,10 @@
   const elVictorySel = document.getElementById('victorySel');
   const elEndTurnBtn = document.getElementById('endTurnBtn');
   const elLineAdvanceBtn = document.getElementById('lineAdvanceBtn');
+  const elRulesBtn = document.getElementById('rulesBtn');
+  const elRulesDrawer = document.getElementById('rulesDrawer');
+  const elRulesBackdrop = document.getElementById('rulesBackdrop');
+  const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
 
   // --- State
   const state = {
@@ -319,6 +323,7 @@
     // Visual toggles
     showCommand: true,
     terrainTheme: 'battlefield',
+    rulesOpen: false,
 
     selectedKey: null,
 
@@ -1739,7 +1744,51 @@ function unitColors(side) {
 
   // --- UI helpers
   function setActive(btn, isActive) {
+    if (!btn) return;
     btn.classList.toggle('active', isActive);
+  }
+
+  function setRulesValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = String(value);
+  }
+
+  function rangedDice(type, dist) {
+    const def = UNIT_BY_ID.get(type);
+    if (!def || !def.ranged) return 0;
+    const v = def.ranged[dist];
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  function populateRulesReference() {
+    setRulesValue('rulesActLimit', ACT_LIMIT);
+    setRulesValue('rulesCmdGreen', COMMAND_RADIUS_BY_QUALITY.green);
+    setRulesValue('rulesCmdRegular', COMMAND_RADIUS_BY_QUALITY.regular);
+    setRulesValue('rulesCmdVeteran', COMMAND_RADIUS_BY_QUALITY.veteran);
+
+    const runDef = UNIT_BY_ID.get('run');
+    setRulesValue('rulesRunMove', runDef ? runDef.move : '-');
+    setRulesValue('rulesRunCmd', RUNNER_COMMAND_RADIUS);
+    setRulesValue('rulesRunHp', unitMaxHp('run', 'green'));
+    setRulesValue('rulesRunUp', unitUpValue('run', 'green'));
+
+    setRulesValue('rulesInfMelee', UNIT_BY_ID.get('inf')?.meleeDice ?? '-');
+    setRulesValue('rulesCavMelee', UNIT_BY_ID.get('cav')?.meleeDice ?? '-');
+    setRulesValue('rulesSkrMelee', UNIT_BY_ID.get('skr')?.meleeDice ?? '-');
+    setRulesValue('rulesArcMelee', UNIT_BY_ID.get('arc')?.meleeDice ?? '-');
+    setRulesValue('rulesGenMelee', UNIT_BY_ID.get('gen')?.meleeDice ?? '-');
+    setRulesValue('rulesArcRange2', rangedDice('arc', 2));
+    setRulesValue('rulesArcRange3', rangedDice('arc', 3));
+    setRulesValue('rulesSkrRange2', rangedDice('skr', 2));
+  }
+
+  function setRulesDrawerOpen(nextOpen) {
+    const open = !!nextOpen;
+    state.rulesOpen = open;
+    if (!elRulesDrawer) return;
+    elRulesDrawer.classList.toggle('open', open);
+    elRulesDrawer.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 
   function compactLabel(text, maxLen = 22) {
@@ -1991,6 +2040,7 @@ function unitColors(side) {
       elForwardAxisSel.value = (state.forwardAxis === 'horizontal') ? 'horizontal' : 'vertical';
       elForwardAxisSel.disabled = (state.mode === 'play' && state.aiBusy);
     }
+    setActive(elRulesBtn, state.rulesOpen);
     setActive(elToolUnits, state.tool === 'units');
     setActive(elToolTerrain, state.tool === 'terrain');
 
@@ -3928,6 +3978,13 @@ function unitColors(side) {
 
   // Keyboard: P = pass, L = line advance (with selected INF)
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.rulesOpen) {
+      e.preventDefault();
+      setRulesDrawerOpen(false);
+      updateHud();
+      return;
+    }
+
     if (e.key === 'p' || e.key === 'P') {
       if (state.mode === 'play' && state.selectedKey && !isAiTurnActive()) {
         e.preventDefault();
@@ -3966,6 +4023,25 @@ function unitColors(side) {
     if (state.mode === 'edit') enterPlay();
     else enterEdit();
   });
+
+  if (elRulesBtn) {
+    elRulesBtn.addEventListener('click', () => {
+      setRulesDrawerOpen(!state.rulesOpen);
+      updateHud();
+    });
+  }
+  if (elRulesCloseBtn) {
+    elRulesCloseBtn.addEventListener('click', () => {
+      setRulesDrawerOpen(false);
+      updateHud();
+    });
+  }
+  if (elRulesBackdrop) {
+    elRulesBackdrop.addEventListener('click', () => {
+      setRulesDrawerOpen(false);
+      updateHud();
+    });
+  }
 
   if (elGameModeSel) {
     elGameModeSel.addEventListener('change', () => {
@@ -4230,6 +4306,8 @@ function unitColors(side) {
     populateScenarioFilters();
     populateScenarioSelect();
     populateVictorySelect();
+    populateRulesReference();
+    setRulesDrawerOpen(false);
 
     loadScenario('Empty (Island)');
     enterEdit();

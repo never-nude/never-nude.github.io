@@ -83,6 +83,110 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   margin-top:10px;
 }
 
+.rulesDrawer{
+  position:fixed;
+  inset:0;
+  z-index:40;
+  pointer-events:none;
+}
+
+.rulesDrawer.open{pointer-events:auto;}
+
+.rulesBackdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(6, 8, 14, 0.62);
+  opacity:0;
+  transition:opacity 170ms ease;
+}
+
+.rulesPanel{
+  position:absolute;
+  top:0;
+  right:0;
+  height:100%;
+  width:min(520px, 96vw);
+  display:flex;
+  flex-direction:column;
+  background:var(--panel);
+  border-left:1px solid var(--line);
+  box-shadow:-12px 0 24px rgba(0,0,0,0.45);
+  transform:translateX(100%);
+  transition:transform 180ms ease;
+}
+
+.rulesDrawer.open .rulesBackdrop{opacity:1;}
+.rulesDrawer.open .rulesPanel{transform:translateX(0);}
+
+.rulesHeader{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  padding:14px 14px 10px 14px;
+  border-bottom:1px solid var(--line);
+  background:#0f1117;
+}
+
+.rulesEyebrow{
+  color:var(--muted);
+  font-size:11px;
+  letter-spacing:0.07em;
+  text-transform:uppercase;
+}
+
+.rulesTitle{
+  margin:4px 0 0 0;
+  font-size:20px;
+  line-height:1.2;
+}
+
+.rulesBody{
+  overflow:auto;
+  padding:12px;
+  display:grid;
+  gap:10px;
+}
+
+.rulesSection{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  background:#0d0f15;
+}
+
+.rulesSection h3{
+  margin:0 0 8px 0;
+  font-size:14px;
+}
+
+.rulesSection p{
+  margin:0 0 8px 0;
+  color:#d8dbe3;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.rulesSection p:last-child{margin-bottom:0;}
+
+.rulesGrid{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  gap:6px 10px;
+}
+
+.rulesKey{
+  color:var(--muted);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}
+
+.rulesVal{
+  font-size:13px;
+  color:#d8dbe3;
+}
+
 .inspectorTitle{
   flex:1;
   font-size:13px;
@@ -193,4 +297,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 @media (max-width: 980px){
   #layout{grid-template-columns:1fr; height: auto;}
   #side{border-left:none;border-top:1px solid var(--line);}
+  .rulesPanel{width:100%;}
+  .rulesGrid{grid-template-columns:1fr;}
+  .rulesKey{margin-top:4px;}
 }
