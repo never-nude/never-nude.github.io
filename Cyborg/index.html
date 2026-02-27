@@ -255,11 +255,27 @@
     <div class="combatCol">
       <div class="combatColTitle">Outcome</div>
       <div id="combatOutcome" class="combatMeta">Outcome: -</div>
+      <div class="combatColTitle">Victory Track</div>
+      <div id="victoryTrackBody" class="victoryTrackBody">Victory: -</div>
+      <div class="rulesLauncher">
+        <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
+        <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
+      </div>
     </div>
   </section>
 
+  <div id="rulesModal" class="rulesModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rulesModalTitle">
+    <div class="rulesCard">
+      <div class="rulesHead">
+        <div id="rulesModalTitle" class="rulesModalTitle">Rules</div>
+        <button id="rulesCloseBtn" class="btn rulesCloseBtn">Close</button>
+      </div>
+      <div id="rulesModalBody" class="rulesModalBody"></div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260227-132938-action-pulse-reinforce-v1"></script>
-  <script src="main.js?v=20260227-132938-action-pulse-reinforce-v1"></script>
+  <script src="build.js?v=20260227-134746-victory-track-rules-v1"></script>
+  <script src="main.js?v=20260227-134746-victory-track-rules-v1"></script>
 </body>
 </html>

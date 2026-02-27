@@ -456,8 +456,45 @@
   const elCombatTerrain = document.getElementById('combatTerrain');
   const elCombatSupport = document.getElementById('combatSupport');
   const elCombatOutcome = document.getElementById('combatOutcome');
+  const elVictoryTrackBody = document.getElementById('victoryTrackBody');
+  const elRulesShortBtn = document.getElementById('rulesShortBtn');
+  const elRulesFullBtn = document.getElementById('rulesFullBtn');
+  const elRulesModal = document.getElementById('rulesModal');
+  const elRulesModalTitle = document.getElementById('rulesModalTitle');
+  const elRulesModalBody = document.getElementById('rulesModalBody');
+  const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
   const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Infantry support directly opposite an adjacent melee attack gives attacker -1 die per supporting rank (up to 2).';
+  const RULES_SHORT_HTML = `
+    <h4>Core</h4>
+    <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
+    <h4>Command</h4>
+    <p>General command radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
+    <p>Out of command: Green INF/ARC/SKR cannot activate. Regular INF/ARC/SKR can attack but cannot move. Veterans and CAV ignore command limits.</p>
+    <h4>Combat</h4>
+    <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1).</p>
+    <p>Infantry support: if a melee attack hits INF, friendly INF directly opposite the attack line reduce attacker dice by -1 per rank (max 2).</p>
+    <h4>Victory</h4>
+    <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
+  `;
+  const RULES_FULL_HTML = `
+    <h4>Turn Structure</h4>
+    <p>Players alternate turns. Each turn has up to 3 activations. You may end early.</p>
+    <h4>Movement</h4>
+    <p>Base movement: INF/ARC 1, CAV/SKR/GEN 2, RUN 3-5 by quality, Medic 1.</p>
+    <p>Terrain cost: Clear 1. Hills/Woods/Rough cost 2 for INF/ARC/SKR/GEN and 3 for CAV. Water is impassable.</p>
+    <p>Engaged units cannot move, except SKR, RUN, and Veterans can disengage 1 hex if destination is not engaged.</p>
+    <h4>Command & Relays</h4>
+    <p>Units are in command if within a friendly General radius or Runner relay radius 1. Generals and Runners are command sources.</p>
+    <h4>Attacks</h4>
+    <p>Melee dice: INF 2, CAV 3, SKR 2, ARC 1, GEN 1, RUN 0, Medic 0.</p>
+    <p>Ranged: ARC range 2-3 (2 dice at 2, 1 die at 3). SKR range 2 (1 die). Engaged units cannot make ranged attacks.</p>
+    <p>Retreats push away from attacker. If retreat is blocked/off-board/water/occupied, that retreat converts to 1 hit.</p>
+    <h4>Support & Feedback</h4>
+    <p>Cyan hex shading shows connected infantry reinforcement formation on hover/select. Red glow+arrow briefly shows move/attack direction.</p>
+    <h4>Victory Modes</h4>
+    <p>Clear Victory uses UP captured toward half-opponent-UP target. Decapitation tracks generals left. Annihilation tracks units left.</p>
+  `;
   let diceRenderNonce = 0;
 
   const elVictorySel = document.getElementById('victorySel');
@@ -4068,6 +4105,88 @@ function unitColors(side) {
     return 'Clear Victory';
   }
 
+  function clampPct(v) {
+    return Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
+  }
+
+  function renderVictoryTrack(blueTotals, redTotals, hideOpponent = false) {
+    if (!elVictoryTrackBody) return;
+
+    if (hideOpponent) {
+      elVictoryTrackBody.innerHTML = '<div class="victoryNote">Victory track hidden during fog draft setup.</div>';
+      return;
+    }
+
+    if (state.victoryMode === 'clear') {
+      const needBlue = Math.max(1, Math.ceil(state.initialUP.red / 2));
+      const needRed = Math.max(1, Math.ceil(state.initialUP.blue / 2));
+      const blueCap = Math.max(0, state.capturedUP.blue);
+      const redCap = Math.max(0, state.capturedUP.red);
+      const bluePct = clampPct((blueCap / needBlue) * 100);
+      const redPct = clampPct((redCap / needRed) * 100);
+      elVictoryTrackBody.innerHTML = `
+        <div class="victoryRow">
+          <div class="victoryLabel blue">Blue</div>
+          <div class="victoryBar"><div class="victoryFill blue" style="width:${bluePct.toFixed(1)}%"></div></div>
+          <div class="victoryValue">${blueCap}/${needBlue}</div>
+        </div>
+        <div class="victoryRow">
+          <div class="victoryLabel red">Red</div>
+          <div class="victoryBar"><div class="victoryFill red" style="width:${redPct.toFixed(1)}%"></div></div>
+          <div class="victoryValue">${redCap}/${needRed}</div>
+        </div>
+        <div class="victoryNote">First side to fill its bar reaches Clear Victory.</div>
+      `;
+      return;
+    }
+
+    if (state.victoryMode === 'decapitation') {
+      elVictoryTrackBody.innerHTML = `
+        <div class="victoryRow">
+          <div class="victoryLabel blue">Blue</div>
+          <div class="victoryNote">Generals left</div>
+          <div class="victoryValue">${blueTotals.gens}</div>
+        </div>
+        <div class="victoryRow">
+          <div class="victoryLabel red">Red</div>
+          <div class="victoryNote">Generals left</div>
+          <div class="victoryValue">${redTotals.gens}</div>
+        </div>
+      `;
+      return;
+    }
+
+    elVictoryTrackBody.innerHTML = `
+      <div class="victoryRow">
+        <div class="victoryLabel blue">Blue</div>
+        <div class="victoryNote">Units left</div>
+        <div class="victoryValue">${blueTotals.units}</div>
+      </div>
+      <div class="victoryRow">
+        <div class="victoryLabel red">Red</div>
+        <div class="victoryNote">Units left</div>
+        <div class="victoryValue">${redTotals.units}</div>
+      </div>
+    `;
+  }
+
+  function openRulesModal(kind = 'short') {
+    if (!elRulesModal || !elRulesModalBody) return;
+    const full = kind === 'full';
+    if (elRulesModalTitle) {
+      elRulesModalTitle.textContent = full ? 'Rules — Full' : 'Rules — Short';
+    }
+    elRulesModalBody.innerHTML = full ? RULES_FULL_HTML : RULES_SHORT_HTML;
+    elRulesModal.classList.add('open');
+    elRulesModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeRulesModal() {
+    if (!elRulesModal) return;
+    elRulesModal.classList.remove('open');
+    elRulesModal.setAttribute('aria-hidden', 'true');
+  }
+
   function normalizeDraftMode(mode) {
     if (mode === 'visible' || mode === 'fog') return mode;
     return 'off';
@@ -4740,6 +4859,7 @@ function unitColors(side) {
     }
     meta.push(`Build ${BUILD_ID}`);
     elHudMeta.textContent = meta.join('  ·  ');
+    renderVictoryTrack(blue, red, hideOpponentDuringFog);
 
     elModeBtn.textContent = state.mode === 'edit' ? 'Start Battle' : 'Back to Setup';
     if (elGameModeSel) {
@@ -6158,6 +6278,7 @@ function unitColors(side) {
     stopAiLoop();
     stopMoveAnimation();
     stopActionPulse();
+    closeRulesModal();
     state.mode = 'edit';
     state.tool = 'units';
 
@@ -6180,6 +6301,7 @@ function unitColors(side) {
     stopAiLoop();
     stopMoveAnimation();
     stopActionPulse();
+    closeRulesModal();
     state.mode = 'play';
     state.turn = 1;
     state.side = 'blue';
@@ -7012,6 +7134,7 @@ function unitColors(side) {
     stopAiLoop();
     stopMoveAnimation();
     stopActionPulse();
+    closeRulesModal();
     resetDraftState({ keepBudget: true });
 
     const resolved = resolveImportPayload(raw);
@@ -7630,6 +7753,14 @@ function unitColors(side) {
 
   // Keyboard: P = pass, L = line advance (with selected INF)
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (elRulesModal && elRulesModal.classList.contains('open')) {
+        e.preventDefault();
+        closeRulesModal();
+        return;
+      }
+    }
+
     if (e.key === 'p' || e.key === 'P') {
       if (state.mode === 'play' && state.selectedKey && !isAiTurnActive()) {
         e.preventDefault();
@@ -7700,6 +7831,21 @@ function unitColors(side) {
         e.preventDefault();
         startOnlineJoin();
       }
+    });
+  }
+
+  if (elRulesShortBtn) {
+    elRulesShortBtn.addEventListener('click', () => openRulesModal('short'));
+  }
+  if (elRulesFullBtn) {
+    elRulesFullBtn.addEventListener('click', () => openRulesModal('full'));
+  }
+  if (elRulesCloseBtn) {
+    elRulesCloseBtn.addEventListener('click', closeRulesModal);
+  }
+  if (elRulesModal) {
+    elRulesModal.addEventListener('click', (e) => {
+      if (e.target === elRulesModal) closeRulesModal();
     });
   }
 

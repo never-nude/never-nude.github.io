@@ -461,6 +461,144 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   height:52px;
 }
 
+.victoryTrackBody{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  font-size:12px;
+  color:#dce2ee;
+}
+
+.victoryRow{
+  display:grid;
+  grid-template-columns:44px 1fr auto;
+  align-items:center;
+  gap:8px;
+}
+
+.victoryLabel{
+  font-weight:700;
+  letter-spacing:0.04em;
+}
+
+.victoryLabel.blue{color:#9ec2ff;}
+.victoryLabel.red{color:#ffb2b2;}
+
+.victoryBar{
+  height:10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.08);
+  overflow:hidden;
+}
+
+.victoryFill{
+  height:100%;
+  width:0%;
+  transition:width 220ms ease;
+}
+
+.victoryFill.blue{
+  background:linear-gradient(90deg, #3e7cff 0%, #8fb4ff 100%);
+}
+
+.victoryFill.red{
+  background:linear-gradient(90deg, #d34e4e 0%, #ff9a9a 100%);
+}
+
+.victoryValue{
+  font-size:11px;
+  color:#e6e9f2;
+  min-width:64px;
+  text-align:right;
+}
+
+.victoryNote{
+  font-size:12px;
+  color:#d7dbe6;
+  line-height:1.35;
+}
+
+.rulesLauncher{
+  margin-top:auto;
+  display:flex;
+  gap:8px;
+}
+
+.rulesBtn{
+  flex:1;
+  padding:6px 8px;
+  font-size:11px;
+}
+
+.rulesModal{
+  position:fixed;
+  inset:0;
+  z-index:2000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(4, 6, 12, 0.74);
+}
+
+.rulesModal.open{
+  display:flex;
+}
+
+.rulesCard{
+  width:min(900px, 94vw);
+  max-height:86vh;
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:12px;
+  background:linear-gradient(180deg, #131722 0%, #0f121a 100%);
+  box-shadow:0 16px 42px rgba(0,0,0,0.55);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.rulesHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.12);
+}
+
+.rulesModalTitle{
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+
+.rulesCloseBtn{
+  padding:6px 10px;
+}
+
+.rulesModalBody{
+  padding:12px;
+  overflow:auto;
+  font-size:13px;
+  line-height:1.45;
+  color:#e5e9f3;
+}
+
+.rulesModalBody h4{
+  margin:12px 0 6px;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:#f1d697;
+}
+
+.rulesModalBody p{
+  margin:6px 0;
+}
+
 @media (max-width: 980px){
   :root{ --combat-h:280px; --hud-h:56px; }
   #hud{grid-template-columns:1fr;}
