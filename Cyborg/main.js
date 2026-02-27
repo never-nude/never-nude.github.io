@@ -296,6 +296,12 @@
   const elVictorySel = document.getElementById('victorySel');
   const elEndTurnBtn = document.getElementById('endTurnBtn');
   const elLineAdvanceBtn = document.getElementById('lineAdvanceBtn');
+  const elOnlineHostBtn = document.getElementById('onlineHostBtn');
+  const elOnlineJoinBtn = document.getElementById('onlineJoinBtn');
+  const elOnlineLeaveBtn = document.getElementById('onlineLeaveBtn');
+  const elOnlineMyCode = document.getElementById('onlineMyCode');
+  const elOnlineJoinCode = document.getElementById('onlineJoinCode');
+  const elOnlineStatus = document.getElementById('onlineStatus');
   const elRulesBtn = document.getElementById('rulesBtn');
   const elRulesDrawer = document.getElementById('rulesDrawer');
   const elRulesBackdrop = document.getElementById('rulesBackdrop');
@@ -346,6 +352,17 @@
     aiTimer: null,
 
     last: 'Booting…',
+  };
+
+  const net = {
+    peer: null,
+    conn: null,
+    isHost: false,
+    connected: false,
+    myCode: '',
+    remoteCode: '',
+    status: 'Online: idle.',
+    applyingRemoteSnapshot: false,
   };
 
   // --- Board model
@@ -1791,6 +1808,267 @@ function unitColors(side) {
     elRulesDrawer.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 
+  function onlineModeActive() {
+    return state.gameMode === 'online';
+  }
+
+  function onlineLibReady() {
+    return typeof window.Peer === 'function';
+  }
+
+  function setOnlineStatus(msg) {
+    net.status = String(msg || 'Online: idle.');
+    if (elOnlineStatus) elOnlineStatus.textContent = net.status;
+  }
+
+  function onlineSendPacket(packet) {
+    if (!net.conn || !net.connected) return false;
+    try {
+      net.conn.send(packet);
+      return true;
+    } catch (err) {
+      setOnlineStatus(`Online send failed: ${err && err.message ? err.message : String(err)}`);
+      return false;
+    }
+  }
+
+  function onlineBroadcastSnapshot(reason = 'sync') {
+    if (!onlineModeActive()) return;
+    if (!net.isHost || !net.connected) return;
+    const snapshot = buildStateSnapshot();
+    snapshot.state.gameMode = 'online';
+    onlineSendPacket({ kind: 'snapshot', reason, snapshot });
+  }
+
+  function onlineCloseConnection() {
+    if (net.conn) {
+      try { net.conn.close(); } catch (_) {}
+    }
+    net.conn = null;
+    net.connected = false;
+    net.remoteCode = '';
+  }
+
+  function onlineDestroyPeer() {
+    onlineCloseConnection();
+    if (net.peer) {
+      try { net.peer.destroy(); } catch (_) {}
+    }
+    net.peer = null;
+    net.myCode = '';
+    net.isHost = false;
+  }
+
+  function onlineLeaveSession(statusText = 'Online: idle.') {
+    onlineDestroyPeer();
+    setOnlineStatus(statusText);
+    updateHud();
+  }
+
+  function onlineExpectedLocalSide() {
+    return net.isHost ? 'blue' : 'red';
+  }
+
+  function executeOnlineActionLocal(action) {
+    if (!action || typeof action !== 'object') return false;
+    switch (action.type) {
+      case 'click': {
+        if (typeof action.hexKey !== 'string') return false;
+        if (!board.activeSet.has(action.hexKey)) return false;
+        clickPlay(action.hexKey);
+        return true;
+      }
+      case 'pass':
+        passSelected();
+        return true;
+      case 'line_advance':
+        lineAdvanceFromSelection();
+        return true;
+      case 'end_turn':
+        endTurn();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  function forwardOnlineAction(action) {
+    if (!onlineModeActive() || !net.connected) return false;
+
+    const localSide = onlineExpectedLocalSide();
+    if (state.mode !== 'play' || state.gameOver) {
+      log('Online: enter Play mode to act.');
+      updateHud();
+      return true;
+    }
+    if (state.side !== localSide) {
+      log(`Online: waiting for ${state.side.toUpperCase()} player.`);
+      updateHud();
+      return true;
+    }
+
+    if (net.isHost) {
+      executeOnlineActionLocal(action);
+    } else {
+      const ok = onlineSendPacket({ kind: 'action', action });
+      if (!ok) {
+        log('Online: failed to send action to host.');
+        updateHud();
+      }
+    }
+    return true;
+  }
+
+  function onOnlinePacket(packet) {
+    if (!packet || typeof packet !== 'object') return;
+
+    if (packet.kind === 'hello') {
+      if (net.isHost) onlineBroadcastSnapshot('hello');
+      return;
+    }
+
+    if (packet.kind === 'snapshot') {
+      if (net.isHost) return;
+      net.applyingRemoteSnapshot = true;
+      applyImportedState(packet.snapshot, 'online sync', { silent: true });
+      net.applyingRemoteSnapshot = false;
+      return;
+    }
+
+    if (packet.kind === 'action') {
+      if (!net.isHost || !onlineModeActive() || !net.connected) return;
+      if (state.mode !== 'play' || state.gameOver) return;
+      if (state.side !== 'red') {
+        onlineBroadcastSnapshot('turn-mismatch');
+        return;
+      }
+      executeOnlineActionLocal(packet.action);
+      return;
+    }
+  }
+
+  function bindOnlineConnection(conn) {
+    if (!conn) return;
+    onlineCloseConnection();
+    net.conn = conn;
+    if (typeof conn.peer === 'string') net.remoteCode = conn.peer;
+
+    conn.on('open', () => {
+      net.connected = true;
+      if (typeof conn.peer === 'string') net.remoteCode = conn.peer;
+      if (net.isHost) setOnlineStatus(`Online host connected to ${net.remoteCode || 'guest'}. You are BLUE.`);
+      else setOnlineStatus(`Online joined ${net.remoteCode || 'host'}. You are RED.`);
+      if (net.isHost) onlineBroadcastSnapshot('peer-open');
+      else onlineSendPacket({ kind: 'hello' });
+      updateHud();
+    });
+    conn.on('data', onOnlinePacket);
+    conn.on('close', () => {
+      if (net.conn !== conn) return;
+      onlineCloseConnection();
+      setOnlineStatus('Online: connection closed.');
+      updateHud();
+    });
+    conn.on('error', (err) => {
+      setOnlineStatus(`Online connection error: ${err && err.message ? err.message : String(err)}`);
+      updateHud();
+    });
+  }
+
+  function startOnlineHost() {
+    if (!onlineModeActive()) {
+      log('Switch Game mode to Online first.');
+      updateHud();
+      return;
+    }
+    if (!onlineLibReady()) {
+      setOnlineStatus('Online unavailable: PeerJS failed to load.');
+      updateHud();
+      return;
+    }
+
+    onlineDestroyPeer();
+    net.isHost = true;
+    setOnlineStatus('Online: opening host room...');
+
+    const peer = new window.Peer();
+    net.peer = peer;
+
+    peer.on('open', (id) => {
+      net.myCode = String(id || '');
+      setOnlineStatus('Online host ready. Share your code. You are BLUE.');
+      updateHud();
+    });
+    peer.on('connection', (conn) => {
+      if (!net.isHost) {
+        try { conn.close(); } catch (_) {}
+        return;
+      }
+      if (net.conn && net.connected) {
+        try { conn.close(); } catch (_) {}
+        return;
+      }
+      bindOnlineConnection(conn);
+    });
+    peer.on('error', (err) => {
+      setOnlineStatus(`Online host error: ${err && err.message ? err.message : String(err)}`);
+      updateHud();
+    });
+    peer.on('close', () => {
+      onlineDestroyPeer();
+      setOnlineStatus('Online: host closed.');
+      updateHud();
+    });
+
+    updateHud();
+  }
+
+  function startOnlineJoin() {
+    if (!onlineModeActive()) {
+      log('Switch Game mode to Online first.');
+      updateHud();
+      return;
+    }
+    if (!onlineLibReady()) {
+      setOnlineStatus('Online unavailable: PeerJS failed to load.');
+      updateHud();
+      return;
+    }
+
+    const hostCode = String(elOnlineJoinCode?.value || '').trim();
+    if (!hostCode) {
+      setOnlineStatus('Online: enter a host code first.');
+      updateHud();
+      return;
+    }
+
+    onlineDestroyPeer();
+    net.isHost = false;
+    setOnlineStatus(`Online: joining ${hostCode}...`);
+
+    const peer = new window.Peer();
+    net.peer = peer;
+
+    peer.on('open', (id) => {
+      net.myCode = String(id || '');
+      setOnlineStatus(`Online: connecting to ${hostCode}...`);
+      const conn = peer.connect(hostCode, { reliable: true });
+      bindOnlineConnection(conn);
+      updateHud();
+    });
+    peer.on('error', (err) => {
+      setOnlineStatus(`Online join error: ${err && err.message ? err.message : String(err)}`);
+      updateHud();
+    });
+    peer.on('close', () => {
+      onlineDestroyPeer();
+      setOnlineStatus('Online: join closed.');
+      updateHud();
+    });
+
+    updateHud();
+  }
+
   function compactLabel(text, maxLen = 22) {
     const s = String(text || '');
     if (s.length <= maxLen) return s;
@@ -2034,24 +2312,49 @@ function unitColors(side) {
     elModeBtn.textContent = state.mode === 'edit' ? 'To Play' : 'To Edit';
     if (elGameModeSel) {
       elGameModeSel.value = state.gameMode;
-      elGameModeSel.disabled = (state.mode === 'play' && state.aiBusy);
+      elGameModeSel.disabled = (state.mode === 'play' && state.aiBusy) || (onlineModeActive() && net.connected);
+    }
+    const onlineMode = onlineModeActive();
+    const guestOnlineLock = onlineMode && net.connected && !net.isHost;
+    elModeBtn.disabled = guestOnlineLock;
+    if (elOnlineMyCode) elOnlineMyCode.textContent = net.myCode || '-';
+    if (elOnlineStatus) elOnlineStatus.textContent = net.status;
+    setActive(elOnlineHostBtn, onlineMode && !!net.peer && net.isHost);
+    setActive(elOnlineJoinBtn, onlineMode && !!net.peer && !net.isHost);
+    if (elOnlineHostBtn) {
+      elOnlineHostBtn.disabled = !onlineMode || (net.connected && net.isHost);
+    }
+    if (elOnlineJoinBtn) {
+      elOnlineJoinBtn.disabled = !onlineMode || (net.connected && !net.isHost);
+    }
+    if (elOnlineLeaveBtn) {
+      elOnlineLeaveBtn.disabled = !onlineMode || (!net.peer && !net.connected);
+    }
+    if (elOnlineJoinCode) {
+      elOnlineJoinCode.disabled = !onlineMode || (net.connected && !net.isHost);
     }
     if (elForwardAxisSel) {
       elForwardAxisSel.value = (state.forwardAxis === 'horizontal') ? 'horizontal' : 'vertical';
-      elForwardAxisSel.disabled = (state.mode === 'play' && state.aiBusy);
+      elForwardAxisSel.disabled = (state.mode === 'play' && state.aiBusy) || (onlineMode && net.connected);
     }
     setActive(elRulesBtn, state.rulesOpen);
     setActive(elToolUnits, state.tool === 'units');
     setActive(elToolTerrain, state.tool === 'terrain');
+    if (elToolUnits) elToolUnits.disabled = guestOnlineLock;
+    if (elToolTerrain) elToolTerrain.disabled = guestOnlineLock;
 
     setActive(elSideBlue, state.editSide === 'blue');
     setActive(elSideRed, state.editSide === 'red');
+    if (elSideBlue) elSideBlue.disabled = guestOnlineLock;
+    if (elSideRed) elSideRed.disabled = guestOnlineLock;
 
     // Type buttons
     for (const b of elTypeBtns.querySelectorAll('button[data-type]')) {
       setActive(b, state.editType === b.dataset.type);
+      b.disabled = guestOnlineLock;
     }
     setActive(elEraseBtn, state.editErase);
+    if (elEraseBtn) elEraseBtn.disabled = guestOnlineLock;
 
     // Quality buttons
     const effectiveEditQuality = (state.editType === 'run') ? 'green' : state.editQuality;
@@ -2059,21 +2362,38 @@ function unitColors(side) {
     setActive(elQualityRegular, effectiveEditQuality === 'regular');
     setActive(elQualityVeteran, effectiveEditQuality === 'veteran');
     const runnerQualityLocked = (state.editType === 'run');
-    elQualityRegular.disabled = runnerQualityLocked;
-    elQualityVeteran.disabled = runnerQualityLocked;
+    elQualityGreen.disabled = guestOnlineLock;
+    elQualityRegular.disabled = guestOnlineLock || runnerQualityLocked;
+    elQualityVeteran.disabled = guestOnlineLock || runnerQualityLocked;
 
     // Terrain buttons
     for (const b of elTerrainBtns.querySelectorAll('button[data-terrain]')) {
       setActive(b, state.editTerrain === b.dataset.terrain);
+      b.disabled = guestOnlineLock;
     }
 
     elEndTurnBtn.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
     if (elLineAdvanceBtn) {
       elLineAdvanceBtn.disabled = !canIssueLineAdvance();
     }
+    if (guestOnlineLock) {
+      if (elScenarioSel) elScenarioSel.disabled = true;
+      if (elScenarioGroupSel) elScenarioGroupSel.disabled = true;
+      if (elScenarioLessonSel) elScenarioLessonSel.disabled = true;
+      if (elScenarioSizeSel) elScenarioSizeSel.disabled = true;
+      if (elScenarioTerrainSel) elScenarioTerrainSel.disabled = true;
+      if (elLoadScenarioBtn) elLoadScenarioBtn.disabled = true;
+      if (elClearUnitsBtn) elClearUnitsBtn.disabled = true;
+      if (elExportStateBtn) elExportStateBtn.disabled = true;
+      if (elImportStateBtn) elImportStateBtn.disabled = true;
+    }
 
     updateInspector();
     draw();
+
+    if (onlineMode && net.isHost && net.connected && !net.applyingRemoteSnapshot) {
+      onlineBroadcastSnapshot('hud-sync');
+    }
   }
 
   function isAiControlledSide(side) {
@@ -3465,12 +3785,14 @@ function unitColors(side) {
     return { ok: true, payload: raw };
   }
 
-  function applyImportedState(raw, sourceLabel = 'import') {
+  function applyImportedState(raw, sourceLabel = 'import', options = null) {
+    const opts = (options && typeof options === 'object') ? options : {};
+    const silent = !!opts.silent;
     stopAiLoop();
 
     const resolved = resolveImportPayload(raw);
     if (!resolved.ok) {
-      log(resolved.error);
+      if (!silent) log(resolved.error);
       updateHud();
       return;
     }
@@ -3594,7 +3916,7 @@ function unitColors(side) {
 
     // Restore state fields
     const restoreMode = (payload.mode === 'play') ? 'play' : 'edit';
-    state.gameMode = (payload.gameMode === 'hvai') ? 'hvai' : 'hvh';
+    state.gameMode = (payload.gameMode === 'hvai' || payload.gameMode === 'online') ? payload.gameMode : 'hvh';
     state.forwardAxis = normalizeForwardAxis(payload.forwardAxis);
     state.mode = restoreMode;
     state.tool = (payload.tool === 'terrain') ? 'terrain' : 'units';
@@ -3643,16 +3965,18 @@ function unitColors(side) {
       clearSelection();
     }
 
-    state.lastImport = {
-      source: String(sourceLabel || 'import'),
-      at: Date.now(),
-    };
+    if (!silent) {
+      state.lastImport = {
+        source: String(sourceLabel || 'import'),
+        at: Date.now(),
+      };
 
-    log(
-      `Imported state: ${sourceLabel} ` +
-      `(units=${report.unitsPlaced}, terrain=${report.terrainApplied}, mode=${state.mode.toUpperCase()}, ` +
-      `turn=${state.turn}, side=${state.side.toUpperCase()}).`
-    );
+      log(
+        `Imported state: ${sourceLabel} ` +
+        `(units=${report.unitsPlaced}, terrain=${report.terrainApplied}, mode=${state.mode.toUpperCase()}, ` +
+        `turn=${state.turn}, side=${state.side.toUpperCase()}).`
+      );
+    }
 
     const skippedTotal =
       report.terrainSkippedOffBoard +
@@ -3663,7 +3987,7 @@ function unitColors(side) {
     const duplicateTotal = report.terrainDuplicates + report.unitsDuplicates;
     const adjustedTotal = report.unitsHpAdjusted + report.unitsIdRemapped;
 
-    if (skippedTotal > 0 || duplicateTotal > 0 || adjustedTotal > 0) {
+    if (!silent && (skippedTotal > 0 || duplicateTotal > 0 || adjustedTotal > 0)) {
       log(
         `Import warnings: skipped=${skippedTotal} ` +
         `(terrain offboard ${report.terrainSkippedOffBoard}, terrain invalid ${report.terrainSkippedInvalidType}, ` +
@@ -3968,9 +4292,17 @@ function unitColors(side) {
     if (!h) return;
 
     if (state.mode === 'edit') {
+      if (onlineModeActive() && net.connected && !net.isHost) {
+        log('Online: host controls setup and mode.');
+        updateHud();
+        return;
+      }
       if (state.tool === 'terrain') paintTerrain(h.k);
       else placeOrReplaceUnit(h.k);
     } else {
+      if (onlineModeActive()) {
+        if (forwardOnlineAction({ type: 'click', hexKey: h.k })) return;
+      }
       if (isAiTurnActive()) return;
       clickPlay(h.k);
     }
@@ -3988,6 +4320,7 @@ function unitColors(side) {
     if (e.key === 'p' || e.key === 'P') {
       if (state.mode === 'play' && state.selectedKey && !isAiTurnActive()) {
         e.preventDefault();
+        if (onlineModeActive() && forwardOnlineAction({ type: 'pass' })) return;
         passSelected();
       }
     }
@@ -3995,6 +4328,7 @@ function unitColors(side) {
     if (e.key === 'l' || e.key === 'L') {
       if (state.mode === 'play' && !isAiTurnActive()) {
         e.preventDefault();
+        if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance' })) return;
         lineAdvanceFromSelection();
       }
     }
@@ -4020,6 +4354,11 @@ function unitColors(side) {
   window.addEventListener('resize', resize);
 
   elModeBtn.addEventListener('click', () => {
+    if (onlineModeActive() && net.connected && !net.isHost) {
+      log('Online: host controls setup and mode.');
+      updateHud();
+      return;
+    }
     if (state.mode === 'edit') enterPlay();
     else enterEdit();
   });
@@ -4043,13 +4382,41 @@ function unitColors(side) {
     });
   }
 
+  if (elOnlineHostBtn) {
+    elOnlineHostBtn.addEventListener('click', startOnlineHost);
+  }
+  if (elOnlineJoinBtn) {
+    elOnlineJoinBtn.addEventListener('click', startOnlineJoin);
+  }
+  if (elOnlineLeaveBtn) {
+    elOnlineLeaveBtn.addEventListener('click', () => {
+      onlineLeaveSession('Online: left session.');
+    });
+  }
+  if (elOnlineJoinCode) {
+    elOnlineJoinCode.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        startOnlineJoin();
+      }
+    });
+  }
+
   if (elGameModeSel) {
     elGameModeSel.addEventListener('change', () => {
-      const nextMode = (elGameModeSel.value === 'hvai') ? 'hvai' : 'hvh';
+      const rawMode = elGameModeSel.value;
+      const nextMode = (rawMode === 'hvai' || rawMode === 'online') ? rawMode : 'hvh';
       if (nextMode === state.gameMode) return;
 
+      if (state.gameMode === 'online' && nextMode !== 'online') {
+        onlineLeaveSession('Online: idle.');
+      }
+
       state.gameMode = nextMode;
-      if (nextMode === 'hvh') {
+      if (nextMode === 'online') {
+        stopAiLoop();
+        log('Game mode: Online (Host = Blue, Guest = Red). Use Online panel to connect.');
+      } else if (nextMode === 'hvh') {
         stopAiLoop();
         log('Game mode: Human vs Human.');
       } else {
@@ -4113,9 +4480,15 @@ function unitColors(side) {
     updateHud();
   });
 
-  elEndTurnBtn.addEventListener('click', endTurn);
+  elEndTurnBtn.addEventListener('click', () => {
+    if (onlineModeActive() && forwardOnlineAction({ type: 'end_turn' })) return;
+    endTurn();
+  });
   if (elLineAdvanceBtn) {
-    elLineAdvanceBtn.addEventListener('click', lineAdvanceFromSelection);
+    elLineAdvanceBtn.addEventListener('click', () => {
+      if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance' })) return;
+      lineAdvanceFromSelection();
+    });
   }
 
   elClearUnitsBtn.addEventListener('click', () => { enterEdit(); clearUnits(); });
@@ -4308,6 +4681,7 @@ function unitColors(side) {
     populateVictorySelect();
     populateRulesReference();
     setRulesDrawerOpen(false);
+    setOnlineStatus(net.status);
 
     loadScenario('Empty (Island)');
     enterEdit();

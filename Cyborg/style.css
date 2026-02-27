@@ -76,6 +76,21 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   padding:8px 10px;
 }
 
+.monoVal{
+  flex:1;
+  min-height:36px;
+  display:flex;
+  align-items:center;
+  padding:6px 10px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#0d0f15;
+  color:#c5d4f7;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size:12px;
+  word-break:break-all;
+}
+
 .note{
   color:var(--muted);
   font-size:12px;

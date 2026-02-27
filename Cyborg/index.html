@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bannerfall</title>
-  <link rel="stylesheet" href="style.css?v=20260227-rules-drawer" />
+  <link rel="stylesheet" href="style.css?v=20260227-online-p2p" />
 </head>
 <body>
   <header id="hud">
@@ -30,6 +30,7 @@
           <select id="gameModeSel" class="select">
             <option value="hvh">Human vs Human</option>
             <option value="hvai">Human vs AI</option>
+            <option value="online">Online (Friend)</option>
           </select>
         </div>
 
@@ -61,6 +62,24 @@
         <div class="row">
           <button id="rulesBtn" class="btn wide">Rules</button>
         </div>
+      </div>
+
+      <div class="panel">
+        <div class="row">
+          <div class="label">Online</div>
+          <button id="onlineHostBtn" class="btn">Host</button>
+          <button id="onlineJoinBtn" class="btn">Join</button>
+          <button id="onlineLeaveBtn" class="btn">Leave</button>
+        </div>
+        <div class="row">
+          <div class="label">Your Code</div>
+          <div id="onlineMyCode" class="monoVal">-</div>
+        </div>
+        <div class="row">
+          <div class="label">Friend</div>
+          <input id="onlineJoinCode" class="select" type="text" autocomplete="off" spellcheck="false" placeholder="Enter host code" />
+        </div>
+        <div id="onlineStatus" class="note">Online: idle.</div>
       </div>
 
       <div class="panel">
@@ -171,6 +190,7 @@
           Infantry pivot: in-command (or veteran) <b>INF</b> auto-pivots against flank/rear melee attacks before impact is resolved.<br>
           Line Advance: select friendly <b>INF</b> and press <b>Line Advance</b> (or <b>L</b>) to push a contiguous line forward 1 hex as one activation (movement only, partial if blocked; line shape follows Advance axis).<br>
           Veteran cavalry: after attacking in melee, a veteran <b>CAV</b> may disengage 1 hex if it has movement remaining and can end not adjacent to enemies.<br><br>
+          Online: set Game mode to <b>Online</b>, Host shares code, friend joins with code. Host controls setup and mode; Host plays Blue, Guest plays Red.<br>
           Dice: <b>5–6</b> = Hit, <b>4</b> = Retreat (blocked retreat → 1 hit). Woods: defender reduces attacker dice by 1 (min 1).<br>
           Pass: press <b>P</b> with a selected unit.<br>
           UI: spent units are dim. Green out-of-command units show a dashed orange ring. Toggle command radius with <b>C</b>.
@@ -230,7 +250,8 @@
     </section>
   </div>
 
-  <script src="build.js?v=20260227-rules-drawer"></script>
-  <script src="main.js?v=20260227-rules-drawer"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="build.js?v=20260227-online-p2p"></script>
+  <script src="main.js?v=20260227-online-p2p"></script>
 </body>
 </html>
