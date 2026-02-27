@@ -8,6 +8,7 @@
   --btn2:#1a1c22;
   --focus:#79a7ff;
   --accent:#d8bd7e;
+  --hud-h:64px;
   --combat-h:198px;
 }
 
@@ -15,22 +16,27 @@
 html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
 
 #hud{
-  padding:14px 16px;
+  height:var(--hud-h);
+  padding:0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   border-bottom:1px solid var(--line);
 }
-#hudTitle{font-weight:800;letter-spacing:0.02em;font-size:18px;}
-#hudMeta{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.35;}
-#hudLast{
-  margin-top:8px;
-  font-size:13px;
-  border-top:1px dashed rgba(255,255,255,0.08);
-  padding-top:7px;
+#hudTitle{
+  font-family:"Times New Roman", Times, serif;
+  font-weight:700;
+  letter-spacing:0.02em;
+  font-size:34px;
+  line-height:1;
+  text-align:center;
 }
+#hudMeta,#hudLast{display:none;}
 
 #layout{
   display:grid;
-  grid-template-columns: 1fr 360px;
-  height: calc(100% - 86px - var(--combat-h));
+  grid-template-columns: 1fr 338px;
+  height: calc(100% - var(--hud-h) - var(--combat-h));
 }
 
 #canvasWrap{position:relative;}
@@ -38,7 +44,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 
 #side{
   border-left:1px solid var(--line);
-  padding:12px;
+  padding:10px;
   overflow:auto;
 }
 
@@ -46,8 +52,8 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   background:var(--panel);
   border:1px solid var(--line);
   border-radius:12px;
-  padding:11px;
-  margin-bottom:12px;
+  padding:10px;
+  margin-bottom:8px;
 }
 
 .panelTitle{
@@ -59,7 +65,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   margin-bottom:8px;
 }
 
-.row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap;}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap;}
 .label{width:88px;color:var(--muted);font-size:11px;letter-spacing:0.05em;text-transform:uppercase;}
 
 .btn{
@@ -134,9 +140,9 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 
 .note{
   color:var(--muted);
-  font-size:12px;
-  line-height:1.35;
-  margin-top:8px;
+  font-size:11px;
+  line-height:1.25;
+  margin-top:6px;
 }
 
 .draftStatus{
@@ -210,7 +216,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 }
 
 .diceTray{
-  display:grid;
+  display:none;
   grid-template-columns:repeat(auto-fill, minmax(40px, 1fr));
   gap:8px;
   margin-top:6px;
@@ -417,7 +423,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 }
 
 @media (max-width: 980px){
-  :root{ --combat-h:280px; }
+  :root{ --combat-h:280px; --hud-h:56px; }
   #layout{grid-template-columns:1fr; height: auto;}
   #side{border-left:none;border-top:1px solid var(--line);}
   .label{width:80px;}

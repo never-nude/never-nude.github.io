@@ -5192,7 +5192,7 @@ function unitColors(side) {
     const blockText = blockParts.length ? ` blocked(${blockParts.join(', ')})` : '';
 
     log(`Line Advance: ${moves.length}/${formation.length} INF advanced.${blockText}`);
-    updateHud();
+    if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
   function veteranCavPostAttackWithdrawTargets(fromKey, u, actCtx) {
@@ -6603,6 +6603,18 @@ function unitColors(side) {
     maybeStartAiTurn();
   }
 
+  function maybeAutoEndTurnAfterAction() {
+    if (state.mode !== 'play') return false;
+    if (state.gameOver) return false;
+    if (isAiTurnActive()) return false;
+    if (state.selectedKey) return false;
+    if (state.actsUsed < ACT_LIMIT) return false;
+
+    log(`Actions ${ACT_LIMIT}/${ACT_LIMIT} spent. Auto-ending turn.`);
+    endTurn();
+    return true;
+  }
+
   // --- Play interaction
   function selectUnit(hexKey) {
     const u = unitsByHex.get(hexKey);
@@ -6689,14 +6701,14 @@ function unitColors(side) {
     if (isPostAttackWithdraw) {
       log(`Veteran CAV disengaged to ${destKey}.`);
       clearSelection();
-      updateHud();
+      if (!maybeAutoEndTurnAfterAction()) updateHud();
       return;
     }
 
     if (u.type === 'iat') {
       log(`Medic moved to ${destKey}.`);
       clearSelection();
-      updateHud();
+      if (!maybeAutoEndTurnAfterAction()) updateHud();
       return;
     }
 
@@ -6745,7 +6757,7 @@ function unitColors(side) {
 
     log(`Medic restored 1 HP to ${target.side.toUpperCase()} ${tdef ? tdef.abbrev : target.type} (${target.hp}/${maxHp}).`);
     clearSelection();
-    updateHud();
+    if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
   function attackFromSelection(targetKey) {
@@ -6798,7 +6810,7 @@ function unitColors(side) {
 
     // End activation after attack.
     clearSelection();
-    updateHud();
+    if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
   function passSelected() {
@@ -6818,7 +6830,7 @@ function unitColors(side) {
     log(`Pass: ${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type).abbrev}.`);
 
     clearSelection();
-    updateHud();
+    if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
   function clickPlay(hexKey) {
@@ -6850,7 +6862,7 @@ function unitColors(side) {
     if (hexKey === selKey) {
       clearSelection();
       log('Deselected.');
-      updateHud();
+      if (!maybeAutoEndTurnAfterAction()) updateHud();
       return;
     }
 

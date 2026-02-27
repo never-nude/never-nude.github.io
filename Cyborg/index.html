@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bannerfall</title>
-  <link rel="stylesheet" href="style.css?v=20260228-combat-rail-v3" />
+  <link rel="stylesheet" href="style.css?v=20260228-ui-streamline-v1" />
 </head>
 <body>
   <header id="hud">
@@ -80,8 +80,7 @@
           <input id="onlineJoinCode" class="select" type="text" maxlength="4" autocomplete="off" spellcheck="false" placeholder="Enter code" />
           <button id="onlineJoinBtn" class="btn">Connect</button>
         </div>
-        <div class="note">Host creates room and shares 4-character code. Guest enters code and connects.</div>
-        <div id="onlineRoleHint" class="note">Switch Game mode to Online, then create or join.</div>
+        <div id="onlineRoleHint" class="note">Create or join a room.</div>
         <div id="onlineStatus" class="note">Online: idle.</div>
       </div>
 
@@ -114,7 +113,7 @@
           <button id="loadScenarioBtn" class="btn wide">Load Scenario</button>
           <button id="clearUnitsBtn" class="btn wide">Clear Units</button>
         </div>
-        <details class="details" open>
+        <details class="details">
           <summary>Multiplayer: Custom Army Draft (2 Players)</summary>
           <div class="row">
             <div class="label">Draft</div>
@@ -225,16 +224,6 @@
             Hotkeys: <b>P</b> pass, <b>C</b> command overlay.
           </div>
         </details>
-        <details class="details">
-          <summary>Advanced rules and UI notes</summary>
-          <div class="note">
-            Runner has 2 HP, no attack, and relays command. Move: Green 3, Regular 4, Veteran 5. UP: 1/2/3.<br>
-            Medic costs 4 UP and is best used near your infantry center or key cavalry screen.<br>
-            Infantry in command (or veteran) auto-pivots against flank/rear melee before impact.<br>
-            Veteran cavalry may disengage after melee if movement remains and destination is safe.<br>
-            Blocked retreat converts to 1 hit. Terrain can reduce attack dice.
-          </div>
-        </details>
       </div>
     </aside>
   </main>
@@ -263,7 +252,7 @@
   </section>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-combat-rail-v3"></script>
-  <script src="main.js?v=20260228-combat-rail-v3"></script>
+  <script src="build.js?v=20260228-ui-streamline-v1"></script>
+  <script src="main.js?v=20260228-ui-streamline-v1"></script>
 </body>
 </html>
