@@ -74,7 +74,7 @@
   const SCENARIO_FILTER_IDS = Object.fromEntries(
     Object.entries(SCENARIO_FILTER_OPTIONS).map(([k, opts]) => [k, new Set(opts.map(o => o.id))])
   );
-  const HEX_DIRECTIONS = ['e', 'w', 'ur', 'ul', 'dr', 'dl'];
+  const HEX_DIRECTIONS = ['up', 'down', 'e', 'w', 'ur', 'ul', 'dr', 'dl'];
 
   // --- Core rules constants
   const ACT_LIMIT = 3; // activations per turn
@@ -5717,6 +5717,7 @@ function unitColors(side) {
   }
 
   function directionAxisId(dir) {
+    if (dir === 'up' || dir === 'down') return 3;
     if (dir === 'e' || dir === 'w') return 0;
     if (dir === 'ur' || dir === 'dl') return 1;
     if (dir === 'ul' || dir === 'dr') return 2;
@@ -5725,6 +5726,7 @@ function unitColors(side) {
 
   function frontlineDirectionPairsForAttack(attackDir) {
     const axis = directionAxisId(attackDir);
+    if (axis === 3) return [['e', 'w']];
     if (axis === 0) return [['ur', 'dl'], ['ul', 'dr']];
     if (axis === 1) return [['e', 'w'], ['ul', 'dr']];
     if (axis === 2) return [['e', 'w'], ['ur', 'dl']];
