@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-ui-layout-v42" />
+  <link rel="stylesheet" href="style.css?v=20260228-side-init-v44" />
 </head>
 <body>
   <header id="hud">
@@ -44,6 +44,9 @@
           <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
           <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
           <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
+        </div>
+        <div class="row">
+          <button id="guidebookBtn" class="btn wide">Open Full Guidebook</button>
         </div>
       </div>
 
@@ -136,6 +139,13 @@
         </select>
       </div>
       <div class="row">
+        <div class="label">Play As</div>
+        <select id="playerSideSel" class="select">
+          <option value="blue">Blue</option>
+          <option value="red">Red</option>
+        </select>
+      </div>
+      <div class="row">
         <div class="label">Difficulty</div>
         <select id="aiDifficultySel" class="select">
           <option value="levy">Levy (Easy)</option>
@@ -152,17 +162,6 @@
       </div>
       <div class="row">
         <button id="lineAdvanceBtn" class="btn wide">Line Advance</button>
-      </div>
-    </div>
-    <div id="selectedUnitPanel" class="combatCol combatColInspector">
-      <div class="combatColTitle">Selected Unit</div>
-      <div id="inspectorTitle" class="inspectorTitle">No unit selected.</div>
-      <div class="inspectorGrid">
-        <div class="inspectorKey">Side</div><div id="inspectorSide" class="inspectorVal">-</div>
-        <div class="inspectorKey">Type</div><div id="inspectorType" class="inspectorVal">-</div>
-        <div class="inspectorKey">Quality</div><div id="inspectorQuality" class="inspectorVal">-</div>
-        <div class="inspectorKey">HP</div><div id="inspectorHp" class="inspectorVal">-</div>
-        <div class="inspectorKey">UP</div><div id="inspectorUp" class="inspectorVal">-</div>
       </div>
     </div>
     <div class="combatCol combatColDice">
@@ -235,7 +234,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-ui-layout-v42"></script>
-  <script src="main.js?v=20260228-ui-layout-v42"></script>
+  <script src="build.js?v=20260228-side-init-v44"></script>
+  <script src="main.js?v=20260228-side-init-v44"></script>
 </body>
 </html>

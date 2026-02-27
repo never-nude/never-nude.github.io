@@ -405,6 +405,7 @@
 
   const elModeBtn = document.getElementById('modeBtn');
   const elGameModeSel = document.getElementById('gameModeSel');
+  const elPlayerSideSel = document.getElementById('playerSideSel');
   const elAiDifficultySel = document.getElementById('aiDifficultySel');
   const elForwardAxisSel = document.getElementById('forwardAxisSel');
   const elToolUnits = document.getElementById('toolUnits');
@@ -460,6 +461,7 @@
   const elVictoryTrackBody = document.getElementById('victoryTrackBody');
   const elRulesShortBtn = document.getElementById('rulesShortBtn');
   const elRulesFullBtn = document.getElementById('rulesFullBtn');
+  const elGuidebookBtn = document.getElementById('guidebookBtn');
   const elRulesModal = document.getElementById('rulesModal');
   const elRulesModalTitle = document.getElementById('rulesModalTitle');
   const elRulesModalBody = document.getElementById('rulesModalBody');
@@ -480,24 +482,59 @@
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
   `;
   const RULES_FULL_HTML = `
-    <h4>Turn Structure</h4>
-    <p>Players alternate turns. Each turn has up to 3 activations. You may end early.</p>
-    <h4>Movement</h4>
-    <p>Base movement: INF/ARC 1, CAV/SKR/GEN 2, RUN 3-5 by quality, Medic 1.</p>
-    <p>Terrain cost: Clear 1. Hills/Woods/Rough cost 2 for INF/ARC/SKR/GEN and 3 for CAV. Water is impassable.</p>
-    <p>Engaged units cannot move, except SKR, RUN, and Veterans can disengage 1 hex if destination is not engaged.</p>
-    <h4>Command & Relays</h4>
-    <p>Units are in command if within a friendly General radius or Runner relay radius 1. Generals and Runners are command sources.</p>
-    <h4>Attacks</h4>
-    <p>Melee dice: INF 2, CAV 3, SKR 2, ARC 1, GEN 1, RUN 0, Medic 0.</p>
-    <p>Ranged: ARC range 2-3 (2 dice at 2, 1 die at 3). SKR range 2 (1 die). Engaged units cannot make ranged attacks.</p>
-    <p>Tree-line rule: ARC in Woods can fire ranged only from woods hexes adjacent to Clear terrain.</p>
-    <p>Retreats push away from attacker. If retreat is blocked/off-board/water/occupied, that retreat converts to 1 hit.</p>
-    <h4>Support & Feedback</h4>
-    <p>Reinforcement requires a touching adjacent INF pair around defender. If attack enters from the pair’s opposite two hex sides, attacker gets -1 die. No stacking and one line deep only.</p>
-    <p>Light cyan shows reinforced unit; darker cyan shows reinforcing adjacent units. Red glow+arrow briefly shows move/attack direction.</p>
-    <h4>Victory Modes</h4>
-    <p>Clear Victory uses UP captured toward half-opponent-UP target. Decapitation tracks generals left. Annihilation tracks units left.</p>
+    <h4>Bannerfall At A Glance</h4>
+    <p>Bannerfall is a hex-grid tactics game about cohesion, command, and collapse. The central idea is simple: an army wins by staying coordinated while forcing the enemy to lose shape. Units are formations, not heroes. Position and command matter more than flashy abilities.</p>
+    <h4>How A Battle Starts</h4>
+    <p>In local play, Blue always acts first. In online multiplayer, once both players connect and the battle begins, the starting side is randomized between Blue and Red.</p>
+    <p>Every turn has up to 3 activations. Most units can act once each turn. You can end your turn early, but if you spend all 3 activations, the turn ends automatically.</p>
+    <h4>Unit Types, Movement, And Role</h4>
+    <p>Base movement: INF 1, ARC 1, CAV 2, SKR 2, GEN 2, RUN 3/4/5 by quality, MED 1. Veterans, skirmishers, and runners can withdraw 1 hex from engagement if the destination is safe.</p>
+    <ul>
+      <li>INF: line holder, 2 melee dice.</li>
+      <li>CAV: shock unit, 3 melee dice.</li>
+      <li>SKR: flexible screen, 2 melee dice, 1 ranged die at range 2.</li>
+      <li>ARC: ranged pressure, 1 melee die, 2 ranged dice at range 2 and 1 die at range 3.</li>
+      <li>GEN: command anchor, 1 melee die.</li>
+      <li>RUN: messenger/relay, no attack, command relay radius 1.</li>
+      <li>MED: healer, no attack, restores +1 HP to one adjacent friendly unit as its action.</li>
+    </ul>
+    <h4>HP, UP, And Why They Matter</h4>
+    <p>HP is durability. A unit at 0 HP is destroyed. UP is strategic value used for force totals and Clear Victory scoring. Experience (Green/Regular/Veteran) mainly changes HP/UP and command independence, not your basic hit table.</p>
+    <p>Reference values:</p>
+    <ul>
+      <li>INF HP 3/4/5, UP 3/5/7</li>
+      <li>CAV HP 2/3/4, UP 6/8/10</li>
+      <li>SKR HP 1/2/3, UP 2/3/4</li>
+      <li>ARC HP 1/2/3, UP 2/4/6</li>
+      <li>GEN HP 2/3/4, UP 8/10/12</li>
+      <li>RUN HP 2/2/2, UP 1/2/3</li>
+      <li>MED HP 1/1/1, UP 4</li>
+    </ul>
+    <h4>Terrain And Friction</h4>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. Hills/Woods/Rough cost 2 for INF/ARC/SKR/GEN and 3 for CAV. Water is impassable.</p>
+    <p>Woods also provide defense: attacker rolls -1 die (minimum 1). Archers standing in Woods can only fire if their woods hex is adjacent to at least one Clear hex (tree-line fire rule).</p>
+    <h4>Command System</h4>
+    <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
+    <ul>
+      <li>Green INF/ARC/SKR out of command: cannot activate.</li>
+      <li>Regular INF/ARC/SKR out of command: can attack but cannot move.</li>
+      <li>CAV and all Veteran units ignore command restrictions.</li>
+    </ul>
+    <h4>Combat Resolution</h4>
+    <p>Each die is read as: 5-6 hit, 4 retreat, 1-3 miss. Hits remove 1 HP each. Retreats push the defender away from the attacker. If a retreat is blocked by map edge, water, terrain legality, or occupation, that retreat converts into an additional hit.</p>
+    <p>This makes combat about geometry as much as damage: displacement can open gaps, break fronts, and trigger collapse.</p>
+    <h4>Infantry Reinforcement Rule</h4>
+    <p>An infantry defender is reinforced only when it has a touching adjacent pair of friendly infantry. If the attack comes from the opposite brace directions, attacker dice are reduced by 1 (minimum 1 die). Reinforcement is one line deep only.</p>
+    <p>UI cue: light cyan marks reinforced units; darker cyan marks the units providing the brace.</p>
+    <h4>Line Advance</h4>
+    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step forward. It does not include attacks. Some units may move while blocked units remain in place.</p>
+    <h4>Victory Conditions</h4>
+    <ul>
+      <li>Clear Victory: capture at least half of the opponent's starting UP.</li>
+      <li>Decapitation: eliminate all enemy generals.</li>
+      <li>Annihilation: eliminate all enemy units.</li>
+    </ul>
+    <p>Once battle starts, the selected victory condition is locked until you return to Setup.</p>
   `;
   let diceRenderNonce = 0;
 
@@ -525,6 +562,7 @@
 
     // Play
     gameMode: 'hvai', // 'hvh' | 'hvai' | 'online'
+    humanSide: 'blue', // local player side in Human vs AI
     aiDifficulty: 'cohort', // 'levy' | 'cohort' | 'legion'
     forwardAxis: 'vertical', // 'vertical' | 'horizontal' | 'diag_tl_br' | 'diag_tr_bl'
     turn: 1,
@@ -588,6 +626,22 @@
   const ONLINE_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   const ONLINE_CODE_LENGTH = 4;
   const ONLINE_PEER_PREFIX = 'cyb-';
+
+  function normalizeSide(side) {
+    return side === 'red' ? 'red' : 'blue';
+  }
+
+  function opposingSide(side) {
+    return normalizeSide(side) === 'blue' ? 'red' : 'blue';
+  }
+
+  function aiSide() {
+    return opposingSide(state.humanSide);
+  }
+
+  function randomStartSide() {
+    return Math.random() < 0.5 ? 'blue' : 'red';
+  }
 
   // --- Board model
   function key(q, r) { return `${q},${r}`; }
@@ -4742,6 +4796,9 @@ function unitColors(side) {
       } else {
         setOnlineStatus(`Connected to room ${net.remoteCode || '----'}.`);
       }
+      if (net.isHost) {
+        maybeRollOnlineOpeningInitiative();
+      }
       if (net.isHost) onlineBroadcastSnapshot('peer-open');
       else onlineSendPacket({ kind: 'hello' });
       updateHud();
@@ -4885,7 +4942,9 @@ function unitColors(side) {
     const sideLabel = (state.side === 'blue') ? 'Blue' : 'Red';
     const modeMeta =
       state.gameMode === 'online' ? ' • Online mode' :
-      (state.gameMode === 'hvai' ? ` • Red AI (${aiDifficultyLabel()} difficulty)` : '');
+      (state.gameMode === 'hvai'
+        ? ` • You ${state.humanSide.toUpperCase()} vs ${aiSide().toUpperCase()} AI (${aiDifficultyLabel()} difficulty)`
+        : '');
     const meta = [
       `${modeLabel}${modeMeta}`,
       `Battle Line: ${forwardAxisLabel(state.forwardAxis)}`,
@@ -4926,10 +4985,17 @@ function unitColors(side) {
     }
     const onlineMode = onlineModeActive();
     const guestOnlineLock = onlineMode && net.connected && !net.isHost;
+    if (elPlayerSideSel) {
+      elPlayerSideSel.value = normalizeSide(state.humanSide);
+      elPlayerSideSel.disabled = state.gameMode !== 'hvai' || state.mode === 'play' || onlineMode;
+    }
     if (elAiDifficultySel) {
       const aiLock = onlineMode && net.connected;
       elAiDifficultySel.value = normalizeAiDifficulty(state.aiDifficulty);
       elAiDifficultySel.disabled = state.gameMode !== 'hvai' || aiLock || (state.mode === 'play' && state.aiBusy);
+    }
+    if (elVictorySel) {
+      elVictorySel.disabled = state.mode === 'play' || guestOnlineLock;
     }
     const shownCode = normalizeOnlineCode(net.isHost ? net.myCode : net.remoteCode);
     elModeBtn.disabled = guestOnlineLock;
@@ -5053,7 +5119,7 @@ function unitColors(side) {
   }
 
   function isAiControlledSide(side) {
-    return state.gameMode === 'hvai' && side === 'red';
+    return state.gameMode === 'hvai' && normalizeSide(side) === aiSide();
   }
 
   function isAiTurnActive() {
@@ -6399,7 +6465,8 @@ function unitColors(side) {
     closeRulesModal();
     state.mode = 'play';
     state.turn = 1;
-    state.side = 'blue';
+    const onlineRandomStart = state.gameMode === 'online' && net.connected && net.isHost;
+    state.side = onlineRandomStart ? randomStartSide() : 'blue';
     state.actsUsed = 0;
     state.actedUnitIds = new Set();
 
@@ -6417,9 +6484,22 @@ function unitColors(side) {
     clearSelection();
     clearDiceDisplay();
 
-    log('Play: click a friendly unit. Blue goes first.');
+    if (onlineRandomStart) {
+      log(`Play: click a friendly unit. ${state.side.toUpperCase()} was randomly selected to go first.`);
+    } else {
+      log('Play: click a friendly unit. Blue goes first.');
+    }
     updateHud();
     maybeStartAiTurn();
+  }
+
+  function maybeRollOnlineOpeningInitiative() {
+    if (!net.isHost || !onlineModeActive()) return;
+    if (state.mode !== 'play' || state.gameOver) return;
+    if (state.turn !== 1) return;
+    if (state.actsUsed !== 0 || state.actedUnitIds.size > 0) return;
+    state.side = randomStartSide();
+    log(`Online initiative: ${state.side.toUpperCase()} was randomly selected to act first.`);
   }
 
   // --- Editing actions
@@ -7141,6 +7221,7 @@ function unitColors(side) {
       state: {
         mode: state.mode,
         gameMode: state.gameMode,
+        humanSide: state.humanSide,
         aiDifficulty: state.aiDifficulty,
         forwardAxis: state.forwardAxis,
         tool: state.tool,
@@ -7361,6 +7442,7 @@ function unitColors(side) {
     state.gameMode = (payload.gameMode === 'hvh' || payload.gameMode === 'hvai' || payload.gameMode === 'online')
       ? payload.gameMode
       : 'hvai';
+    state.humanSide = normalizeSide(payload.humanSide);
     state.aiDifficulty = normalizeAiDifficulty(payload.aiDifficulty);
     state.forwardAxis = normalizeForwardAxis(payload.forwardAxis);
     state.mode = restoreMode;
@@ -7945,6 +8027,9 @@ function unitColors(side) {
   if (elRulesFullBtn) {
     elRulesFullBtn.addEventListener('click', () => openRulesModal('full'));
   }
+  if (elGuidebookBtn) {
+    elGuidebookBtn.addEventListener('click', () => openRulesModal('full'));
+  }
   if (elRulesCloseBtn) {
     elRulesCloseBtn.addEventListener('click', closeRulesModal);
   }
@@ -7966,14 +8051,25 @@ function unitColors(side) {
 
       state.gameMode = nextMode;
       if (nextMode === 'hvai') {
-        log(`Game mode: Human vs AI (Red AI, ${aiDifficultyLabel()} difficulty).`);
+        log(`Game mode: Human vs AI. You are ${state.humanSide.toUpperCase()}, ${aiSide().toUpperCase()} is AI (${aiDifficultyLabel()} difficulty). Blue goes first.`);
       } else if (nextMode === 'online') {
         stopAiLoop();
-        log('Game mode: Online (Host = Blue, Guest = Red). Use Online panel to connect.');
+        log('Game mode: Online (Host = Blue, Guest = Red). First side is randomized when battle starts.');
       } else {
         stopAiLoop();
         log('Game mode: Human vs Human.');
       }
+      updateHud();
+      maybeStartAiTurn();
+    });
+  }
+
+  if (elPlayerSideSel) {
+    elPlayerSideSel.addEventListener('change', () => {
+      const nextSide = normalizeSide(elPlayerSideSel.value);
+      if (nextSide === state.humanSide) return;
+      state.humanSide = nextSide;
+      log(`Player side set to ${state.humanSide.toUpperCase()}. ${aiSide().toUpperCase()} is AI. Blue still acts first.`);
       updateHud();
       maybeStartAiTurn();
     });
@@ -8062,6 +8158,12 @@ function unitColors(side) {
   });
 
   elVictorySel.addEventListener('change', () => {
+    if (state.mode === 'play') {
+      elVictorySel.value = state.victoryMode;
+      log('Victory condition is locked once battle starts. Use Back to Setup to change it.');
+      updateHud();
+      return;
+    }
     state.victoryMode = elVictorySel.value;
     updateHud();
   });
