@@ -455,6 +455,7 @@
   const elCombatMath = document.getElementById('combatMath');
   const elCombatTerrain = document.getElementById('combatTerrain');
   const elCombatSupport = document.getElementById('combatSupport');
+  const elModifierPreview = document.getElementById('modifierPreview');
   const elCombatOutcome = document.getElementById('combatOutcome');
   const elVictoryTrackBody = document.getElementById('victoryTrackBody');
   const elRulesShortBtn = document.getElementById('rulesShortBtn');
@@ -464,7 +465,7 @@
   const elRulesModalBody = document.getElementById('rulesModalBody');
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Infantry support directly opposite an adjacent melee attack gives attacker -1 die per supporting rank (up to 2).';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Reinforcement needs a gapless rear rank and more infantry behind than front; attacker always rolls at least 1 die.';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
     <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
@@ -473,7 +474,7 @@
     <p>Out of command: Green INF/ARC/SKR cannot activate. Regular INF/ARC/SKR can attack but cannot move. Veterans and CAV ignore command limits.</p>
     <h4>Combat</h4>
     <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1).</p>
-    <p>Infantry support: if a melee attack hits INF, friendly INF directly opposite the attack line reduce attacker dice by -1 per rank (max 2).</p>
+    <p>Infantry reinforcement: only if the rear rank is gapless and total infantry behind the front line is greater than infantry in front. Then attacker loses -1 die per depth behind the defender (max 2).</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
   `;
@@ -491,7 +492,8 @@
     <p>Ranged: ARC range 2-3 (2 dice at 2, 1 die at 3). SKR range 2 (1 die). Engaged units cannot make ranged attacks.</p>
     <p>Retreats push away from attacker. If retreat is blocked/off-board/water/occupied, that retreat converts to 1 hit.</p>
     <h4>Support & Feedback</h4>
-    <p>Cyan hex shading shows connected infantry reinforcement formation on hover/select. Red glow+arrow briefly shows move/attack direction.</p>
+    <p>Reinforcement requires: (1) gapless first rear rank behind the front line, and (2) more infantry behind than in the front line. If active, attacker takes up to -2 dice based on depth directly behind defender.</p>
+    <p>Light cyan shows reinforced front units; darker cyan shows reinforcing rear units. Red glow+arrow briefly shows move/attack direction.</p>
     <h4>Victory Modes</h4>
     <p>Clear Victory uses UP captured toward half-opponent-UP target. Decapitation tracks generals left. Annihilation tracks units left.</p>
   `;
@@ -3505,10 +3507,12 @@ function unitColors(side) {
       if (!state.selectedKey && state._hoverKey && unitsByHex.get(state._hoverKey)?.type === 'inf') return state._hoverKey;
       return null;
     })();
-    const reinforcedKeys = (
+    const reinforcePreview = (
       state.mode === 'play' &&
       reinforceAnchorKey
-    ) ? reinforcedFormationKeys(reinforceAnchorKey) : null;
+    ) ? reinforcementPreviewForAnchor(reinforceAnchorKey) : null;
+    const reinforcedFrontKeys = (reinforcePreview && reinforcePreview.active) ? reinforcePreview.frontSet : null;
+    const reinforcingBackKeys = (reinforcePreview && reinforcePreview.active) ? reinforcePreview.supportSet : null;
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
     // Background
@@ -3558,9 +3562,14 @@ function unitColors(side) {
         }
       }
 
-      // Reinforcement visibility: soft tile shading reads faster than another dashed ring.
-      if (reinforcedKeys && reinforcedKeys.has(k)) {
-        ctx.fillStyle = 'rgba(0, 226, 214, 0.24)';
+      // Reinforcement visibility:
+      // - light cyan = reinforced front
+      // - darker cyan = reinforcing rear
+      if (reinforcingBackKeys && reinforcingBackKeys.has(k)) {
+        ctx.fillStyle = 'rgba(0, 170, 170, 0.36)';
+        ctx.fill(p);
+      } else if (reinforcedFrontKeys && reinforcedFrontKeys.has(k)) {
+        ctx.fillStyle = 'rgba(0, 226, 214, 0.20)';
         ctx.fill(p);
       }
 
@@ -3710,6 +3719,8 @@ function unitColors(side) {
     if (state.actionPulse) {
       drawActionPulseOverlay(state.actionPulse);
     }
+
+    renderModifierPreview();
   }
 
   // --- UI helpers
@@ -3792,8 +3803,12 @@ function unitColors(side) {
       ? `Play mode: ${activationState}.`
       : 'Edit mode preview values.';
     if (state.mode === 'play' && u.type === 'inf') {
-      const reinforcedCount = reinforcedFormationKeys(selectedKey).size;
-      metaText += ` Reinforcement shading: ${reinforcedCount} infantry.`;
+      const preview = reinforcementPreviewForAnchor(selectedKey);
+      if (preview && preview.active) {
+        metaText += ` Reinforcement active (front ${preview.frontCount}, behind ${preview.behindCount}, defense -${preview.penaltyRanks} die).`;
+      } else if (preview) {
+        metaText += ` Reinforcement inactive (front ${preview.frontCount}, behind ${preview.behindCount}; needs gapless rear and behind > front).`;
+      }
     }
 
     setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.abbrev} (${qualityText})`);
@@ -3893,6 +3908,59 @@ function unitColors(side) {
     return TERRAIN_LABEL_BY_ID.get(terrainId) || 'Unknown';
   }
 
+  function renderModifierPreview() {
+    if (!elModifierPreview) return;
+    if (state.mode !== 'play') {
+      elModifierPreview.textContent = 'Modifier preview: start battle and hover/select a unit.';
+      return;
+    }
+
+    const previewKey = (() => {
+      if (state.selectedKey && unitsByHex.has(state.selectedKey)) return state.selectedKey;
+      if (state._hoverKey && unitsByHex.has(state._hoverKey)) return state._hoverKey;
+      return null;
+    })();
+
+    if (!previewKey) {
+      elModifierPreview.textContent = 'Modifier preview: hover or select a unit.';
+      return;
+    }
+
+    const u = unitsByHex.get(previewKey);
+    const h = board.byKey.get(previewKey);
+    if (!u || !h) {
+      elModifierPreview.textContent = 'Modifier preview: -';
+      return;
+    }
+
+    const terrainMod = (h.terrain === 'woods') ? -1 : 0;
+    const terrainText = terrainMod ? `terrain ${terrainMod}` : 'terrain 0';
+
+    if (u.type !== 'inf') {
+      elModifierPreview.textContent =
+        `Modifier preview (${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type)?.abbrev || u.type}): ${terrainText}, reinforcement n/a, minimum 1 die.`;
+      return;
+    }
+
+    const profile = reinforcementPreviewForAnchor(previewKey);
+    const reinfMod = (profile && profile.active) ? -profile.penaltyRanks : 0;
+    if (profile && profile.active) {
+      elModifierPreview.textContent =
+        `Modifier preview (front attack): ${terrainText}, reinforcement ${reinfMod} ` +
+        `(front ${profile.frontCount}, behind ${profile.behindCount}), minimum 1 die.`;
+      return;
+    }
+
+    if (profile) {
+      elModifierPreview.textContent =
+        `Modifier preview (front attack): ${terrainText}, reinforcement 0 ` +
+        `(needs gapless rear rank and behind > front; currently front ${profile.frontCount}, behind ${profile.behindCount}), minimum 1 die.`;
+      return;
+    }
+
+    elModifierPreview.textContent = `Modifier preview: ${terrainText}, reinforcement 0, minimum 1 die.`;
+  }
+
   function setCombatSupportStatus(text, cls = 'na') {
     if (!elCombatSupport) return;
     elCombatSupport.textContent = text;
@@ -3903,6 +3971,9 @@ function unitColors(side) {
   function supportStatusForCombat(info) {
     const ranks = Math.max(0, Number(info?.supportRanks || 0));
     const dicePenalty = Math.abs(Number(info?.supportDiceMod || 0));
+    const frontCount = Math.max(0, Number(info?.supportFrontCount || 0));
+    const behindCount = Math.max(0, Number(info?.supportBehindCount || 0));
+    const gapless = !!info?.supportGapless;
 
     if (!info || info.kind !== 'melee' || info.defenderType !== 'inf') {
       return {
@@ -3914,14 +3985,17 @@ function unitColors(side) {
     if (ranks > 0 && dicePenalty > 0) {
       return {
         text:
-          `Infantry support ACTIVE: ${ranks} supporting Infantry directly behind defender ` +
-          `on the opposite side of the attack. Attacker -${dicePenalty} die${dicePenalty === 1 ? '' : 's'}.`,
+          `Infantry support ACTIVE: front ${frontCount}, behind ${behindCount}, ` +
+          `gapless rear rank yes. Attacker -${dicePenalty} die${dicePenalty === 1 ? '' : 's'}.`,
         cls: 'active',
       };
     }
 
+    const reason = !gapless
+      ? 'rear rank has gaps'
+      : `behind (${behindCount}) is not greater than front (${frontCount})`;
     return {
-      text: 'Infantry support not active: no friendly Infantry directly behind defender on the opposite side of attack.',
+      text: `Infantry support not active: ${reason}.`,
       cls: 'inactive',
     };
   }
@@ -3951,12 +4025,14 @@ function unitColors(side) {
     const terrainDelta = Number(info.terrainDiceMod || 0);
     const supportDelta = Number(info.supportDiceMod || 0);
     const supportRanks = Math.max(0, Number(info.supportRanks || 0));
+    const supportFrontCount = Math.max(0, Number(info.supportFrontCount || 0));
+    const supportBehindCount = Math.max(0, Number(info.supportBehindCount || 0));
     const terrainMath = terrainDelta
       ? `${terrainName} ${terrainDelta > 0 ? `+${terrainDelta}` : `${terrainDelta}`} die`
       : `${terrainName}: no dice change`;
     const supportMath = supportDelta
-      ? `${supportRanks} rank${supportRanks === 1 ? '' : 's'} ${supportDelta > 0 ? `+${supportDelta}` : `${supportDelta}`} dice`
-      : 'none';
+      ? `${supportRanks} rank${supportRanks === 1 ? '' : 's'} ${supportDelta > 0 ? `+${supportDelta}` : `${supportDelta}`} dice (front ${supportFrontCount}, behind ${supportBehindCount})`
+      : `none (front ${supportFrontCount}, behind ${supportBehindCount})`;
     const flankText = info.flankBonus ? ` + flank ${info.flankBonus}` : '';
     const rearText = info.rearBonus ? ` + rear ${info.rearBonus}` : '';
     const terrainText = terrainDelta ? ` ${terrainDelta > 0 ? '+' : '-'} terrain ${Math.abs(terrainDelta)}` : '';
@@ -3995,9 +4071,11 @@ function unitColors(side) {
     const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
     const terrainName = terrainLabel(info.defenderTerrain || 'clear');
     const terrainText = info.terrainDiceMod ? `, ${terrainName.toLowerCase()} ${info.terrainDiceMod > 0 ? '+' : ''}${info.terrainDiceMod}` : `, ${terrainName.toLowerCase()} 0`;
+    const supportFrontCount = Math.max(0, Number(info.supportFrontCount || 0));
+    const supportBehindCount = Math.max(0, Number(info.supportBehindCount || 0));
     const supportText = info.supportDiceMod
-      ? `, support ${info.supportDiceMod > 0 ? '+' : ''}${info.supportDiceMod} (${Math.max(0, Number(info.supportRanks || 0))} rank${Math.max(0, Number(info.supportRanks || 0)) === 1 ? '' : 's'})`
-      : ', support 0';
+      ? `, support ${info.supportDiceMod > 0 ? '+' : ''}${info.supportDiceMod} (${Math.max(0, Number(info.supportRanks || 0))} rank${Math.max(0, Number(info.supportRanks || 0)) === 1 ? '' : 's'}, front ${supportFrontCount}, behind ${supportBehindCount})`
+      : `, support 0 (front ${supportFrontCount}, behind ${supportBehindCount})`;
     const finalSummary =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
       `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${terrainText}${supportText}) · ` +
@@ -5638,10 +5716,23 @@ function unitColors(side) {
     return !!u && u.side === side && u.type === 'inf';
   }
 
-  function collectInfantryLineByAxis(anchorKey, side) {
-    if (!isFriendlyInfAt(anchorKey, side)) return [];
+  function directionAxisId(dir) {
+    if (dir === 'e' || dir === 'w') return 0;
+    if (dir === 'ur' || dir === 'dl') return 1;
+    if (dir === 'ul' || dir === 'dr') return 2;
+    return -1;
+  }
 
-    const [beforeDir, afterDir] = axisLateralDirections(state.forwardAxis);
+  function frontlineDirectionPairsForAttack(attackDir) {
+    const axis = directionAxisId(attackDir);
+    if (axis === 0) return [['ur', 'dl'], ['ul', 'dr']];
+    if (axis === 1) return [['e', 'w'], ['ul', 'dr']];
+    if (axis === 2) return [['e', 'w'], ['ur', 'dl']];
+    return [];
+  }
+
+  function collectInfantryLineByPair(anchorKey, side, dirA, dirB) {
+    if (!isFriendlyInfAt(anchorKey, side)) return [];
     const before = [];
     const after = [];
 
@@ -5655,33 +5746,98 @@ function unitColors(side) {
       }
     }
 
-    walk(beforeDir, before);
-    walk(afterDir, after);
+    walk(dirA, before);
+    walk(dirB, after);
     before.reverse();
     return [...before, anchorKey, ...after];
   }
 
-  function reinforcedFormationKeys(anchorKey) {
-    const anchor = unitsByHex.get(anchorKey);
-    if (!anchor || anchor.type !== 'inf') return new Set();
+  function buildReinforcementProfileForLine(lineKeys, side, backDir, defenderKey) {
+    const frontSet = new Set(lineKeys);
+    const supportSet = new Set();
 
-    const line = collectInfantryLineByAxis(anchorKey, anchor.side);
-    const out = new Set(line);
-    if (line.length === 0) return out;
+    let gaplessFirstRank = true;
+    let defenderDepth = 0;
 
-    for (const lk of line) {
-      for (const dir of HEX_DIRECTIONS) {
-        let cur = lk;
-        for (let i = 0; i < INF_SUPPORT_MAX_RANKS; i++) {
-          const next = stepKeyInDirection(cur, dir);
-          if (!next || !isFriendlyInfAt(next, anchor.side)) break;
-          out.add(next);
-          cur = next;
-        }
+    for (const fk of lineKeys) {
+      let cur = fk;
+      let depth = 0;
+      for (let i = 0; i < INF_SUPPORT_MAX_RANKS; i++) {
+        const next = stepKeyInDirection(cur, backDir);
+        if (!next || !isFriendlyInfAt(next, side)) break;
+        supportSet.add(next);
+        depth += 1;
+        cur = next;
       }
+      if (depth === 0) gaplessFirstRank = false;
+      if (fk === defenderKey) defenderDepth = depth;
     }
 
-    return out;
+    const frontCount = frontSet.size;
+    const behindCount = supportSet.size;
+    const active = gaplessFirstRank && behindCount > frontCount && defenderDepth > 0;
+    const penaltyRanks = active ? Math.min(INF_SUPPORT_MAX_RANKS, defenderDepth) : 0;
+
+    return {
+      active,
+      frontSet,
+      supportSet,
+      frontCount,
+      behindCount,
+      gaplessFirstRank,
+      defenderDepth,
+      penaltyRanks,
+    };
+  }
+
+  function bestReinforcementProfile(defenderKey, side, attackDir) {
+    if (!isFriendlyInfAt(defenderKey, side)) return null;
+    const backDir = oppositeDirection(attackDir);
+    if (!backDir) return null;
+
+    const candidates = frontlineDirectionPairsForAttack(attackDir);
+    if (!candidates.length) return null;
+
+    let best = null;
+    for (const [dirA, dirB] of candidates) {
+      const line = collectInfantryLineByPair(defenderKey, side, dirA, dirB);
+      if (!line.length) continue;
+      const prof = buildReinforcementProfileForLine(line, side, backDir, defenderKey);
+      prof.attackDir = attackDir;
+      prof.backDir = backDir;
+      prof.frontDirs = [dirA, dirB];
+
+      if (!best) {
+        best = prof;
+        continue;
+      }
+      const scoreA = (prof.penaltyRanks * 1000) + (prof.active ? 100 : 0) + (prof.behindCount - prof.frontCount);
+      const scoreB = (best.penaltyRanks * 1000) + (best.active ? 100 : 0) + (best.behindCount - best.frontCount);
+      if (scoreA > scoreB) best = prof;
+    }
+    return best;
+  }
+
+  function reinforcementSupportForAttack(defenderKey, attackerKey, defenderUnit) {
+    if (!defenderUnit || defenderUnit.type !== 'inf') {
+      return { supportRanks: 0, active: false, profile: null };
+    }
+    const attackDir = adjacentDirection(defenderKey, attackerKey);
+    if (!attackDir) return { supportRanks: 0, active: false, profile: null };
+    const profile = bestReinforcementProfile(defenderKey, defenderUnit.side, attackDir);
+    if (!profile) return { supportRanks: 0, active: false, profile: null };
+    return {
+      supportRanks: profile.penaltyRanks,
+      active: profile.active,
+      profile,
+    };
+  }
+
+  function reinforcementPreviewForAnchor(anchorKey) {
+    const anchor = unitsByHex.get(anchorKey);
+    if (!anchor || anchor.type !== 'inf') return null;
+    const previewAttackDir = sideForwardDirection(anchor.side, state.forwardAxis);
+    return bestReinforcementProfile(anchorKey, anchor.side, previewAttackDir);
   }
 
   function canLineAdvanceInfAt(hexKey, u) {
@@ -5891,26 +6047,6 @@ function unitColors(side) {
     return inCommandAt(defenderKey, defenderUnit.side);
   }
 
-  function infantrySupportRanks(defenderKey, attackerKey, defenderUnit) {
-    if (!defenderUnit || defenderUnit.type !== 'inf') return 0;
-    const attackDir = adjacentDirection(defenderKey, attackerKey);
-    if (!attackDir) return 0;
-    const backDir = oppositeDirection(attackDir);
-    if (!backDir) return 0;
-
-    let ranks = 0;
-    let cur = defenderKey;
-    for (let i = 0; i < INF_SUPPORT_MAX_RANKS; i++) {
-      const backKey = stepKeyInDirection(cur, backDir);
-      if (!backKey) break;
-      const backUnit = unitsByHex.get(backKey);
-      if (!backUnit || backUnit.side !== defenderUnit.side || backUnit.type !== 'inf') break;
-      ranks += 1;
-      cur = backKey;
-    }
-    return ranks;
-  }
-
   function cavalryAngleBonuses(attackerUnit, defenderUnit, kind, position) {
     if (!ENABLE_CAV_ANGLE_BONUS) return { flankBonus: 0, rearBonus: 0, totalBonus: 0 };
     if (kind !== 'melee') return { flankBonus: 0, rearBonus: 0, totalBonus: 0 };
@@ -6085,9 +6221,10 @@ function unitColors(side) {
     const defHex = board.byKey.get(defenderKey);
     const defenderTerrain = defHex?.terrain || 'clear';
     const terrainDiceMod = (defenderTerrain === 'woods') ? -1 : 0;
-    const supportRanks = (prof.kind === 'melee')
-      ? infantrySupportRanks(defenderKey, attackerKey, defU)
-      : 0;
+    const supportEval = (prof.kind === 'melee')
+      ? reinforcementSupportForAttack(defenderKey, attackerKey, defU)
+      : { supportRanks: 0, active: false, profile: null };
+    const supportRanks = supportEval.supportRanks || 0;
     const supportDiceMod = supportRanks > 0
       ? -(Math.min(INF_SUPPORT_MAX_RANKS, supportRanks) * INF_SUPPORT_DICE_PER_RANK)
       : 0;
@@ -6147,6 +6284,9 @@ function unitColors(side) {
       supportRanks,
       supportDiceMod,
       defenseDiceMod,
+      supportFrontCount: supportEval.profile ? supportEval.profile.frontCount : 0,
+      supportBehindCount: supportEval.profile ? supportEval.profile.behindCount : 0,
+      supportGapless: !!(supportEval.profile && supportEval.profile.gaplessFirstRank),
       defenderTerrain,
       terrainRuleText,
       hits,
@@ -6165,9 +6305,23 @@ function unitColors(side) {
     log(`Rolls: [${rollTokens.join(' ')}] => hits=${hits}, retreats=${retreats}, misses=${misses}.`);
     if (prof.kind === 'melee' && defU.type === 'inf') {
       if (supportRanks > 0 && supportDiceMod < 0) {
-        log(`Infantry support ACTIVE: ${supportRanks} rank${supportRanks === 1 ? '' : 's'} directly behind defender opposite attack (-${Math.abs(supportDiceMod)} die).`);
+        const frontCount = supportEval.profile ? supportEval.profile.frontCount : 0;
+        const behindCount = supportEval.profile ? supportEval.profile.behindCount : 0;
+        log(
+          `Infantry support ACTIVE: front ${frontCount}, behind ${behindCount}, ` +
+          `attacker -${Math.abs(supportDiceMod)} die.`
+        );
       } else {
-        log('Infantry support inactive: no friendly Infantry directly behind defender on the opposite attack side.');
+        const frontCount = supportEval.profile ? supportEval.profile.frontCount : 0;
+        const behindCount = supportEval.profile ? supportEval.profile.behindCount : 0;
+        const gapless = !!(supportEval.profile && supportEval.profile.gaplessFirstRank);
+        if (!supportEval.profile) {
+          log('Infantry support inactive: no valid front/rear line from this attack angle.');
+        } else if (!gapless) {
+          log(`Infantry support inactive: rear rank has gaps (front ${frontCount}, behind ${behindCount}).`);
+        } else {
+          log(`Infantry support inactive: behind (${behindCount}) is not greater than front (${frontCount}).`);
+        }
       }
     }
 

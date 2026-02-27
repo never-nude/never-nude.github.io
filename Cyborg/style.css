@@ -444,6 +444,16 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   background:rgba(255,255,255,0.05);
 }
 
+.modifierPreview{
+  margin-top:2px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.14);
+  background:rgba(255,255,255,0.04);
+  font-size:12px;
+  color:#d9deea;
+}
+
 .combatHint{
   font-size:12px;
   color:var(--muted);
