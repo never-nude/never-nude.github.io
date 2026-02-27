@@ -7348,13 +7348,14 @@ function unitColors(side) {
     }
 
     loadScenario(RANDOM_START_SCENARIO_NAME);
+    enterPlay();
 
     const biasLabel = (randomScenario.advantageSide === 'none')
       ? 'balanced'
       : `${randomScenario.advantageSide} flank bias`;
 
     log(
-      `Booted ${GAME_NAME}. Randomized startup loaded ` +
+      `Booted ${GAME_NAME}. Randomized startup loaded and battle started ` +
       `(units=${randomScenario.units.length}, terrain=${randomScenario.terrain.length}, ` +
       `axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}).`
     );
