@@ -465,7 +465,7 @@
   const elRulesModalBody = document.getElementById('rulesModalBody');
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Archers in Woods can fire only from tree-line woods (woods hex adjacent to clear). Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
     <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
@@ -474,6 +474,7 @@
     <p>Out of command: Green INF/ARC/SKR cannot activate. Regular INF/ARC/SKR can attack but cannot move. Veterans and CAV ignore command limits.</p>
     <h4>Combat</h4>
     <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1).</p>
+    <p>Tree-line rule: Archers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
     <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
@@ -490,6 +491,7 @@
     <h4>Attacks</h4>
     <p>Melee dice: INF 2, CAV 3, SKR 2, ARC 1, GEN 1, RUN 0, Medic 0.</p>
     <p>Ranged: ARC range 2-3 (2 dice at 2, 1 die at 3). SKR range 2 (1 die). Engaged units cannot make ranged attacks.</p>
+    <p>Tree-line rule: ARC in Woods can fire ranged only from woods hexes adjacent to Clear terrain.</p>
     <p>Retreats push away from attacker. If retreat is blocked/off-board/water/occupied, that retreat converts to 1 hit.</p>
     <h4>Support & Feedback</h4>
     <p>Reinforcement requires a touching adjacent INF pair around defender. If attack enters from the pair’s opposite two hex sides, attacker gets -1 die. No stacking and one line deep only.</p>
@@ -5378,6 +5380,16 @@ function unitColors(side) {
     return (unitType === 'cav') ? 3 : 2;
   }
 
+  function hasAdjacentTerrain(hexKey, terrainId) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return false;
+    for (const nk of h.neigh) {
+      const nh = board.byKey.get(nk);
+      if (nh && nh.terrain === terrainId) return true;
+    }
+    return false;
+  }
+
   function isEngaged(hexKey, side) {
     const h = board.byKey.get(hexKey);
     if (!h) return false;
@@ -6038,6 +6050,9 @@ function unitColors(side) {
     // Beyond range 1 requires ranged capability and NOT being engaged.
     if (engaged) return null;
     if (!atkDef.ranged) return null;
+    if (attackerUnit.type === 'arc' && atkHex.terrain === 'woods' && !hasAdjacentTerrain(attackerKey, 'clear')) {
+      return null;
+    }
 
     const dice = atkDef.ranged[dist];
     if (!dice) return null;
@@ -7545,6 +7560,16 @@ function unitColors(side) {
       const healCount = state._healTargets ? state._healTargets.size : 0;
       if (healCount > 0) notes.push(`Medic can heal ${healCount} adjacent unit(s).`);
       else notes.push('Medic has no adjacent wounded ally to heal.');
+    }
+    if (u.type === 'arc') {
+      const curHex = board.byKey.get(hexKey);
+      if (curHex && curHex.terrain === 'woods') {
+        if (hasAdjacentTerrain(hexKey, 'clear')) {
+          notes.push('Tree-line: ARC ranged attacks are enabled from this woods hex.');
+        } else {
+          notes.push('Deep woods: ARC ranged attacks are disabled until on a woods hex adjacent to clear.');
+        }
+      }
     }
 
     log(`Selected ${u.side.toUpperCase()} ${def.abbrev}.${notes.length ? ' ' + notes.join(' ') : ''}`);
