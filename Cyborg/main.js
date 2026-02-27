@@ -3758,17 +3758,17 @@ function unitColors(side) {
     el.textContent = String(value);
   }
 
-  function resetInspector(message = 'Select a friendly unit in Play mode.') {
+  function resetInspector(message = '') {
     setInspectorValue(elInspectorTitle, 'No unit selected.');
     setInspectorValue(elInspectorMeta, message);
     setInspectorValue(elInspectorSide, '-');
     setInspectorValue(elInspectorType, '-');
     setInspectorValue(elInspectorQuality, '-');
-    setInspectorValue(elInspectorHex, '-');
+    setInspectorValue(elInspectorHex, '');
     setInspectorValue(elInspectorHp, '-');
     setInspectorValue(elInspectorUp, '-');
-    setInspectorValue(elInspectorCommand, '-');
-    setInspectorValue(elInspectorRadius, '-');
+    setInspectorValue(elInspectorCommand, '');
+    setInspectorValue(elInspectorRadius, '');
   }
 
   function updateInspector() {
@@ -3790,40 +3790,16 @@ function unitColors(side) {
     const qualityText = humanizeQuality(u.quality);
     const maxHp = unitMaxHp(u.type, u.quality);
     const up = unitUpValue(u.type, u.quality);
-    const inCmd = inCommandAt(selectedKey, u.side);
-
-    let commandText = inCmd ? 'IN' : 'OUT';
-    if (u.type === 'gen') commandText = 'IN (command source)';
-    else if (u.type === 'run') commandText = 'IN (relay source)';
-    else if (unitIgnoresCommand(u)) commandText += ' (independent)';
-
-    let radiusText = '-';
-    if (u.type === 'gen') radiusText = String(generalCommandRadius(u));
-    else if (u.type === 'run') radiusText = String(RUNNER_COMMAND_RADIUS);
-    const activationState = state.actedUnitIds.has(u.id) ? 'spent this turn' : 'ready';
-    let metaText = (state.mode === 'play')
-      ? `Play mode: ${activationState}.`
-      : 'Edit mode preview values.';
-    if (state.mode === 'play' && u.type === 'inf') {
-      const preview = reinforcementPreviewForAnchor(selectedKey);
-      if (preview && preview.active) {
-        const dirText = preview.braceDirs.map(d => d.toUpperCase()).join('/');
-        metaText += ` Reinforcement active: adjacent brace pair gives defense -1 die vs attacks from ${dirText}.`;
-      } else {
-        metaText += ' Reinforcement inactive: needs two adjacent friendly infantry touching each other.';
-      }
-    }
-
     setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.abbrev} (${qualityText})`);
-    setInspectorValue(elInspectorMeta, metaText);
+    setInspectorValue(elInspectorMeta, '');
     setInspectorValue(elInspectorSide, u.side.toUpperCase());
     setInspectorValue(elInspectorType, def.label);
     setInspectorValue(elInspectorQuality, qualityText);
-    setInspectorValue(elInspectorHex, selectedKey);
+    setInspectorValue(elInspectorHex, '');
     setInspectorValue(elInspectorHp, `${u.hp}/${maxHp}`);
     setInspectorValue(elInspectorUp, up);
-    setInspectorValue(elInspectorCommand, commandText);
-    setInspectorValue(elInspectorRadius, radiusText);
+    setInspectorValue(elInspectorCommand, '');
+    setInspectorValue(elInspectorRadius, '');
   }
 
   function diePipIndexes(value) {
@@ -4594,7 +4570,10 @@ function unitColors(side) {
 
   function setOnlineStatus(msg) {
     net.status = String(msg || 'Online: idle.');
-    if (elOnlineStatus) elOnlineStatus.textContent = net.status;
+    if (elOnlineStatus) {
+      elOnlineStatus.textContent = '';
+      elOnlineStatus.style.display = 'none';
+    }
   }
 
   function onlineRoleHintText() {
@@ -4958,8 +4937,14 @@ function unitColors(side) {
       elOnlineMyCode.textContent = shownCode || '----';
       elOnlineMyCode.classList.toggle('empty', !shownCode);
     }
-    if (elOnlineRoleHint) elOnlineRoleHint.textContent = onlineRoleHintText();
-    if (elOnlineStatus) elOnlineStatus.textContent = net.status;
+    if (elOnlineRoleHint) {
+      elOnlineRoleHint.textContent = '';
+      elOnlineRoleHint.style.display = 'none';
+    }
+    if (elOnlineStatus) {
+      elOnlineStatus.textContent = '';
+      elOnlineStatus.style.display = 'none';
+    }
     if (elOnlineHostBtn) setActive(elOnlineHostBtn, onlineMode && !!net.peer && net.isHost);
     if (elOnlineJoinBtn) setActive(elOnlineJoinBtn, onlineMode && !!net.peer && !net.isHost);
     if (elOnlineHostBtn) {
