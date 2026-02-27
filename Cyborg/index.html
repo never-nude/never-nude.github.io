@@ -247,7 +247,7 @@
           <p><b>SKR</b>, <b>RUN</b>, and <b>Veterans</b> may disengage 1 hex, but must end on a hex not adjacent to enemies.</p>
           <div class="rulesGrid">
             <div class="rulesKey">Clear</div><div class="rulesVal">Entry cost <span id="rulesMoveClear">1</span> for all unit types.</div>
-            <div class="rulesKey">Hills/Woods/Rough</div><div class="rulesVal">Entry cost <span id="rulesMoveDifficultFoot">2</span> for INF/ARC/SKR/GEN/RUN, and <span id="rulesMoveDifficultCav">3</span> for CAV.</div>
+            <div class="rulesKey">Hills/Woods/Rough</div><div class="rulesVal">Entry cost <span id="rulesMoveDifficultFoot">2</span> for INF/ARC/SKR/GEN/RUN, and <span id="rulesMoveDifficultCav">4</span> for CAV.</div>
             <div class="rulesKey">Water</div><div class="rulesVal">Impassable (cannot enter).</div>
           </div>
           <p><b>Line Advance</b>: select a friendly INF; the game previews contiguous eligible INF in line and forward destination arrows. Resolve as one activation, movement only, partial if blocked; all participants become spent.</p>
@@ -260,7 +260,7 @@
             <div class="rulesKey">Melee Dice</div><div class="rulesVal">INF <span id="rulesInfMelee">2</span>, CAV <span id="rulesCavMelee">3</span>, SKR <span id="rulesSkrMelee">2</span>, ARC <span id="rulesArcMelee">1</span>, GEN <span id="rulesGenMelee">1</span>, RUN 0</div>
             <div class="rulesKey">Ranged Dice</div><div class="rulesVal">ARC: range 2 (<span id="rulesArcRange2">2</span> dice), range 3 (<span id="rulesArcRange3">1</span> die). SKR: range 2 only (<span id="rulesSkrRange2">1</span> die).</div>
             <div class="rulesKey">Ranged Limits</div><div class="rulesVal">Only ARC/SKR have ranged attacks; engaged units cannot make ranged attacks.</div>
-            <div class="rulesKey">Woods Defense</div><div class="rulesVal">Attacker rolls −1 die (minimum 1).</div>
+            <div class="rulesKey">Terrain Defense</div><div class="rulesVal">Defender in Woods: attacker −2 melee dice (−1 ranged). Defender in Hills or Rough: attacker −1 die (minimum 1).</div>
             <div class="rulesKey">Retreat Rule</div><div class="rulesVal">Retreat pushes defender to a neighboring hex that increases distance from attacker. If retreat hex is off-board, water, or occupied, that retreat converts to 1 hit.</div>
             <div class="rulesKey">Retreat Chain</div><div class="rulesVal">Multiple retreat results resolve one step at a time; each step can retreat or convert to hit.</div>
           </div>
@@ -283,7 +283,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260227-historic-pack-2"></script>
-  <script src="main.js?v=20260227-historic-pack-2"></script>
+  <script src="build.js?v=20260227-scenario-housekeeping"></script>
+  <script src="main.js?v=20260227-scenario-housekeeping"></script>
 </body>
 </html>

@@ -37,7 +37,6 @@
   const SCENARIO_FILTER_OPTIONS = {
     group: [
       { id: 'all', label: 'All Groups' },
-      { id: 'demo', label: 'Demo' },
       { id: 'grand', label: 'Grand Battle' },
       { id: 'terrain', label: 'Terrain Pack' },
       { id: 'berserker', label: 'Berserker' },
@@ -72,6 +71,22 @@
   };
   const SCENARIO_FILTER_IDS = Object.fromEntries(
     Object.entries(SCENARIO_FILTER_OPTIONS).map(([k, opts]) => [k, new Set(opts.map(o => o.id))])
+  );
+
+  const HISTORICAL_SCENARIO_ORDER = [
+    'Terrain G — Tuderberg Ring Ambush',
+    'Terrain K — Marathon (490 BCE)',
+    'Terrain L — Granicus River (334 BCE)',
+    'Terrain M — Cannae Double Envelopment (216 BCE)',
+    'Terrain N — Pharsalus Reserve Counterstroke (48 BCE)',
+    'Terrain O — Zama (202 BCE)',
+    'Terrain P — Ilipa Reverse Deployment (206 BCE)',
+    'Terrain Q — Carhae (Carrhae, 53 BCE)',
+    'Terrain R — Thapsus Coastal Pressure (46 BCE)',
+    'Terrain S — Philippi Twin Camps (42 BCE)',
+  ];
+  const HISTORICAL_SCENARIO_INDEX = new Map(
+    HISTORICAL_SCENARIO_ORDER.map((name, i) => [name, i])
   );
 
   // --- Core rules constants
@@ -424,67 +439,12 @@
   const unitsByHex = new Map();
   let nextUnitId = 1;
 
-  // --- Scenarios (tiny demos)
-  // We keep the existing demos as placeholders; we can retune them into
-  // "Even Lines / Encirclement / Corridor" once RB01 feels solid.
+  // --- Scenario library
   const SCENARIOS = {
     'Empty (Island)': {
       terrain: [],
       units: [],
     },
-    'Demo A — Line Clash': {
-      terrain: [],
-      units: [
-        // Blue
-        { q: 2, r: 5, side: 'blue', type: 'gen', quality: 'green' },
-        { q: 3, r: 4, side: 'blue', type: 'inf', quality: 'green' },
-        { q: 3, r: 6, side: 'blue', type: 'inf', quality: 'green' },
-        { q: 4, r: 5, side: 'blue', type: 'cav', quality: 'regular' },
-        { q: 2, r: 4, side: 'blue', type: 'arc', quality: 'green' },
-        { q: 2, r: 6, side: 'blue', type: 'skr', quality: 'green' },
-
-        // Red
-        { q: 13, r: 5, side: 'red', type: 'gen', quality: 'green' },
-        { q: 12, r: 4, side: 'red', type: 'inf', quality: 'green' },
-        { q: 12, r: 6, side: 'red', type: 'inf', quality: 'green' },
-        { q: 11, r: 5, side: 'red', type: 'cav', quality: 'regular' },
-        { q: 13, r: 4, side: 'red', type: 'arc', quality: 'green' },
-        { q: 13, r: 6, side: 'red', type: 'skr', quality: 'green' },
-      ],
-    },
-    'Demo B — Center Push': {
-      terrain: [],
-      units: [
-        { q: 4, r: 4, side: 'blue', type: 'gen', quality: 'green' },
-        { q: 4, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
-        { q: 5, r: 6, side: 'blue', type: 'cav', quality: 'green' },
-        { q: 3, r: 6, side: 'blue', type: 'arc', quality: 'green' },
-
-        { q: 11, r: 6, side: 'red', type: 'gen', quality: 'green' },
-        { q: 10, r: 5, side: 'red', type: 'inf', quality: 'regular' },
-        { q: 9, r: 4, side: 'red', type: 'cav', quality: 'green' },
-        { q: 12, r: 4, side: 'red', type: 'arc', quality: 'green' },
-      ],
-    },
-    'Demo C — Skirmisher Screen': {
-      terrain: [],
-      units: [
-        { q: 2, r: 5, side: 'blue', type: 'gen', quality: 'green' },
-        { q: 3, r: 5, side: 'blue', type: 'inf', quality: 'green' },
-        { q: 4, r: 5, side: 'blue', type: 'cav', quality: 'green' },
-        { q: 3, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
-        { q: 3, r: 6, side: 'blue', type: 'skr', quality: 'regular' },
-        { q: 1, r: 5, side: 'blue', type: 'arc', quality: 'green' },
-
-        { q: 13, r: 5, side: 'red', type: 'gen', quality: 'green' },
-        { q: 12, r: 5, side: 'red', type: 'inf', quality: 'green' },
-        { q: 11, r: 5, side: 'red', type: 'cav', quality: 'green' },
-        { q: 12, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-        { q: 12, r: 6, side: 'red', type: 'skr', quality: 'regular' },
-        { q: 14, r: 5, side: 'red', type: 'arc', quality: 'green' },
-      ],
-    },
-
     'Terrain G — Tuderberg Ring Ambush': {
       terrain: [
         { q: 2, r: 2, terrain: 'hills' },
@@ -1140,7 +1100,7 @@
         { q: 6, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
         { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
         { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-        { q: 11, r: 7, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 11, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
 
         { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
         { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
@@ -3887,10 +3847,10 @@ function unitColors(side) {
     const pivotText = info.pivoted ? ', pivot' : '';
     const flankText = info.flankBonus ? `, flank +${info.flankBonus}` : '';
     const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
-    const woodsText = info.woodsPenalty ? `, woods -${info.woodsPenalty}` : '';
+    const terrainText = info.terrainPenalty ? `, ${info.terrainId || 'terrain'} -${info.terrainPenalty}` : '';
     const finalSummary =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
-      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${woodsText}) · ` +
+      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${terrainText}) · ` +
       `H ${info.hits} / R ${info.retreats} / M ${info.misses}`;
     elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
 
@@ -4381,8 +4341,15 @@ function unitColors(side) {
     if (terrainId === 'water') return Infinity;
     if (terrainId === 'clear') return 1;
 
-    // hills/woods/rough
-    return (unitType === 'cav') ? 3 : 2;
+    // Hills/Woods/Rough: cavalry are much more constrained than foot.
+    return (unitType === 'cav') ? 4 : 2;
+  }
+
+  function terrainDefensePenalty(kind, terrainId) {
+    if (terrainId === 'woods') return (kind === 'melee') ? 2 : 1;
+    if (terrainId === 'hills') return 1;
+    if (terrainId === 'rough') return 1;
+    return 0;
   }
 
   function isEngaged(hexKey, side) {
@@ -5036,15 +5003,15 @@ function unitColors(side) {
       }
     }
 
-    // Terrain defensive modifier: defender in woods => -1 die (min 1)
     const defHex = board.byKey.get(defenderKey);
-    const woodsPenalty = (defHex && defHex.terrain === 'woods') ? 1 : 0;
+    const defTerrain = defHex ? defHex.terrain : 'clear';
+    const terrainPenalty = terrainDefensePenalty(prof.kind, defTerrain);
     const impact = cavalryAngleBonuses(atk, defU, prof.kind, impactPosition);
     const baseDice = prof.baseDice ?? prof.dice;
     const flankBonus = impact.flankBonus;
     const rearBonus = impact.rearBonus;
     const preTerrainDice = baseDice + impact.totalBonus;
-    const dice = woodsPenalty ? Math.max(1, preTerrainDice - 1) : preTerrainDice;
+    const dice = terrainPenalty ? Math.max(1, preTerrainDice - terrainPenalty) : preTerrainDice;
 
     const rolls = [];
     for (let i = 0; i < dice; i++) rolls.push(rollD6());
@@ -5069,7 +5036,7 @@ function unitColors(side) {
     const modParts = [`base ${baseDice}`];
     if (flankBonus) modParts.push(`flank +${flankBonus}`);
     if (rearBonus) modParts.push(`rear +${rearBonus}`);
-    if (woodsPenalty) modParts.push('woods -1');
+    if (terrainPenalty && defTerrain && defTerrain !== 'clear') modParts.push(`${defTerrain} -${terrainPenalty}`);
     const modText = ` (${modParts.join(', ')})`;
     renderDiceDisplay(rolls, {
       attacker: tag,
@@ -5082,7 +5049,8 @@ function unitColors(side) {
       rearBonus,
       impactPosition,
       pivoted,
-      woodsPenalty,
+      terrainPenalty,
+      terrainId: defTerrain,
       hits,
       retreats,
       misses,
@@ -6287,7 +6255,6 @@ function unitColors(side) {
   }
 
   function scenarioGroupTag(name) {
-    if (name.startsWith('Demo ')) return 'demo';
     if (name.startsWith('Grand ')) return 'grand';
     if (name.startsWith('Terrain ')) return 'terrain';
     if (name.startsWith('Berserker ')) return 'berserker';
@@ -6334,6 +6301,88 @@ function unitColors(side) {
     return { group, lesson, size, terrain, totalUnits };
   }
 
+  function isHistoricalScenarioName(name) {
+    if (HISTORICAL_SCENARIO_INDEX.has(name)) return true;
+    if (/\b\d+\s*(BCE|CE)\b/i.test(name)) return true;
+    return /tuderberg|teutoburg/i.test(name);
+  }
+
+  function isMirroredScenarioName(name) {
+    return /\bmirrored\b/i.test(name);
+  }
+
+  function scenarioTerrainHexCount(sc) {
+    if (!sc || !Array.isArray(sc.terrain)) return 0;
+    const unique = new Set();
+    for (const t of sc.terrain) {
+      if (!t) continue;
+      unique.add(`${t.q},${t.r},${t.terrain}`);
+    }
+    return unique.size;
+  }
+
+  function scenarioUnitLayoutSignature(sc) {
+    if (!sc || !Array.isArray(sc.units)) return '';
+    return sc.units
+      .map(u => `${u.side}|${u.type}|${u.quality}|${u.q},${u.r}`)
+      .sort()
+      .join(';');
+  }
+
+  function dedupeScenarioNames(names) {
+    const bestBySig = new Map();
+
+    for (const name of names) {
+      const sc = SCENARIOS[name];
+      const sig = scenarioUnitLayoutSignature(sc);
+      const terrainHexes = scenarioTerrainHexCount(sc);
+      const preferTerrainName = name.startsWith('Terrain ');
+      const prev = bestBySig.get(sig);
+      const cand = { name, terrainHexes, preferTerrainName };
+      if (!prev) {
+        bestBySig.set(sig, cand);
+        continue;
+      }
+
+      const terrainBetter = cand.terrainHexes > prev.terrainHexes;
+      const terrainNameBetter = cand.terrainHexes === prev.terrainHexes &&
+        cand.preferTerrainName && !prev.preferTerrainName;
+      if (terrainBetter || terrainNameBetter) bestBySig.set(sig, cand);
+    }
+
+    const keptNames = new Set();
+    for (const best of bestBySig.values()) keptNames.add(best.name);
+    return names.filter(name => keptNames.has(name));
+  }
+
+  function scenarioDisplayRank(name, meta) {
+    if (isHistoricalScenarioName(name)) return 4;
+    if (isMirroredScenarioName(name)) return 1;
+    if (meta.group !== 'other') return 2;
+    return 3;
+  }
+
+  function orderScenarioNamesForDisplay(allNames) {
+    const deduped = dedupeScenarioNames(allNames);
+    const insertionIndex = new Map(allNames.map((name, i) => [name, i]));
+
+    return deduped.sort((a, b) => {
+      const ma = scenarioMeta(a);
+      const mb = scenarioMeta(b);
+      const ra = scenarioDisplayRank(a, ma);
+      const rb = scenarioDisplayRank(b, mb);
+      if (ra !== rb) return ra - rb;
+
+      if (ra === 4) {
+        const ia = HISTORICAL_SCENARIO_INDEX.get(a) ?? Number.MAX_SAFE_INTEGER;
+        const ib = HISTORICAL_SCENARIO_INDEX.get(b) ?? Number.MAX_SAFE_INTEGER;
+        if (ia !== ib) return ia - ib;
+      }
+
+      return (insertionIndex.get(a) ?? 0) - (insertionIndex.get(b) ?? 0);
+    });
+  }
+
   function scenarioMatchesFilters(meta, filters) {
     if (filters.group !== 'all' && meta.group !== filters.group) return false;
     if (filters.lesson !== 'all' && meta.lesson !== filters.lesson) return false;
@@ -6346,9 +6395,10 @@ function unitColors(side) {
     const prev = elScenarioSel.value;
     const filters = readScenarioFilters();
     elScenarioSel.innerHTML = '';
+    const names = orderScenarioNamesForDisplay(Object.keys(SCENARIOS));
 
     let shown = 0;
-    for (const name of Object.keys(SCENARIOS)) {
+    for (const name of names) {
       const meta = scenarioMeta(name);
       if (!scenarioMatchesFilters(meta, filters)) continue;
 
