@@ -1,1 +1,1 @@
-window.POLEMO_BUILD_ID = '20260228-122900-ai-difficulty-v1';
+window.POLEMO_BUILD_ID = '20260228-131200-ai-difficulty-v2';

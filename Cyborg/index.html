@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-ai-difficulty-v1" />
+  <link rel="stylesheet" href="style.css?v=20260228-ai-difficulty-v2" />
 </head>
 <body>
   <header id="hud">
@@ -39,21 +39,11 @@
         </div>
 
         <div class="row">
-          <div class="label">AI Tier</div>
+          <div class="label">Difficulty</div>
           <select id="aiDifficultySel" class="select">
             <option value="levy">Levy (Easy)</option>
             <option value="cohort">Cohort (Standard)</option>
             <option value="legion">Legion (Hard)</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <div class="label">Advance</div>
-          <select id="forwardAxisSel" class="select">
-            <option value="vertical">Vertical (Blue down)</option>
-            <option value="horizontal">Horizontal (Blue right)</option>
-            <option value="diag_tl_br">Diagonal TL→BR (Blue down-right)</option>
-            <option value="diag_tr_bl">Diagonal TR→BL (Blue down-left)</option>
           </select>
         </div>
 
@@ -264,7 +254,7 @@
   </section>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-ai-difficulty-v1"></script>
-  <script src="main.js?v=20260228-ai-difficulty-v1"></script>
+  <script src="build.js?v=20260228-ai-difficulty-v2"></script>
+  <script src="main.js?v=20260228-ai-difficulty-v2"></script>
 </body>
 </html>

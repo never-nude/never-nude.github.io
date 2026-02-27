@@ -87,6 +87,8 @@
   // AI pace intentionally slowed so piece-by-piece actions are easier to follow.
   const AI_STEP_DELAY_MS = 400; // ~60% slower than the previous 240ms pace
   const AI_START_DELAY_MS = 300;
+  const MOVE_ANIM_STEP_MS_HUMAN = 170;
+  const MOVE_ANIM_STEP_MS_AI = 340;
   const AI_DIFFICULTY_PROFILES = {
     levy: {
       label: 'Levy',
@@ -499,6 +501,8 @@
     aiBusy: false,
     aiTimer: null,
     lastCombat: null,
+    moveAnim: null,
+    moveAnimRaf: null,
 
     draft: {
       active: false,
@@ -3237,7 +3241,96 @@ function unitColors(side) {
     }
   }
 
+  function stopMoveAnimation() {
+    if (state.moveAnimRaf) {
+      cancelAnimationFrame(state.moveAnimRaf);
+      state.moveAnimRaf = null;
+    }
+    state.moveAnim = null;
+  }
+
+  function moveAnimationPosition(anim) {
+    if (!anim || !Array.isArray(anim.pathKeys) || anim.pathKeys.length < 2) return null;
+    const totalSegments = anim.pathKeys.length - 1;
+    const clamped = Math.max(0, Math.min(1, Number(anim.t || 0)));
+    const segmentProgress = clamped * totalSegments;
+    const segIndex = Math.min(totalSegments - 1, Math.floor(segmentProgress));
+    const localT = segmentProgress - segIndex;
+
+    const fromHex = board.byKey.get(anim.pathKeys[segIndex]);
+    const toHex = board.byKey.get(anim.pathKeys[segIndex + 1]);
+    if (!fromHex || !toHex) return null;
+
+    return {
+      cx: fromHex.cx + ((toHex.cx - fromHex.cx) * localT),
+      cy: fromHex.cy + ((toHex.cy - fromHex.cy) * localT),
+    };
+  }
+
+  function drawTokenAt(unit, cx, cy) {
+    if (!unit) return;
+    const c = unitColors(unit.side);
+    const def = UNIT_BY_ID.get(unit.type);
+    if (!def) return;
+
+    ctx.save();
+    ctx.globalAlpha = 0.96;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.55, 0, Math.PI * 2);
+    ctx.fillStyle = c.fill;
+    ctx.fill();
+
+    ctx.lineWidth = Math.max(2, Math.floor(R * 0.12));
+    ctx.strokeStyle = qualityStroke(unit.quality);
+    ctx.stroke();
+
+    if (unit.type === 'run') {
+      drawRunnerFootGlyph(cx, cy, R * 0.82);
+    } else {
+      const img = UNIT_ICONS && UNIT_ICONS[unit.type];
+      const canIcon = (unit.type !== 'gen') && unitIconReady && unitIconReady(unit.type);
+      if (canIcon) {
+        const tune = (UNIT_ICON_TUNE && UNIT_ICON_TUNE[unit.type]) ? UNIT_ICON_TUNE[unit.type] : { scale: 0.95, y: 0 };
+        const s = Math.floor((R * 0.95) * (tune.scale || 0.95));
+        const yOff = Math.floor(R * (tune.y || 0));
+        const rot = (typeof tune.rot === 'number') ? tune.rot : 0;
+        if (rot) {
+          ctx.save();
+          ctx.translate(Math.floor(cx), Math.floor(cy + yOff));
+          ctx.rotate(rot);
+          ctx.drawImage(img, Math.floor(-s / 2), Math.floor(-s / 2), s, s);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, Math.floor(cx - s / 2), Math.floor(cy - s / 2 + yOff), s, s);
+        }
+      } else {
+        const textScale = (unit.type === 'inf' || unit.type === 'cav' || unit.type === 'skr') ? 0.83 : 1.0;
+        const fontPx = Math.floor(R * 0.55 * textScale);
+        ctx.font = `700 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = c.text;
+        ctx.fillText(def.symbol, cx, cy + 1);
+      }
+    }
+
+    const maxHp = unitMaxHp(unit.type, unit.quality);
+    const pipR = Math.max(2, Math.floor(R * 0.07));
+    const startX = cx - (pipR * 2) * (maxHp - 1) * 0.5;
+    const y = cy + R * 0.78;
+    for (let i = 0; i < maxHp; i++) {
+      ctx.beginPath();
+      ctx.arc(startX + i * (pipR * 2), y, pipR, 0, Math.PI * 2);
+      ctx.fillStyle = (i < unit.hp) ? '#fff' : '#ffffff33';
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   function draw() {
+    const activeMoveAnim = state.moveAnim;
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
     // Background
@@ -3324,6 +3417,7 @@ function unitColors(side) {
     // Units
     for (const [hk, u] of unitsByHex) {
       if (!isUnitVisibleForCurrentView(u)) continue;
+      if (activeMoveAnim && u.id === activeMoveAnim.unitId && hk === activeMoveAnim.toKey) continue;
       const h = board.byKey.get(hk);
       if (!h) continue;
 
@@ -3422,6 +3516,11 @@ function unitColors(side) {
         ctx.stroke();
         ctx.setLineDash([]);
       }
+    }
+
+    if (activeMoveAnim && activeMoveAnim.unit) {
+      const p = moveAnimationPosition(activeMoveAnim);
+      if (p) drawTokenAt(activeMoveAnim.unit, p.cx, p.cy);
     }
   }
 
@@ -4402,7 +4501,7 @@ function unitColors(side) {
     const sideLabel = (state.side === 'blue') ? 'Blue' : 'Red';
     const modeMeta =
       state.gameMode === 'online' ? ' • Online mode' :
-      (state.gameMode === 'hvai' ? ` • Red AI (${aiDifficultyLabel()} tier)` : '');
+      (state.gameMode === 'hvai' ? ` • Red AI (${aiDifficultyLabel()} difficulty)` : '');
     const meta = [
       `${modeLabel}${modeMeta}`,
       `Battle Line: ${forwardAxisLabel(state.forwardAxis)}`,
@@ -5097,6 +5196,111 @@ function unitColors(side) {
     return null;
   }
 
+  function movementPathKeys(fromKey, toKey, unit) {
+    if (fromKey === toKey) return [fromKey];
+    if (!unit) return [fromKey, toKey];
+    const mp = unitMovePoints(unit);
+    if (mp <= 0) return [fromKey, toKey];
+
+    const best = new Map();
+    const prev = new Map();
+    const pq = [{ k: fromKey, c: 0 }];
+    best.set(fromKey, 0);
+
+    while (pq.length) {
+      pq.sort((a, b) => a.c - b.c);
+      const cur = pq.shift();
+      if (!cur) break;
+      if (cur.k === toKey) break;
+
+      const h = board.byKey.get(cur.k);
+      if (!h) continue;
+
+      for (const nk of h.neigh) {
+        if (isOccupied(nk) && nk !== toKey) continue;
+        const nh = board.byKey.get(nk);
+        if (!nh) continue;
+
+        const stepCost = terrainMoveCost(unit.type, nh.terrain);
+        if (!Number.isFinite(stepCost)) continue;
+
+        const nc = cur.c + stepCost;
+        if (nc > mp) continue;
+
+        const prevBest = best.get(nk);
+        if (prevBest !== undefined && nc >= prevBest) continue;
+
+        best.set(nk, nc);
+        prev.set(nk, cur.k);
+        pq.push({ k: nk, c: nc });
+      }
+    }
+
+    if (!best.has(toKey)) return [fromKey, toKey];
+
+    const path = [toKey];
+    let cur = toKey;
+    let guard = 0;
+    while (cur !== fromKey && guard < 256) {
+      const p = prev.get(cur);
+      if (!p) break;
+      path.push(p);
+      cur = p;
+      guard += 1;
+    }
+    path.reverse();
+    if (path[0] !== fromKey) return [fromKey, toKey];
+    return path;
+  }
+
+  function startMoveAnimation(pathKeys, unit, isAiMove = false) {
+    if (!Array.isArray(pathKeys) || pathKeys.length < 2 || !unit) {
+      stopMoveAnimation();
+      return;
+    }
+
+    stopMoveAnimation();
+
+    const perStep = isAiMove ? MOVE_ANIM_STEP_MS_AI : MOVE_ANIM_STEP_MS_HUMAN;
+    const durationMs = Math.max(perStep, (pathKeys.length - 1) * perStep);
+    state.moveAnim = {
+      unitId: unit.id,
+      toKey: pathKeys[pathKeys.length - 1],
+      pathKeys: [...pathKeys],
+      unit: {
+        id: unit.id,
+        side: unit.side,
+        type: unit.type,
+        quality: unit.quality,
+        hp: unit.hp,
+      },
+      t: 0,
+      startedAt: performance.now(),
+      durationMs,
+    };
+
+    const tick = (ts) => {
+      if (!state.moveAnim) {
+        state.moveAnimRaf = null;
+        return;
+      }
+      const anim = state.moveAnim;
+      const elapsed = ts - anim.startedAt;
+      anim.t = Math.max(0, Math.min(1, elapsed / anim.durationMs));
+      draw();
+
+      if (anim.t >= 1) {
+        state.moveAnim = null;
+        state.moveAnimRaf = null;
+        draw();
+        return;
+      }
+      state.moveAnimRaf = requestAnimationFrame(tick);
+    };
+
+    state.moveAnimRaf = requestAnimationFrame(tick);
+  }
+
   function forwardStepKey(fromKey, side) {
     const dir = sideForwardDirection(side, state.forwardAxis);
     return stepKeyInDirection(fromKey, dir);
@@ -5654,6 +5858,7 @@ function unitColors(side) {
 
   function enterEdit() {
     stopAiLoop();
+    stopMoveAnimation();
     state.mode = 'edit';
     state.tool = 'units';
 
@@ -5674,6 +5879,7 @@ function unitColors(side) {
     }
 
     stopAiLoop();
+    stopMoveAnimation();
     state.mode = 'play';
     state.turn = 1;
     state.side = 'blue';
@@ -6089,9 +6295,91 @@ function unitColors(side) {
     return out;
   }
 
-  function buildRandomForce(side, terrainByHex, occupiedSet, geometry) {
+  function chooseRandomStartupProfile() {
+    const sizeRoll = Math.random();
+    let size = 'medium';
+    let baseUnits = randInt(24, 30);
+    if (sizeRoll < 0.33) {
+      size = 'small';
+      baseUnits = randInt(18, 22);
+    } else if (sizeRoll >= 0.76) {
+      size = 'large';
+      baseUnits = randInt(34, 42);
+    }
+
+    let blueUnits = baseUnits;
+    let redUnits = baseUnits;
+    let matchup = 'even';
+
+    const asymmetryRoll = Math.random();
+    const delta =
+      (size === 'small') ? randInt(3, 6) :
+      (size === 'large') ? randInt(7, 12) :
+      randInt(5, 9);
+
+    if (asymmetryRoll < 0.22) {
+      matchup = 'blue_advantage';
+      blueUnits += delta;
+    } else if (asymmetryRoll < 0.44) {
+      matchup = 'red_advantage';
+      redUnits += delta;
+    }
+
+    return {
+      size,
+      matchup,
+      blueUnits: clampInt(blueUnits, 12, 48, baseUnits),
+      redUnits: clampInt(redUnits, 12, 48, baseUnits),
+    };
+  }
+
+  function forceMixCounts(totalNeeded) {
+    const counts = {
+      gen: totalNeeded >= 34 ? 3 : (totalNeeded >= 24 ? 2 : 1),
+      run: totalNeeded >= 18 ? 1 : 0,
+      iat: totalNeeded >= 18 ? 1 : 0,
+      inf: 0,
+      cav: 0,
+      arc: 0,
+      skr: 0,
+    };
+
+    let remaining = Math.max(0, totalNeeded - counts.gen - counts.run - counts.iat);
+    const min = { inf: 4, cav: 2, arc: 2, skr: 2 };
+    counts.inf = Math.max(min.inf, Math.floor(remaining * 0.46));
+    counts.cav = Math.max(min.cav, Math.floor(remaining * 0.20));
+    counts.arc = Math.max(min.arc, Math.floor(remaining * 0.16));
+    counts.skr = Math.max(min.skr, Math.floor(remaining * 0.18));
+
+    let used = counts.inf + counts.cav + counts.arc + counts.skr;
+    const upOrder = ['inf', 'inf', 'skr', 'arc', 'cav'];
+    let upIdx = 0;
+    while (used < remaining) {
+      const t = upOrder[upIdx % upOrder.length];
+      counts[t] += 1;
+      used += 1;
+      upIdx += 1;
+    }
+
+    const downOrder = ['inf', 'skr', 'arc', 'cav'];
+    while (used > remaining) {
+      let changed = false;
+      for (const t of downOrder) {
+        if (counts[t] > min[t]) {
+          counts[t] -= 1;
+          used -= 1;
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) break;
+    }
+
+    return counts;
+  }
+
+  function buildRandomForce(side, terrainByHex, occupiedSet, geometry, totalNeeded = RANDOM_START_UNITS_PER_SIDE) {
     const force = [];
-    const totalNeeded = RANDOM_START_UNITS_PER_SIDE;
     let depthNorm = 0.26;
     let pool = [];
 
@@ -6117,6 +6405,7 @@ function unitColors(side) {
     const isFront = (h) => depthAt(h) >= Math.max(0.16, depthNorm - 0.08);
     const isCenter = (h) => lateralOffset(h) <= 0.20;
     const isFlank = (h) => lateralOffset(h) >= 0.30;
+    const mix = forceMixCounts(totalNeeded);
 
     function addUnits(type, count, predicates) {
       for (let i = 0; i < count; i++) {
@@ -6133,13 +6422,13 @@ function unitColors(side) {
       }
     }
 
-    addUnits('gen', 3, [isBack, isCenter]);
-    addUnits('run', 1, [isBack, isCenter]);
-    addUnits('iat', 1, [isBack, isCenter]);
-    addUnits('cav', 5, [isFront, isFlank]);
-    addUnits('arc', 4, [isBack, isCenter]);
-    addUnits('inf', 11, [isFront, isCenter]);
-    addUnits('skr', 5, [isFront]);
+    addUnits('gen', mix.gen, [isBack, isCenter]);
+    addUnits('run', mix.run, [isBack, isCenter]);
+    addUnits('iat', mix.iat, [isBack, isCenter]);
+    addUnits('cav', mix.cav, [isFront, isFlank]);
+    addUnits('arc', mix.arc, [isBack, isCenter]);
+    addUnits('inf', mix.inf, [isFront, isCenter]);
+    addUnits('skr', mix.skr, [isFront]);
 
     const refillTypes = ['inf', 'inf', 'inf', 'skr', 'arc', 'cav', 'iat'];
     while (force.length < totalNeeded) {
@@ -6160,17 +6449,22 @@ function unitColors(side) {
   }
 
   function buildRandomStartupScenario(axis) {
+    const profile = chooseRandomStartupProfile();
     const geometry = buildAxisGeometry(axis);
     const terrainData = createRandomTerrainLayout(axis, geometry);
     const occupiedSet = new Set();
-    const blue = buildRandomForce('blue', terrainData.terrainByHex, occupiedSet, geometry);
-    const red = buildRandomForce('red', terrainData.terrainByHex, occupiedSet, geometry);
+    const blue = buildRandomForce('blue', terrainData.terrainByHex, occupiedSet, geometry, profile.blueUnits);
+    const red = buildRandomForce('red', terrainData.terrainByHex, occupiedSet, geometry, profile.redUnits);
 
     return {
       axis: normalizeForwardAxis(axis),
       terrain: terrainData.terrain,
       units: [...blue, ...red],
       advantageSide: terrainData.advantageSide,
+      size: profile.size,
+      matchup: profile.matchup,
+      blueUnits: profile.blueUnits,
+      redUnits: profile.redUnits,
     };
   }
 
@@ -6416,6 +6710,7 @@ function unitColors(side) {
     const silent = !!options.silent;
     const skipAiKick = !!options.skipAiKick;
     stopAiLoop();
+    stopMoveAnimation();
     resetDraftState({ keepBudget: true });
 
     const resolved = resolveImportPayload(raw);
@@ -6766,11 +7061,13 @@ function unitColors(side) {
     if (Number.isFinite(stepCost) && stepCost > 0) {
       state.act.moveSpent = (state.act.moveSpent || 0) + stepCost;
     }
+    const pathKeys = movementPathKeys(fromKey, destKey, u);
 
     unitsByHex.delete(fromKey);
     unitsByHex.set(destKey, u);
     state.selectedKey = destKey;
     state.act.moved = true;
+    startMoveAnimation(pathKeys, u, isAiControlledSide(u.side));
 
     if (isPostAttackWithdraw) {
       log(`Veteran CAV disengaged to ${destKey}.`);
@@ -6792,6 +7089,11 @@ function unitColors(side) {
     state._moveTargets = null;
     state._attackTargets = computeAttackTargets(destKey, u);
     state._healTargets = computeHealTargets(destKey, u);
+    if (!state._attackTargets || state._attackTargets.size === 0) {
+      clearSelection();
+      if (!maybeAutoEndTurnAfterAction()) updateHud();
+      return;
+    }
 
     updateHud();
   }
@@ -6912,6 +7214,7 @@ function unitColors(side) {
 
     // If nothing selected: try to select.
     if (!state.selectedKey) {
+      if (state.actsUsed >= ACT_LIMIT && maybeAutoEndTurnAfterAction()) return;
       if (clickedUnit) {
         const reason = activationBlockReason(clickedUnit, hexKey);
         if (reason) {
@@ -6961,6 +7264,7 @@ function unitColors(side) {
     // Switch selection to another friendly (forfeits any optional post-move attack)
     if (clickedUnit && clickedUnit.side === state.side) {
       clearSelection();
+      if (maybeAutoEndTurnAfterAction()) return;
       const reason = activationBlockReason(clickedUnit, hexKey);
       if (reason) {
         log(reason);
@@ -7098,7 +7402,7 @@ function unitColors(side) {
 
       state.gameMode = nextMode;
       if (nextMode === 'hvai') {
-        log(`Game mode: Human vs AI (Red AI, ${aiDifficultyLabel()} tier).`);
+        log(`Game mode: Human vs AI (Red AI, ${aiDifficultyLabel()} difficulty).`);
       } else if (nextMode === 'online') {
         stopAiLoop();
         log('Game mode: Online (Host = Blue, Guest = Red). Use Online panel to connect.');
@@ -7116,7 +7420,7 @@ function unitColors(side) {
       const next = normalizeAiDifficulty(elAiDifficultySel.value);
       if (next === state.aiDifficulty) return;
       state.aiDifficulty = next;
-      log(`AI tier set to ${aiDifficultyLabel()}${state.gameMode === 'hvai' ? '.' : ' (will apply in Human vs AI mode).'}`);
+      log(`AI difficulty set to ${aiDifficultyLabel()}${state.gameMode === 'hvai' ? '.' : ' (will apply in Human vs AI mode).'}`);
       updateHud();
     });
   }
@@ -7435,13 +7739,18 @@ function unitColors(side) {
     enterPlay();
 
     const biasLabel = (randomScenario.advantageSide === 'none')
-      ? 'balanced'
-      : `${randomScenario.advantageSide} flank bias`;
+      ? 'balanced terrain'
+      : `${randomScenario.advantageSide} flank-terrain bias`;
+    const matchupLabel =
+      randomScenario.matchup === 'even'
+        ? 'even forces'
+        : (randomScenario.matchup === 'blue_advantage' ? 'blue-advantaged forces' : 'red-advantaged forces');
 
     log(
       `Booted ${GAME_NAME}. Randomized startup loaded and battle started ` +
-      `(units=${randomScenario.units.length}, terrain=${randomScenario.terrain.length}, ` +
-      `axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}).`
+      `(${randomScenario.size} battle, ${matchupLabel}, ` +
+      `B ${randomScenario.blueUnits} / R ${randomScenario.redUnits}, ` +
+      `terrain=${randomScenario.terrain.length}, axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}).`
     );
     updateHud();
     resize();
