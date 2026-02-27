@@ -2414,9 +2414,8 @@ function unitColors(side) {
     if (elOnlineHostBtn) {
       elOnlineHostBtn.disabled = (net.connected && net.isHost) || (net.peer && !net.isHost);
     }
-    const joinCodeReady = normalizeOnlineCode(elOnlineJoinCode?.value || '').length === ONLINE_CODE_LENGTH;
     if (elOnlineJoinBtn) {
-      elOnlineJoinBtn.disabled = (net.connected && !net.isHost) || (net.peer && net.isHost) || !joinCodeReady;
+      elOnlineJoinBtn.disabled = (net.connected && !net.isHost) || (net.peer && net.isHost);
     }
     if (elOnlineLeaveBtn) {
       elOnlineLeaveBtn.disabled = (!net.peer && !net.connected);
