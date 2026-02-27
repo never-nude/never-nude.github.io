@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bannerfall</title>
-  <link rel="stylesheet" href="style.css?v=20260227-online-join-fix" />
+  <link rel="stylesheet" href="style.css?v=20260227-line-advance-preview" />
 </head>
 <body>
   <header id="hud">
@@ -190,7 +190,7 @@
           Runner: <b>RUN</b> is always Green, has <b>2 HP</b>, moves <b>4</b>, has <b>no attack</b>, and relays command as a mini-general.<br>
           Engaged (adjacent) units can't move; <b>SKR</b>, <b>RUN</b>, and <b>Veterans</b> may disengage 1 hex to a hex not adjacent to any enemy.<br>
           Infantry pivot: in-command (or veteran) <b>INF</b> auto-pivots against flank/rear melee attacks before impact is resolved.<br>
-          Line Advance: select friendly <b>INF</b> and press <b>Line Advance</b> (or <b>L</b>) to push a contiguous line forward 1 hex as one activation (movement only, partial if blocked; line shape follows Advance axis).<br>
+          Line Advance: select friendly <b>INF</b> and press <b>Line Advance</b> (or <b>L</b>) to push a contiguous line forward 1 hex as one activation (movement only, partial if blocked; line shape follows Advance axis). Selected INF now previews the exact line and forward direction before commit.<br>
           Veteran cavalry: after attacking in melee, a veteran <b>CAV</b> may disengage 1 hex if it has movement remaining and can end not adjacent to enemies.<br><br>
           Online: set Game mode to <b>Online</b>, Host creates room and shares a <b>4-character code</b>, friend enters code to connect. Host controls setup and mode; Host plays Blue, Guest plays Red.<br>
           Dice: <b>5–6</b> = Hit, <b>4</b> = Retreat (blocked retreat → 1 hit). Woods: defender reduces attacker dice by 1 (min 1).<br>
@@ -253,7 +253,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260227-online-join-fix"></script>
-  <script src="main.js?v=20260227-online-join-fix"></script>
+  <script src="build.js?v=20260227-line-advance-preview"></script>
+  <script src="main.js?v=20260227-line-advance-preview"></script>
 </body>
 </html>

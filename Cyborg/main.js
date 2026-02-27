@@ -164,6 +164,18 @@
     return (side === 'blue') ? { dq: 0, dr: +1 } : { dq: 0, dr: -1 };
   }
 
+  function sideForwardArrow(side, axis = state.forwardAxis) {
+    const a = normalizeForwardAxis(axis);
+    if (a === 'horizontal') return (side === 'blue') ? '→' : '←';
+    return (side === 'blue') ? '↓' : '↑';
+  }
+
+  function sideForwardWord(side, axis = state.forwardAxis) {
+    const a = normalizeForwardAxis(axis);
+    if (a === 'horizontal') return (side === 'blue') ? 'right' : 'left';
+    return (side === 'blue') ? 'down' : 'up';
+  }
+
   function generalCommandRadius(generalUnit) {
     if (!generalUnit || generalUnit.type !== 'gen') return DEFAULT_COMMAND_RADIUS;
     return qualityStatValue(COMMAND_RADIUS_BY_QUALITY, generalUnit.quality, DEFAULT_COMMAND_RADIUS);
@@ -1587,8 +1599,64 @@ function unitColors(side) {
     }
   }
 
+  function drawAdvanceArrow(fromHex, toHex, color = 'rgba(90, 220, 130, 0.9)', dashed = false) {
+    if (!fromHex || !toHex) return;
+    const dx = toHex.cx - fromHex.cx;
+    const dy = toHex.cy - fromHex.cy;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) return;
+
+    const ux = dx / len;
+    const uy = dy / len;
+    const startPad = R * 0.36;
+    const endPad = R * 0.50;
+    const sx = fromHex.cx + ux * startPad;
+    const sy = fromHex.cy + uy * startPad;
+    const ex = toHex.cx - ux * endPad;
+    const ey = toHex.cy - uy * endPad;
+    const head = Math.max(7, R * 0.18);
+    const wing = head * 0.65;
+    const px = -uy;
+    const py = ux;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2.5;
+    if (dashed) ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    if (dashed) ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - ux * head + px * wing, ey - uy * head + py * wing);
+    ctx.lineTo(ex - ux * head - px * wing, ey - uy * head - py * wing);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBlockedMarker(hex, color = 'rgba(255, 163, 70, 0.95)') {
+    if (!hex) return;
+    const r = R * 0.22;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(hex.cx - r, hex.cy - r);
+    ctx.lineTo(hex.cx + r, hex.cy + r);
+    ctx.moveTo(hex.cx + r, hex.cy - r);
+    ctx.lineTo(hex.cx - r, hex.cy + r);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function draw() {
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
+    const linePreview = lineAdvancePreviewFromSelection();
 
     // Background
     ctx.fillStyle = '#0b0b0d';
@@ -1629,12 +1697,49 @@ function unitColors(side) {
           ctx.setLineDash([]);
         }
       }
+      if (linePreview && linePreview.formationSet.has(k)) {
+        ctx.strokeStyle = (linePreview.anchorKey === k) ? '#ffe287' : '#ffd45a';
+        ctx.lineWidth = (linePreview.anchorKey === k) ? 4 : 2.5;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke(p);
+        ctx.setLineDash([]);
+      }
+      if (linePreview && linePreview.moveTargetSet.has(k)) {
+        ctx.strokeStyle = '#5ee38d';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([2, 5]);
+        ctx.stroke(p);
+        ctx.setLineDash([]);
+      }
+      if (linePreview && linePreview.blockedFromSet.has(k)) {
+        ctx.strokeStyle = 'rgba(255, 165, 70, 0.95)';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([2, 4]);
+        ctx.stroke(p);
+        ctx.setLineDash([]);
+      }
 
       // Hover
       if (state._hoverKey === k) {
         ctx.strokeStyle = '#ffffff55';
         ctx.lineWidth = 3;
         ctx.stroke(p);
+      }
+    }
+
+    if (linePreview) {
+      for (const m of linePreview.plan.moves) {
+        const fromHex = board.byKey.get(m.fromKey);
+        const toHex = board.byKey.get(m.toKey);
+        drawAdvanceArrow(fromHex, toHex, 'rgba(90, 220, 130, 0.95)', false);
+      }
+      for (const b of linePreview.plan.blocked) {
+        const fromHex = board.byKey.get(b.fromKey);
+        const toHex = b.toKey ? board.byKey.get(b.toKey) : null;
+        if (fromHex && toHex) {
+          drawAdvanceArrow(fromHex, toHex, 'rgba(255, 165, 70, 0.85)', true);
+          drawBlockedMarker(toHex, 'rgba(255, 165, 70, 0.95)');
+        }
       }
     }
 
@@ -2464,6 +2569,10 @@ function unitColors(side) {
 
     elEndTurnBtn.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
     if (elLineAdvanceBtn) {
+      const fArrow = sideForwardArrow(state.side, state.forwardAxis);
+      const fWord = sideForwardWord(state.side, state.forwardAxis);
+      elLineAdvanceBtn.textContent = `Line Advance ${fArrow}`;
+      elLineAdvanceBtn.title = `Advance infantry one hex forward (${fWord}).`;
       elLineAdvanceBtn.disabled = !canIssueLineAdvance();
     }
     if (guestOnlineLock) {
@@ -3030,6 +3139,37 @@ function unitColors(side) {
     return unitCanMoveThisActivation(u, { inCommandStart: inCmd }, hexKey);
   }
 
+  function lineAdvancePreviewFromAnchor(anchorKey) {
+    const anchorUnit = unitsByHex.get(anchorKey);
+    if (!anchorUnit || anchorUnit.type !== 'inf' || anchorUnit.side !== state.side) return null;
+    if (!canLineAdvanceInfAt(anchorKey, anchorUnit)) return null;
+
+    const formation = collectLineAdvanceFormation(anchorKey);
+    if (formation.length === 0) return null;
+
+    const plan = lineAdvanceMovePlan(formation);
+    const formationSet = new Set(formation);
+    const moveTargetSet = new Set(plan.moves.map(m => m.toKey));
+    const blockedFromSet = new Set(plan.blocked.map(b => b.fromKey));
+
+    return {
+      anchorKey,
+      axis: normalizeForwardAxis(state.forwardAxis),
+      side: anchorUnit.side,
+      formation,
+      formationSet,
+      plan,
+      moveTargetSet,
+      blockedFromSet,
+    };
+  }
+
+  function lineAdvancePreviewFromSelection() {
+    if (state.mode !== 'play') return null;
+    if (!state.selectedKey) return null;
+    return lineAdvancePreviewFromAnchor(state.selectedKey);
+  }
+
   function collectLineAdvanceFormation(anchorKey) {
     const anchorUnit = unitsByHex.get(anchorKey);
     const anchorHex = board.byKey.get(anchorKey);
@@ -3094,28 +3234,28 @@ function unitColors(side) {
 
       const toKey = forwardStepKey(fromKey, u.side);
       if (!toKey) {
-        blocked.push({ fromKey, reason: 'off-board' });
+        blocked.push({ fromKey, toKey: null, reason: 'off-board' });
         continue;
       }
       if (!board.activeSet.has(toKey)) {
-        blocked.push({ fromKey, reason: 'off-board' });
+        blocked.push({ fromKey, toKey: null, reason: 'off-board' });
         continue;
       }
 
       if (unitsByHex.has(toKey) && !formationSet.has(toKey)) {
-        blocked.push({ fromKey, reason: 'occupied' });
+        blocked.push({ fromKey, toKey, reason: 'occupied' });
         continue;
       }
 
       const toHex = board.byKey.get(toKey);
       if (!toHex) {
-        blocked.push({ fromKey, reason: 'off-board' });
+        blocked.push({ fromKey, toKey: null, reason: 'off-board' });
         continue;
       }
 
       const cost = terrainMoveCost('inf', toHex.terrain);
       if (!Number.isFinite(cost) || cost > infMove) {
-        blocked.push({ fromKey, reason: 'terrain' });
+        blocked.push({ fromKey, toKey, reason: 'terrain' });
         continue;
       }
 
@@ -3129,13 +3269,9 @@ function unitColors(side) {
     if (state.mode !== 'play' || state.gameOver) return false;
     if (isAiTurnActive()) return false;
     if (state.actsUsed >= ACT_LIMIT) return false;
-    if (!state.selectedKey) return false;
-
-    const u = unitsByHex.get(state.selectedKey);
-    if (!u || u.side !== state.side || u.type !== 'inf') return false;
-    const formation = collectLineAdvanceFormation(state.selectedKey);
-    if (formation.length === 0) return false;
-    return lineAdvanceMovePlan(formation).moves.length > 0;
+    const preview = lineAdvancePreviewFromSelection();
+    if (!preview) return false;
+    return preview.plan.moves.length > 0;
   }
 
   function lineAdvanceFromSelection() {
@@ -3161,19 +3297,22 @@ function unitColors(side) {
       return;
     }
 
-    const formation = collectLineAdvanceFormation(anchorKey);
-    if (formation.length === 0) {
+    const preview = lineAdvancePreviewFromSelection();
+    if (!preview) {
       log('Line Advance unavailable: selected INF cannot form an eligible line.');
       updateHud();
       return;
     }
 
-    const plan = lineAdvanceMovePlan(formation);
+    const formation = preview.formation;
+    const plan = preview.plan;
     const moves = plan.moves;
     const blocked = plan.blocked;
+    const directionArrow = sideForwardArrow(anchor.side, preview.axis);
+    const directionWord = sideForwardWord(anchor.side, preview.axis);
 
     if (moves.length === 0) {
-      log('Line Advance blocked: no INF in the line can step forward.');
+      log(`Line Advance blocked: no INF in the line can step forward ${directionArrow} (${directionWord}).`);
       updateHud();
       return;
     }
@@ -3203,7 +3342,7 @@ function unitColors(side) {
     if (byReason.terrain) blockParts.push(`terrain ${byReason.terrain}`);
     const blockText = blockParts.length ? ` blocked(${blockParts.join(', ')})` : '';
 
-    log(`Line Advance: ${moves.length}/${formation.length} INF advanced.${blockText}`);
+    log(`Line Advance ${directionArrow}: ${moves.length}/${formation.length} INF advanced.${blockText}`);
     updateHud();
   }
 
