@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-start-in-play-v1" />
+  <link rel="stylesheet" href="style.css?v=20260228-ai-difficulty-v1" />
 </head>
 <body>
   <header id="hud">
@@ -33,8 +33,17 @@
           <div class="label">Game</div>
           <select id="gameModeSel" class="select">
             <option value="hvh">Human vs Human</option>
-            <option value="hvai">Human vs AI</option>
+            <option value="hvai" selected>Human vs AI</option>
             <option value="online">Online (Host/Guest)</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="label">AI Tier</div>
+          <select id="aiDifficultySel" class="select">
+            <option value="levy">Levy (Easy)</option>
+            <option value="cohort">Cohort (Standard)</option>
+            <option value="legion">Legion (Hard)</option>
           </select>
         </div>
 
@@ -255,7 +264,7 @@
   </section>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-start-in-play-v1"></script>
-  <script src="main.js?v=20260228-start-in-play-v1"></script>
+  <script src="build.js?v=20260228-ai-difficulty-v1"></script>
+  <script src="main.js?v=20260228-ai-difficulty-v1"></script>
 </body>
 </html>

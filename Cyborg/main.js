@@ -87,6 +87,41 @@
   // AI pace intentionally slowed so piece-by-piece actions are easier to follow.
   const AI_STEP_DELAY_MS = 400; // ~60% slower than the previous 240ms pace
   const AI_START_DELAY_MS = 300;
+  const AI_DIFFICULTY_PROFILES = {
+    levy: {
+      label: 'Levy',
+      attackScale: 0.82,
+      moveScale: 0.90,
+      genFocusBonus: 2,
+      attackNoise: 8,
+      moveNoise: 5,
+      passChance: 0.18,
+      attackBias: -1.0,
+      moveBias: 1.4,
+    },
+    cohort: {
+      label: 'Cohort',
+      attackScale: 1.00,
+      moveScale: 1.00,
+      genFocusBonus: 6,
+      attackNoise: 3.2,
+      moveNoise: 2.3,
+      passChance: 0.06,
+      attackBias: 0.0,
+      moveBias: 0.0,
+    },
+    legion: {
+      label: 'Legion',
+      attackScale: 1.14,
+      moveScale: 1.08,
+      genFocusBonus: 12,
+      attackNoise: 1.0,
+      moveNoise: 0.8,
+      passChance: 0.01,
+      attackBias: 1.5,
+      moveBias: -0.2,
+    },
+  };
   const RANDOM_START_SCENARIO_NAME = 'Randomized Opening (Auto)';
   const RANDOM_START_UNITS_PER_SIDE = 30;
   const DRAFT_BUDGET_MIN = 20;
@@ -193,6 +228,18 @@
     if (a === 'diag_tl_br') return 'Diagonal TL->BR (Blue down-right)';
     if (a === 'diag_tr_bl') return 'Diagonal TR->BL (Blue down-left)';
     return 'Vertical (Blue down)';
+  }
+
+  function normalizeAiDifficulty(level) {
+    return Object.prototype.hasOwnProperty.call(AI_DIFFICULTY_PROFILES, level) ? level : 'cohort';
+  }
+
+  function aiDifficultyProfile(level = state.aiDifficulty) {
+    return AI_DIFFICULTY_PROFILES[normalizeAiDifficulty(level)] || AI_DIFFICULTY_PROFILES.cohort;
+  }
+
+  function aiDifficultyLabel(level = state.aiDifficulty) {
+    return aiDifficultyProfile(level).label;
   }
 
   function sideForwardDirection(side, axis = state.forwardAxis) {
@@ -344,6 +391,7 @@
 
   const elModeBtn = document.getElementById('modeBtn');
   const elGameModeSel = document.getElementById('gameModeSel');
+  const elAiDifficultySel = document.getElementById('aiDifficultySel');
   const elForwardAxisSel = document.getElementById('forwardAxisSel');
   const elToolUnits = document.getElementById('toolUnits');
   const elToolTerrain = document.getElementById('toolTerrain');
@@ -419,7 +467,8 @@
     editTerrain: 'clear',
 
     // Play
-    gameMode: 'hvh', // 'hvh' | 'hvai' | 'online'
+    gameMode: 'hvai', // 'hvh' | 'hvai' | 'online'
+    aiDifficulty: 'cohort', // 'levy' | 'cohort' | 'legion'
     forwardAxis: 'vertical', // 'vertical' | 'horizontal' | 'diag_tl_br' | 'diag_tr_bl'
     turn: 1,
     side: 'blue',
@@ -4353,7 +4402,7 @@ function unitColors(side) {
     const sideLabel = (state.side === 'blue') ? 'Blue' : 'Red';
     const modeMeta =
       state.gameMode === 'online' ? ' • Online mode' :
-      (state.gameMode === 'hvai' ? ' • Red AI enabled' : '');
+      (state.gameMode === 'hvai' ? ` • Red AI (${aiDifficultyLabel()} tier)` : '');
     const meta = [
       `${modeLabel}${modeMeta}`,
       `Battle Line: ${forwardAxisLabel(state.forwardAxis)}`,
@@ -4393,6 +4442,11 @@ function unitColors(side) {
     }
     const onlineMode = onlineModeActive();
     const guestOnlineLock = onlineMode && net.connected && !net.isHost;
+    if (elAiDifficultySel) {
+      const aiLock = onlineMode && net.connected;
+      elAiDifficultySel.value = normalizeAiDifficulty(state.aiDifficulty);
+      elAiDifficultySel.disabled = state.gameMode !== 'hvai' || aiLock || (state.mode === 'play' && state.aiBusy);
+    }
     const shownCode = normalizeOnlineCode(net.isHost ? net.myCode : net.remoteCode);
     elModeBtn.disabled = guestOnlineLock;
     if (elOnlineMyCode) {
@@ -4548,19 +4602,22 @@ function unitColors(side) {
   }
 
   function aiAttackScore(attackerKey, targetKey, attackerUnit) {
-    const prof = attackDiceFor(attackerKey, targetKey, attackerUnit);
-    if (!prof) return -Infinity;
+    const attackProf = attackDiceFor(attackerKey, targetKey, attackerUnit);
+    if (!attackProf) return -Infinity;
 
     const target = unitsByHex.get(targetKey);
     if (!target) return -Infinity;
+    const ai = aiDifficultyProfile();
 
     let score = 0;
-    score += prof.dice * 6;
-    if (prof.kind === 'melee') score += 2;
-    if (target.type === 'gen') score += 20;
+    score += attackProf.dice * 6;
+    if (attackProf.kind === 'melee') score += 2;
+    if (target.type === 'gen') score += 20 + ai.genFocusBonus;
     score += unitUpValue(target.type, target.quality);
     score += Math.max(0, 3 - target.hp) * 2;
     if (!retreatPick(attackerKey, targetKey)) score += 2;
+    score *= ai.attackScale;
+    score += (Math.random() * 2 - 1) * ai.attackNoise;
     return score;
   }
 
@@ -4580,6 +4637,7 @@ function unitColors(side) {
   }
 
   function aiMoveScore(fromKey, destKey, unit, actCtx) {
+    const ai = aiDifficultyProfile();
     let score = 0;
 
     const fromDist = nearestEnemyDistance(fromKey, unit.side);
@@ -4611,6 +4669,8 @@ function unitColors(side) {
       if (h.terrain === 'rough' && unit.type === 'cav') score -= 0.75;
     }
 
+    score *= ai.moveScale;
+    score += (Math.random() * 2 - 1) * ai.moveNoise;
     return score;
   }
 
@@ -4623,6 +4683,7 @@ function unitColors(side) {
   }
 
   function chooseAiActionPlan() {
+    const ai = aiDifficultyProfile();
     let bestAttack = null;
     let bestAttackScore = -Infinity;
 
@@ -4665,6 +4726,15 @@ function unitColors(side) {
       }
     }
 
+    if (passPlan && state.actsUsed > 0 && Math.random() < ai.passChance) {
+      return passPlan;
+    }
+
+    if (bestAttack && bestMove) {
+      const attackAdj = bestAttack.score + ai.attackBias;
+      const moveAdj = bestMove.score + ai.moveBias;
+      return attackAdj >= moveAdj ? bestAttack : bestMove;
+    }
     if (bestAttack) return bestAttack;
     if (bestMove) return bestMove;
     return passPlan;
@@ -6260,6 +6330,7 @@ function unitColors(side) {
       state: {
         mode: state.mode,
         gameMode: state.gameMode,
+        aiDifficulty: state.aiDifficulty,
         forwardAxis: state.forwardAxis,
         tool: state.tool,
         turn: state.turn,
@@ -6473,7 +6544,10 @@ function unitColors(side) {
 
     // Restore state fields
     const restoreMode = (payload.mode === 'play') ? 'play' : 'edit';
-    state.gameMode = (payload.gameMode === 'hvai' || payload.gameMode === 'online') ? payload.gameMode : 'hvh';
+    state.gameMode = (payload.gameMode === 'hvh' || payload.gameMode === 'hvai' || payload.gameMode === 'online')
+      ? payload.gameMode
+      : 'hvai';
+    state.aiDifficulty = normalizeAiDifficulty(payload.aiDifficulty);
     state.forwardAxis = normalizeForwardAxis(payload.forwardAxis);
     state.mode = restoreMode;
     state.tool = (payload.tool === 'terrain') ? 'terrain' : 'units';
@@ -7024,7 +7098,7 @@ function unitColors(side) {
 
       state.gameMode = nextMode;
       if (nextMode === 'hvai') {
-        log('Game mode: Human vs AI (Red AI).');
+        log(`Game mode: Human vs AI (Red AI, ${aiDifficultyLabel()} tier).`);
       } else if (nextMode === 'online') {
         stopAiLoop();
         log('Game mode: Online (Host = Blue, Guest = Red). Use Online panel to connect.');
@@ -7034,6 +7108,16 @@ function unitColors(side) {
       }
       updateHud();
       maybeStartAiTurn();
+    });
+  }
+
+  if (elAiDifficultySel) {
+    elAiDifficultySel.addEventListener('change', () => {
+      const next = normalizeAiDifficulty(elAiDifficultySel.value);
+      if (next === state.aiDifficulty) return;
+      state.aiDifficulty = next;
+      log(`AI tier set to ${aiDifficultyLabel()}${state.gameMode === 'hvai' ? '.' : ' (will apply in Human vs AI mode).'}`);
+      updateHud();
     });
   }
 
