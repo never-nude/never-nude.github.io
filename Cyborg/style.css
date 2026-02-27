@@ -409,6 +409,41 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   line-height:1.35;
 }
 
+.diceOutcomeBrief{
+  font-weight:700;
+  color:#eef2fb;
+}
+
+.diceLegendBrief{
+  margin-top:0;
+}
+
+.combatSupport{
+  margin-top:2px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.18);
+  font-weight:700;
+}
+
+.combatSupport.active{
+  color:#dff5e8;
+  border-color:#2b8f52;
+  background:rgba(43,143,82,0.22);
+}
+
+.combatSupport.inactive{
+  color:#f8deb2;
+  border-color:#b98018;
+  background:rgba(185,128,24,0.20);
+}
+
+.combatSupport.na{
+  color:#cfd3de;
+  border-color:rgba(255,255,255,0.16);
+  background:rgba(255,255,255,0.05);
+}
+
 .combatHint{
   font-size:12px;
   color:var(--muted);

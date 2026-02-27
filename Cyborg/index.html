@@ -223,6 +223,7 @@
             <b>Medic</b>: move 1, no attack, 1 HP (always Regular). Heal one adjacent friendly unit for +1 HP as its action.<br>
             <b>Line Advance</b>: select Infantry and press <b>Line Advance</b> (or <b>L</b>) to push a contiguous line one step forward.<br>
             Dice: <b>5–6 hit</b>, <b>4 retreat</b>, <b>1–3 miss</b>.<br>
+            Selected Infantry: cyan dotted ring shows connected reinforcement formation.<br>
             Hotkeys: <b>P</b> pass, <b>C</b> command overlay.
           </div>
         </details>
@@ -242,10 +243,13 @@
       <div id="physicalDiceRow" class="physicalDiceRow">
         <span class="physicalDiceEmpty">No dice yet.</span>
       </div>
+      <div id="diceOutcomeBrief" class="combatMeta diceOutcomeBrief">This roll: -</div>
+      <div id="diceLegendBrief" class="combatHint diceLegendBrief">Legend: 5-6 = hit, 4 = retreat, 1-3 = miss.</div>
     </div>
     <div class="combatCol">
-      <div class="combatColTitle">Terrain Modifier</div>
+      <div class="combatColTitle">Defense Modifiers</div>
       <div id="combatTerrain" class="combatMeta">Defense modifiers: -</div>
+      <div id="combatSupport" class="combatMeta combatSupport na">Infantry support: -</div>
     </div>
     <div class="combatCol">
       <div class="combatColTitle">Outcome</div>
@@ -254,7 +258,7 @@
   </section>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-ai-difficulty-v2"></script>
-  <script src="main.js?v=20260228-ai-difficulty-v2"></script>
+  <script src="build.js?v=20260227-124026-support-clarity-v1"></script>
+  <script src="main.js?v=20260227-124026-support-clarity-v1"></script>
 </body>
 </html>

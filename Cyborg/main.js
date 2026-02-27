@@ -436,6 +436,7 @@
   const elStateFileInput = document.getElementById('stateFileInput');
   const elDiceSummary = document.getElementById('diceSummary');
   const elPhysicalDiceRow = document.getElementById('physicalDiceRow');
+  const elDiceOutcomeBrief = document.getElementById('diceOutcomeBrief');
   const elDiceTray = document.getElementById('diceTray');
   const elInspectorTitle = document.getElementById('inspectorTitle');
   const elInspectorMeta = document.getElementById('inspectorMeta');
@@ -450,6 +451,7 @@
   const elCombatSummary = document.getElementById('combatSummary');
   const elCombatMath = document.getElementById('combatMath');
   const elCombatTerrain = document.getElementById('combatTerrain');
+  const elCombatSupport = document.getElementById('combatSupport');
   const elCombatOutcome = document.getElementById('combatOutcome');
   const elCombatHint = document.getElementById('combatHint');
   const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Infantry support directly opposite an adjacent melee attack gives attacker -1 die per supporting rank (up to 2).';
@@ -3340,6 +3342,11 @@ function unitColors(side) {
 
   function draw() {
     const activeMoveAnim = state.moveAnim;
+    const reinforcedKeys = (
+      state.mode === 'play' &&
+      state.selectedKey &&
+      unitsByHex.get(state.selectedKey)?.type === 'inf'
+    ) ? reinforcedFormationKeys(state.selectedKey) : null;
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
     // Background
@@ -3464,6 +3471,15 @@ function unitColors(side) {
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#fff';
         ctx.stroke();
+      }
+      if (reinforcedKeys && reinforcedKeys.has(hk)) {
+        ctx.beginPath();
+        ctx.arc(h.cx, h.cy, R * 0.79, 0, Math.PI * 2);
+        ctx.lineWidth = 2.25;
+        ctx.strokeStyle = 'rgba(0, 226, 214, 0.95)';
+        ctx.setLineDash([3, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
       // Unit mark (ICON preferred, text fallback)
       const def = UNIT_BY_ID.get(u.type);
@@ -3609,9 +3625,13 @@ function unitColors(side) {
     if (u.type === 'gen') radiusText = String(generalCommandRadius(u));
     else if (u.type === 'run') radiusText = String(RUNNER_COMMAND_RADIUS);
     const activationState = state.actedUnitIds.has(u.id) ? 'spent this turn' : 'ready';
-    const metaText = (state.mode === 'play')
+    let metaText = (state.mode === 'play')
       ? `Play mode: ${activationState}.`
       : 'Edit mode preview values.';
+    if (state.mode === 'play' && u.type === 'inf') {
+      const reinforcedCount = reinforcedFormationKeys(selectedKey).size;
+      metaText += ` Reinforcement outline: ${reinforcedCount} infantry.`;
+    }
 
     setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.abbrev} (${qualityText})`);
     setInspectorValue(elInspectorMeta, metaText);
@@ -3700,6 +3720,7 @@ function unitColors(side) {
   function clearDiceDisplay() {
     diceRenderNonce += 1;
     if (elDiceSummary) elDiceSummary.textContent = 'No rolls yet.';
+    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'This roll: -';
     if (elDiceTray) elDiceTray.innerHTML = '';
     renderIdlePhysicalDice();
     clearCombatBreakdown();
@@ -3709,11 +3730,45 @@ function unitColors(side) {
     return TERRAIN_LABEL_BY_ID.get(terrainId) || 'Unknown';
   }
 
+  function setCombatSupportStatus(text, cls = 'na') {
+    if (!elCombatSupport) return;
+    elCombatSupport.textContent = text;
+    elCombatSupport.classList.remove('active', 'inactive', 'na');
+    elCombatSupport.classList.add(cls);
+  }
+
+  function supportStatusForCombat(info) {
+    const ranks = Math.max(0, Number(info?.supportRanks || 0));
+    const dicePenalty = Math.abs(Number(info?.supportDiceMod || 0));
+
+    if (!info || info.kind !== 'melee' || info.defenderType !== 'inf') {
+      return {
+        text: 'Infantry support: not applicable (only melee attacks into Infantry).',
+        cls: 'na',
+      };
+    }
+
+    if (ranks > 0 && dicePenalty > 0) {
+      return {
+        text:
+          `Infantry support ACTIVE: ${ranks} supporting Infantry directly behind defender ` +
+          `on the opposite side of the attack. Attacker -${dicePenalty} die${dicePenalty === 1 ? '' : 's'}.`,
+        cls: 'active',
+      };
+    }
+
+    return {
+      text: 'Infantry support not active: no friendly Infantry directly behind defender on the opposite side of attack.',
+      cls: 'inactive',
+    };
+  }
+
   function clearCombatBreakdown() {
     state.lastCombat = null;
     if (elCombatSummary) elCombatSummary.textContent = 'No combat yet. Select a unit and attack to see exact dice math.';
     if (elCombatMath) elCombatMath.textContent = 'Dice math: -';
     if (elCombatTerrain) elCombatTerrain.textContent = 'Defense modifiers: -';
+    setCombatSupportStatus('Infantry support: -', 'na');
     if (elCombatOutcome) elCombatOutcome.textContent = 'Outcome: -';
     if (elCombatHint) elCombatHint.textContent = COMBAT_RULE_HINT;
   }
@@ -3750,6 +3805,8 @@ function unitColors(side) {
       `Dice math: base ${info.baseDice}${flankText}${rearText}${terrainText}${supportText} = ${info.dice}.`;
     elCombatTerrain.textContent =
       `Defense modifiers: terrain ${terrainMath}; infantry support ${supportMath}.`;
+    const supportStatus = supportStatusForCombat(info);
+    setCombatSupportStatus(supportStatus.text, supportStatus.cls);
 
     const retreatResolved =
       (typeof info.retreatMoved === 'number' || typeof info.retreatBlocked === 'number')
@@ -3782,7 +3839,12 @@ function unitColors(side) {
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
       `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${terrainText}${supportText}) · ` +
       `H ${info.hits} / R ${info.retreats} / M ${info.misses}`;
+    const briefOutcome =
+      `This roll: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ` +
+      `${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ` +
+      `${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
     elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
+    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = `This roll: rolling ${info.dice} dice...`;
 
     elDiceTray.innerHTML = '';
     if (elPhysicalDiceRow) elPhysicalDiceRow.innerHTML = '';
@@ -3845,6 +3907,7 @@ function unitColors(side) {
     setTimeout(() => {
       if (renderNonce !== diceRenderNonce) return;
       elDiceSummary.textContent = finalSummary;
+      if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = briefOutcome;
     }, summaryDelay);
   }
 
@@ -5324,6 +5387,63 @@ function unitColors(side) {
     return stepKeyInDirection(fromKey, dir);
   }
 
+  function isFriendlyInfAt(hexKey, side) {
+    const u = unitsByHex.get(hexKey);
+    return !!u && u.side === side && u.type === 'inf';
+  }
+
+  function collectInfantryLineByAxis(anchorKey, side) {
+    if (!isFriendlyInfAt(anchorKey, side)) return [];
+
+    const [beforeDir, afterDir] = axisLateralDirections(state.forwardAxis);
+    const before = [];
+    const after = [];
+
+    function walk(dir, out) {
+      let cur = anchorKey;
+      while (true) {
+        const next = stepKeyInDirection(cur, dir);
+        if (!next || !isFriendlyInfAt(next, side)) break;
+        out.push(next);
+        cur = next;
+      }
+    }
+
+    walk(beforeDir, before);
+    walk(afterDir, after);
+    before.reverse();
+    return [...before, anchorKey, ...after];
+  }
+
+  function reinforcedFormationKeys(anchorKey) {
+    const anchor = unitsByHex.get(anchorKey);
+    if (!anchor || anchor.type !== 'inf') return new Set();
+
+    const line = collectInfantryLineByAxis(anchorKey, anchor.side);
+    const out = new Set(line);
+    if (line.length === 0) return out;
+
+    const frontDir = sideForwardDirection(anchor.side, state.forwardAxis);
+    const rearDir = oppositeDirection(frontDir);
+    const supportDirs = [];
+    if (frontDir) supportDirs.push(frontDir);
+    if (rearDir && rearDir !== frontDir) supportDirs.push(rearDir);
+
+    for (const lk of line) {
+      for (const dir of supportDirs) {
+        let cur = lk;
+        for (let i = 0; i < INF_SUPPORT_MAX_RANKS; i++) {
+          const next = stepKeyInDirection(cur, dir);
+          if (!next || !isFriendlyInfAt(next, anchor.side)) break;
+          out.add(next);
+          cur = next;
+        }
+      }
+    }
+
+    return out;
+  }
+
   function canLineAdvanceInfAt(hexKey, u) {
     if (!u || u.type !== 'inf') return false;
     if (u.side !== state.side) return false;
@@ -5771,6 +5891,8 @@ function unitColors(side) {
     const combatInfo = {
       attacker: tag,
       defender: vs,
+      attackerType: atk.type,
+      defenderType: defU.type,
       kind: prof.kind,
       dist: prof.dist,
       dice,
@@ -5801,6 +5923,13 @@ function unitColors(side) {
     renderCombatBreakdown(rolls, combatInfo);
     log(`${tag} ${prof.kind.toUpperCase()}→${vs} r${prof.dist} · dice=${dice}${modText}`);
     log(`Rolls: [${rollTokens.join(' ')}] => hits=${hits}, retreats=${retreats}, misses=${misses}.`);
+    if (prof.kind === 'melee' && defU.type === 'inf') {
+      if (supportRanks > 0 && supportDiceMod < 0) {
+        log(`Infantry support ACTIVE: ${supportRanks} rank${supportRanks === 1 ? '' : 's'} directly behind defender opposite attack (-${Math.abs(supportDiceMod)} die).`);
+      } else {
+        log('Infantry support inactive: no friendly Infantry directly behind defender on the opposite attack side.');
+      }
+    }
 
     // Pass 1: apply hits
     if (hits > 0) {
