@@ -301,6 +301,7 @@
   const elOnlineLeaveBtn = document.getElementById('onlineLeaveBtn');
   const elOnlineMyCode = document.getElementById('onlineMyCode');
   const elOnlineJoinCode = document.getElementById('onlineJoinCode');
+  const elOnlineRoleHint = document.getElementById('onlineRoleHint');
   const elOnlineStatus = document.getElementById('onlineStatus');
   const elRulesBtn = document.getElementById('rulesBtn');
   const elRulesDrawer = document.getElementById('rulesDrawer');
@@ -364,6 +365,10 @@
     status: 'Online: idle.',
     applyingRemoteSnapshot: false,
   };
+
+  const ONLINE_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const ONLINE_CODE_LENGTH = 4;
+  const ONLINE_PEER_PREFIX = 'cyb-';
 
   // --- Board model
   function key(q, r) { return `${q},${r}`; }
@@ -1816,9 +1821,65 @@ function unitColors(side) {
     return typeof window.Peer === 'function';
   }
 
+  function normalizeOnlineCode(raw) {
+    const source = String(raw || '').toUpperCase();
+    let out = '';
+    for (const ch of source) {
+      if (ONLINE_CODE_ALPHABET.includes(ch)) out += ch;
+      if (out.length >= ONLINE_CODE_LENGTH) break;
+    }
+    return out;
+  }
+
+  function randomOnlineCode() {
+    let out = '';
+    for (let i = 0; i < ONLINE_CODE_LENGTH; i++) {
+      const idx = Math.floor(Math.random() * ONLINE_CODE_ALPHABET.length);
+      out += ONLINE_CODE_ALPHABET[idx];
+    }
+    return out;
+  }
+
+  function onlinePeerIdForCode(code) {
+    return `${ONLINE_PEER_PREFIX}${normalizeOnlineCode(code)}`;
+  }
+
+  function onlineCodeFromPeerId(peerId) {
+    const s = String(peerId || '');
+    if (s.startsWith(ONLINE_PEER_PREFIX)) {
+      return normalizeOnlineCode(s.slice(ONLINE_PEER_PREFIX.length));
+    }
+    return normalizeOnlineCode(s);
+  }
+
   function setOnlineStatus(msg) {
     net.status = String(msg || 'Online: idle.');
     if (elOnlineStatus) elOnlineStatus.textContent = net.status;
+  }
+
+  function onlineRoleHintText() {
+    if (!onlineModeActive()) {
+      return 'Switch Game to Online, then create or join a room.';
+    }
+    if (net.connected && net.isHost) {
+      return 'You are Host (Blue). You set scenario, rules, and when play starts.';
+    }
+    if (net.connected && !net.isHost) {
+      return 'You are Guest (Red). Host controls setup/rules and starts play.';
+    }
+    if (net.peer && net.isHost) {
+      return 'Room created. Share the 4-character room code with your friend.';
+    }
+    if (net.peer && !net.isHost) {
+      return `Connecting to room ${net.remoteCode || '----'}...`;
+    }
+    return 'Host creates a room. Friend enters the 4-character code to connect.';
+  }
+
+  function ensureOnlineMode() {
+    if (state.gameMode === 'online') return;
+    state.gameMode = 'online';
+    if (elGameModeSel) elGameModeSel.value = 'online';
   }
 
   function onlineSendPacket(packet) {
@@ -1951,13 +2012,16 @@ function unitColors(side) {
     if (!conn) return;
     onlineCloseConnection();
     net.conn = conn;
-    if (typeof conn.peer === 'string') net.remoteCode = conn.peer;
+    if (typeof conn.peer === 'string') net.remoteCode = onlineCodeFromPeerId(conn.peer);
 
     conn.on('open', () => {
       net.connected = true;
-      if (typeof conn.peer === 'string') net.remoteCode = conn.peer;
-      if (net.isHost) setOnlineStatus(`Online host connected to ${net.remoteCode || 'guest'}. You are BLUE.`);
-      else setOnlineStatus(`Online joined ${net.remoteCode || 'host'}. You are RED.`);
+      if (typeof conn.peer === 'string') net.remoteCode = onlineCodeFromPeerId(conn.peer);
+      if (net.isHost) {
+        setOnlineStatus(`Connected. Room ${net.myCode || '----'} is live.`);
+      } else {
+        setOnlineStatus(`Connected to room ${net.remoteCode || '----'}.`);
+      }
       if (net.isHost) onlineBroadcastSnapshot('peer-open');
       else onlineSendPacket({ kind: 'hello' });
       updateHud();
@@ -1976,11 +2040,7 @@ function unitColors(side) {
   }
 
   function startOnlineHost() {
-    if (!onlineModeActive()) {
-      log('Switch Game mode to Online first.');
-      updateHud();
-      return;
-    }
+    ensureOnlineMode();
     if (!onlineLibReady()) {
       setOnlineStatus('Online unavailable: PeerJS failed to load.');
       updateHud();
@@ -1989,78 +2049,103 @@ function unitColors(side) {
 
     onlineDestroyPeer();
     net.isHost = true;
-    setOnlineStatus('Online: opening host room...');
+    net.myCode = randomOnlineCode();
 
-    const peer = new window.Peer();
-    net.peer = peer;
+    function openHostPeer(triesLeft) {
+      const roomCode = net.myCode || randomOnlineCode();
+      const peerId = onlinePeerIdForCode(roomCode);
+      let opened = false;
+      const peer = new window.Peer(peerId);
+      net.peer = peer;
+      setOnlineStatus(`Creating room ${roomCode}...`);
 
-    peer.on('open', (id) => {
-      net.myCode = String(id || '');
-      setOnlineStatus('Online host ready. Share your code. You are BLUE.');
-      updateHud();
-    });
-    peer.on('connection', (conn) => {
-      if (!net.isHost) {
-        try { conn.close(); } catch (_) {}
-        return;
-      }
-      if (net.conn && net.connected) {
-        try { conn.close(); } catch (_) {}
-        return;
-      }
-      bindOnlineConnection(conn);
-    });
-    peer.on('error', (err) => {
-      setOnlineStatus(`Online host error: ${err && err.message ? err.message : String(err)}`);
-      updateHud();
-    });
-    peer.on('close', () => {
-      onlineDestroyPeer();
-      setOnlineStatus('Online: host closed.');
-      updateHud();
-    });
+      peer.on('open', (id) => {
+        if (net.peer !== peer) return;
+        opened = true;
+        net.myCode = onlineCodeFromPeerId(id) || roomCode;
+        setOnlineStatus(`Room ${net.myCode} ready. Share this code. You are BLUE.`);
+        updateHud();
+      });
+      peer.on('connection', (conn) => {
+        if (net.peer !== peer || !net.isHost) {
+          try { conn.close(); } catch (_) {}
+          return;
+        }
+        if (net.conn && net.connected) {
+          try { conn.close(); } catch (_) {}
+          return;
+        }
+        bindOnlineConnection(conn);
+      });
+      peer.on('error', (err) => {
+        if (net.peer !== peer) return;
+        const errText = String(err?.type || err?.message || err || '').toLowerCase();
+        if (!opened && triesLeft > 0 && (errText.includes('unavailable') || errText.includes('taken') || errText.includes('id'))) {
+          try { peer.destroy(); } catch (_) {}
+          net.peer = null;
+          net.myCode = randomOnlineCode();
+          openHostPeer(triesLeft - 1);
+          return;
+        }
+        setOnlineStatus(`Online host error: ${err && err.message ? err.message : String(err)}`);
+        updateHud();
+      });
+      peer.on('close', () => {
+        if (net.peer !== peer) return;
+        onlineDestroyPeer();
+        setOnlineStatus('Online: room closed.');
+        updateHud();
+      });
+    }
+
+    openHostPeer(8);
 
     updateHud();
   }
 
   function startOnlineJoin() {
-    if (!onlineModeActive()) {
-      log('Switch Game mode to Online first.');
-      updateHud();
-      return;
-    }
+    ensureOnlineMode();
     if (!onlineLibReady()) {
       setOnlineStatus('Online unavailable: PeerJS failed to load.');
       updateHud();
       return;
     }
 
-    const hostCode = String(elOnlineJoinCode?.value || '').trim();
-    if (!hostCode) {
-      setOnlineStatus('Online: enter a host code first.');
+    const hostCode = normalizeOnlineCode(elOnlineJoinCode?.value || '');
+    if (elOnlineJoinCode) elOnlineJoinCode.value = hostCode;
+    if (hostCode.length !== ONLINE_CODE_LENGTH) {
+      setOnlineStatus(`Enter a ${ONLINE_CODE_LENGTH}-character room code.`);
       updateHud();
       return;
     }
 
     onlineDestroyPeer();
     net.isHost = false;
-    setOnlineStatus(`Online: joining ${hostCode}...`);
+    net.remoteCode = hostCode;
+    setOnlineStatus(`Connecting to room ${hostCode}...`);
 
     const peer = new window.Peer();
     net.peer = peer;
 
-    peer.on('open', (id) => {
-      net.myCode = String(id || '');
-      setOnlineStatus(`Online: connecting to ${hostCode}...`);
-      const conn = peer.connect(hostCode, { reliable: true });
+    peer.on('open', () => {
+      if (net.peer !== peer) return;
+      net.myCode = '';
+      const conn = peer.connect(onlinePeerIdForCode(hostCode), { reliable: true });
       bindOnlineConnection(conn);
       updateHud();
     });
     peer.on('error', (err) => {
-      setOnlineStatus(`Online join error: ${err && err.message ? err.message : String(err)}`);
+      if (net.peer !== peer) return;
+      const errType = String(err?.type || '').toLowerCase();
+      if (errType.includes('peer-unavailable')) {
+        setOnlineStatus(`Room ${hostCode} not found. Check the code and try again.`);
+      } else {
+        setOnlineStatus(`Online join error: ${err && err.message ? err.message : String(err)}`);
+      }
       updateHud();
     });
     peer.on('close', () => {
+      if (net.peer !== peer) return;
       onlineDestroyPeer();
       setOnlineStatus('Online: join closed.');
       updateHud();
@@ -2316,22 +2401,28 @@ function unitColors(side) {
     }
     const onlineMode = onlineModeActive();
     const guestOnlineLock = onlineMode && net.connected && !net.isHost;
+    const shownCode = normalizeOnlineCode(net.isHost ? net.myCode : net.remoteCode);
     elModeBtn.disabled = guestOnlineLock;
-    if (elOnlineMyCode) elOnlineMyCode.textContent = net.myCode || '-';
+    if (elOnlineMyCode) {
+      elOnlineMyCode.textContent = shownCode || '----';
+      elOnlineMyCode.classList.toggle('empty', !shownCode);
+    }
+    if (elOnlineRoleHint) elOnlineRoleHint.textContent = onlineRoleHintText();
     if (elOnlineStatus) elOnlineStatus.textContent = net.status;
     setActive(elOnlineHostBtn, onlineMode && !!net.peer && net.isHost);
     setActive(elOnlineJoinBtn, onlineMode && !!net.peer && !net.isHost);
     if (elOnlineHostBtn) {
-      elOnlineHostBtn.disabled = !onlineMode || (net.connected && net.isHost);
+      elOnlineHostBtn.disabled = (net.connected && net.isHost) || (net.peer && !net.isHost);
     }
+    const joinCodeReady = normalizeOnlineCode(elOnlineJoinCode?.value || '').length === ONLINE_CODE_LENGTH;
     if (elOnlineJoinBtn) {
-      elOnlineJoinBtn.disabled = !onlineMode || (net.connected && !net.isHost);
+      elOnlineJoinBtn.disabled = (net.connected && !net.isHost) || (net.peer && net.isHost) || !joinCodeReady;
     }
     if (elOnlineLeaveBtn) {
-      elOnlineLeaveBtn.disabled = !onlineMode || (!net.peer && !net.connected);
+      elOnlineLeaveBtn.disabled = (!net.peer && !net.connected);
     }
     if (elOnlineJoinCode) {
-      elOnlineJoinCode.disabled = !onlineMode || (net.connected && !net.isHost);
+      elOnlineJoinCode.disabled = (net.connected && !net.isHost) || (net.peer && net.isHost);
     }
     if (elForwardAxisSel) {
       elForwardAxisSel.value = (state.forwardAxis === 'horizontal') ? 'horizontal' : 'vertical';
@@ -4394,6 +4485,13 @@ function unitColors(side) {
     });
   }
   if (elOnlineJoinCode) {
+    elOnlineJoinCode.addEventListener('input', () => {
+      const normalized = normalizeOnlineCode(elOnlineJoinCode.value);
+      if (elOnlineJoinCode.value !== normalized) {
+        elOnlineJoinCode.value = normalized;
+      }
+      updateHud();
+    });
     elOnlineJoinCode.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();

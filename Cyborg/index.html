@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bannerfall</title>
-  <link rel="stylesheet" href="style.css?v=20260227-online-p2p" />
+  <link rel="stylesheet" href="style.css?v=20260227-online-shortcode-ui" />
 </head>
 <body>
   <header id="hud">
@@ -67,18 +67,20 @@
       <div class="panel">
         <div class="row">
           <div class="label">Online</div>
-          <button id="onlineHostBtn" class="btn">Host</button>
-          <button id="onlineJoinBtn" class="btn">Join</button>
+          <button id="onlineHostBtn" class="btn wide">Create Room</button>
           <button id="onlineLeaveBtn" class="btn">Leave</button>
         </div>
         <div class="row">
-          <div class="label">Your Code</div>
-          <div id="onlineMyCode" class="monoVal">-</div>
+          <div class="label">Room</div>
+          <div id="onlineMyCode" class="monoVal roomCode empty">----</div>
         </div>
         <div class="row">
-          <div class="label">Friend</div>
-          <input id="onlineJoinCode" class="select" type="text" autocomplete="off" spellcheck="false" placeholder="Enter host code" />
+          <div class="label">Join</div>
+          <input id="onlineJoinCode" class="select" type="text" maxlength="4" autocomplete="off" spellcheck="false" placeholder="AB7K" />
+          <button id="onlineJoinBtn" class="btn">Connect</button>
         </div>
+        <div class="note">Host: Create Room and share code. Guest: enter code and Connect.</div>
+        <div id="onlineRoleHint" class="note">Host sets setup/rules and starts battle. Guest joins as Red.</div>
         <div id="onlineStatus" class="note">Online: idle.</div>
       </div>
 
@@ -190,7 +192,7 @@
           Infantry pivot: in-command (or veteran) <b>INF</b> auto-pivots against flank/rear melee attacks before impact is resolved.<br>
           Line Advance: select friendly <b>INF</b> and press <b>Line Advance</b> (or <b>L</b>) to push a contiguous line forward 1 hex as one activation (movement only, partial if blocked; line shape follows Advance axis).<br>
           Veteran cavalry: after attacking in melee, a veteran <b>CAV</b> may disengage 1 hex if it has movement remaining and can end not adjacent to enemies.<br><br>
-          Online: set Game mode to <b>Online</b>, Host shares code, friend joins with code. Host controls setup and mode; Host plays Blue, Guest plays Red.<br>
+          Online: set Game mode to <b>Online</b>, Host creates room and shares a <b>4-character code</b>, friend enters code to connect. Host controls setup and mode; Host plays Blue, Guest plays Red.<br>
           Dice: <b>5–6</b> = Hit, <b>4</b> = Retreat (blocked retreat → 1 hit). Woods: defender reduces attacker dice by 1 (min 1).<br>
           Pass: press <b>P</b> with a selected unit.<br>
           UI: spent units are dim. Green out-of-command units show a dashed orange ring. Toggle command radius with <b>C</b>.
@@ -251,7 +253,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260227-online-p2p"></script>
-  <script src="main.js?v=20260227-online-p2p"></script>
+  <script src="build.js?v=20260227-online-shortcode-ui"></script>
+  <script src="main.js?v=20260227-online-shortcode-ui"></script>
 </body>
 </html>

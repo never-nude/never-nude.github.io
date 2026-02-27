@@ -91,6 +91,21 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   word-break:break-all;
 }
 
+.roomCode{
+  justify-content:center;
+  letter-spacing:0.22em;
+  font-size:20px;
+  font-weight:800;
+  color:#e7f0ff;
+}
+
+.roomCode.empty{
+  letter-spacing:0.08em;
+  font-size:13px;
+  font-weight:650;
+  color:var(--muted);
+}
+
 .note{
   color:var(--muted);
   font-size:12px;
