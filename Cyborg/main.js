@@ -89,6 +89,8 @@
   const AI_START_DELAY_MS = 300;
   const MOVE_ANIM_STEP_MS_HUMAN = 170;
   const MOVE_ANIM_STEP_MS_AI = 340;
+  const INF_SUPPORT_MAX_RANKS = 2;
+  const INF_SUPPORT_DICE_PER_RANK = 1;
   const AI_DIFFICULTY_PROFILES = {
     levy: {
       label: 'Levy',
@@ -264,6 +266,13 @@
       case 'down': return 'up';
       default: return null;
     }
+  }
+
+  function adjacentDirection(fromKey, toKey) {
+    for (const d of ['e', 'w', 'ur', 'ul', 'dr', 'dl']) {
+      if (stepKeyInDirection(fromKey, d) === toKey) return d;
+    }
+    return null;
   }
 
   function axisLateralDirections(axis = state.forwardAxis) {
@@ -443,7 +452,7 @@
   const elCombatTerrain = document.getElementById('combatTerrain');
   const elCombatOutcome = document.getElementById('combatOutcome');
   const elCombatHint = document.getElementById('combatHint');
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1).';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Infantry support directly opposite an adjacent melee attack gives attacker -1 die per supporting rank (up to 2).';
   let diceRenderNonce = 0;
 
   const elVictorySel = document.getElementById('victorySel');
@@ -3704,7 +3713,7 @@ function unitColors(side) {
     state.lastCombat = null;
     if (elCombatSummary) elCombatSummary.textContent = 'No combat yet. Select a unit and attack to see exact dice math.';
     if (elCombatMath) elCombatMath.textContent = 'Dice math: -';
-    if (elCombatTerrain) elCombatTerrain.textContent = 'Terrain modifier: -';
+    if (elCombatTerrain) elCombatTerrain.textContent = 'Defense modifiers: -';
     if (elCombatOutcome) elCombatOutcome.textContent = 'Outcome: -';
     if (elCombatHint) elCombatHint.textContent = COMBAT_RULE_HINT;
   }
@@ -3722,19 +3731,25 @@ function unitColors(side) {
     const pivotText = info.pivoted ? ` (defender pivoted from ${info.pivotFrom})` : '';
     const terrainName = terrainLabel(info.defenderTerrain || 'clear');
     const terrainDelta = Number(info.terrainDiceMod || 0);
+    const supportDelta = Number(info.supportDiceMod || 0);
+    const supportRanks = Math.max(0, Number(info.supportRanks || 0));
     const terrainMath = terrainDelta
       ? `${terrainName} ${terrainDelta > 0 ? `+${terrainDelta}` : `${terrainDelta}`} die`
       : `${terrainName}: no dice change`;
+    const supportMath = supportDelta
+      ? `${supportRanks} rank${supportRanks === 1 ? '' : 's'} ${supportDelta > 0 ? `+${supportDelta}` : `${supportDelta}`} dice`
+      : 'none';
     const flankText = info.flankBonus ? ` + flank ${info.flankBonus}` : '';
     const rearText = info.rearBonus ? ` + rear ${info.rearBonus}` : '';
     const terrainText = terrainDelta ? ` ${terrainDelta > 0 ? '+' : '-'} terrain ${Math.abs(terrainDelta)}` : '';
+    const supportText = supportDelta ? ` - support ${Math.abs(supportDelta)}` : '';
 
     elCombatSummary.textContent =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
     elCombatMath.textContent =
-      `Dice math: base ${info.baseDice}${flankText}${rearText}${terrainText} = ${info.dice}.`;
+      `Dice math: base ${info.baseDice}${flankText}${rearText}${terrainText}${supportText} = ${info.dice}.`;
     elCombatTerrain.textContent =
-      `Terrain modifier: ${terrainMath}.`;
+      `Defense modifiers: terrain ${terrainMath}; infantry support ${supportMath}.`;
 
     const retreatResolved =
       (typeof info.retreatMoved === 'number' || typeof info.retreatBlocked === 'number')
@@ -3760,9 +3775,12 @@ function unitColors(side) {
     const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
     const terrainName = terrainLabel(info.defenderTerrain || 'clear');
     const terrainText = info.terrainDiceMod ? `, ${terrainName.toLowerCase()} ${info.terrainDiceMod > 0 ? '+' : ''}${info.terrainDiceMod}` : `, ${terrainName.toLowerCase()} 0`;
+    const supportText = info.supportDiceMod
+      ? `, support ${info.supportDiceMod > 0 ? '+' : ''}${info.supportDiceMod} (${Math.max(0, Number(info.supportRanks || 0))} rank${Math.max(0, Number(info.supportRanks || 0)) === 1 ? '' : 's'})`
+      : ', support 0';
     const finalSummary =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
-      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${terrainText}) · ` +
+      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${terrainText}${supportText}) · ` +
       `H ${info.hits} / R ${info.retreats} / M ${info.misses}`;
     elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
 
@@ -5513,6 +5531,26 @@ function unitColors(side) {
     return inCommandAt(defenderKey, defenderUnit.side);
   }
 
+  function infantrySupportRanks(defenderKey, attackerKey, defenderUnit) {
+    if (!defenderUnit || defenderUnit.type !== 'inf') return 0;
+    const attackDir = adjacentDirection(defenderKey, attackerKey);
+    if (!attackDir) return 0;
+    const backDir = oppositeDirection(attackDir);
+    if (!backDir) return 0;
+
+    let ranks = 0;
+    let cur = defenderKey;
+    for (let i = 0; i < INF_SUPPORT_MAX_RANKS; i++) {
+      const backKey = stepKeyInDirection(cur, backDir);
+      if (!backKey) break;
+      const backUnit = unitsByHex.get(backKey);
+      if (!backUnit || backUnit.side !== defenderUnit.side || backUnit.type !== 'inf') break;
+      ranks += 1;
+      cur = backKey;
+    }
+    return ranks;
+  }
+
   function cavalryAngleBonuses(attackerUnit, defenderUnit, kind, position) {
     if (!ENABLE_CAV_ANGLE_BONUS) return { flankBonus: 0, rearBonus: 0, totalBonus: 0 };
     if (kind !== 'melee') return { flankBonus: 0, rearBonus: 0, totalBonus: 0 };
@@ -5687,6 +5725,13 @@ function unitColors(side) {
     const defHex = board.byKey.get(defenderKey);
     const defenderTerrain = defHex?.terrain || 'clear';
     const terrainDiceMod = (defenderTerrain === 'woods') ? -1 : 0;
+    const supportRanks = (prof.kind === 'melee')
+      ? infantrySupportRanks(defenderKey, attackerKey, defU)
+      : 0;
+    const supportDiceMod = supportRanks > 0
+      ? -(Math.min(INF_SUPPORT_MAX_RANKS, supportRanks) * INF_SUPPORT_DICE_PER_RANK)
+      : 0;
+    const defenseDiceMod = terrainDiceMod + supportDiceMod;
     const terrainRuleText = (defenderTerrain === 'woods')
       ? 'Defender in Woods: attacker rolls -1 die (minimum 1).'
       : `Defender in ${terrainLabel(defenderTerrain)}: no terrain dice modifier in this ruleset.`;
@@ -5695,7 +5740,7 @@ function unitColors(side) {
     const flankBonus = impact.flankBonus;
     const rearBonus = impact.rearBonus;
     const preTerrainDice = baseDice + impact.totalBonus;
-    const dice = terrainDiceMod ? Math.max(1, preTerrainDice + terrainDiceMod) : preTerrainDice;
+    const dice = defenseDiceMod ? Math.max(1, preTerrainDice + defenseDiceMod) : preTerrainDice;
 
     const rolls = [];
     for (let i = 0; i < dice; i++) rolls.push(rollD6());
@@ -5721,6 +5766,7 @@ function unitColors(side) {
     if (flankBonus) modParts.push(`flank +${flankBonus}`);
     if (rearBonus) modParts.push(`rear +${rearBonus}`);
     if (terrainDiceMod) modParts.push(`${terrainLabel(defenderTerrain).toLowerCase()} ${terrainDiceMod}`);
+    if (supportDiceMod) modParts.push(`inf support ${supportDiceMod}`);
     const modText = ` (${modParts.join(', ')})`;
     const combatInfo = {
       attacker: tag,
@@ -5736,6 +5782,9 @@ function unitColors(side) {
       pivotFrom,
       woodsPenalty: terrainDiceMod < 0 ? Math.abs(terrainDiceMod) : 0,
       terrainDiceMod,
+      supportRanks,
+      supportDiceMod,
+      defenseDiceMod,
       defenderTerrain,
       terrainRuleText,
       hits,
