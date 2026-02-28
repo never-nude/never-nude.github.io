@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-apollo-v1" />
+  <link rel="stylesheet" href="style.css?v=20260228-pre-apollo-v51" />
 </head>
 <body>
   <header id="hud">
@@ -58,51 +58,45 @@
           <button id="toolUnits" class="btn">Units</button>
           <button id="toolTerrain" class="btn">Terrain</button>
         </div>
-      </div>
-
-      <div class="panel editorOnly">
-        <div class="panelTitle">Editor Tools</div>
-        <div class="row">
-          <div class="label">Side</div>
-          <button id="sideBlue" class="btn">Blue</button>
-          <button id="sideRed" class="btn">Red</button>
-        </div>
-
-        <div class="row">
-          <div class="label">Type</div>
-          <div id="typeBtns" class="btnGrid">
-            <button class="btn" data-type="inf">Infantry</button>
-            <button class="btn" data-type="cav">Cavalry</button>
-            <button class="btn" data-type="skr">Skirmisher</button>
-            <button class="btn" data-type="arc">Archer</button>
-            <button class="btn" data-type="gen">General</button>
-            <button class="btn" data-type="run">Runner</button>
-            <button class="btn" data-type="iat">Medic</button>
+        <div class="setupEditorBlock editorOnly">
+          <div class="panelTitle">Editor Tools</div>
+          <div class="row">
+            <div class="label">Side</div>
+            <button id="sideBlue" class="btn">Blue</button>
+            <button id="sideRed" class="btn">Red</button>
+          </div>
+          <div class="row">
+            <div class="label">Type</div>
+            <div id="typeBtns" class="btnGrid">
+              <button class="btn" data-type="inf">Infantry</button>
+              <button class="btn" data-type="cav">Cavalry</button>
+              <button class="btn" data-type="skr">Skirmisher</button>
+              <button class="btn" data-type="arc">Archer</button>
+              <button class="btn" data-type="gen">General</button>
+              <button class="btn" data-type="run">Runner</button>
+              <button class="btn" data-type="iat">Medic</button>
+            </div>
+          </div>
+          <div class="row">
+            <button id="eraseBtn" class="btn wide">Erase</button>
+          </div>
+          <div class="row">
+            <div class="label">Quality</div>
+            <button id="qGreen" class="btn">Green</button>
+            <button id="qRegular" class="btn">Regular</button>
+            <button id="qVeteran" class="btn">Veteran</button>
+          </div>
+          <div class="row">
+            <div class="label">Terrain</div>
+            <div id="terrainBtns" class="btnGrid">
+              <button class="btn" data-terrain="clear">Clear</button>
+              <button class="btn" data-terrain="hills">Hills</button>
+              <button class="btn" data-terrain="woods">Woods</button>
+              <button class="btn" data-terrain="rough">Rough</button>
+              <button class="btn" data-terrain="water">Water</button>
+            </div>
           </div>
         </div>
-
-        <div class="row">
-          <button id="eraseBtn" class="btn wide">Erase</button>
-        </div>
-
-        <div class="row">
-          <div class="label">Quality</div>
-          <button id="qGreen" class="btn">Green</button>
-          <button id="qRegular" class="btn">Regular</button>
-          <button id="qVeteran" class="btn">Veteran</button>
-        </div>
-
-        <div class="row">
-          <div class="label">Terrain</div>
-          <div id="terrainBtns" class="btnGrid">
-            <button class="btn" data-terrain="clear">Clear</button>
-            <button class="btn" data-terrain="hills">Hills</button>
-            <button class="btn" data-terrain="woods">Woods</button>
-            <button class="btn" data-terrain="rough">Rough</button>
-            <button class="btn" data-terrain="water">Water</button>
-          </div>
-        </div>
-
       </div>
     </aside>
   </main>
@@ -225,7 +219,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-apollo-v1"></script>
-  <script src="main.js?v=20260228-apollo-v1"></script>
+  <script src="build.js?v=20260228-pre-apollo-v51"></script>
+  <script src="main.js?v=20260228-pre-apollo-v51"></script>
 </body>
 </html>

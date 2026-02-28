@@ -649,6 +649,12 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   gap:6px;
 }
 
+.setupEditorBlock{
+  margin-top:6px;
+  padding-top:6px;
+  border-top:1px dashed rgba(255,255,255,0.12);
+}
+
 .combatColOnline .btn,
 .combatColOnline .input,
 .combatColOnline .select{
