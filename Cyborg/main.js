@@ -278,6 +278,31 @@
     return null;
   }
 
+  const LINE_AXIS_PAIRS = [
+    ['w', 'e'],
+    ['ul', 'dr'],
+    ['ur', 'dl'],
+  ];
+  const LINE_ADVANCE_DIRECTION_ORDER = ['ul', 'ur', 'e', 'dr', 'dl', 'w'];
+  const LINE_ADVANCE_DIRECTION_LABELS = {
+    e: 'Right',
+    w: 'Left',
+    ur: 'Up-Right',
+    ul: 'Up-Left',
+    dr: 'Down-Right',
+    dl: 'Down-Left',
+  };
+
+  function normalizeLineAdvanceDirection(dir) {
+    return HEX_DIRECTIONS.includes(dir) ? dir : null;
+  }
+
+  function lineAdvanceDirectionLabel(dir) {
+    const k = normalizeLineAdvanceDirection(dir);
+    if (!k) return 'Auto';
+    return LINE_ADVANCE_DIRECTION_LABELS[k] || k.toUpperCase();
+  }
+
   function axisLateralDirections(axis = state.forwardAxis) {
     const a = normalizeForwardAxis(axis);
     if (a === 'horizontal') return ['up', 'down'];
@@ -477,6 +502,7 @@
     <p>Tree-line rule: Archers and skirmishers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
     <p>Hill missile rule: ARC/SKR on Hills get +1 ranged die and +1 max range.</p>
     <p>Friction rule: all units that enter Rough must pause movement on their next turn. SKR and RUN move one hex at a time while in or entering Woods/Hills. INF also pause after entering Woods/Hills, ARC pause after entering Woods, and MED pause after entering Woods.</p>
+    <p>Line Advance: select a friendly INF, choose a line direction, then issue the order. The line can advance into one of four non-lateral directions based on its current orientation.</p>
     <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
@@ -527,7 +553,7 @@
     <p>An infantry defender is reinforced only when it has a touching adjacent pair of friendly infantry. If the attack comes from the opposite brace directions, attacker dice are reduced by 1 (minimum 1 die). Reinforcement is one line deep only.</p>
     <p>UI cue: light cyan marks reinforced units; darker cyan marks the units providing the brace.</p>
     <h4>Line Advance</h4>
-    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step forward. It does not include attacks. Some units may move while blocked units remain in place.</p>
+    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step in a selected advance direction. The UI offers four non-lateral options based on the line's orientation. It does not include attacks. Some units may move while blocked units remain in place.</p>
     <h4>Victory Conditions</h4>
     <ul>
       <li>Clear Victory: capture at least half of the opponent's starting UP.</li>
@@ -541,6 +567,7 @@
   const elVictorySel = document.getElementById('victorySel');
   const elEndTurnBtn = document.getElementById('endTurnBtn');
   const elLineAdvanceBtn = document.getElementById('lineAdvanceBtn');
+  const elLineAdvanceDirSel = document.getElementById('lineAdvanceDirSel');
   const elOnlineHostBtn = document.getElementById('onlineHostBtn');
   const elOnlineJoinBtn = document.getElementById('onlineJoinBtn');
   const elOnlineLeaveBtn = document.getElementById('onlineLeaveBtn');
@@ -603,6 +630,7 @@
     actionPulse: null,
     actionPulseRaf: null,
     lineAdvancePreviewHover: false,
+    lineAdvanceDir: null,
 
     draft: {
       active: false,
@@ -3635,7 +3663,7 @@ function unitColors(side) {
         const row = collectContiguousInfantryRow(state.selectedKey);
         if (row.length <= 1) return null;
       }
-      return lineAdvancePreviewForAnchor(state.selectedKey);
+      return lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
     })();
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
@@ -4855,7 +4883,7 @@ function unitColors(side) {
         passSelected();
         return true;
       case 'line_advance':
-        lineAdvanceFromSelection();
+        lineAdvanceFromSelection(action.advanceDir);
         return true;
       case 'end_turn':
         endTurn();
@@ -5258,9 +5286,44 @@ function unitColors(side) {
     }
     updateDraftStatusUi();
 
+    const selectedLineAdvancePreview = (() => {
+      if (state.mode !== 'play' || !state.selectedKey) return null;
+      const u = unitsByHex.get(state.selectedKey);
+      if (!u || u.side !== state.side || u.type !== 'inf') return null;
+      return lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
+    })();
+
     elEndTurnBtn.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
     if (elLineAdvanceBtn) {
-      elLineAdvanceBtn.disabled = !canIssueLineAdvance();
+      elLineAdvanceBtn.disabled = !(selectedLineAdvancePreview && selectedLineAdvancePreview.anyMoves);
+    }
+    if (elLineAdvanceDirSel) {
+      const options = selectedLineAdvancePreview?.directionOptions || [];
+      if (options.length > 0) {
+        if (state.lineAdvanceDir !== selectedLineAdvancePreview.advanceDir) {
+          state.lineAdvanceDir = selectedLineAdvancePreview.advanceDir;
+        }
+        elLineAdvanceDirSel.innerHTML = '';
+        for (const d of options) {
+          const opt = document.createElement('option');
+          opt.value = d;
+          const plan = selectedLineAdvancePreview.directionPlans?.[d];
+          const moved = Array.isArray(plan?.moves) ? plan.moves.length : 0;
+          const total = selectedLineAdvancePreview.formation.length;
+          opt.textContent = `${lineAdvanceDirectionLabel(d)} (${moved}/${total})`;
+          elLineAdvanceDirSel.appendChild(opt);
+        }
+        elLineAdvanceDirSel.value = selectedLineAdvancePreview.advanceDir || options[0];
+        elLineAdvanceDirSel.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
+      } else {
+        elLineAdvanceDirSel.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Select INF line';
+        elLineAdvanceDirSel.appendChild(opt);
+        elLineAdvanceDirSel.value = '';
+        elLineAdvanceDirSel.disabled = true;
+      }
     }
 
     // Keep combat rail columns anchored at their headers.
@@ -6266,13 +6329,11 @@ function unitColors(side) {
     return true;
   }
 
-  function collectContiguousInfantryRow(anchorKey) {
+  function collectContiguousInfantryRowByDirs(anchorKey, beforeDir, afterDir) {
     const anchorUnit = unitsByHex.get(anchorKey);
     if (!anchorUnit) return [];
     if (anchorUnit.type !== 'inf') return [];
     if (anchorUnit.side !== state.side) return [];
-
-    const [beforeDir, afterDir] = axisLateralDirections(state.forwardAxis);
     const before = [];
     const after = [];
     const rowSide = anchorUnit.side;
@@ -6296,13 +6357,59 @@ function unitColors(side) {
     return [...before, anchorKey, ...after];
   }
 
+  function detectLineAxisForAnchor(anchorKey) {
+    const anchorUnit = unitsByHex.get(anchorKey);
+    if (!anchorUnit || anchorUnit.type !== 'inf') return null;
+    const rowSide = anchorUnit.side;
+
+    const candidates = [];
+    for (const [beforeDir, afterDir] of LINE_AXIS_PAIRS) {
+      const row = collectContiguousInfantryRowByDirs(anchorKey, beforeDir, afterDir);
+      const eligibleCount = row.reduce((n, hk) => {
+        const u = unitsByHex.get(hk);
+        return n + (canLineAdvanceInfAt(hk, u) ? 1 : 0);
+      }, 0);
+      candidates.push({
+        dirs: [beforeDir, afterDir],
+        row,
+        rowLength: row.length,
+        eligibleCount,
+      });
+    }
+
+    candidates.sort((a, b) => {
+      if (b.rowLength !== a.rowLength) return b.rowLength - a.rowLength;
+      if (b.eligibleCount !== a.eligibleCount) return b.eligibleCount - a.eligibleCount;
+      const sideFwd = sideForwardDirection(rowSide, state.forwardAxis);
+      const aBias = a.dirs.includes(sideFwd) ? 1 : 0;
+      const bBias = b.dirs.includes(sideFwd) ? 1 : 0;
+      return bBias - aBias;
+    });
+
+    return candidates[0] || null;
+  }
+
+  function collectContiguousInfantryRow(anchorKey) {
+    const axis = detectLineAxisForAnchor(anchorKey);
+    return axis ? axis.row : [];
+  }
+
+  function lineAdvanceDirectionOptionsForRowDirs(rowDirs = []) {
+    const blocked = new Set(rowDirs);
+    const opts = [];
+    for (const d of LINE_ADVANCE_DIRECTION_ORDER) {
+      if (!blocked.has(d)) opts.push(d);
+    }
+    return opts;
+  }
+
   function collectLineAdvanceFormation(anchorKey) {
     const row = collectContiguousInfantryRow(anchorKey);
     if (row.length === 0) return [];
     return row.filter((hk) => canLineAdvanceInfAt(hk, unitsByHex.get(hk)));
   }
 
-  function lineAdvanceMovePlan(formation) {
+  function lineAdvanceMovePlan(formation, advanceDir = null) {
     const formationSet = new Set(formation);
     const moves = [];
     const blocked = [];
@@ -6312,7 +6419,8 @@ function unitColors(side) {
       const u = unitsByHex.get(fromKey);
       if (!u) continue;
 
-      const toKey = forwardStepKey(fromKey, u.side);
+      const dir = normalizeLineAdvanceDirection(advanceDir) || sideForwardDirection(u.side, state.forwardAxis);
+      const toKey = stepKeyInDirection(fromKey, dir);
       if (!toKey) {
         blocked.push({ fromKey, reason: 'off-board' });
         continue;
@@ -6342,21 +6450,40 @@ function unitColors(side) {
       moves.push({ fromKey, toKey, unit: u });
     }
 
-    return { moves, blocked };
+    return { moves, blocked, advanceDir: normalizeLineAdvanceDirection(advanceDir) };
   }
 
-  function lineAdvancePreviewForAnchor(anchorKey) {
-    const row = collectContiguousInfantryRow(anchorKey);
+  function preferredLineAdvanceDirection(preferredDir, optionDirs, anchorSide) {
+    const preferred = normalizeLineAdvanceDirection(preferredDir);
+    if (preferred && optionDirs.includes(preferred)) return preferred;
+    const sideFwd = sideForwardDirection(anchorSide, state.forwardAxis);
+    if (optionDirs.includes(sideFwd)) return sideFwd;
+    return optionDirs[0] || null;
+  }
+
+  function lineAdvancePreviewForAnchor(anchorKey, preferredDir = state.lineAdvanceDir) {
+    const axis = detectLineAxisForAnchor(anchorKey);
+    const row = axis ? axis.row : [];
     if (row.length === 0) return null;
 
     const formation = row.filter((hk) => canLineAdvanceInfAt(hk, unitsByHex.get(hk)));
-    const plan = lineAdvanceMovePlan(formation);
+    const rowDirs = axis ? axis.dirs : [];
+    const directionOptions = lineAdvanceDirectionOptionsForRowDirs(rowDirs);
+    const anchorUnit = unitsByHex.get(anchorKey);
+    const advanceDir = preferredLineAdvanceDirection(preferredDir, directionOptions, anchorUnit?.side || state.side);
+    const directionPlans = {};
+    let anyMoves = false;
+    for (const d of directionOptions) {
+      const p = lineAdvanceMovePlan(formation, d);
+      directionPlans[d] = p;
+      if (p.moves.length > 0) anyMoves = true;
+    }
+    const plan = advanceDir ? (directionPlans[advanceDir] || lineAdvanceMovePlan(formation, advanceDir)) : { moves: [], blocked: [], advanceDir: null };
     const destinationSet = new Set(plan.moves.map(m => m.toKey));
     const movableSet = new Set(plan.moves.map(m => m.fromKey));
     const blockedSet = new Set(plan.blocked.map(b => b.fromKey));
     const rowSet = new Set(row);
     const formationSet = new Set(formation);
-    const anchorUnit = unitsByHex.get(anchorKey);
 
     return {
       anchorKey,
@@ -6369,6 +6496,11 @@ function unitColors(side) {
       destinationSet,
       movableSet,
       blockedSet,
+      rowDirs,
+      directionOptions,
+      directionPlans,
+      anyMoves,
+      advanceDir,
       forwardDir: sideForwardDirection(anchorUnit?.side || state.side, state.forwardAxis),
     };
   }
@@ -6381,12 +6513,19 @@ function unitColors(side) {
 
     const u = unitsByHex.get(state.selectedKey);
     if (!u || u.side !== state.side || u.type !== 'inf') return false;
-    const preview = lineAdvancePreviewForAnchor(state.selectedKey);
+    const preview = lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
     if (!preview) return false;
-    return preview.moves.length > 0;
+    return !!preview.anyMoves;
   }
 
-  function lineAdvanceFromSelection() {
+  function selectedLineAdvanceDirection() {
+    if (!state.selectedKey) return normalizeLineAdvanceDirection(state.lineAdvanceDir);
+    const preview = lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
+    if (!preview) return normalizeLineAdvanceDirection(state.lineAdvanceDir);
+    return normalizeLineAdvanceDirection(preview.advanceDir);
+  }
+
+  function lineAdvanceFromSelection(explicitAdvanceDir = null) {
     if (state.mode !== 'play') return;
     if (state.gameOver) return;
     if (isAiTurnActive()) return;
@@ -6409,21 +6548,23 @@ function unitColors(side) {
       return;
     }
 
-    const preview = lineAdvancePreviewForAnchor(anchorKey);
+    const chosenAdvanceDir = normalizeLineAdvanceDirection(explicitAdvanceDir) || state.lineAdvanceDir;
+    const preview = lineAdvancePreviewForAnchor(anchorKey, chosenAdvanceDir);
     const formation = preview ? preview.formation : [];
     const fullRow = preview ? preview.row : [];
+    const advanceDir = preview ? preview.advanceDir : null;
     if (formation.length === 0) {
       log('Line Advance unavailable: selected INF cannot form an eligible line.');
       updateHud();
       return;
     }
 
-    const plan = preview || lineAdvanceMovePlan(formation);
+    const plan = preview || lineAdvanceMovePlan(formation, advanceDir);
     const moves = plan.moves;
     const blocked = plan.blocked;
 
     if (moves.length === 0) {
-      log('Line Advance blocked: no INF in the line can step forward.');
+      log(`Line Advance blocked toward ${lineAdvanceDirectionLabel(advanceDir)}: no INF in the line can step there.`);
       updateHud();
       return;
     }
@@ -6461,7 +6602,7 @@ function unitColors(side) {
     const pauseText = terrainPauseCount > 0
       ? ` terrain-pause ${terrainPauseCount}`
       : '';
-    log(`Line Advance: ${moves.length}/${formation.length} INF advanced${eligibilityText}.${blockText}${pauseText}.`);
+    log(`Line Advance ${lineAdvanceDirectionLabel(advanceDir)}: ${moves.length}/${formation.length} INF advanced${eligibilityText}.${blockText}${pauseText}.`);
     if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
@@ -8469,6 +8610,7 @@ function unitColors(side) {
         humanSide: state.humanSide,
         aiDifficulty: state.aiDifficulty,
         forwardAxis: state.forwardAxis,
+        lineAdvanceDir: state.lineAdvanceDir,
         tool: state.tool,
         turn: state.turn,
         side: state.side,
@@ -8693,6 +8835,7 @@ function unitColors(side) {
     state.humanSide = normalizeSide(payload.humanSide);
     state.aiDifficulty = normalizeAiDifficulty(payload.aiDifficulty);
     state.forwardAxis = normalizeForwardAxis(payload.forwardAxis);
+    state.lineAdvanceDir = normalizeLineAdvanceDirection(payload.lineAdvanceDir);
     state.mode = restoreMode;
     state.tool = (payload.tool === 'terrain') ? 'terrain' : 'units';
 
@@ -9218,8 +9361,9 @@ function unitColors(side) {
     if (e.key === 'l' || e.key === 'L') {
       if (state.mode === 'play' && !isAiTurnActive()) {
         e.preventDefault();
-        if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance' })) return;
-        lineAdvanceFromSelection();
+        const advanceDir = selectedLineAdvanceDirection();
+        if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance', advanceDir })) return;
+        lineAdvanceFromSelection(advanceDir);
       }
     }
 
@@ -9454,6 +9598,14 @@ function unitColors(side) {
     if (onlineModeActive() && forwardOnlineAction({ type: 'end_turn' })) return;
     endTurn();
   });
+  if (elLineAdvanceDirSel) {
+    elLineAdvanceDirSel.addEventListener('change', () => {
+      const next = normalizeLineAdvanceDirection(elLineAdvanceDirSel.value);
+      if (!next) return;
+      state.lineAdvanceDir = next;
+      updateHud();
+    });
+  }
   if (elLineAdvanceBtn) {
     const setLineAdvancePreviewHover = (isHovering) => {
       const next = !!isHovering;
@@ -9466,8 +9618,9 @@ function unitColors(side) {
     elLineAdvanceBtn.addEventListener('focus', () => setLineAdvancePreviewHover(true));
     elLineAdvanceBtn.addEventListener('blur', () => setLineAdvancePreviewHover(false));
     elLineAdvanceBtn.addEventListener('click', () => {
-      if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance' })) return;
-      lineAdvanceFromSelection();
+      const advanceDir = selectedLineAdvanceDirection();
+      if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance', advanceDir })) return;
+      lineAdvanceFromSelection(advanceDir);
     });
   }
 
