@@ -6966,13 +6966,19 @@ function unitColors(side) {
   function chooseRandomStartupProfile() {
     const sizeRoll = Math.random();
     let size = 'medium';
-    let baseUnits = randInt(24, 30);
-    if (sizeRoll < 0.33) {
+    let baseUnits = randInt(23, 28);
+
+    // Most generated battles should be readable and playable quickly:
+    // generally 20-30 units per side, with rare larger clashes.
+    if (sizeRoll < 0.20) {
       size = 'small';
-      baseUnits = randInt(18, 22);
-    } else if (sizeRoll >= 0.76) {
+      baseUnits = randInt(20, 22);
+    } else if (sizeRoll >= 0.96) {
       size = 'large';
-      baseUnits = randInt(34, 42);
+      baseUnits = randInt(32, 36);
+    } else if (sizeRoll >= 0.84) {
+      size = 'medium';
+      baseUnits = randInt(26, 30);
     }
 
     let blueUnits = baseUnits;
@@ -6980,24 +6986,39 @@ function unitColors(side) {
     let matchup = 'even';
 
     const asymmetryRoll = Math.random();
-    const delta =
-      (size === 'small') ? randInt(3, 6) :
-      (size === 'large') ? randInt(7, 12) :
-      randInt(5, 9);
 
-    if (asymmetryRoll < 0.22) {
-      matchup = 'blue_advantage';
-      blueUnits += delta;
-    } else if (asymmetryRoll < 0.44) {
-      matchup = 'red_advantage';
-      redUnits += delta;
+    if (asymmetryRoll < 0.20) {
+      // Common asymmetry: one side gets a modest edge.
+      const delta =
+        (size === 'small') ? randInt(3, 5) :
+        (size === 'large') ? randInt(6, 9) :
+        randInt(4, 7);
+      if (Math.random() < 0.5) {
+        matchup = 'blue_advantage';
+        blueUnits += delta;
+      } else {
+        matchup = 'red_advantage';
+        redUnits += delta;
+      }
+    } else if (asymmetryRoll < 0.24) {
+      // Rare dramatic mismatch (e.g., ~40 vs ~20) for variety.
+      size = 'large';
+      if (Math.random() < 0.5) {
+        matchup = 'blue_advantage';
+        blueUnits = randInt(38, 40);
+        redUnits = randInt(20, 24);
+      } else {
+        matchup = 'red_advantage';
+        redUnits = randInt(38, 40);
+        blueUnits = randInt(20, 24);
+      }
     }
 
     return {
       size,
       matchup,
-      blueUnits: clampInt(blueUnits, 12, 48, baseUnits),
-      redUnits: clampInt(redUnits, 12, 48, baseUnits),
+      blueUnits: clampInt(blueUnits, 20, 42, baseUnits),
+      redUnits: clampInt(redUnits, 20, 42, baseUnits),
     };
   }
 
