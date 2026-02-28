@@ -804,3 +804,57 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   .label{width:80px;}
   #combatRail{grid-template-columns:1fr; gap:8px;}
 }
+
+@media (min-width: 2200px) and (min-height: 1200px){
+  :root{
+    --side-w:360px;
+    --hud-h:64px;
+    --combat-h:248px;
+  }
+
+  #hudTitle{
+    font-size:32px;
+  }
+
+  .panelTitle{
+    font-size:13px;
+  }
+
+  .uType,
+  .uStat,
+  .uAtk,
+  .terrainHead,
+  .terrainCell{
+    font-size:11px;
+  }
+
+  .label{
+    width:96px;
+    font-size:12px;
+  }
+
+  .btn,
+  .select,
+  .input{
+    min-height:30px;
+    padding:7px 10px;
+    font-size:12px;
+  }
+
+  .combatColTitle{
+    font-size:12px;
+  }
+
+  .combatSummary,
+  .combatMeta{
+    font-size:11px;
+  }
+
+  .modifierPreview{
+    font-size:12px;
+  }
+
+  .combatHint{
+    font-size:10px;
+  }
+}

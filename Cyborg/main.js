@@ -3126,7 +3126,10 @@
     // height ≈ R*((rows-1)*1.5 + 2)
     const rByW = availW / (Math.sqrt(3) * (cols + 0.5));
     const rByH = availH / (((rows - 1) * 1.5) + 2);
-    R = Math.max(18, Math.min(42, Math.floor(Math.min(rByW, rByH))));
+    // On large/ultrawide displays, allow a larger token scale so the board
+    // doesn't look undersized.
+    const maxR = (availW >= 2200 && availH >= 900) ? 52 : 42;
+    R = Math.max(18, Math.min(maxR, Math.floor(Math.min(rByW, rByH))));
 
     HEX_W = Math.sqrt(3) * R;
     HEX_H = 2 * R;
