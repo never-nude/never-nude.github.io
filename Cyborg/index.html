@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-apollo-v45" />
+  <link rel="stylesheet" href="style.css?v=20260228-pre-apollo-v46" />
 </head>
 <body>
   <header id="hud">
@@ -45,8 +45,9 @@
           <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
           <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
         </div>
-        <div class="row">
-          <button id="guidebookBtn" class="btn wide">Open Full Guidebook</button>
+        <div class="rulesDock">
+          <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
+          <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
         </div>
       </div>
 
@@ -179,10 +180,6 @@
       <div id="combatOutcome" class="combatMeta">Outcome: -</div>
       <div class="combatColTitle">Victory Track</div>
       <div id="victoryTrackBody" class="victoryTrackBody">Victory: -</div>
-      <div class="rulesLauncher">
-        <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
-        <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
-      </div>
     </div>
     <div class="combatCol combatColOnline">
       <div class="combatColTitle">Online Multiplayer</div>
@@ -234,7 +231,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-apollo-v45"></script>
-  <script src="main.js?v=20260228-apollo-v45"></script>
+  <script src="build.js?v=20260228-pre-apollo-v46"></script>
+  <script src="main.js?v=20260228-pre-apollo-v46"></script>
 </body>
 </html>

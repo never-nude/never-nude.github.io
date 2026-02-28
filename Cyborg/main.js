@@ -461,7 +461,6 @@
   const elVictoryTrackBody = document.getElementById('victoryTrackBody');
   const elRulesShortBtn = document.getElementById('rulesShortBtn');
   const elRulesFullBtn = document.getElementById('rulesFullBtn');
-  const elGuidebookBtn = document.getElementById('guidebookBtn');
   const elRulesModal = document.getElementById('rulesModal');
   const elRulesModalTitle = document.getElementById('rulesModalTitle');
   const elRulesModalBody = document.getElementById('rulesModalBody');
@@ -4237,12 +4236,12 @@ function unitColors(side) {
         <div class="victoryRow">
           <div class="victoryLabel blue">Blue</div>
           <div class="victoryBar"><div class="victoryFill blue" style="width:${bluePct.toFixed(1)}%"></div></div>
-          <div class="victoryValue">${blueCap}/${needBlue}</div>
+          <div class="victoryValue">UP captured: ${blueCap}/${needBlue}</div>
         </div>
         <div class="victoryRow">
           <div class="victoryLabel red">Red</div>
           <div class="victoryBar"><div class="victoryFill red" style="width:${redPct.toFixed(1)}%"></div></div>
-          <div class="victoryValue">${redCap}/${needRed}</div>
+          <div class="victoryValue">UP captured: ${redCap}/${needRed}</div>
         </div>
         <div class="victoryNote">First side to fill its bar reaches Clear Victory.</div>
       `;
@@ -4254,12 +4253,12 @@ function unitColors(side) {
         <div class="victoryRow">
           <div class="victoryLabel blue">Blue</div>
           <div class="victoryNote">Generals left</div>
-          <div class="victoryValue">${blueTotals.gens}</div>
+          <div class="victoryValue">Generals left: ${blueTotals.gens}</div>
         </div>
         <div class="victoryRow">
           <div class="victoryLabel red">Red</div>
           <div class="victoryNote">Generals left</div>
-          <div class="victoryValue">${redTotals.gens}</div>
+          <div class="victoryValue">Generals left: ${redTotals.gens}</div>
         </div>
       `;
       return;
@@ -4269,12 +4268,12 @@ function unitColors(side) {
       <div class="victoryRow">
         <div class="victoryLabel blue">Blue</div>
         <div class="victoryNote">Units left</div>
-        <div class="victoryValue">${blueTotals.units}</div>
+        <div class="victoryValue">Units left: ${blueTotals.units}</div>
       </div>
       <div class="victoryRow">
         <div class="victoryLabel red">Red</div>
         <div class="victoryNote">Units left</div>
-        <div class="victoryValue">${redTotals.units}</div>
+        <div class="victoryValue">Units left: ${redTotals.units}</div>
       </div>
     `;
   }
@@ -8026,9 +8025,6 @@ function unitColors(side) {
   }
   if (elRulesFullBtn) {
     elRulesFullBtn.addEventListener('click', () => openRulesModal('full'));
-  }
-  if (elGuidebookBtn) {
-    elGuidebookBtn.addEventListener('click', () => openRulesModal('full'));
   }
   if (elRulesCloseBtn) {
     elRulesCloseBtn.addEventListener('click', closeRulesModal);

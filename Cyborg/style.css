@@ -594,10 +594,11 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 }
 
 .victoryValue{
-  font-size:11px;
+  font-size:10px;
   color:#e6e9f2;
-  min-width:64px;
-  text-align:right;
+  min-width:0;
+  text-align:left;
+  line-height:1.25;
 }
 
 .victoryNote{
@@ -609,6 +610,13 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 .rulesLauncher{
   margin-top:auto;
   display:flex;
+  gap:8px;
+}
+
+.rulesDock{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
   gap:8px;
 }
 
