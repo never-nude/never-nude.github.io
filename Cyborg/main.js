@@ -465,7 +465,7 @@
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
   const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and hills can reduce attacker dice (minimum 1). ARC/SKR ranged shots from hills or tree-line gain +1 die. Attacks launched from rough lose 1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR on hills gain +1 ranged die and +1 max range. Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
     <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
@@ -475,7 +475,8 @@
     <h4>Combat</h4>
     <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender terrain can reduce attacker dice (minimum 1).</p>
     <p>Tree-line rule: Archers and skirmishers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
-    <p>Friction rule: INF entering Woods/Hills/Rough and CAV entering Rough must pause movement on their next turn.</p>
+    <p>Hill missile rule: ARC/SKR on Hills get +1 ranged die and +1 max range.</p>
+    <p>Friction rule: all units that enter Rough must pause movement on their next turn. INF also pause after entering Woods/Hills, ARC pause after entering Woods, and MED pause after entering Woods.</p>
     <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
@@ -510,8 +511,8 @@
       <li>MED HP 1/1/1, UP 4</li>
     </ul>
     <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF/ARC/SKR/RUN can step into Hills/Woods/Rough at cost 1. GEN/MED pay 2 in Hills/Woods/Rough. CAV pays 2 in Rough, 3 in Woods, and cannot climb Hills. Water is impassable.</p>
-    <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). Infantry attacking out of Woods suffers -1 die. Any attack launched out of Rough suffers -1 die. ARC/SKR ranged attacks from Hills or tree-line gain +1 die.</p>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods/Hills at cost 2 (one hex at a time), and can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV cannot enter Woods or Hills and enters Rough at cost 2. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
+    <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die and +1 max range. Any attack launched from Rough suffers -1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
     <ul>
@@ -4088,13 +4089,11 @@ function unitColors(side) {
 
     let terrainMod = 0;
     if (h.terrain === 'woods') terrainMod -= 1;
-    if (h.terrain === 'hills' && (u.type === 'inf' || u.type === 'arc' || u.type === 'skr')) terrainMod -= 1;
-    if (h.terrain === 'woods' && (u.type === 'arc' || u.type === 'skr') && hasAdjacentTerrain(previewKey, 'clear')) terrainMod -= 1;
+    if (h.terrain === 'hills' && (u.type === 'arc' || u.type === 'skr')) terrainMod -= 1;
     const terrainText = terrainMod ? `defense terrain ${terrainMod}` : 'defense terrain 0';
     const attackOutMod = (() => {
       let n = 0;
       if (h.terrain === 'rough') n -= 1;
-      if (h.terrain === 'woods' && u.type === 'inf') n -= 1;
       return n;
     })();
     const attackOutText = attackOutMod ? `attack-out ${attackOutMod}` : 'attack-out 0';
@@ -4198,6 +4197,8 @@ function unitColors(side) {
       : `none (available pairs ${supportPairCount}, attack ${supportAttackDir || '?'})`;
     const flankText = info.flankBonus ? ` + flank ${info.flankBonus}` : '';
     const rearText = info.rearBonus ? ` + rear ${info.rearBonus}` : '';
+    const hillDiceText = Number(info.hillBonusDice || 0) ? ` + hill-shot ${Math.abs(Number(info.hillBonusDice || 0))}` : '';
+    const hillRangeText = info.rangeExtended ? ' + hill range' : '';
     const attackTerrainText = attackTerrainDelta
       ? ` ${attackTerrainDelta > 0 ? '+' : '-'} atk-terrain ${Math.abs(attackTerrainDelta)}`
       : '';
@@ -4207,7 +4208,7 @@ function unitColors(side) {
     elCombatSummary.textContent =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
     elCombatMath.textContent =
-      `Dice math: base ${info.baseDice}${flankText}${rearText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
+      `Dice math: base ${info.baseDice}${flankText}${rearText}${hillDiceText}${hillRangeText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
     elCombatTerrain.textContent =
       `Defense modifiers: ${attackTerrainMath}; terrain ${terrainMath}; infantry support ${supportMath}.`;
     const supportStatus = supportStatusForCombat(info);
@@ -4229,6 +4230,8 @@ function unitColors(side) {
     const pivotText = info.pivoted ? ', pivot' : '';
     const flankText = info.flankBonus ? `, flank +${info.flankBonus}` : '';
     const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
+    const hillDiceText = Number(info.hillBonusDice || 0) ? `, hill-shot +${Math.abs(Number(info.hillBonusDice || 0))}` : '';
+    const hillRangeText = info.rangeExtended ? ', hill-range +1' : '';
     const attackTerrainText = info.attackTerrainDiceMod
       ? `, atk terrain ${info.attackTerrainDiceMod > 0 ? '+' : ''}${info.attackTerrainDiceMod}`
       : ', atk terrain 0';
@@ -4242,7 +4245,7 @@ function unitColors(side) {
       : `, support 0 (pairs ${supportPairCount}, atk ${supportAttackDir || '?'})`;
     const finalSummary =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
-      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${attackTerrainText}${terrainText}${supportText}) · ` +
+      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${hillDiceText}${hillRangeText}${attackTerrainText}${terrainText}${supportText}) · ` +
       `H ${info.hits} / R ${info.retreats} / M ${info.misses}`;
     const briefOutcome =
       `This roll: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ` +
@@ -5738,6 +5741,10 @@ function unitColors(side) {
     return terrainId === 'woods' || terrainId === 'hills' || terrainId === 'rough';
   }
 
+  function isRunnerSlowTerrain(terrainId) {
+    return terrainId === 'woods' || terrainId === 'hills';
+  }
+
   function unitMoveIsPausedThisTurn(unit) {
     if (!unit) return false;
     const until = Number(unit.movePauseUntilTurn || 0);
@@ -5746,8 +5753,10 @@ function unitColors(side) {
 
   function movementPauseAppliesForEntry(unitType, terrainId) {
     if (terrainId === 'clear' || terrainId === 'water') return false;
-    if (unitType === 'inf' && (terrainId === 'woods' || terrainId === 'hills' || terrainId === 'rough')) return true;
-    if (unitType === 'cav' && terrainId === 'rough') return true;
+    if (terrainId === 'rough') return true; // global rough friction
+    if (unitType === 'inf' && (terrainId === 'woods' || terrainId === 'hills')) return true;
+    if (unitType === 'arc' && terrainId === 'woods') return true;
+    if (unitType === 'iat' && terrainId === 'woods') return true;
     return false;
   }
 
@@ -5764,17 +5773,20 @@ function unitColors(side) {
     if (terrainId === 'water') return Infinity;
     if (terrainId === 'clear') return 1;
     if (terrainId === 'woods') {
-      if (unitType === 'cav') return 3;
-      if (unitType === 'gen' || unitType === 'iat') return 2;
+      if (unitType === 'cav') return Infinity;
+      if (unitType === 'skr' || unitType === 'gen') return 2;
+      if (unitType === 'iat') return 1;
       return 1;
     }
     if (terrainId === 'hills') {
       if (unitType === 'cav') return Infinity;
-      if (unitType === 'gen' || unitType === 'iat') return 2;
+      if (unitType === 'iat') return Infinity;
+      if (unitType === 'skr' || unitType === 'gen') return 2;
       return 1;
     }
     if (terrainId === 'rough') {
-      if (unitType === 'cav' || unitType === 'gen' || unitType === 'iat') return 2;
+      if (unitType === 'iat') return Infinity;
+      if (unitType === 'cav' || unitType === 'gen') return 2;
       return 1;
     }
     return 1;
@@ -5923,7 +5935,8 @@ function unitColors(side) {
   function computeMoveTargets(fromKey, u, actCtx) {
     const mp = unitMovePoints(u);
     const startHex = board.byKey.get(fromKey);
-    const runnerStartingInDifficult = !!(u && u.type === 'run' && startHex && isDifficultTerrain(startHex.terrain));
+    const runnerStartingSlow = !!(u && u.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
+    const skrStartingSlow = !!(u && u.type === 'skr' && startHex && isRunnerSlowTerrain(startHex.terrain));
 
     // If movement isn't allowed, return empty set.
     if (!unitCanMoveThisActivation(u, actCtx, fromKey)) return new Set();
@@ -5951,8 +5964,9 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
-      if (u.type === 'run' && cur.k !== fromKey && isDifficultTerrain(h.terrain)) continue;
-      if (u.type === 'run' && runnerStartingInDifficult && cur.k !== fromKey) continue;
+      if (u.type === 'run' && cur.k !== fromKey && isRunnerSlowTerrain(h.terrain)) continue;
+      if (u.type === 'run' && runnerStartingSlow && cur.k !== fromKey) continue;
+      if (u.type === 'skr' && skrStartingSlow && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk)) continue;
@@ -5970,8 +5984,9 @@ function unitColors(side) {
 
         best.set(nk, nc);
         out.add(nk);
-        if (u.type === 'run' && isDifficultTerrain(nh.terrain)) continue;
-        if (u.type === 'run' && runnerStartingInDifficult) continue;
+        if (u.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
+        if (u.type === 'run' && runnerStartingSlow) continue;
+        if (u.type === 'skr' && (skrStartingSlow || isRunnerSlowTerrain(nh.terrain))) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -5985,7 +6000,8 @@ function unitColors(side) {
     const mp = unitMovePoints(unit);
     if (mp <= 0) return null;
     const startHex = board.byKey.get(fromKey);
-    const runnerStartingInDifficult = !!(unit.type === 'run' && startHex && isDifficultTerrain(startHex.terrain));
+    const runnerStartingSlow = !!(unit.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
+    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isRunnerSlowTerrain(startHex.terrain));
 
     const best = new Map();
     const pq = [{ k: fromKey, c: 0 }];
@@ -5999,8 +6015,9 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
-      if (unit.type === 'run' && cur.k !== fromKey && isDifficultTerrain(h.terrain)) continue;
-      if (unit.type === 'run' && runnerStartingInDifficult && cur.k !== fromKey) continue;
+      if (unit.type === 'run' && cur.k !== fromKey && isRunnerSlowTerrain(h.terrain)) continue;
+      if (unit.type === 'run' && runnerStartingSlow && cur.k !== fromKey) continue;
+      if (unit.type === 'skr' && skrStartingSlow && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk) && nk !== toKey) continue;
@@ -6017,8 +6034,9 @@ function unitColors(side) {
         if (prevBest !== undefined && nc >= prevBest) continue;
 
         best.set(nk, nc);
-        if (unit.type === 'run' && isDifficultTerrain(nh.terrain)) continue;
-        if (unit.type === 'run' && runnerStartingInDifficult) continue;
+        if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
+        if (unit.type === 'run' && runnerStartingSlow) continue;
+        if (unit.type === 'skr' && (skrStartingSlow || isRunnerSlowTerrain(nh.terrain))) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -6032,7 +6050,8 @@ function unitColors(side) {
     const mp = unitMovePoints(unit);
     if (mp <= 0) return [fromKey, toKey];
     const startHex = board.byKey.get(fromKey);
-    const runnerStartingInDifficult = !!(unit.type === 'run' && startHex && isDifficultTerrain(startHex.terrain));
+    const runnerStartingSlow = !!(unit.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
+    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isRunnerSlowTerrain(startHex.terrain));
 
     const best = new Map();
     const prev = new Map();
@@ -6047,8 +6066,9 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
-      if (unit.type === 'run' && cur.k !== fromKey && isDifficultTerrain(h.terrain)) continue;
-      if (unit.type === 'run' && runnerStartingInDifficult && cur.k !== fromKey) continue;
+      if (unit.type === 'run' && cur.k !== fromKey && isRunnerSlowTerrain(h.terrain)) continue;
+      if (unit.type === 'run' && runnerStartingSlow && cur.k !== fromKey) continue;
+      if (unit.type === 'skr' && skrStartingSlow && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk) && nk !== toKey) continue;
@@ -6066,8 +6086,9 @@ function unitColors(side) {
 
         best.set(nk, nc);
         prev.set(nk, cur.k);
-        if (unit.type === 'run' && isDifficultTerrain(nh.terrain)) continue;
-        if (unit.type === 'run' && runnerStartingInDifficult) continue;
+        if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
+        if (unit.type === 'run' && runnerStartingSlow) continue;
+        if (unit.type === 'skr' && (skrStartingSlow || isRunnerSlowTerrain(nh.terrain))) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -6525,10 +6546,34 @@ function unitColors(side) {
       return null;
     }
 
-    const dice = atkDef.ranged[dist];
-    if (!dice) return null;
+    let baseRangedDice = atkDef.ranged[dist] || 0;
+    let rangeExtended = false;
+    let hillBonusDice = 0;
 
-    return { kind: 'ranged', dist, baseDice: dice, dice, flankBonus: 0, rearBonus: 0, impactPosition: 'none' };
+    if ((attackerUnit.type === 'arc' || attackerUnit.type === 'skr') && atkHex.terrain === 'hills') {
+      // Hilltop advantage: +1 die and +1 max range for ARC/SKR.
+      hillBonusDice = 1;
+      const hillMaxRange = (attackerUnit.type === 'arc') ? 4 : 3;
+      if (!baseRangedDice && dist === hillMaxRange) {
+        rangeExtended = true;
+        baseRangedDice = 1;
+      }
+    }
+
+    if (!baseRangedDice) return null;
+    const totalRangedDice = baseRangedDice + hillBonusDice;
+
+    return {
+      kind: 'ranged',
+      dist,
+      baseDice: baseRangedDice,
+      dice: totalRangedDice,
+      flankBonus: 0,
+      rearBonus: 0,
+      impactPosition: 'none',
+      hillBonusDice,
+      rangeExtended,
+    };
   }
 
   function computeAttackTargets(attackerKey, u) {
@@ -6650,13 +6695,12 @@ function unitColors(side) {
 
     // Terrain modifiers:
     // - Defensive: woods / hills / tree-line cover can reduce attacker dice.
-    // - Offensive: rough and some woods attacks reduce outgoing dice.
-    // - Elevated missile fire (ARC/SKR) can add +1 die.
+    // - Offensive: rough attacks reduce outgoing dice.
+    // - Elevated missile fire (ARC/SKR) is handled in attackDiceFor().
     const atkHex = board.byKey.get(attackerKey);
     const defHex = board.byKey.get(defenderKey);
     const defenderTerrain = defHex?.terrain || 'clear';
     const attackerTerrain = atkHex?.terrain || 'clear';
-    const attackerTreeLine = attackerTerrain === 'woods' && hasAdjacentTerrain(attackerKey, 'clear');
     const defenderTreeLine = defenderTerrain === 'woods' && hasAdjacentTerrain(defenderKey, 'clear');
 
     let attackTerrainDiceMod = 0;
@@ -6665,24 +6709,12 @@ function unitColors(side) {
       attackTerrainDiceMod -= 1;
       attackTerrainParts.push('rough -1');
     }
-    if (attackerTerrain === 'woods' && atk.type === 'inf' && prof.kind === 'melee') {
-      attackTerrainDiceMod -= 1;
-      attackTerrainParts.push('inf-from-woods -1');
-    }
-    if (prof.kind === 'ranged' && (atk.type === 'arc' || atk.type === 'skr')) {
-      if (attackerTerrain === 'hills') {
-        attackTerrainDiceMod += 1;
-        attackTerrainParts.push('hill-shot +1');
-      } else if (attackerTreeLine) {
-        attackTerrainDiceMod += 1;
-        attackTerrainParts.push('tree-line-shot +1');
-      }
-    }
 
     let terrainDiceMod = 0;
-    if (defenderTerrain === 'woods') terrainDiceMod -= 1;
-    if (defenderTerrain === 'hills' && (defU.type === 'inf' || defU.type === 'arc' || defU.type === 'skr')) terrainDiceMod -= 1;
-    if (defenderTreeLine && (defU.type === 'arc' || defU.type === 'skr')) terrainDiceMod -= 1;
+    if (defenderTerrain === 'woods') {
+      terrainDiceMod -= 1;
+    }
+    if (defenderTerrain === 'hills' && (defU.type === 'arc' || defU.type === 'skr')) terrainDiceMod -= 1;
     const supportEval = (prof.kind === 'melee')
       ? reinforcementSupportForAttack(defenderKey, attackerKey, defU)
       : { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
@@ -6694,12 +6726,13 @@ function unitColors(side) {
     const terrainRuleText = (() => {
       const parts = [];
       if (attackTerrainParts.length > 0) parts.push(`attack stance ${attackTerrainParts.join(', ')}`);
-      if (defenderTerrain === 'woods') parts.push('defender in Woods: attacker -1 die');
-      if (defenderTerrain === 'hills' && (defU.type === 'inf' || defU.type === 'arc' || defU.type === 'skr')) {
-        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} on Hills: attacker -1 die`);
+      if (defenderTerrain === 'woods' && (defU.type === 'arc' || defU.type === 'skr') && defenderTreeLine) {
+        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} on tree-line: attacker -1 die`);
+      } else if (defenderTerrain === 'woods') {
+        parts.push('defender in Woods: attacker -1 die');
       }
-      if (defenderTreeLine && (defU.type === 'arc' || defU.type === 'skr')) {
-        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} in tree-line: attacker -1 die`);
+      if (defenderTerrain === 'hills' && (defU.type === 'arc' || defU.type === 'skr')) {
+        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} on Hills: attacker -1 die`);
       }
       return parts.length > 0
         ? `${parts.join('; ')}.`
@@ -6707,9 +6740,10 @@ function unitColors(side) {
     })();
     const impact = cavalryAngleBonuses(atk, defU, prof.kind, impactPosition);
     const baseDice = prof.baseDice ?? prof.dice;
+    const hillBonusDice = Number(prof.hillBonusDice || 0);
     const flankBonus = impact.flankBonus;
     const rearBonus = impact.rearBonus;
-    const preTerrainDice = baseDice + impact.totalBonus + attackTerrainDiceMod;
+    const preTerrainDice = baseDice + hillBonusDice + impact.totalBonus + attackTerrainDiceMod;
     const dice = Math.max(1, preTerrainDice + defenseDiceMod);
 
     const rolls = [];
@@ -6733,6 +6767,7 @@ function unitColors(side) {
       return `${v}M`;
     });
     const modParts = [`base ${baseDice}`];
+    if (hillBonusDice) modParts.push(`hill-shot +${hillBonusDice}`);
     if (flankBonus) modParts.push(`flank +${flankBonus}`);
     if (rearBonus) modParts.push(`rear +${rearBonus}`);
     if (attackTerrainDiceMod) modParts.push(`attack terrain ${attackTerrainDiceMod > 0 ? `+${attackTerrainDiceMod}` : `${attackTerrainDiceMod}`}`);
@@ -6752,7 +6787,8 @@ function unitColors(side) {
       rearBonus,
       attackTerrainDiceMod,
       attackerTerrain,
-      attackerTreeLine,
+      hillBonusDice,
+      rangeExtended: !!prof.rangeExtended,
       impactPosition,
       pivoted,
       pivotFrom,
@@ -8826,14 +8862,16 @@ function unitColors(side) {
       if (healCount > 0) notes.push(`Medic can heal ${healCount} adjacent unit(s).`);
       else notes.push('Medic has no adjacent wounded ally to heal.');
     }
-    if (u.type === 'arc') {
+    if (u.type === 'arc' || u.type === 'skr') {
       const curHex = board.byKey.get(hexKey);
       if (curHex && curHex.terrain === 'woods') {
         if (hasAdjacentTerrain(hexKey, 'clear')) {
-          notes.push('Tree-line: ARC ranged attacks are enabled from this woods hex.');
+          notes.push('Tree-line: ranged attacks are enabled from this woods hex.');
         } else {
-          notes.push('Deep woods: ARC ranged attacks are disabled until on a woods hex adjacent to clear.');
+          notes.push('Deep woods: ranged attacks are disabled until on a woods hex adjacent to clear.');
         }
+      } else if (curHex && curHex.terrain === 'hills') {
+        notes.push('Hilltop: ranged attacks gain +1 die and +1 max range.');
       }
     }
 

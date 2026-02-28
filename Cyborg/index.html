@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-jupiter-v5" />
+  <link rel="stylesheet" href="style.css?v=20260228-jupiter-v6" />
 </head>
 <body>
   <header id="hud">
@@ -36,15 +36,15 @@
         <summary class="panelHead"><span class="panelTitle">Unit Quick Sheet</span></summary>
         <div class="panelBody">
           <div class="quickUnitList">
-            <div class="quickUnit"><span class="uType">INF</span><span class="uStat">M1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">2 melee (woods-out -1)</span></div>
-            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">3 melee</span></div>
-            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">M2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">2 melee, 1@r2 (+1 hill/tree-line)</span></div>
-            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">M1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">1 melee, 2@r2, 1@r3 (+1 hill/tree-line)</span></div>
+            <div class="quickUnit"><span class="uType">INF</span><span class="uStat">M1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">2 melee (pause after entering woods/hills/rough)</span></div>
+            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">3 melee (no woods/hills; rough slows + pause)</span></div>
+            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">M2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">2 melee, 1@r2 (woods/hills 1-step; hills +1 die/+1 range)</span></div>
+            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">M1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">1 melee, 2@r2, 1@r3 (hills: +1 die, +1 range)</span></div>
             <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">1 melee</span></div>
-            <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">M3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack (1 hex/act in difficult terrain)</span></div>
-            <div class="quickUnit"><span class="uType">MED</span><span class="uStat">M1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4</span><span class="uAtk">Heal +1 adjacent</span></div>
+            <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">M3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack (1 hex/act in woods/hills)</span></div>
+            <div class="quickUnit"><span class="uType">MED</span><span class="uStat">M1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4</span><span class="uAtk">Heal +1 adjacent (woods only in difficult)</span></div>
           </div>
-          <div class="quickSheetNote">d6: 5-6 hit, 4 retreat, 1-3 miss. Rough-out attacks: -1 die. INF entering woods/hills/rough and CAV entering rough pause movement next turn.</div>
+          <div class="quickSheetNote">d6: 5-6 hit, 4 retreat, 1-3 miss. Rough-out attacks: -1 die. Rough entry causes next-turn movement pause for all units that can enter rough.</div>
         </div>
       </details>
 
@@ -54,9 +54,9 @@
           <div class="terrainGuideGrid">
             <div class="terrainHead">Terrain</div><div class="terrainHead">Move Cost</div><div class="terrainHead">Combat</div>
             <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No modifier</div>
-            <div class="terrainCell">Woods</div><div class="terrainCell">INF/ARC/SKR/RUN: 1, GEN/MED: 2, CAV: 3</div><div class="terrainCell">Defender gives attacker -1 die; ARC/SKR ranged only from tree-line; INF melee out of woods -1 die</div>
-            <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/SKR/RUN: 1, GEN/MED: 2, CAV: blocked</div><div class="terrainCell">Defender INF/ARC/SKR gives attacker -1 die; ARC/SKR ranged from hills +1 die</div>
-            <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/RUN: 1, CAV/GEN/MED: 2</div><div class="terrainCell">Attacks launched from rough -1 die; INF/CAV entering rough pause movement next turn</div>
+            <div class="terrainCell">Woods</div><div class="terrainCell">INF/ARC/RUN/MED: 1, SKR/GEN: 2, CAV: blocked</div><div class="terrainCell">Defender gives attacker -1 die; ARC/SKR ranged only from tree-line; tree-line ARC/SKR defender gives attacker -1 die</div>
+            <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/RUN: 1, SKR/GEN: 2, CAV/MED: blocked</div><div class="terrainCell">ARC/SKR ranged from hills: +1 die and +1 max range; defending ARC/SKR on hills gives attacker -1 die</div>
+            <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/RUN: 1, CAV/GEN: 2, MED: blocked</div><div class="terrainCell">Any attack launched from rough is -1 die; entering rough causes next-turn movement pause</div>
             <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
           </div>
         </div>
@@ -235,7 +235,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-jupiter-v5"></script>
-  <script src="main.js?v=20260228-jupiter-v5"></script>
+  <script src="build.js?v=20260228-jupiter-v6"></script>
+  <script src="main.js?v=20260228-jupiter-v6"></script>
 </body>
 </html>
