@@ -6626,9 +6626,42 @@ function unitColors(side) {
     return pullRandomFromPool(pool);
   }
 
-  function randomQualityForType(type) {
+  function randomQualityForType(type, doctrine = 'balanced') {
     if (type === 'iat') return 'regular';
     const roll = Math.random();
+
+    if (doctrine === 'elite') {
+      if (type === 'run') {
+        if (roll < 0.38) return 'veteran';
+        if (roll < 0.90) return 'regular';
+        return 'green';
+      }
+      if (type === 'gen') {
+        if (roll < 0.36) return 'veteran';
+        if (roll < 0.90) return 'regular';
+        return 'green';
+      }
+      if (roll < 0.34) return 'veteran';
+      if (roll < 0.86) return 'regular';
+      return 'green';
+    }
+
+    if (doctrine === 'levy') {
+      if (type === 'run') {
+        if (roll < 0.05) return 'veteran';
+        if (roll < 0.30) return 'regular';
+        return 'green';
+      }
+      if (type === 'gen') {
+        if (roll < 0.10) return 'veteran';
+        if (roll < 0.45) return 'regular';
+        return 'green';
+      }
+      if (roll < 0.04) return 'veteran';
+      if (roll < 0.24) return 'regular';
+      return 'green';
+    }
+
     if (type === 'run') {
       if (roll < 0.20) return 'veteran';
       if (roll < 0.60) return 'regular';
@@ -6964,6 +6997,22 @@ function unitColors(side) {
   }
 
   function chooseRandomStartupProfile() {
+    const doctrineRoll = Math.random();
+    if (doctrineRoll < 0.42) {
+      // Frequent asymmetric setup: smaller elite force vs larger levy force.
+      const eliteIsBlue = Math.random() < 0.5;
+      const eliteUnits = randInt(20, 24);
+      const levyUnits = randInt(30, 36);
+      return {
+        size: 'asymmetric',
+        matchup: eliteIsBlue ? 'blue_elite_outnumbered' : 'red_elite_outnumbered',
+        blueUnits: eliteIsBlue ? eliteUnits : levyUnits,
+        redUnits: eliteIsBlue ? levyUnits : eliteUnits,
+        blueDoctrine: eliteIsBlue ? 'elite' : 'levy',
+        redDoctrine: eliteIsBlue ? 'levy' : 'elite',
+      };
+    }
+
     const sizeRoll = Math.random();
     let size = 'medium';
     let baseUnits = randInt(23, 28);
@@ -7017,6 +7066,8 @@ function unitColors(side) {
     return {
       size,
       matchup,
+      blueDoctrine: 'balanced',
+      redDoctrine: 'balanced',
       blueUnits: clampInt(blueUnits, 20, 42, baseUnits),
       redUnits: clampInt(redUnits, 20, 42, baseUnits),
     };
@@ -7067,7 +7118,14 @@ function unitColors(side) {
     return counts;
   }
 
-  function buildRandomForce(side, terrainByHex, occupiedSet, geometry, totalNeeded = RANDOM_START_UNITS_PER_SIDE) {
+  function buildRandomForce(
+    side,
+    terrainByHex,
+    occupiedSet,
+    geometry,
+    totalNeeded = RANDOM_START_UNITS_PER_SIDE,
+    qualityDoctrine = 'balanced',
+  ) {
     const force = [];
     let depthNorm = 0.26;
     let pool = [];
@@ -7109,7 +7167,7 @@ function unitColors(side) {
           r: spot.r,
           side,
           type,
-          quality: randomQualityForType(type),
+          quality: randomQualityForType(type, qualityDoctrine),
         });
       }
     }
@@ -7136,7 +7194,7 @@ function unitColors(side) {
         r: spot.r,
         side,
         type,
-        quality: randomQualityForType(type),
+        quality: randomQualityForType(type, qualityDoctrine),
       });
     }
 
@@ -7148,8 +7206,22 @@ function unitColors(side) {
     const geometry = buildAxisGeometry(axis);
     const terrainData = createRandomTerrainLayout(axis, geometry);
     const occupiedSet = new Set();
-    const blue = buildRandomForce('blue', terrainData.terrainByHex, occupiedSet, geometry, profile.blueUnits);
-    const red = buildRandomForce('red', terrainData.terrainByHex, occupiedSet, geometry, profile.redUnits);
+    const blue = buildRandomForce(
+      'blue',
+      terrainData.terrainByHex,
+      occupiedSet,
+      geometry,
+      profile.blueUnits,
+      profile.blueDoctrine || 'balanced',
+    );
+    const red = buildRandomForce(
+      'red',
+      terrainData.terrainByHex,
+      occupiedSet,
+      geometry,
+      profile.redUnits,
+      profile.redDoctrine || 'balanced',
+    );
 
     return {
       axis: normalizeForwardAxis(axis),
@@ -7158,6 +7230,8 @@ function unitColors(side) {
       advantageSide: terrainData.advantageSide,
       size: profile.size,
       matchup: profile.matchup,
+      blueDoctrine: profile.blueDoctrine || 'balanced',
+      redDoctrine: profile.redDoctrine || 'balanced',
       blueUnits: profile.blueUnits,
       redUnits: profile.redUnits,
     };
@@ -8525,16 +8599,20 @@ function unitColors(side) {
     const biasLabel = (randomScenario.advantageSide === 'none')
       ? 'balanced terrain'
       : `${randomScenario.advantageSide} flank-terrain bias`;
-    const matchupLabel =
-      randomScenario.matchup === 'even'
-        ? 'even forces'
-        : (randomScenario.matchup === 'blue_advantage' ? 'blue-advantaged forces' : 'red-advantaged forces');
+    let matchupLabel = 'even forces';
+    if (randomScenario.matchup === 'blue_advantage') matchupLabel = 'blue-advantaged forces';
+    else if (randomScenario.matchup === 'red_advantage') matchupLabel = 'red-advantaged forces';
+    else if (randomScenario.matchup === 'blue_elite_outnumbered') matchupLabel = 'blue elite outnumbered by red levy';
+    else if (randomScenario.matchup === 'red_elite_outnumbered') matchupLabel = 'red elite outnumbered by blue levy';
+
+    const doctrineLabel = `doctrine B:${randomScenario.blueDoctrine || 'balanced'} / R:${randomScenario.redDoctrine || 'balanced'}`;
 
     log(
       `Booted ${GAME_NAME}. Randomized startup loaded and battle started ` +
       `(${randomScenario.size} battle, ${matchupLabel}, ` +
       `B ${randomScenario.blueUnits} / R ${randomScenario.redUnits}, ` +
-      `terrain=${randomScenario.terrain.length}, axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}).`
+      `${doctrineLabel}, terrain=${randomScenario.terrain.length}, ` +
+      `axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}).`
     );
     updateHud();
     resize();
