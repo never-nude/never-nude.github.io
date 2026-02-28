@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-apollo-v6" />
+  <link rel="stylesheet" href="style.css?v=20260228-apollo-v7" />
 </head>
 <body>
   <header id="hud">
@@ -22,82 +22,101 @@
     </section>
 
     <aside id="side">
-      <div id="defensePanel" class="panel">
-        <div class="panelTitle">Unit Quick Sheet</div>
-        <div class="quickUnitList">
-          <div class="quickUnit"><span class="uType">INF</span><span class="uStat">M1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">2 melee</span></div>
-          <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">3 melee</span></div>
-          <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">M2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">2 melee, 1@r2</span></div>
-          <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">M1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">1 melee, 2@r2, 1@r3</span></div>
-          <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">1 melee</span></div>
-          <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">M3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack</span></div>
-          <div class="quickUnit"><span class="uType">MED</span><span class="uStat">M1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4</span><span class="uAtk">Heal +1 adjacent</span></div>
+      <details id="defensePanel" class="panel collapsible" open>
+        <summary class="panelHead"><span class="panelTitle">Unit Quick Sheet</span></summary>
+        <div class="panelBody">
+          <div class="quickUnitList">
+            <div class="quickUnit"><span class="uType">INF</span><span class="uStat">M1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">2 melee</span></div>
+            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">3 melee</span></div>
+            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">M2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">2 melee, 1@r2</span></div>
+            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">M1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">1 melee, 2@r2, 1@r3</span></div>
+            <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">1 melee</span></div>
+            <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">M3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack</span></div>
+            <div class="quickUnit"><span class="uType">MED</span><span class="uStat">M1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4</span><span class="uAtk">Heal +1 adjacent</span></div>
+          </div>
+          <div class="quickSheetNote">d6: 5-6 hit, 4 retreat, 1-3 miss.</div>
         </div>
-        <div class="quickSheetNote">d6: 5-6 hit, 4 retreat, 1-3 miss.</div>
-      </div>
-      <div id="terrainGuidePanel" class="panel">
-        <div class="panelTitle">Terrain Guide</div>
-        <div class="terrainGuideGrid">
-          <div class="terrainHead">Terrain</div><div class="terrainHead">Move Cost</div><div class="terrainHead">Combat</div>
-          <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No modifier</div>
-          <div class="terrainCell">Woods</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">Defender gives attacker -1 die; ARC can fire only from tree-line</div>
-          <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
-          <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
-          <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
-        </div>
-      </div>
+      </details>
 
-      <div id="battleSetupSide" class="panel">
-        <div class="panelTitle">Battle Setup</div>
-        <div class="row">
-          <div class="label">Scenario</div>
-          <select id="scenarioSel" class="select"></select>
+      <details id="terrainGuidePanel" class="panel collapsible" open>
+        <summary class="panelHead"><span class="panelTitle">Terrain Guide</span></summary>
+        <div class="panelBody">
+          <div class="terrainGuideGrid">
+            <div class="terrainHead">Terrain</div><div class="terrainHead">Move Cost</div><div class="terrainHead">Combat</div>
+            <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No modifier</div>
+            <div class="terrainCell">Woods</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">Defender gives attacker -1 die; ARC can fire only from tree-line</div>
+            <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
+            <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
+            <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
+          </div>
         </div>
-        <div class="row">
-          <div class="label">Tool</div>
-          <button id="toolUnits" class="btn">Units</button>
-          <button id="toolTerrain" class="btn">Terrain</button>
-        </div>
-        <div class="setupEditorBlock editorOnly">
-          <div class="panelTitle">Editor Tools</div>
+      </details>
+
+      <details id="battleSetupSide" class="panel collapsible" open>
+        <summary class="panelHead"><span class="panelTitle">Battle Setup</span></summary>
+        <div class="panelBody">
           <div class="row">
-            <div class="label">Side</div>
-            <button id="sideBlue" class="btn">Blue</button>
-            <button id="sideRed" class="btn">Red</button>
+            <div class="label">Scenario</div>
+            <select id="scenarioSel" class="select"></select>
           </div>
           <div class="row">
-            <div class="label">Type</div>
-            <div id="typeBtns" class="btnGrid">
-              <button class="btn" data-type="inf">Infantry</button>
-              <button class="btn" data-type="cav">Cavalry</button>
-              <button class="btn" data-type="skr">Skirmisher</button>
-              <button class="btn" data-type="arc">Archer</button>
-              <button class="btn" data-type="gen">General</button>
-              <button class="btn" data-type="run">Runner</button>
-              <button class="btn" data-type="iat">Medic</button>
+            <div class="label">Tool</div>
+            <button id="toolUnits" class="btn">Units</button>
+            <button id="toolTerrain" class="btn">Terrain</button>
+          </div>
+          <details class="setupEditorBlock editorOnly collapsible" open>
+            <summary class="panelHead"><span class="panelTitle">Editor Tools</span></summary>
+            <div class="panelBody">
+              <div class="row">
+                <div class="label">Side</div>
+                <button id="sideBlue" class="btn">Blue</button>
+                <button id="sideRed" class="btn">Red</button>
+              </div>
+              <div class="row">
+                <div class="label">Type</div>
+                <div id="typeBtns" class="btnGrid">
+                  <button class="btn" data-type="inf">Infantry</button>
+                  <button class="btn" data-type="cav">Cavalry</button>
+                  <button class="btn" data-type="skr">Skirmisher</button>
+                  <button class="btn" data-type="arc">Archer</button>
+                  <button class="btn" data-type="gen">General</button>
+                  <button class="btn" data-type="run">Runner</button>
+                  <button class="btn" data-type="iat">Medic</button>
+                </div>
+              </div>
+              <div class="row">
+                <button id="eraseBtn" class="btn wide">Erase</button>
+              </div>
+              <div class="row">
+                <div class="label">Quality</div>
+                <button id="qGreen" class="btn">Green</button>
+                <button id="qRegular" class="btn">Regular</button>
+                <button id="qVeteran" class="btn">Veteran</button>
+              </div>
+              <div class="row">
+                <div class="label">Terrain</div>
+                <div id="terrainBtns" class="btnGrid">
+                  <button class="btn" data-terrain="clear">Clear</button>
+                  <button class="btn" data-terrain="hills">Hills</button>
+                  <button class="btn" data-terrain="woods">Woods</button>
+                  <button class="btn" data-terrain="rough">Rough</button>
+                  <button class="btn" data-terrain="water">Water</button>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="row">
-            <button id="eraseBtn" class="btn wide">Erase</button>
-          </div>
-          <div class="row">
-            <div class="label">Quality</div>
-            <button id="qGreen" class="btn">Green</button>
-            <button id="qRegular" class="btn">Regular</button>
-            <button id="qVeteran" class="btn">Veteran</button>
-          </div>
-          <div class="row">
-            <div class="label">Terrain</div>
-            <div id="terrainBtns" class="btnGrid">
-              <button class="btn" data-terrain="clear">Clear</button>
-              <button class="btn" data-terrain="hills">Hills</button>
-              <button class="btn" data-terrain="woods">Woods</button>
-              <button class="btn" data-terrain="rough">Rough</button>
-              <button class="btn" data-terrain="water">Water</button>
-            </div>
+          </details>
+        </div>
+      </details>
+
+      <details id="rulesSidePanel" class="panel collapsible" open>
+        <summary class="panelHead"><span class="panelTitle">Rules</span></summary>
+        <div class="panelBody">
+          <div class="rulesDockSide">
+            <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
+            <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
           </div>
         </div>
-      </div>
+      </details>
     </aside>
   </main>
 
@@ -158,16 +177,12 @@
       </div>
       <div id="diceOutcomeBrief" class="combatMeta diceOutcomeBrief">This roll: -</div>
       <div id="diceLegendBrief" class="combatHint diceLegendBrief">Legend: 5-6 = hit, 4 = retreat, 1-3 = miss.</div>
-      <div class="rulesUnderDice">
-        <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
-        <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
-      </div>
       <div id="diceTray" class="diceTray"></div>
     </div>
     <div class="combatCol combatColOutcome">
       <div class="combatColTitle">Victory Track</div>
+      <div id="forceTotals" class="forceTotals">Score (UP / HP): Blue - / - · Red - / -</div>
       <div id="victoryTrackBody" class="victoryTrackBody">Victory: -</div>
-      <div id="forceTotals" class="forceTotals">Forces: Blue - UP / - HP · Red - UP / - HP</div>
     </div>
     <div class="combatCol combatColOnline">
       <div class="combatColTitle">Online Multiplayer</div>
@@ -219,7 +234,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-apollo-v6"></script>
-  <script src="main.js?v=20260228-apollo-v6"></script>
+  <script src="build.js?v=20260228-apollo-v7"></script>
+  <script src="main.js?v=20260228-apollo-v7"></script>
 </body>
 </html>

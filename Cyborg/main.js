@@ -4982,9 +4982,9 @@ function unitColors(side) {
     renderVictoryTrack(blue, red, hideOpponentDuringFog);
     if (elForceTotals) {
       if (hideOpponentDuringFog) {
-        elForceTotals.textContent = 'Forces: hidden during fog draft setup.';
+        elForceTotals.textContent = 'Score (UP / HP): hidden during fog draft setup.';
       } else {
-        elForceTotals.textContent = `Forces: Blue ${blue.up} UP / ${blue.hp} HP · Red ${red.up} UP / ${red.hp} HP`;
+        elForceTotals.textContent = `Score (UP / HP): Blue ${blue.up} / ${blue.hp} · Red ${red.up} / ${red.hp}`;
       }
     }
 
