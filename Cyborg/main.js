@@ -547,6 +547,10 @@
   const elOnlineRoleHint = document.getElementById('onlineRoleHint');
   const elOnlineStatus = document.getElementById('onlineStatus');
 
+  if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+
   // --- State
   const state = {
     mode: 'edit', // 'edit' | 'play'
@@ -3894,6 +3898,21 @@ function unitColors(side) {
     return String(q).charAt(0).toUpperCase() + String(q).slice(1);
   }
 
+  function resetCombatRailScrollPositions() {
+    for (const col of elCombatCols) {
+      if (!col) continue;
+      col.scrollTop = 0;
+      col.scrollLeft = 0;
+    }
+  }
+
+  function scheduleCombatRailScrollReset() {
+    resetCombatRailScrollPositions();
+    requestAnimationFrame(() => resetCombatRailScrollPositions());
+    setTimeout(() => resetCombatRailScrollPositions(), 80);
+    setTimeout(() => resetCombatRailScrollPositions(), 260);
+  }
+
   function setInspectorValue(el, value) {
     if (!el) return;
     el.textContent = String(value);
@@ -5205,13 +5224,8 @@ function unitColors(side) {
       elLineAdvanceBtn.disabled = !canIssueLineAdvance();
     }
 
-    // Safari/ultrawide safety: prevent bottom rail columns from staying scrolled
-    // to their bottom, which can make the row appear missing.
-    for (const col of elCombatCols) {
-      if (!col) continue;
-      col.scrollTop = 0;
-      col.scrollLeft = 0;
-    }
+    // Keep combat rail columns anchored at their headers.
+    resetCombatRailScrollPositions();
 
     updateInspector();
     draw();
@@ -8291,7 +8305,14 @@ function unitColors(side) {
     }
   });
 
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', () => {
+    resize();
+    scheduleCombatRailScrollReset();
+  });
+  window.addEventListener('load', scheduleCombatRailScrollReset);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) scheduleCombatRailScrollReset();
+  });
 
   elModeBtn.addEventListener('click', () => {
     if (onlineModeActive() && net.connected && !net.isHost) {
@@ -8763,6 +8784,7 @@ function unitColors(side) {
     );
     updateHud();
     resize();
+    scheduleCombatRailScrollReset();
   }
 
   boot();
