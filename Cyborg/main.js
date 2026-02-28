@@ -5310,7 +5310,97 @@ function unitColors(side) {
     return best;
   }
 
-  function aiAttackScore(attackerKey, targetKey, attackerUnit) {
+  function enemyPotentialDiceAt(targetKey, friendlySide) {
+    let total = 0;
+    let melee = 0;
+    let ranged = 0;
+    const attackers = [];
+    for (const [attackerKey, u] of unitsByHex) {
+      if (u.side === friendlySide) continue;
+      const prof = attackDiceFor(attackerKey, targetKey, u);
+      if (!prof) continue;
+      const dice = Math.max(1, Number(prof.dice || prof.baseDice || 1));
+      total += dice;
+      if (prof.kind === 'melee') melee += dice;
+      else ranged += dice;
+      attackers.push(attackerKey);
+    }
+    return { total, melee, ranged, attackers };
+  }
+
+  function mostThreatenedGeneral(side) {
+    let worst = null;
+    for (const [hk, u] of unitsByHex) {
+      if (u.side !== side || u.type !== 'gen') continue;
+      const threat = enemyPotentialDiceAt(hk, side);
+      const maxHp = unitMaxHp('gen', u.quality);
+      const hpLoss = Math.max(0, maxHp - u.hp);
+      const pressure = (threat.total * 2.2) + (threat.melee * 2.8) + (hpLoss * 2.5);
+      if (!worst || pressure > worst.pressure) {
+        worst = { key: hk, pressure, threat };
+      }
+    }
+    return worst;
+  }
+
+  function sideCommandCoverageRatio(side, moveOverride = null) {
+    const sources = [];
+    const controlled = [];
+
+    for (const [hk, u] of unitsByHex) {
+      if (u.side !== side) continue;
+      let sourceKey = hk;
+      if (moveOverride && u.id === moveOverride.unitId && hk === moveOverride.fromKey) {
+        sourceKey = moveOverride.toKey;
+      }
+
+      if (isCommandSourceUnit(u)) {
+        const sh = board.byKey.get(sourceKey);
+        if (sh) sources.push({ q: sh.q, r: sh.r, radius: commandRadiusForUnit(u) });
+      }
+
+      if ((u.type === 'inf' || u.type === 'arc' || u.type === 'skr') && u.quality !== 'veteran') {
+        const th = board.byKey.get(hk);
+        if (th) controlled.push({ q: th.q, r: th.r });
+      }
+    }
+
+    if (controlled.length === 0) return 1;
+    if (sources.length === 0) return 0;
+
+    let covered = 0;
+    for (const t of controlled) {
+      const inRange = sources.some(s => axialDistance(t.q, t.r, s.q, s.r) <= s.radius);
+      if (inRange) covered += 1;
+    }
+    return covered / controlled.length;
+  }
+
+  function aiAttackThresholdForUnit(unit, difficultyLevel = state.aiDifficulty) {
+    const level = normalizeAiDifficulty(difficultyLevel);
+    if (level === 'levy' || !unit) return -Infinity;
+    if (unit.type === 'gen') return level === 'legion' ? 12 : 6;
+    return level === 'legion' ? -1 : -4;
+  }
+
+  function aiGeneralThreatContext(side) {
+    const threatened = mostThreatenedGeneral(side);
+    const threateningEnemies = new Set();
+    if (threatened && threatened.key) {
+      for (const [ek, eu] of unitsByHex) {
+        if (eu.side === side) continue;
+        if (attackDiceFor(ek, threatened.key, eu)) threateningEnemies.add(ek);
+      }
+    }
+    return {
+      threatenedGeneralKey: threatened ? threatened.key : null,
+      threatenedGeneralPressure: threatened ? threatened.pressure : 0,
+      threateningEnemies,
+      commandCoverage: sideCommandCoverageRatio(side),
+    };
+  }
+
+  function aiAttackScore(attackerKey, targetKey, attackerUnit, aiCtx = null) {
     const attackProf = attackDiceFor(attackerKey, targetKey, attackerUnit);
     if (!attackProf) return -Infinity;
 
@@ -5325,17 +5415,35 @@ function unitColors(side) {
     score += unitUpValue(target.type, target.quality);
     score += Math.max(0, 3 - target.hp) * 2;
     if (!retreatPick(attackerKey, targetKey)) score += 2;
+    const expectedHits = attackProf.dice * 0.40;
+    if (expectedHits >= target.hp) score += 8;
+
+    // If the target is one of the enemies currently threatening our general, prioritize it.
+    if (aiCtx && aiCtx.threateningEnemies && aiCtx.threateningEnemies.has(targetKey)) {
+      score += 12;
+    }
+
+    // Generals should not trade themselves cheaply.
+    const selfThreat = enemyPotentialDiceAt(attackerKey, attackerUnit.side);
+    if (attackerUnit.type === 'gen') {
+      score -= selfThreat.total * 6;
+      score -= selfThreat.melee * 5;
+      if (target.type !== 'gen' && target.hp > 1) score -= 7;
+    } else {
+      score -= selfThreat.melee * 0.4;
+    }
+
     score *= ai.attackScale;
     score += (Math.random() * 2 - 1) * ai.attackNoise;
     return score;
   }
 
-  function bestAiAttackFrom(attackerKey, attackerUnit) {
+  function bestAiAttackFrom(attackerKey, attackerUnit, aiCtx = null) {
     let bestTargetKey = null;
     let bestScore = -Infinity;
     const targets = computeAttackTargets(attackerKey, attackerUnit);
     for (const targetKey of targets) {
-      const score = aiAttackScore(attackerKey, targetKey, attackerUnit);
+      const score = aiAttackScore(attackerKey, targetKey, attackerUnit, aiCtx);
       if (score > bestScore) {
         bestScore = score;
         bestTargetKey = targetKey;
@@ -5345,7 +5453,7 @@ function unitColors(side) {
     return { targetKey: bestTargetKey, score: bestScore };
   }
 
-  function aiMoveScore(fromKey, destKey, unit, actCtx) {
+  function aiMoveScore(fromKey, destKey, unit, actCtx, aiCtx = null) {
     const ai = aiDifficultyProfile();
     let score = 0;
 
@@ -5356,7 +5464,7 @@ function unitColors(side) {
       score += Math.max(0, 8 - toDist) * 0.5;
     }
 
-    const follow = bestAiAttackFrom(destKey, unit);
+    const follow = bestAiAttackFrom(destKey, unit, aiCtx);
     if (follow) score += 4 + follow.score * 0.2;
 
     if (isEngaged(destKey, unit.side)) score += 2;
@@ -5378,6 +5486,41 @@ function unitColors(side) {
       if (h.terrain === 'rough' && unit.type === 'cav') score -= 0.75;
     }
 
+    const exposureBefore = enemyPotentialDiceAt(fromKey, unit.side);
+    const exposureAfter = enemyPotentialDiceAt(destKey, unit.side);
+    score += (exposureBefore.total - exposureAfter.total) * (unit.type === 'gen' ? 5.0 : 1.2);
+
+    if (unit.type === 'gen') {
+      const toDist = nearestEnemyDistance(destKey, unit.side);
+      score -= exposureAfter.total * 8;
+      score -= exposureAfter.melee * 8;
+      if (toDist <= 1) score -= 18;
+      else if (toDist <= 2) score -= 8;
+    }
+
+    if (isCommandSourceUnit(unit)) {
+      const covBefore = aiCtx ? aiCtx.commandCoverage : sideCommandCoverageRatio(unit.side);
+      const covAfter = sideCommandCoverageRatio(unit.side, {
+        unitId: unit.id,
+        fromKey,
+        toKey: destKey,
+      });
+      const covDelta = covAfter - covBefore;
+      score += covDelta * (unit.type === 'gen' ? 90 : 60);
+    }
+
+    if (aiCtx && aiCtx.threatenedGeneralKey && unit.type !== 'gen') {
+      const gHex = board.byKey.get(aiCtx.threatenedGeneralKey);
+      const fromHex = board.byKey.get(fromKey);
+      const destHex = board.byKey.get(destKey);
+      if (gHex && fromHex && destHex) {
+        const dFrom = axialDistance(fromHex.q, fromHex.r, gHex.q, gHex.r);
+        const dTo = axialDistance(destHex.q, destHex.r, gHex.q, gHex.r);
+        if (dTo < dFrom) score += 2.5;
+        if (dTo <= 1) score += 6;
+      }
+    }
+
     score *= ai.moveScale;
     score += (Math.random() * 2 - 1) * ai.moveNoise;
     return score;
@@ -5393,6 +5536,7 @@ function unitColors(side) {
 
   function chooseAiActionPlan() {
     const ai = aiDifficultyProfile();
+    const aiCtx = aiGeneralThreatContext(state.side);
     let bestAttack = null;
     let bestAttackScore = -Infinity;
 
@@ -5406,13 +5550,14 @@ function unitColors(side) {
 
       if (!passPlan) passPlan = { type: 'pass', fromKey };
 
-      const attack = bestAiAttackFrom(fromKey, u);
+      const attack = bestAiAttackFrom(fromKey, u, aiCtx);
       if (attack && attack.score > bestAttackScore) {
         bestAttackScore = attack.score;
         bestAttack = {
           type: 'attack',
           fromKey,
           targetKey: attack.targetKey,
+          attackerType: u.type,
           score: attack.score,
         };
       }
@@ -5422,17 +5567,28 @@ function unitColors(side) {
       };
       const moveTargets = computeMoveTargets(fromKey, u, actCtx);
       for (const destKey of moveTargets) {
-        const score = aiMoveScore(fromKey, destKey, u, actCtx);
+        const score = aiMoveScore(fromKey, destKey, u, actCtx, aiCtx);
         if (score > bestMoveScore) {
           bestMoveScore = score;
           bestMove = {
             type: 'move',
             fromKey,
             destKey,
+            moverType: u.type,
             score,
           };
         }
       }
+    }
+
+    if (bestAttack) {
+      const atkUnit = unitsByHex.get(bestAttack.fromKey);
+      const threshold = aiAttackThresholdForUnit(atkUnit, state.aiDifficulty);
+      if (bestAttack.score < threshold) bestAttack = null;
+    }
+    if (bestMove && bestMove.moverType === 'gen' && bestMove.score < 0) {
+      // If every general move is a net blunder, prefer not to commit that move.
+      bestMove = null;
     }
 
     if (passPlan && state.actsUsed > 0 && Math.random() < ai.passChance) {
@@ -5480,15 +5636,17 @@ function unitColors(side) {
         let bestTargetKey = null;
         let bestScore = -Infinity;
         if (movedUnit) {
+          const aiCtx = aiGeneralThreatContext(movedUnit.side);
           for (const targetKey of state._attackTargets) {
-            const score = aiAttackScore(plan.destKey, targetKey, movedUnit);
+            const score = aiAttackScore(plan.destKey, targetKey, movedUnit, aiCtx);
             if (score > bestScore) {
               bestScore = score;
               bestTargetKey = targetKey;
             }
           }
         }
-        if (bestTargetKey && state._attackTargets.has(bestTargetKey)) {
+        const attackThreshold = aiAttackThresholdForUnit(movedUnit, state.aiDifficulty);
+        if (bestTargetKey && state._attackTargets.has(bestTargetKey) && bestScore >= attackThreshold) {
           attackFromSelection(bestTargetKey);
         } else {
           clearSelection();
