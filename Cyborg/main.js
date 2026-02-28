@@ -6897,6 +6897,72 @@ function unitColors(side) {
     return out;
   }
 
+  function terrainAtForLayout(hexKey, terrainByHex) {
+    if (terrainByHex && terrainByHex.has(hexKey)) return terrainByHex.get(hexKey) || 'clear';
+    const h = board.byKey.get(hexKey);
+    return h?.terrain || 'clear';
+  }
+
+  function hasTerrainExitForType(hex, type, terrainByHex) {
+    if (!hex || !type) return false;
+    const moveUnit = { type, quality: 'green' };
+    const mp = unitMovePoints(moveUnit);
+    if (mp <= 0) return false;
+
+    for (const nk of hex.neigh || []) {
+      const nh = board.byKey.get(nk);
+      if (!nh) continue;
+      const nTerrain = terrainAtForLayout(nk, terrainByHex);
+      const stepCost = terrainMoveCost(type, nTerrain);
+      if (Number.isFinite(stepCost) && stepCost <= mp) return true;
+    }
+
+    return false;
+  }
+
+  function pickPreferredSpawnHex(pool, predicates, type, terrainByHex) {
+    if (!Array.isArray(pool) || pool.length === 0) return null;
+    const safeCheck = (h) => hasTerrainExitForType(h, type, terrainByHex);
+
+    for (const pred of predicates || []) {
+      if (typeof pred !== 'function') continue;
+      const hits = [];
+      for (let i = 0; i < pool.length; i++) {
+        const h = pool[i];
+        if (pred(h) && safeCheck(h)) hits.push(i);
+      }
+      if (hits.length > 0) {
+        const chosenIdx = hits[randInt(0, hits.length - 1)];
+        return pool.splice(chosenIdx, 1)[0] || null;
+      }
+    }
+
+    const safeFallback = [];
+    for (let i = 0; i < pool.length; i++) {
+      if (safeCheck(pool[i])) safeFallback.push(i);
+    }
+    if (safeFallback.length > 0) {
+      const chosenIdx = safeFallback[randInt(0, safeFallback.length - 1)];
+      return pool.splice(chosenIdx, 1)[0] || null;
+    }
+
+    return null;
+  }
+
+  function pullAnySafeHex(type, terrainByHex, occupiedSet) {
+    const candidates = [];
+    for (const h of board.active) {
+      if (!h) continue;
+      if (occupiedSet.has(h.k)) continue;
+      const t = terrainAtForLayout(h.k, terrainByHex);
+      if (t === 'water') continue;
+      if (!hasTerrainExitForType(h, type, terrainByHex)) continue;
+      candidates.push(h);
+    }
+    if (candidates.length === 0) return null;
+    return candidates[randInt(0, candidates.length - 1)] || null;
+  }
+
   function chooseRandomStartupProfile() {
     const sizeRoll = Math.random();
     let size = 'medium';
@@ -7011,7 +7077,10 @@ function unitColors(side) {
 
     function addUnits(type, count, predicates) {
       for (let i = 0; i < count; i++) {
-        const spot = pickPreferredHex(pool, predicates);
+        let spot = pickPreferredSpawnHex(pool, predicates, type, terrainByHex);
+        if (!spot) {
+          spot = pullAnySafeHex(type, terrainByHex, occupiedSet);
+        }
         if (!spot) break;
         occupiedSet.add(spot.k);
         force.push({
@@ -7034,9 +7103,12 @@ function unitColors(side) {
 
     const refillTypes = ['inf', 'inf', 'inf', 'skr', 'arc', 'cav', 'iat'];
     while (force.length < totalNeeded) {
-      const spot = pullRandomFromPool(pool);
-      if (!spot) break;
       const type = refillTypes[randInt(0, refillTypes.length - 1)];
+      let spot = pickPreferredSpawnHex(pool, [], type, terrainByHex);
+      if (!spot) {
+        spot = pullAnySafeHex(type, terrainByHex, occupiedSet);
+      }
+      if (!spot) break;
       occupiedSet.add(spot.k);
       force.push({
         q: spot.q,
