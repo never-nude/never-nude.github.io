@@ -484,7 +484,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr);
   gap:6px;
   align-items:stretch;
-  overflow-x:hidden;
+  overflow-x:auto;
   overflow-y:hidden;
 }
 
@@ -496,9 +496,10 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   display:flex;
   flex-direction:column;
   gap:5px;
-  min-width:0;
+  min-width:230px;
   min-height:0;
-  overflow:auto;
+  overflow-x:hidden;
+  overflow-y:auto;
   scrollbar-width:thin;
 }
 
@@ -845,6 +846,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   #side{border-left:none;border-top:1px solid var(--line);}
   .label{width:80px;}
   #combatRail{grid-template-columns:1fr; gap:8px;}
+  .combatCol{min-width:0;}
 }
 
 @media (min-width: 2200px) and (min-height: 1200px){

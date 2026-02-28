@@ -464,6 +464,7 @@
   const elRulesModalBody = document.getElementById('rulesModalBody');
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
+  const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
   const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Archers in Woods can fire only from tree-line woods (woods hex adjacent to clear). Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
@@ -5202,6 +5203,14 @@ function unitColors(side) {
     elEndTurnBtn.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
     if (elLineAdvanceBtn) {
       elLineAdvanceBtn.disabled = !canIssueLineAdvance();
+    }
+
+    // Safari/ultrawide safety: prevent bottom rail columns from staying scrolled
+    // to their bottom, which can make the row appear missing.
+    for (const col of elCombatCols) {
+      if (!col) continue;
+      col.scrollTop = 0;
+      col.scrollLeft = 0;
     }
 
     updateInspector();
