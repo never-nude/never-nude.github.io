@@ -595,6 +595,7 @@
     moveAnimRaf: null,
     actionPulse: null,
     actionPulseRaf: null,
+    lineAdvancePreviewHover: false,
 
     draft: {
       active: false,
@@ -3555,6 +3556,55 @@ function unitColors(side) {
     }
   }
 
+  function drawLineAdvancePreviewArrows(preview) {
+    if (!preview || !Array.isArray(preview.moves) || preview.moves.length === 0) return;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = 'rgba(122, 228, 162, 0.92)';
+    ctx.fillStyle = 'rgba(122, 228, 162, 0.95)';
+    ctx.lineWidth = Math.max(2, R * 0.13);
+
+    for (const m of preview.moves) {
+      const fromHex = board.byKey.get(m.fromKey);
+      const toHex = board.byKey.get(m.toKey);
+      if (!fromHex || !toHex) continue;
+
+      const dx = toHex.cx - fromHex.cx;
+      const dy = toHex.cy - fromHex.cy;
+      const len = Math.hypot(dx, dy);
+      if (len < 1) continue;
+
+      const ux = dx / len;
+      const uy = dy / len;
+      const pad = R * 0.58;
+      const sx = fromHex.cx + (ux * pad);
+      const sy = fromHex.cy + (uy * pad);
+      const ex = toHex.cx - (ux * pad);
+      const ey = toHex.cy - (uy * pad);
+
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+
+      const ah = Math.max(6, R * 0.28);
+      const aw = Math.max(4, R * 0.16);
+      const px = -uy;
+      const py = ux;
+      ctx.beginPath();
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - (ux * ah) + (px * aw), ey - (uy * ah) + (py * aw));
+      ctx.lineTo(ex - (ux * ah) - (px * aw), ey - (uy * ah) - (py * aw));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   function draw() {
     const activeMoveAnim = state.moveAnim;
     const reinforceAnchorKey = (() => {
@@ -3569,6 +3619,14 @@ function unitColors(side) {
     ) ? reinforcementPreviewForAnchor(reinforceAnchorKey) : null;
     const reinforcedFrontKeys = (reinforcePreview && reinforcePreview.active) ? reinforcePreview.frontSet : null;
     const reinforcingBackKeys = (reinforcePreview && reinforcePreview.active) ? reinforcePreview.supportSet : null;
+    const lineAdvancePreview = (() => {
+      if (state.mode !== 'play') return null;
+      if (!state.lineAdvancePreviewHover) return null;
+      if (!state.selectedKey) return null;
+      const u = unitsByHex.get(state.selectedKey);
+      if (!u || u.side !== state.side || u.type !== 'inf') return null;
+      return lineAdvancePreviewForAnchor(state.selectedKey);
+    })();
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
     // Background
@@ -3618,6 +3676,30 @@ function unitColors(side) {
         }
       }
 
+      if (lineAdvancePreview) {
+        if (lineAdvancePreview.rowSet.has(k)) {
+          ctx.fillStyle = 'rgba(255, 198, 96, 0.11)';
+          ctx.fill(p);
+        }
+        if (lineAdvancePreview.formationSet.has(k)) {
+          ctx.fillStyle = 'rgba(93, 205, 255, 0.18)';
+          ctx.fill(p);
+        }
+        if (lineAdvancePreview.blockedSet.has(k)) {
+          ctx.fillStyle = 'rgba(255, 113, 113, 0.18)';
+          ctx.fill(p);
+        }
+        if (lineAdvancePreview.destinationSet.has(k)) {
+          ctx.fillStyle = 'rgba(110, 220, 152, 0.22)';
+          ctx.fill(p);
+          ctx.strokeStyle = 'rgba(116, 236, 165, 0.95)';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([5, 4]);
+          ctx.stroke(p);
+          ctx.setLineDash([]);
+        }
+      }
+
       // Reinforcement visibility:
       // - light cyan = reinforced front
       // - darker cyan = reinforcing rear
@@ -3635,6 +3717,10 @@ function unitColors(side) {
         ctx.lineWidth = 3;
         ctx.stroke(p);
       }
+    }
+
+    if (lineAdvancePreview) {
+      drawLineAdvancePreviewArrows(lineAdvancePreview);
     }
 
     // Command radius outlines (truthy, but calm): dotted perimeter.
@@ -5857,23 +5943,25 @@ function unitColors(side) {
   }
 
   function canLineAdvanceInfAt(hexKey, u) {
+    if (state.mode !== 'play' || state.gameOver) return false;
     if (!u || u.type !== 'inf') return false;
     if (u.side !== state.side) return false;
-    if (!unitCanActivate(u, hexKey)) return false;
+    if (state.actsUsed >= ACT_LIMIT) return false;
+    if (state.actedUnitIds.has(u.id)) return false;
     if (isEngaged(hexKey, u.side)) return false;
-
-    const inCmd = unitIgnoresCommand(u) ? true : inCommandAt(hexKey, u.side);
-    return unitCanMoveThisActivation(u, { inCommandStart: inCmd }, hexKey);
+    return true;
   }
 
-  function collectLineAdvanceFormation(anchorKey) {
+  function collectContiguousInfantryRow(anchorKey) {
     const anchorUnit = unitsByHex.get(anchorKey);
     if (!anchorUnit) return [];
-    if (!canLineAdvanceInfAt(anchorKey, anchorUnit)) return [];
+    if (anchorUnit.type !== 'inf') return [];
+    if (anchorUnit.side !== state.side) return [];
 
     const [beforeDir, afterDir] = axisLateralDirections(state.forwardAxis);
     const before = [];
     const after = [];
+    const rowSide = anchorUnit.side;
 
     function walk(dir, out) {
       let cur = anchorKey;
@@ -5881,7 +5969,7 @@ function unitColors(side) {
         const next = stepKeyInDirection(cur, dir);
         if (!next) break;
         const u = unitsByHex.get(next);
-        if (!canLineAdvanceInfAt(next, u)) break;
+        if (!u || u.type !== 'inf' || u.side !== rowSide) break;
         out.push(next);
         cur = next;
       }
@@ -5892,6 +5980,12 @@ function unitColors(side) {
 
     before.reverse();
     return [...before, anchorKey, ...after];
+  }
+
+  function collectLineAdvanceFormation(anchorKey) {
+    const row = collectContiguousInfantryRow(anchorKey);
+    if (row.length === 0) return [];
+    return row.filter((hk) => canLineAdvanceInfAt(hk, unitsByHex.get(hk)));
   }
 
   function lineAdvanceMovePlan(formation) {
@@ -5937,6 +6031,34 @@ function unitColors(side) {
     return { moves, blocked };
   }
 
+  function lineAdvancePreviewForAnchor(anchorKey) {
+    const row = collectContiguousInfantryRow(anchorKey);
+    if (row.length === 0) return null;
+
+    const formation = row.filter((hk) => canLineAdvanceInfAt(hk, unitsByHex.get(hk)));
+    const plan = lineAdvanceMovePlan(formation);
+    const destinationSet = new Set(plan.moves.map(m => m.toKey));
+    const movableSet = new Set(plan.moves.map(m => m.fromKey));
+    const blockedSet = new Set(plan.blocked.map(b => b.fromKey));
+    const rowSet = new Set(row);
+    const formationSet = new Set(formation);
+    const anchorUnit = unitsByHex.get(anchorKey);
+
+    return {
+      anchorKey,
+      row,
+      rowSet,
+      formation,
+      formationSet,
+      moves: plan.moves,
+      blocked: plan.blocked,
+      destinationSet,
+      movableSet,
+      blockedSet,
+      forwardDir: sideForwardDirection(anchorUnit?.side || state.side, state.forwardAxis),
+    };
+  }
+
   function canIssueLineAdvance() {
     if (state.mode !== 'play' || state.gameOver) return false;
     if (isAiTurnActive()) return false;
@@ -5945,9 +6067,9 @@ function unitColors(side) {
 
     const u = unitsByHex.get(state.selectedKey);
     if (!u || u.side !== state.side || u.type !== 'inf') return false;
-    const formation = collectLineAdvanceFormation(state.selectedKey);
-    if (formation.length === 0) return false;
-    return lineAdvanceMovePlan(formation).moves.length > 0;
+    const preview = lineAdvancePreviewForAnchor(state.selectedKey);
+    if (!preview) return false;
+    return preview.moves.length > 0;
   }
 
   function lineAdvanceFromSelection() {
@@ -5973,14 +6095,16 @@ function unitColors(side) {
       return;
     }
 
-    const formation = collectLineAdvanceFormation(anchorKey);
+    const preview = lineAdvancePreviewForAnchor(anchorKey);
+    const formation = preview ? preview.formation : [];
+    const fullRow = preview ? preview.row : [];
     if (formation.length === 0) {
       log('Line Advance unavailable: selected INF cannot form an eligible line.');
       updateHud();
       return;
     }
 
-    const plan = lineAdvanceMovePlan(formation);
+    const plan = preview || lineAdvanceMovePlan(formation);
     const moves = plan.moves;
     const blocked = plan.blocked;
 
@@ -6015,7 +6139,8 @@ function unitColors(side) {
     if (byReason.terrain) blockParts.push(`terrain ${byReason.terrain}`);
     const blockText = blockParts.length ? ` blocked(${blockParts.join(', ')})` : '';
 
-    log(`Line Advance: ${moves.length}/${formation.length} INF advanced.${blockText}`);
+    const eligibilityText = fullRow.length > formation.length ? ` (${formation.length}/${fullRow.length} eligible)` : '';
+    log(`Line Advance: ${moves.length}/${formation.length} INF advanced${eligibilityText}.${blockText}`);
     if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
@@ -8364,6 +8489,16 @@ function unitColors(side) {
     endTurn();
   });
   if (elLineAdvanceBtn) {
+    const setLineAdvancePreviewHover = (isHovering) => {
+      const next = !!isHovering;
+      if (state.lineAdvancePreviewHover === next) return;
+      state.lineAdvancePreviewHover = next;
+      draw();
+    };
+    elLineAdvanceBtn.addEventListener('mouseenter', () => setLineAdvancePreviewHover(true));
+    elLineAdvanceBtn.addEventListener('mouseleave', () => setLineAdvancePreviewHover(false));
+    elLineAdvanceBtn.addEventListener('focus', () => setLineAdvancePreviewHover(true));
+    elLineAdvanceBtn.addEventListener('blur', () => setLineAdvancePreviewHover(false));
     elLineAdvanceBtn.addEventListener('click', () => {
       if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance' })) return;
       lineAdvanceFromSelection();

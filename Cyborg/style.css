@@ -481,10 +481,10 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   background:linear-gradient(180deg, #0f1218 0%, #0b0d12 100%);
   padding:6px 8px 7px;
   display:grid;
-  grid-template-columns:1.05fr 1fr 1fr 1fr 1.05fr;
+  grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr);
   gap:6px;
   align-items:stretch;
-  overflow-x:auto;
+  overflow-x:hidden;
   overflow-y:hidden;
 }
 
