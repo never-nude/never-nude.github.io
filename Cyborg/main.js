@@ -465,7 +465,7 @@
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
   const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Archers in Woods can fire only from tree-line woods (woods hex adjacent to clear). Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and hills can reduce attacker dice (minimum 1). ARC/SKR ranged shots from hills or tree-line gain +1 die. Attacks launched from rough lose 1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
     <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
@@ -473,8 +473,9 @@
     <p>General command radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
     <p>Out of command: Green INF/ARC/SKR cannot activate. Regular INF/ARC/SKR can attack but cannot move. Veterans and CAV ignore command limits.</p>
     <h4>Combat</h4>
-    <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1).</p>
-    <p>Tree-line rule: Archers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
+    <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender terrain can reduce attacker dice (minimum 1).</p>
+    <p>Tree-line rule: Archers and skirmishers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
+    <p>Friction rule: INF entering Woods/Hills/Rough and CAV entering Rough must pause movement on their next turn.</p>
     <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
@@ -509,8 +510,8 @@
       <li>MED HP 1/1/1, UP 4</li>
     </ul>
     <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. Hills/Woods/Rough cost 2 for INF/ARC/SKR/GEN and 3 for CAV. Water is impassable.</p>
-    <p>Woods also provide defense: attacker rolls -1 die (minimum 1). Archers standing in Woods can only fire if their woods hex is adjacent to at least one Clear hex (tree-line fire rule).</p>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF/ARC/SKR/RUN can step into Hills/Woods/Rough at cost 1. GEN/MED pay 2 in Hills/Woods/Rough. CAV pays 2 in Rough, 3 in Woods, and cannot climb Hills. Water is impassable.</p>
+    <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). Infantry attacking out of Woods suffers -1 die. Any attack launched out of Rough suffers -1 die. ARC/SKR ranged attacks from Hills or tree-line gain +1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
     <ul>
@@ -3626,10 +3627,13 @@ function unitColors(side) {
     const reinforcingBackKeys = (reinforcePreview && reinforcePreview.active) ? reinforcePreview.supportSet : null;
     const lineAdvancePreview = (() => {
       if (state.mode !== 'play') return null;
-      if (!state.lineAdvancePreviewHover) return null;
       if (!state.selectedKey) return null;
       const u = unitsByHex.get(state.selectedKey);
       if (!u || u.side !== state.side || u.type !== 'inf') return null;
+      if (!state.lineAdvancePreviewHover && !canIssueLineAdvance()) {
+        const row = collectContiguousInfantryRow(state.selectedKey);
+        if (row.length <= 1) return null;
+      }
       return lineAdvancePreviewForAnchor(state.selectedKey);
     })();
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
@@ -3764,13 +3768,14 @@ function unitColors(side) {
       const isPlay = (state.mode === 'play') && !state.gameOver;
       const isTurnSide = isPlay && (u.side === state.side);
       const isSpent = isTurnSide && state.actedUnitIds.has(u.id);
+      const isMovePaused = isTurnSide && !isSpent && unitMoveIsPausedThisTurn(u);
       const isCmdLocked = isTurnSide && !isSpent && (state.actsUsed < ACT_LIMIT) &&
         (!unitIgnoresCommand(u)) && (u.quality === 'green') && (!inCommandAt(hk, u.side));
 
       // Visual friction: spent units and unorderable greens read as "not available".
       // - spent: dim
       // - green out-of-command: dim + dashed orange ring
-      const alpha = isSpent ? 0.38 : (isCmdLocked ? 0.48 : 1.0);
+      const alpha = isSpent ? 0.38 : (isMovePaused ? 0.58 : (isCmdLocked ? 0.48 : 1.0));
 
       const c = unitColors(u.side);
 
@@ -3853,6 +3858,15 @@ function unitColors(side) {
         ctx.lineWidth = 2;
         ctx.strokeStyle = 'rgba(255, 157, 0, 0.9)';
         ctx.setLineDash([3, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      if (isMovePaused) {
+        ctx.beginPath();
+        ctx.arc(h.cx, h.cy, R * 0.64, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(205, 221, 255, 0.92)';
+        ctx.setLineDash([2, 3]);
         ctx.stroke();
         ctx.setLineDash([]);
       }
@@ -4072,12 +4086,22 @@ function unitColors(side) {
       return;
     }
 
-    const terrainMod = (h.terrain === 'woods') ? -1 : 0;
-    const terrainText = terrainMod ? `terrain ${terrainMod}` : 'terrain 0';
+    let terrainMod = 0;
+    if (h.terrain === 'woods') terrainMod -= 1;
+    if (h.terrain === 'hills' && (u.type === 'inf' || u.type === 'arc' || u.type === 'skr')) terrainMod -= 1;
+    if (h.terrain === 'woods' && (u.type === 'arc' || u.type === 'skr') && hasAdjacentTerrain(previewKey, 'clear')) terrainMod -= 1;
+    const terrainText = terrainMod ? `defense terrain ${terrainMod}` : 'defense terrain 0';
+    const attackOutMod = (() => {
+      let n = 0;
+      if (h.terrain === 'rough') n -= 1;
+      if (h.terrain === 'woods' && u.type === 'inf') n -= 1;
+      return n;
+    })();
+    const attackOutText = attackOutMod ? `attack-out ${attackOutMod}` : 'attack-out 0';
 
     if (u.type !== 'inf') {
       elModifierPreview.textContent =
-        `Modifier preview (${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type)?.abbrev || u.type}): ${terrainText}, reinforcement n/a, minimum 1 die.`;
+        `Modifier preview (${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type)?.abbrev || u.type}): ${terrainText}, ${attackOutText}, reinforcement n/a, minimum 1 die.`;
       return;
     }
 
@@ -4086,13 +4110,13 @@ function unitColors(side) {
     if (profile && profile.active) {
       const dirText = profile.braceDirs.map(d => d.toUpperCase()).join('/');
       elModifierPreview.textContent =
-        `Modifier preview (front attack): ${terrainText}, reinforcement ${reinfMod} ` +
+        `Modifier preview (front attack): ${terrainText}, ${attackOutText}, reinforcement ${reinfMod} ` +
         `(adjacent brace pair), active vs attacks from ${dirText}, minimum 1 die.`;
       return;
     }
 
     elModifierPreview.textContent =
-      `Modifier preview (front attack): ${terrainText}, reinforcement 0 ` +
+      `Modifier preview (front attack): ${terrainText}, ${attackOutText}, reinforcement 0 ` +
       `(needs two adjacent friendly infantry touching each other), minimum 1 die.`;
   }
 
@@ -4157,6 +4181,7 @@ function unitColors(side) {
     const pivotText = info.pivoted ? ` (defender pivoted from ${info.pivotFrom})` : '';
     const terrainName = terrainLabel(info.defenderTerrain || 'clear');
     const terrainDelta = Number(info.terrainDiceMod || 0);
+    const attackTerrainDelta = Number(info.attackTerrainDiceMod || 0);
     const supportDelta = Number(info.supportDiceMod || 0);
     const supportRanks = Math.max(0, Number(info.supportRanks || 0));
     const supportPairCount = Math.max(0, Number(info.supportPairCount || 0));
@@ -4165,20 +4190,26 @@ function unitColors(side) {
     const terrainMath = terrainDelta
       ? `${terrainName} ${terrainDelta > 0 ? `+${terrainDelta}` : `${terrainDelta}`} die`
       : `${terrainName}: no dice change`;
+    const attackTerrainMath = attackTerrainDelta
+      ? `attacker terrain ${attackTerrainDelta > 0 ? `+${attackTerrainDelta}` : `${attackTerrainDelta}`} die`
+      : 'attacker terrain 0';
     const supportMath = supportDelta
       ? `${supportRanks} line ${supportDelta > 0 ? `+${supportDelta}` : `${supportDelta}`} die (matched pairs ${supportMatchingCount}, attack ${supportAttackDir})`
       : `none (available pairs ${supportPairCount}, attack ${supportAttackDir || '?'})`;
     const flankText = info.flankBonus ? ` + flank ${info.flankBonus}` : '';
     const rearText = info.rearBonus ? ` + rear ${info.rearBonus}` : '';
+    const attackTerrainText = attackTerrainDelta
+      ? ` ${attackTerrainDelta > 0 ? '+' : '-'} atk-terrain ${Math.abs(attackTerrainDelta)}`
+      : '';
     const terrainText = terrainDelta ? ` ${terrainDelta > 0 ? '+' : '-'} terrain ${Math.abs(terrainDelta)}` : '';
     const supportText = supportDelta ? ` - support ${Math.abs(supportDelta)}` : '';
 
     elCombatSummary.textContent =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
     elCombatMath.textContent =
-      `Dice math: base ${info.baseDice}${flankText}${rearText}${terrainText}${supportText} = ${info.dice}.`;
+      `Dice math: base ${info.baseDice}${flankText}${rearText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
     elCombatTerrain.textContent =
-      `Defense modifiers: terrain ${terrainMath}; infantry support ${supportMath}.`;
+      `Defense modifiers: ${attackTerrainMath}; terrain ${terrainMath}; infantry support ${supportMath}.`;
     const supportStatus = supportStatusForCombat(info);
     setCombatSupportStatus(supportStatus.text, supportStatus.cls);
 
@@ -4198,6 +4229,9 @@ function unitColors(side) {
     const pivotText = info.pivoted ? ', pivot' : '';
     const flankText = info.flankBonus ? `, flank +${info.flankBonus}` : '';
     const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
+    const attackTerrainText = info.attackTerrainDiceMod
+      ? `, atk terrain ${info.attackTerrainDiceMod > 0 ? '+' : ''}${info.attackTerrainDiceMod}`
+      : ', atk terrain 0';
     const terrainName = terrainLabel(info.defenderTerrain || 'clear');
     const terrainText = info.terrainDiceMod ? `, ${terrainName.toLowerCase()} ${info.terrainDiceMod > 0 ? '+' : ''}${info.terrainDiceMod}` : `, ${terrainName.toLowerCase()} 0`;
     const supportPairCount = Math.max(0, Number(info.supportPairCount || 0));
@@ -4208,7 +4242,7 @@ function unitColors(side) {
       : `, support 0 (pairs ${supportPairCount}, atk ${supportAttackDir || '?'})`;
     const finalSummary =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
-      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${terrainText}${supportText}) · ` +
+      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${attackTerrainText}${terrainText}${supportText}) · ` +
       `H ${info.hits} / R ${info.retreats} / M ${info.misses}`;
     const briefOutcome =
       `This roll: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ` +
@@ -4613,6 +4647,7 @@ function unitColors(side) {
       existing.type = type;
       existing.quality = quality;
       existing.hp = unitMaxHp(type, quality);
+      delete existing.movePauseUntilTurn;
       log(`Draft replace at ${hexKey} -> ${side.toUpperCase()} ${def.abbrev} (${newCost} UP).`);
     } else {
       unitsByHex.set(hexKey, {
@@ -4621,6 +4656,7 @@ function unitColors(side) {
         type,
         quality,
         hp: unitMaxHp(type, quality),
+        movePauseUntilTurn: 0,
       });
       log(`Draft placed ${side.toUpperCase()} ${def.abbrev} at ${hexKey} (${newCost} UP).`);
     }
@@ -5540,12 +5576,50 @@ function unitColors(side) {
     return unitsByHex.has(hk);
   }
 
+  function isDifficultTerrain(terrainId) {
+    return terrainId === 'woods' || terrainId === 'hills' || terrainId === 'rough';
+  }
+
+  function unitMoveIsPausedThisTurn(unit) {
+    if (!unit) return false;
+    const until = Number(unit.movePauseUntilTurn || 0);
+    return Number.isFinite(until) && until >= state.turn;
+  }
+
+  function movementPauseAppliesForEntry(unitType, terrainId) {
+    if (terrainId === 'clear' || terrainId === 'water') return false;
+    if (unitType === 'inf' && (terrainId === 'woods' || terrainId === 'hills' || terrainId === 'rough')) return true;
+    if (unitType === 'cav' && terrainId === 'rough') return true;
+    return false;
+  }
+
+  function markMovementPauseIfNeeded(unit, destKey) {
+    if (!unit || !destKey) return false;
+    const destHex = board.byKey.get(destKey);
+    if (!destHex) return false;
+    if (!movementPauseAppliesForEntry(unit.type, destHex.terrain)) return false;
+    unit.movePauseUntilTurn = state.turn + 1;
+    return true;
+  }
+
   function terrainMoveCost(unitType, terrainId) {
     if (terrainId === 'water') return Infinity;
     if (terrainId === 'clear') return 1;
-
-    // hills/woods/rough
-    return (unitType === 'cav') ? 3 : 2;
+    if (terrainId === 'woods') {
+      if (unitType === 'cav') return 3;
+      if (unitType === 'gen' || unitType === 'iat') return 2;
+      return 1;
+    }
+    if (terrainId === 'hills') {
+      if (unitType === 'cav') return Infinity;
+      if (unitType === 'gen' || unitType === 'iat') return 2;
+      return 1;
+    }
+    if (terrainId === 'rough') {
+      if (unitType === 'cav' || unitType === 'gen' || unitType === 'iat') return 2;
+      return 1;
+    }
+    return 1;
   }
 
   function hasAdjacentTerrain(hexKey, terrainId) {
@@ -5667,6 +5741,8 @@ function unitColors(side) {
   }
 
   function unitCanMoveThisActivation(u, actCtx, startKey) {
+    if (unitMoveIsPausedThisTurn(u)) return false;
+
     // Engagement makes the line sticky.
     const engaged = isEngaged(startKey, u.side);
 
@@ -5688,6 +5764,8 @@ function unitColors(side) {
   // --- Movement (MP + terrain costs)
   function computeMoveTargets(fromKey, u, actCtx) {
     const mp = unitMovePoints(u);
+    const startHex = board.byKey.get(fromKey);
+    const runnerStartingInDifficult = !!(u && u.type === 'run' && startHex && isDifficultTerrain(startHex.terrain));
 
     // If movement isn't allowed, return empty set.
     if (!unitCanMoveThisActivation(u, actCtx, fromKey)) return new Set();
@@ -5715,6 +5793,8 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
+      if (u.type === 'run' && cur.k !== fromKey && isDifficultTerrain(h.terrain)) continue;
+      if (u.type === 'run' && runnerStartingInDifficult && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk)) continue;
@@ -5732,6 +5812,8 @@ function unitColors(side) {
 
         best.set(nk, nc);
         out.add(nk);
+        if (u.type === 'run' && isDifficultTerrain(nh.terrain)) continue;
+        if (u.type === 'run' && runnerStartingInDifficult) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -5744,6 +5826,8 @@ function unitColors(side) {
     if (!unit) return null;
     const mp = unitMovePoints(unit);
     if (mp <= 0) return null;
+    const startHex = board.byKey.get(fromKey);
+    const runnerStartingInDifficult = !!(unit.type === 'run' && startHex && isDifficultTerrain(startHex.terrain));
 
     const best = new Map();
     const pq = [{ k: fromKey, c: 0 }];
@@ -5757,6 +5841,8 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
+      if (unit.type === 'run' && cur.k !== fromKey && isDifficultTerrain(h.terrain)) continue;
+      if (unit.type === 'run' && runnerStartingInDifficult && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk) && nk !== toKey) continue;
@@ -5773,6 +5859,8 @@ function unitColors(side) {
         if (prevBest !== undefined && nc >= prevBest) continue;
 
         best.set(nk, nc);
+        if (unit.type === 'run' && isDifficultTerrain(nh.terrain)) continue;
+        if (unit.type === 'run' && runnerStartingInDifficult) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -5785,6 +5873,8 @@ function unitColors(side) {
     if (!unit) return [fromKey, toKey];
     const mp = unitMovePoints(unit);
     if (mp <= 0) return [fromKey, toKey];
+    const startHex = board.byKey.get(fromKey);
+    const runnerStartingInDifficult = !!(unit.type === 'run' && startHex && isDifficultTerrain(startHex.terrain));
 
     const best = new Map();
     const prev = new Map();
@@ -5799,6 +5889,8 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
+      if (unit.type === 'run' && cur.k !== fromKey && isDifficultTerrain(h.terrain)) continue;
+      if (unit.type === 'run' && runnerStartingInDifficult && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk) && nk !== toKey) continue;
@@ -5816,6 +5908,8 @@ function unitColors(side) {
 
         best.set(nk, nc);
         prev.set(nk, cur.k);
+        if (unit.type === 'run' && isDifficultTerrain(nh.terrain)) continue;
+        if (unit.type === 'run' && runnerStartingInDifficult) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -5971,6 +6065,7 @@ function unitColors(side) {
     if (u.side !== state.side) return false;
     if (state.actsUsed >= ACT_LIMIT) return false;
     if (state.actedUnitIds.has(u.id)) return false;
+    if (unitMoveIsPausedThisTurn(u)) return false;
     if (isEngaged(hexKey, u.side)) return false;
     return true;
   }
@@ -6146,6 +6241,10 @@ function unitColors(side) {
 
     for (const m of moves) unitsByHex.delete(m.fromKey);
     for (const m of moves) unitsByHex.set(m.toKey, m.unit);
+    let terrainPauseCount = 0;
+    for (const m of moves) {
+      if (markMovementPauseIfNeeded(m.unit, m.toKey)) terrainPauseCount += 1;
+    }
 
     clearSelection();
 
@@ -6163,7 +6262,10 @@ function unitColors(side) {
     const blockText = blockParts.length ? ` blocked(${blockParts.join(', ')})` : '';
 
     const eligibilityText = fullRow.length > formation.length ? ` (${formation.length}/${fullRow.length} eligible)` : '';
-    log(`Line Advance: ${moves.length}/${formation.length} INF advanced${eligibilityText}.${blockText}`);
+    const pauseText = terrainPauseCount > 0
+      ? ` terrain-pause ${terrainPauseCount}`
+      : '';
+    log(`Line Advance: ${moves.length}/${formation.length} INF advanced${eligibilityText}.${blockText}${pauseText}.`);
     if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
@@ -6257,7 +6359,11 @@ function unitColors(side) {
     // Beyond range 1 requires ranged capability and NOT being engaged.
     if (engaged) return null;
     if (!atkDef.ranged) return null;
-    if (attackerUnit.type === 'arc' && atkHex.terrain === 'woods' && !hasAdjacentTerrain(attackerKey, 'clear')) {
+    if (
+      (attackerUnit.type === 'arc' || attackerUnit.type === 'skr') &&
+      atkHex.terrain === 'woods' &&
+      !hasAdjacentTerrain(attackerKey, 'clear')
+    ) {
       return null;
     }
 
@@ -6384,10 +6490,41 @@ function unitColors(side) {
       }
     }
 
-    // Terrain defensive modifier: defender in woods => -1 die (min 1)
+    // Terrain modifiers:
+    // - Defensive: woods / hills / tree-line cover can reduce attacker dice.
+    // - Offensive: rough and some woods attacks reduce outgoing dice.
+    // - Elevated missile fire (ARC/SKR) can add +1 die.
+    const atkHex = board.byKey.get(attackerKey);
     const defHex = board.byKey.get(defenderKey);
     const defenderTerrain = defHex?.terrain || 'clear';
-    const terrainDiceMod = (defenderTerrain === 'woods') ? -1 : 0;
+    const attackerTerrain = atkHex?.terrain || 'clear';
+    const attackerTreeLine = attackerTerrain === 'woods' && hasAdjacentTerrain(attackerKey, 'clear');
+    const defenderTreeLine = defenderTerrain === 'woods' && hasAdjacentTerrain(defenderKey, 'clear');
+
+    let attackTerrainDiceMod = 0;
+    const attackTerrainParts = [];
+    if (attackerTerrain === 'rough') {
+      attackTerrainDiceMod -= 1;
+      attackTerrainParts.push('rough -1');
+    }
+    if (attackerTerrain === 'woods' && atk.type === 'inf' && prof.kind === 'melee') {
+      attackTerrainDiceMod -= 1;
+      attackTerrainParts.push('inf-from-woods -1');
+    }
+    if (prof.kind === 'ranged' && (atk.type === 'arc' || atk.type === 'skr')) {
+      if (attackerTerrain === 'hills') {
+        attackTerrainDiceMod += 1;
+        attackTerrainParts.push('hill-shot +1');
+      } else if (attackerTreeLine) {
+        attackTerrainDiceMod += 1;
+        attackTerrainParts.push('tree-line-shot +1');
+      }
+    }
+
+    let terrainDiceMod = 0;
+    if (defenderTerrain === 'woods') terrainDiceMod -= 1;
+    if (defenderTerrain === 'hills' && (defU.type === 'inf' || defU.type === 'arc' || defU.type === 'skr')) terrainDiceMod -= 1;
+    if (defenderTreeLine && (defU.type === 'arc' || defU.type === 'skr')) terrainDiceMod -= 1;
     const supportEval = (prof.kind === 'melee')
       ? reinforcementSupportForAttack(defenderKey, attackerKey, defU)
       : { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
@@ -6396,15 +6533,26 @@ function unitColors(side) {
       ? -(Math.min(INF_SUPPORT_MAX_RANKS, supportRanks) * INF_SUPPORT_DICE_PER_RANK)
       : 0;
     const defenseDiceMod = terrainDiceMod + supportDiceMod;
-    const terrainRuleText = (defenderTerrain === 'woods')
-      ? 'Defender in Woods: attacker rolls -1 die (minimum 1).'
-      : `Defender in ${terrainLabel(defenderTerrain)}: no terrain dice modifier in this ruleset.`;
+    const terrainRuleText = (() => {
+      const parts = [];
+      if (attackTerrainParts.length > 0) parts.push(`attack stance ${attackTerrainParts.join(', ')}`);
+      if (defenderTerrain === 'woods') parts.push('defender in Woods: attacker -1 die');
+      if (defenderTerrain === 'hills' && (defU.type === 'inf' || defU.type === 'arc' || defU.type === 'skr')) {
+        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} on Hills: attacker -1 die`);
+      }
+      if (defenderTreeLine && (defU.type === 'arc' || defU.type === 'skr')) {
+        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} in tree-line: attacker -1 die`);
+      }
+      return parts.length > 0
+        ? `${parts.join('; ')}.`
+        : `No terrain dice modifier in this exchange.`;
+    })();
     const impact = cavalryAngleBonuses(atk, defU, prof.kind, impactPosition);
     const baseDice = prof.baseDice ?? prof.dice;
     const flankBonus = impact.flankBonus;
     const rearBonus = impact.rearBonus;
-    const preTerrainDice = baseDice + impact.totalBonus;
-    const dice = defenseDiceMod ? Math.max(1, preTerrainDice + defenseDiceMod) : preTerrainDice;
+    const preTerrainDice = baseDice + impact.totalBonus + attackTerrainDiceMod;
+    const dice = Math.max(1, preTerrainDice + defenseDiceMod);
 
     const rolls = [];
     for (let i = 0; i < dice; i++) rolls.push(rollD6());
@@ -6429,6 +6577,7 @@ function unitColors(side) {
     const modParts = [`base ${baseDice}`];
     if (flankBonus) modParts.push(`flank +${flankBonus}`);
     if (rearBonus) modParts.push(`rear +${rearBonus}`);
+    if (attackTerrainDiceMod) modParts.push(`attack terrain ${attackTerrainDiceMod > 0 ? `+${attackTerrainDiceMod}` : `${attackTerrainDiceMod}`}`);
     if (terrainDiceMod) modParts.push(`${terrainLabel(defenderTerrain).toLowerCase()} ${terrainDiceMod}`);
     if (supportDiceMod) modParts.push(`inf support ${supportDiceMod}`);
     const modText = ` (${modParts.join(', ')})`;
@@ -6443,6 +6592,9 @@ function unitColors(side) {
       baseDice,
       flankBonus,
       rearBonus,
+      attackTerrainDiceMod,
+      attackerTerrain,
+      attackerTreeLine,
       impactPosition,
       pivoted,
       pivotFrom,
@@ -6693,6 +6845,7 @@ function unitColors(side) {
       existing.type = type;
       existing.quality = quality;
       existing.hp = unitMaxHp(type, quality);
+      delete existing.movePauseUntilTurn;
       log(`Replaced at ${hexKey} → ${state.editSide} ${def.abbrev}`);
     } else {
       unitsByHex.set(hexKey, {
@@ -6701,6 +6854,7 @@ function unitColors(side) {
         type,
         quality,
         hp: unitMaxHp(type, quality),
+        movePauseUntilTurn: 0,
       });
       log(`Placed ${state.editSide} ${def.abbrev} at ${hexKey}`);
     }
@@ -7147,103 +7301,234 @@ function unitColors(side) {
     return candidates[randInt(0, candidates.length - 1)] || null;
   }
 
+  const FORMATION_LABELS = new Map([
+    ['phalanx', 'Phalanx Line'],
+    ['triplex', 'Triplex Acies'],
+    ['oblique', 'Oblique Order'],
+    ['crescent', 'Crescent Envelopment'],
+    ['refused_flank', 'Refused Flank'],
+  ]);
+
+  function formationLabel(id) {
+    return FORMATION_LABELS.get(id) || String(id || 'Phalanx Line');
+  }
+
+  function weightedPick(options, fallback) {
+    if (!Array.isArray(options) || options.length === 0) return fallback;
+    let total = 0;
+    for (const o of options) total += Math.max(0, Number(o.weight) || 0);
+    if (total <= 0) return options[0]?.value ?? fallback;
+    let roll = Math.random() * total;
+    for (const o of options) {
+      roll -= Math.max(0, Number(o.weight) || 0);
+      if (roll <= 0) return o.value;
+    }
+    return options[options.length - 1]?.value ?? fallback;
+  }
+
+  function chooseFormationForStartup(doctrine = 'balanced', role = 'even') {
+    if (doctrine === 'elite') {
+      if (role === 'outnumbered') {
+        return weightedPick([
+          { value: 'oblique', weight: 36 },
+          { value: 'refused_flank', weight: 29 },
+          { value: 'triplex', weight: 21 },
+          { value: 'crescent', weight: 10 },
+          { value: 'phalanx', weight: 4 },
+        ], 'oblique');
+      }
+      return weightedPick([
+        { value: 'triplex', weight: 32 },
+        { value: 'oblique', weight: 26 },
+        { value: 'refused_flank', weight: 20 },
+        { value: 'phalanx', weight: 14 },
+        { value: 'crescent', weight: 8 },
+      ], 'triplex');
+    }
+
+    if (doctrine === 'levy') {
+      if (role === 'advantaged') {
+        return weightedPick([
+          { value: 'phalanx', weight: 38 },
+          { value: 'crescent', weight: 26 },
+          { value: 'triplex', weight: 18 },
+          { value: 'refused_flank', weight: 10 },
+          { value: 'oblique', weight: 8 },
+        ], 'phalanx');
+      }
+      return weightedPick([
+        { value: 'phalanx', weight: 34 },
+        { value: 'triplex', weight: 24 },
+        { value: 'crescent', weight: 24 },
+        { value: 'refused_flank', weight: 10 },
+        { value: 'oblique', weight: 8 },
+      ], 'phalanx');
+    }
+
+    if (role === 'outnumbered') {
+      return weightedPick([
+        { value: 'triplex', weight: 29 },
+        { value: 'oblique', weight: 24 },
+        { value: 'refused_flank', weight: 22 },
+        { value: 'phalanx', weight: 15 },
+        { value: 'crescent', weight: 10 },
+      ], 'triplex');
+    }
+
+    return weightedPick([
+      { value: 'triplex', weight: 24 },
+      { value: 'phalanx', weight: 23 },
+      { value: 'crescent', weight: 20 },
+      { value: 'oblique', weight: 17 },
+      { value: 'refused_flank', weight: 16 },
+    ], 'triplex');
+  }
+
+  function sizeLabelForUnits(maxUnits) {
+    if (maxUnits <= 20) return 'small';
+    if (maxUnits >= 29) return 'large';
+    return 'medium';
+  }
+
   function chooseRandomStartupProfile() {
-    const doctrineRoll = Math.random();
-    if (doctrineRoll < 0.42) {
-      // Frequent asymmetric setup: smaller elite force vs larger levy force.
-      const eliteIsBlue = Math.random() < 0.5;
-      const eliteUnits = randInt(20, 24);
-      const levyUnits = randInt(30, 36);
-      return {
-        size: 'asymmetric',
-        matchup: eliteIsBlue ? 'blue_elite_outnumbered' : 'red_elite_outnumbered',
-        blueUnits: eliteIsBlue ? eliteUnits : levyUnits,
-        redUnits: eliteIsBlue ? levyUnits : eliteUnits,
-        blueDoctrine: eliteIsBlue ? 'elite' : 'levy',
-        redDoctrine: eliteIsBlue ? 'levy' : 'elite',
-      };
-    }
+    const modeRoll = Math.random();
 
-    const sizeRoll = Math.random();
-    let size = 'medium';
-    let baseUnits = randInt(23, 28);
-
-    // Most generated battles should be readable and playable quickly:
-    // generally 20-30 units per side, with rare larger clashes.
-    if (sizeRoll < 0.20) {
-      size = 'small';
-      baseUnits = randInt(20, 22);
-    } else if (sizeRoll >= 0.96) {
-      size = 'large';
-      baseUnits = randInt(32, 36);
-    } else if (sizeRoll >= 0.84) {
-      size = 'medium';
-      baseUnits = randInt(26, 30);
-    }
-
-    let blueUnits = baseUnits;
-    let redUnits = baseUnits;
     let matchup = 'even';
+    let blueUnits = 24;
+    let redUnits = 24;
+    let blueDoctrine = 'balanced';
+    let redDoctrine = 'balanced';
+    let blueRole = 'even';
+    let redRole = 'even';
 
-    const asymmetryRoll = Math.random();
-
-    if (asymmetryRoll < 0.20) {
-      // Common asymmetry: one side gets a modest edge.
-      const delta =
-        (size === 'small') ? randInt(3, 5) :
-        (size === 'large') ? randInt(6, 9) :
-        randInt(4, 7);
-      if (Math.random() < 0.5) {
-        matchup = 'blue_advantage';
-        blueUnits += delta;
-      } else {
-        matchup = 'red_advantage';
-        redUnits += delta;
+    if (modeRoll < 0.27) {
+      // Classic "quality vs quantity" setup.
+      const eliteIsBlue = Math.random() < 0.5;
+      const eliteUnits = randInt(15, 22);
+      const levyUnits = randInt(27, 35);
+      matchup = eliteIsBlue ? 'blue_elite_outnumbered' : 'red_elite_outnumbered';
+      blueUnits = eliteIsBlue ? eliteUnits : levyUnits;
+      redUnits = eliteIsBlue ? levyUnits : eliteUnits;
+      blueDoctrine = eliteIsBlue ? 'elite' : 'levy';
+      redDoctrine = eliteIsBlue ? 'levy' : 'elite';
+      blueRole = eliteIsBlue ? 'outnumbered' : 'advantaged';
+      redRole = eliteIsBlue ? 'advantaged' : 'outnumbered';
+    } else if (modeRoll < 0.62) {
+      // Even baseline battles.
+      const evenUnits = randInt(18, 32);
+      blueUnits = evenUnits;
+      redUnits = evenUnits;
+      matchup = 'even';
+      if (Math.random() < 0.20) {
+        blueDoctrine = 'elite';
+        redDoctrine = 'balanced';
+      } else if (Math.random() < 0.20) {
+        redDoctrine = 'elite';
+        blueDoctrine = 'balanced';
       }
-    } else if (asymmetryRoll < 0.24) {
-      // Rare dramatic mismatch (e.g., ~40 vs ~20) for variety.
-      size = 'large';
+    } else {
+      // Moderate asymmetry (still within requested 15-35 window).
+      const base = randInt(18, 30);
+      const delta = randInt(3, 8);
       if (Math.random() < 0.5) {
         matchup = 'blue_advantage';
-        blueUnits = randInt(38, 40);
-        redUnits = randInt(20, 24);
+        blueUnits = clampInt(base + delta, 15, 35, base);
+        redUnits = clampInt(base, 15, 35, base);
+        blueRole = 'advantaged';
+        redRole = 'outnumbered';
       } else {
         matchup = 'red_advantage';
-        redUnits = randInt(38, 40);
-        blueUnits = randInt(20, 24);
+        redUnits = clampInt(base + delta, 15, 35, base);
+        blueUnits = clampInt(base, 15, 35, base);
+        redRole = 'advantaged';
+        blueRole = 'outnumbered';
+      }
+
+      if (Math.random() < 0.25) {
+        if (blueRole === 'outnumbered') blueDoctrine = 'elite';
+        if (redRole === 'outnumbered') redDoctrine = 'elite';
+        if (blueRole === 'advantaged') blueDoctrine = 'levy';
+        if (redRole === 'advantaged') redDoctrine = 'levy';
       }
     }
+
+    const blueFormation = chooseFormationForStartup(blueDoctrine, blueRole);
+    const redFormation = chooseFormationForStartup(redDoctrine, redRole);
+    const size = sizeLabelForUnits(Math.max(blueUnits, redUnits));
 
     return {
       size,
       matchup,
-      blueDoctrine: 'balanced',
-      redDoctrine: 'balanced',
-      blueUnits: clampInt(blueUnits, 20, 42, baseUnits),
-      redUnits: clampInt(redUnits, 20, 42, baseUnits),
+      blueDoctrine,
+      redDoctrine,
+      blueRole,
+      redRole,
+      blueFormation,
+      redFormation,
+      blueUnits: clampInt(blueUnits, 15, 35, 24),
+      redUnits: clampInt(redUnits, 15, 35, 24),
     };
   }
 
-  function forceMixCounts(totalNeeded) {
+  function forceMixCounts(totalNeeded, doctrine = 'balanced', formation = 'phalanx', role = 'even') {
     const counts = {
-      gen: totalNeeded >= 34 ? 3 : (totalNeeded >= 24 ? 2 : 1),
-      run: totalNeeded >= 18 ? 1 : 0,
-      iat: totalNeeded >= 18 ? 1 : 0,
+      gen: totalNeeded >= 30 ? 3 : (totalNeeded >= 18 ? 2 : 1),
+      run: totalNeeded >= 16 ? 1 : 0,
+      iat: totalNeeded >= 22 ? 1 : 0,
       inf: 0,
       cav: 0,
       arc: 0,
       skr: 0,
     };
 
+    const baseRatios = {
+      phalanx: { inf: 0.56, cav: 0.18, arc: 0.12, skr: 0.14 },
+      triplex: { inf: 0.53, cav: 0.18, arc: 0.13, skr: 0.16 },
+      oblique: { inf: 0.46, cav: 0.25, arc: 0.11, skr: 0.18 },
+      crescent: { inf: 0.49, cav: 0.23, arc: 0.11, skr: 0.17 },
+      refused_flank: { inf: 0.51, cav: 0.22, arc: 0.11, skr: 0.16 },
+    };
+    const ratios = { ...(baseRatios[formation] || baseRatios.triplex) };
+
+    if (doctrine === 'elite') {
+      ratios.cav += 0.03;
+      ratios.inf -= 0.01;
+      ratios.arc -= 0.01;
+      ratios.skr -= 0.01;
+    } else if (doctrine === 'levy') {
+      ratios.inf += 0.04;
+      ratios.skr += 0.02;
+      ratios.cav -= 0.03;
+      ratios.arc -= 0.03;
+    }
+
+    if (role === 'outnumbered') {
+      ratios.cav += 0.02;
+      ratios.inf -= 0.01;
+      ratios.arc -= 0.01;
+    } else if (role === 'advantaged') {
+      ratios.inf += 0.02;
+      ratios.skr += 0.01;
+      ratios.cav -= 0.02;
+      ratios.arc -= 0.01;
+    }
+
     let remaining = Math.max(0, totalNeeded - counts.gen - counts.run - counts.iat);
-    const min = { inf: 4, cav: 2, arc: 2, skr: 2 };
-    counts.inf = Math.max(min.inf, Math.floor(remaining * 0.46));
-    counts.cav = Math.max(min.cav, Math.floor(remaining * 0.20));
-    counts.arc = Math.max(min.arc, Math.floor(remaining * 0.16));
-    counts.skr = Math.max(min.skr, Math.floor(remaining * 0.18));
+    const min = {
+      inf: Math.max(4, Math.floor(remaining * 0.34)),
+      cav: remaining >= 20 ? 2 : 1,
+      arc: remaining >= 18 ? 2 : 1,
+      skr: remaining >= 18 ? 2 : 1,
+    };
+    counts.inf = Math.max(min.inf, Math.floor(remaining * ratios.inf));
+    counts.cav = Math.max(min.cav, Math.floor(remaining * ratios.cav));
+    counts.arc = Math.max(min.arc, Math.floor(remaining * ratios.arc));
+    counts.skr = Math.max(min.skr, Math.floor(remaining * ratios.skr));
 
     let used = counts.inf + counts.cav + counts.arc + counts.skr;
-    const upOrder = ['inf', 'inf', 'skr', 'arc', 'cav'];
+    const upOrder = (formation === 'oblique' || formation === 'refused_flank')
+      ? ['inf', 'cav', 'inf', 'skr', 'arc']
+      : ['inf', 'inf', 'skr', 'arc', 'cav'];
     let upIdx = 0;
     while (used < remaining) {
       const t = upOrder[upIdx % upOrder.length];
@@ -7269,6 +7554,22 @@ function unitColors(side) {
     return counts;
   }
 
+  function splitByWeights(total, weights) {
+    const safeWeights = Array.isArray(weights) && weights.length > 0 ? weights : [1];
+    let sum = 0;
+    for (const w of safeWeights) sum += Math.max(0, Number(w) || 0);
+    if (sum <= 0) sum = safeWeights.length;
+    const out = safeWeights.map(w => Math.floor(total * ((Math.max(0, Number(w) || 0) || 1) / sum)));
+    let used = out.reduce((a, b) => a + b, 0);
+    let idx = 0;
+    while (used < total) {
+      out[idx % out.length] += 1;
+      used += 1;
+      idx += 1;
+    }
+    return out;
+  }
+
   function buildRandomForce(
     side,
     terrainByHex,
@@ -7276,6 +7577,8 @@ function unitColors(side) {
     geometry,
     totalNeeded = RANDOM_START_UNITS_PER_SIDE,
     qualityDoctrine = 'balanced',
+    formation = 'triplex',
+    forceRole = 'even',
   ) {
     const force = [];
     let depthNorm = 0.26;
@@ -7294,60 +7597,454 @@ function unitColors(side) {
     pool = shuffledCopy(pool);
 
     const depthAt = (h) => sideDepthNorm(geometry.byKey.get(h.k), side);
+    const lateralSigned = (h) => {
+      const m = geometry.byKey.get(h.k);
+      return m ? (m.lateralN - 0.5) : 0;
+    };
     const lateralOffset = (h) => {
       const m = geometry.byKey.get(h.k);
       return m ? Math.abs(m.lateralN - 0.5) : 0;
     };
 
-    const isBack = (h) => depthAt(h) <= 0.14;
-    const isFront = (h) => depthAt(h) >= Math.max(0.16, depthNorm - 0.08);
-    const isCenter = (h) => lateralOffset(h) <= 0.20;
-    const isFlank = (h) => lateralOffset(h) >= 0.30;
-    const mix = forceMixCounts(totalNeeded);
-
-    function addUnits(type, count, predicates) {
-      for (let i = 0; i < count; i++) {
-        let spot = pickPreferredSpawnHex(pool, predicates, type, terrainByHex);
-        if (!spot) {
-          spot = pullAnySafeHex(type, terrainByHex, occupiedSet);
-        }
-        if (!spot) break;
-        occupiedSet.add(spot.k);
-        force.push({
-          q: spot.q,
-          r: spot.r,
-          side,
-          type,
-          quality: randomQualityForType(type, qualityDoctrine),
-        });
-      }
+    function shiftQuality(baseQuality, steps) {
+      const idx = QUALITY_ORDER.indexOf(baseQuality);
+      if (idx < 0) return baseQuality;
+      const next = Math.max(0, Math.min(QUALITY_ORDER.length - 1, idx + steps));
+      return QUALITY_ORDER[next] || baseQuality;
     }
 
-    addUnits('gen', mix.gen, [isBack, isCenter]);
-    addUnits('run', mix.run, [isBack, isCenter]);
-    addUnits('iat', mix.iat, [isBack, isCenter]);
-    addUnits('cav', mix.cav, [isFront, isFlank]);
-    addUnits('arc', mix.arc, [isBack, isCenter]);
-    addUnits('inf', mix.inf, [isFront, isCenter]);
-    addUnits('skr', mix.skr, [isFront]);
+    function qualityPlanForForce() {
+      const plan = {
+        gen: 'regular',
+        run: 'green',
+        iat: 'regular',
+        infFront: 'regular',
+        infSupport: 'regular',
+        infReserve: 'regular',
+        cavWing: 'regular',
+        arcLine: 'regular',
+        skrScreen: 'regular',
+      };
+      if (qualityDoctrine === 'elite') {
+        plan.gen = 'veteran';
+        plan.run = 'regular';
+        plan.infFront = 'veteran';
+        plan.infSupport = 'regular';
+        plan.infReserve = 'regular';
+        plan.cavWing = 'veteran';
+        plan.arcLine = 'regular';
+        plan.skrScreen = 'regular';
+      } else if (qualityDoctrine === 'levy') {
+        plan.gen = 'regular';
+        plan.run = 'green';
+        plan.infFront = 'green';
+        plan.infSupport = 'green';
+        plan.infReserve = 'green';
+        plan.cavWing = 'regular';
+        plan.arcLine = 'green';
+        plan.skrScreen = 'green';
+      }
 
-    const refillTypes = ['inf', 'inf', 'inf', 'skr', 'arc', 'cav', 'iat'];
-    while (force.length < totalNeeded) {
-      const type = refillTypes[randInt(0, refillTypes.length - 1)];
-      let spot = pickPreferredSpawnHex(pool, [], type, terrainByHex);
+      if (forceRole === 'outnumbered') {
+        plan.gen = shiftQuality(plan.gen, +1);
+        plan.cavWing = shiftQuality(plan.cavWing, +1);
+        plan.infFront = shiftQuality(plan.infFront, +1);
+      } else if (forceRole === 'advantaged' && qualityDoctrine === 'levy') {
+        plan.infSupport = shiftQuality(plan.infSupport, -1);
+        plan.infReserve = shiftQuality(plan.infReserve, -1);
+      }
+
+      if (formation === 'oblique' || formation === 'refused_flank') {
+        plan.cavWing = shiftQuality(plan.cavWing, +1);
+      } else if (formation === 'phalanx') {
+        plan.infFront = shiftQuality(plan.infFront, +1);
+      }
+
+      plan.iat = 'regular';
+      return plan;
+    }
+
+    const qPlan = qualityPlanForForce();
+    const strongWing = (Math.random() < 0.5) ? 'left' : 'right';
+    const frontDepthMin = Math.max(0.13, depthNorm - 0.09);
+    const supportDepthMin = Math.max(0.09, frontDepthMin - 0.08);
+    const rearDepthMax = Math.max(0.07, supportDepthMin - 0.02);
+    const vanguardDepthMin = Math.max(frontDepthMin + 0.01, depthNorm - 0.03);
+
+    const isCenterTight = (h) => lateralOffset(h) <= 0.14;
+    const isCenter = (h) => lateralOffset(h) <= 0.23;
+    const isInnerFlank = (h) => lateralOffset(h) >= 0.18 && lateralOffset(h) <= 0.34;
+    const isFlank = (h) => lateralOffset(h) >= 0.30;
+    const isLeftWing = (h) => lateralSigned(h) <= -0.22;
+    const isRightWing = (h) => lateralSigned(h) >= 0.22;
+    const isStrongWing = (h) => strongWing === 'left' ? isLeftWing(h) : isRightWing(h);
+    const isWeakWing = (h) => strongWing === 'left' ? isRightWing(h) : isLeftWing(h);
+
+    const isRear = (h) => depthAt(h) <= rearDepthMax;
+    const isSupport = (h) => depthAt(h) >= supportDepthMin && depthAt(h) < frontDepthMin;
+    const isFront = (h) => depthAt(h) >= frontDepthMin && depthAt(h) <= Math.max(frontDepthMin + 0.12, depthNorm + 0.03);
+    const isVanguard = (h) => depthAt(h) >= vanguardDepthMin;
+
+    const mix = forceMixCounts(totalNeeded, qualityDoctrine, formation, forceRole);
+
+    function removeFromPool(hexKey) {
+      const idx = pool.findIndex(h => h && h.k === hexKey);
+      if (idx >= 0) pool.splice(idx, 1);
+    }
+
+    function pickSpotForGroup(type, groupSpots, predicates) {
+      const basePreds = (Array.isArray(predicates) && predicates.length > 0) ? predicates : [() => true];
+      const ordered = [];
+      const nearGroup = (h) => groupSpots.some(g => g.neigh.includes(h.k));
+
+      for (const pred of basePreds) {
+        if (groupSpots.length > 0) ordered.push((h) => pred(h) && nearGroup(h));
+        ordered.push(pred);
+      }
+
+      let spot = pickPreferredSpawnHex(pool, ordered, type, terrainByHex);
+      if (!spot && groupSpots.length > 0) {
+        spot = pickPreferredSpawnHex(pool, [(h) => nearGroup(h)], type, terrainByHex);
+      }
+      if (!spot) {
+        spot = pickPreferredSpawnHex(pool, [() => true], type, terrainByHex);
+      }
       if (!spot) {
         spot = pullAnySafeHex(type, terrainByHex, occupiedSet);
       }
-      if (!spot) break;
+      return spot;
+    }
+
+    function groupedQuality(roleName, chunkIdx, type) {
+      if (type === 'iat') return 'regular';
+      let q = qPlan[roleName] || randomQualityForType(type, qualityDoctrine);
+      if (chunkIdx > 0 && Math.random() < 0.22) {
+        if (qualityDoctrine === 'elite') q = shiftQuality(q, -1);
+        else if (qualityDoctrine === 'levy') q = shiftQuality(q, +1);
+      }
+      return q;
+    }
+
+    function placeUnit(spot, type, quality) {
+      if (!spot || !type) return false;
+      if (occupiedSet.has(spot.k)) return false;
       occupiedSet.add(spot.k);
+      removeFromPool(spot.k);
       force.push({
         q: spot.q,
         r: spot.r,
         side,
         type,
-        quality: randomQualityForType(type, qualityDoctrine),
+        quality,
       });
+      return true;
     }
+
+    function addGrouped(type, count, roleName, predicates, chunkMin = 1, chunkMax = 1) {
+      let remaining = Math.max(0, count);
+      let chunkIdx = 0;
+
+      while (remaining > 0) {
+        const targetChunk = Math.min(remaining, Math.max(1, randInt(chunkMin, chunkMax)));
+        const groupSpots = [];
+        const q = groupedQuality(roleName, chunkIdx, type);
+        let placed = 0;
+
+        for (let i = 0; i < targetChunk; i++) {
+          const spot = pickSpotForGroup(type, groupSpots, predicates);
+          if (!spot) break;
+          if (!placeUnit(spot, type, q)) break;
+          groupSpots.push(spot);
+          placed += 1;
+        }
+
+        if (placed <= 0) {
+          const fallback = pullAnySafeHex(type, terrainByHex, occupiedSet);
+          if (!fallback) break;
+          if (!placeUnit(fallback, type, q)) break;
+          placed = 1;
+        }
+
+        remaining -= placed;
+        chunkIdx += 1;
+      }
+    }
+
+    addGrouped('gen', mix.gen, 'gen', [h => isRear(h) && isCenterTight(h), h => isRear(h) && isCenter(h)], 1, 1);
+    addGrouped('run', mix.run, 'run', [h => isRear(h) && isCenter(h)], 1, 1);
+    addGrouped('iat', mix.iat, 'iat', [h => isSupport(h) && isCenter(h), h => isRear(h) && isCenter(h)], 1, 1);
+
+    const addWingCav = (count, wingPred) => {
+      if (count <= 0) return;
+      addGrouped('cav', count, 'cavWing', [
+        h => isFront(h) && wingPred(h),
+        h => isSupport(h) && wingPred(h),
+        h => isFront(h) && isInnerFlank(h),
+      ], 2, 3);
+    };
+
+    const [cavStrong, cavWeak] = splitByWeights(mix.cav, (formation === 'oblique' || formation === 'refused_flank') ? [0.70, 0.30] : [0.50, 0.50]);
+    addWingCav(cavStrong, isStrongWing);
+    addWingCav(cavWeak, isWeakWing);
+
+    if (formation === 'phalanx') {
+      const [infFront, infReserve] = splitByWeights(mix.inf, [0.68, 0.32]);
+      addGrouped('inf', infFront, 'infFront', [
+        h => isFront(h) && isCenter(h),
+        h => isFront(h) && isInnerFlank(h),
+      ], 3, 6);
+      addGrouped('inf', infReserve, 'infReserve', [
+        h => isSupport(h) && isCenter(h),
+        h => isRear(h) && isCenter(h),
+      ], 2, 4);
+      addGrouped('arc', mix.arc, 'arcLine', [
+        h => isRear(h) && isCenter(h),
+        h => isSupport(h) && isCenter(h),
+      ], 2, 4);
+      addGrouped('skr', mix.skr, 'skrScreen', [
+        h => isFront(h) && isInnerFlank(h),
+        h => isVanguard(h) && isFlank(h),
+      ], 2, 3);
+    } else if (formation === 'triplex') {
+      const [line1, line2, line3] = splitByWeights(mix.inf, [0.38, 0.34, 0.28]);
+      addGrouped('inf', line1, 'infFront', [
+        h => isFront(h) && isCenter(h),
+        h => isFront(h) && isInnerFlank(h),
+      ], 2, 5);
+      addGrouped('inf', line2, 'infSupport', [
+        h => isSupport(h) && isCenter(h),
+        h => isSupport(h) && isInnerFlank(h),
+      ], 2, 4);
+      addGrouped('inf', line3, 'infReserve', [
+        h => isRear(h) && isCenter(h),
+        h => isRear(h) && isInnerFlank(h),
+      ], 2, 4);
+      addGrouped('skr', mix.skr, 'skrScreen', [
+        h => isVanguard(h) && isCenter(h),
+        h => isFront(h) && isCenter(h),
+      ], 2, 3);
+      addGrouped('arc', mix.arc, 'arcLine', [
+        h => isRear(h) && isCenter(h),
+        h => isSupport(h) && isCenter(h),
+      ], 2, 4);
+    } else if (formation === 'oblique') {
+      const [infSpear, infCenter, infRefused] = splitByWeights(mix.inf, [0.48, 0.28, 0.24]);
+      addGrouped('inf', infSpear, 'infFront', [
+        h => isFront(h) && isStrongWing(h),
+        h => isFront(h) && isInnerFlank(h),
+      ], 2, 5);
+      addGrouped('inf', infCenter, 'infSupport', [
+        h => isFront(h) && isCenter(h),
+        h => isSupport(h) && isCenter(h),
+      ], 2, 4);
+      addGrouped('inf', infRefused, 'infReserve', [
+        h => isSupport(h) && isWeakWing(h),
+        h => isRear(h) && isWeakWing(h),
+      ], 2, 4);
+      addGrouped('skr', mix.skr, 'skrScreen', [
+        h => isFront(h) && isStrongWing(h),
+        h => isVanguard(h) && isCenter(h),
+      ], 2, 3);
+      addGrouped('arc', mix.arc, 'arcLine', [
+        h => isRear(h) && isCenter(h),
+        h => isSupport(h) && isWeakWing(h),
+      ], 2, 3);
+    } else if (formation === 'crescent') {
+      const [infLeft, infCenter, infRight] = splitByWeights(mix.inf, [0.36, 0.28, 0.36]);
+      addGrouped('inf', infLeft, 'infFront', [
+        h => isFront(h) && isLeftWing(h),
+        h => isSupport(h) && isLeftWing(h),
+      ], 2, 5);
+      addGrouped('inf', infCenter, 'infSupport', [
+        h => isSupport(h) && isCenter(h),
+        h => isRear(h) && isCenter(h),
+      ], 2, 4);
+      addGrouped('inf', infRight, 'infFront', [
+        h => isFront(h) && isRightWing(h),
+        h => isSupport(h) && isRightWing(h),
+      ], 2, 5);
+      addGrouped('skr', mix.skr, 'skrScreen', [
+        h => isVanguard(h) && isCenter(h),
+        h => isFront(h) && isInnerFlank(h),
+      ], 2, 3);
+      addGrouped('arc', mix.arc, 'arcLine', [
+        h => isRear(h) && isCenter(h),
+        h => isSupport(h) && isCenter(h),
+      ], 2, 4);
+    } else { // refused_flank
+      const [infMain, infReserve] = splitByWeights(mix.inf, [0.62, 0.38]);
+      addGrouped('inf', infMain, 'infFront', [
+        h => isFront(h) && isStrongWing(h),
+        h => isFront(h) && isCenter(h),
+      ], 2, 5);
+      addGrouped('inf', infReserve, 'infReserve', [
+        h => isSupport(h) && isWeakWing(h),
+        h => isRear(h) && isWeakWing(h),
+      ], 2, 4);
+      addGrouped('skr', mix.skr, 'skrScreen', [
+        h => isFront(h) && isCenter(h),
+        h => isSupport(h) && isWeakWing(h),
+      ], 2, 3);
+      addGrouped('arc', mix.arc, 'arcLine', [
+        h => isRear(h) && isCenter(h),
+        h => isRear(h) && isWeakWing(h),
+      ], 2, 3);
+    }
+
+    const refillTypes = ['inf', 'inf', 'skr', 'arc', 'cav', 'inf', 'skr'];
+    while (force.length < totalNeeded) {
+      const type = refillTypes[randInt(0, refillTypes.length - 1)];
+      const role = (type === 'inf')
+        ? (forceRole === 'outnumbered' ? 'infFront' : 'infSupport')
+        : (type === 'cav' ? 'cavWing' : (type === 'arc' ? 'arcLine' : 'skrScreen'));
+      const q = groupedQuality(role, 99, type);
+      const spot = pullAnySafeHex(type, terrainByHex, occupiedSet);
+      if (!spot) break;
+      placeUnit(spot, type, q);
+    }
+
+    function commandRadiusForForceUnit(u) {
+      if (!u) return 0;
+      if (u.type === 'run') return RUNNER_COMMAND_RADIUS;
+      if (u.type === 'gen') return commandRadiusForUnit(u);
+      return 0;
+    }
+
+    function forceMeta(u) {
+      return geometry.byKey.get(key(u.q, u.r)) || null;
+    }
+
+    function forceDepth(u) {
+      return sideDepthNorm(forceMeta(u), side);
+    }
+
+    function forceLateral(u) {
+      const meta = forceMeta(u);
+      return meta ? meta.lateralN : 0.5;
+    }
+
+    function forceCoverageRatio() {
+      const commanders = force.filter(u => u.side === side && isCommandSourceUnit(u));
+      const controlled = force.filter(u => {
+        if (u.side !== side) return false;
+        if (u.type !== 'inf' && u.type !== 'arc' && u.type !== 'skr') return false;
+        return u.quality !== 'veteran';
+      });
+      if (controlled.length === 0) return 1;
+      if (commanders.length === 0) return 0;
+
+      let inRange = 0;
+      for (const target of controlled) {
+        const covered = commanders.some((src) => {
+          const radius = commandRadiusForForceUnit(src);
+          if (radius <= 0) return false;
+          return axialDistance(target.q, target.r, src.q, src.r) <= radius;
+        });
+        if (covered) inRange += 1;
+      }
+      return inRange / controlled.length;
+    }
+
+    function swapForcePositions(a, b) {
+      if (!a || !b || a === b) return;
+      const q = a.q;
+      const r = a.r;
+      a.q = b.q;
+      a.r = b.r;
+      b.q = q;
+      b.r = r;
+    }
+
+    function rebalanceForceCommandNodes() {
+      const commanders = force
+        .filter(u => u.side === side && isCommandSourceUnit(u))
+        .sort((a, b) => commandRadiusForForceUnit(b) - commandRadiusForForceUnit(a));
+      if (commanders.length === 0) return;
+
+      const originalPositions = force.map(u => ({ q: u.q, r: u.r }));
+      const baseline = forceCoverageRatio();
+      const strongLateralTarget = strongWing === 'left' ? 0.34 : 0.66;
+      const weakLateralTarget = strongWing === 'left' ? 0.66 : 0.34;
+      const desiredAnchors = [
+        { depth: 0.24, lateral: 0.50 },
+        { depth: 0.40, lateral: 0.50 },
+        { depth: 0.38, lateral: strongLateralTarget },
+        { depth: 0.35, lateral: weakLateralTarget },
+      ];
+
+      const used = new Set();
+      const nonWater = force.filter(u => {
+        const h = board.byKey.get(key(u.q, u.r));
+        return h && h.terrain !== 'water';
+      });
+
+      function pickAnchor(targetDepth, targetLateral) {
+        const candidates = nonWater.filter(u => !used.has(key(u.q, u.r)));
+        if (candidates.length === 0) return null;
+        candidates.sort((a, b) => {
+          const da = Math.abs(forceDepth(a) - targetDepth) * 1.9 + Math.abs(forceLateral(a) - targetLateral);
+          const db = Math.abs(forceDepth(b) - targetDepth) * 1.9 + Math.abs(forceLateral(b) - targetLateral);
+          return da - db;
+        });
+        const winner = candidates[0] || null;
+        if (winner) used.add(key(winner.q, winner.r));
+        return winner;
+      }
+
+      for (let i = 0; i < commanders.length; i++) {
+        const cmd = commanders[i];
+        const anchorSpec = desiredAnchors[Math.min(i, desiredAnchors.length - 1)];
+        const anchor = pickAnchor(anchorSpec.depth, anchorSpec.lateral);
+        if (!anchor) continue;
+        swapForcePositions(cmd, anchor);
+      }
+
+      const mobileCommanders = [...commanders].sort((a, b) => commandRadiusForForceUnit(a) - commandRadiusForForceUnit(b));
+      for (let pass = 0; pass < 2; pass++) {
+        const now = forceCoverageRatio();
+        if (now >= 0.78) break;
+
+        const controlled = force.filter(u => {
+          if (u.side !== side) return false;
+          if (u.type !== 'inf' && u.type !== 'arc' && u.type !== 'skr') return false;
+          return u.quality !== 'veteran';
+        });
+        if (controlled.length === 0 || mobileCommanders.length === 0) break;
+
+        let uncovered = null;
+        let bestGap = -1;
+        for (const t of controlled) {
+          let nearest = Infinity;
+          for (const src of commanders) {
+            const d = axialDistance(t.q, t.r, src.q, src.r) - commandRadiusForForceUnit(src);
+            if (d < nearest) nearest = d;
+          }
+          if (nearest > bestGap) {
+            bestGap = nearest;
+            uncovered = t;
+          }
+        }
+        if (!uncovered || bestGap <= 0) break;
+
+        const mover = mobileCommanders[pass % mobileCommanders.length];
+        if (!mover) break;
+        swapForcePositions(mover, uncovered);
+      }
+
+      const after = forceCoverageRatio();
+      if (after + 0.06 < baseline) {
+        // If rebalancing somehow hurts command coverage badly, fall back to the original placement.
+        // This keeps random starts stable.
+        for (let i = 0; i < force.length; i++) {
+          const saved = originalPositions[i];
+          if (!saved) continue;
+          force[i].q = saved.q;
+          force[i].r = saved.r;
+        }
+      }
+    }
+
+    rebalanceForceCommandNodes();
 
     return force;
   }
@@ -7364,6 +8061,8 @@ function unitColors(side) {
       geometry,
       profile.blueUnits,
       profile.blueDoctrine || 'balanced',
+      profile.blueFormation || 'triplex',
+      profile.blueRole || 'even',
     );
     const red = buildRandomForce(
       'red',
@@ -7372,6 +8071,8 @@ function unitColors(side) {
       geometry,
       profile.redUnits,
       profile.redDoctrine || 'balanced',
+      profile.redFormation || 'triplex',
+      profile.redRole || 'even',
     );
 
     return {
@@ -7383,6 +8084,10 @@ function unitColors(side) {
       matchup: profile.matchup,
       blueDoctrine: profile.blueDoctrine || 'balanced',
       redDoctrine: profile.redDoctrine || 'balanced',
+      blueRole: profile.blueRole || 'even',
+      redRole: profile.redRole || 'even',
+      blueFormation: profile.blueFormation || 'triplex',
+      redFormation: profile.redFormation || 'triplex',
       blueUnits: profile.blueUnits,
       redUnits: profile.redUnits,
     };
@@ -7473,6 +8178,9 @@ function unitColors(side) {
         type: u.type,
         quality,
         hp: unitMaxHp(u.type, quality),
+        movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
+          ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
+          : 0,
       });
       stats.unitsPlaced += 1;
     }
@@ -7532,6 +8240,9 @@ function unitColors(side) {
         type: u.type,
         quality: u.quality,
         hp: u.hp,
+        movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
+          ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
+          : 0,
       });
     }
     units.sort((a, b) => (a.r - b.r) || (a.q - b.q) || (a.id - b.id));
@@ -7755,6 +8466,9 @@ function unitColors(side) {
         type: u.type,
         quality,
         hp,
+        movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
+          ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
+          : 0,
       });
       report.unitsPlaced += 1;
     }
@@ -7937,8 +8651,11 @@ function unitColors(side) {
     const def = UNIT_BY_ID.get(u.type);
     const engaged = isEngaged(hexKey, u.side);
     const notes = [];
+    const movePaused = unitMoveIsPausedThisTurn(u);
 
-    if (engaged) {
+    if (movePaused) {
+      notes.push(`Terrain fatigue: cannot move this turn (ready again on turn ${u.movePauseUntilTurn + 1}).`);
+    } else if (engaged) {
       if (u.type === 'skr') notes.push('Engaged: SKR may disengage 1 hex.');
       else if (u.type === 'run') notes.push('Engaged: RUN may disengage 1 hex.');
       else if (u.quality === 'veteran') notes.push('Engaged: Veteran may withdraw 1 hex.');
@@ -8001,6 +8718,7 @@ function unitColors(side) {
     unitsByHex.set(destKey, u);
     state.selectedKey = destKey;
     state.act.moved = true;
+    const movementPaused = markMovementPauseIfNeeded(u, destKey);
     startMoveAnimation(pathKeys, u, isAiControlledSide(u.side));
     startActionPulse({
       type: 'move',
@@ -8023,7 +8741,13 @@ function unitColors(side) {
       return;
     }
 
-    log(`Moved to ${destKey}.`);
+    if (movementPaused) {
+      const destHex = board.byKey.get(destKey);
+      const terrainName = terrainLabel(destHex?.terrain || 'clear');
+      log(`Moved to ${destKey}. Terrain friction: ${UNIT_BY_ID.get(u.type)?.abbrev || u.type} must pause movement on turn ${u.movePauseUntilTurn} after entering ${terrainName}.`);
+    } else {
+      log(`Moved to ${destKey}.`);
+    }
 
     // After moving, you may make at most ONE attack (same activation).
     state._moveTargets = null;
@@ -8774,12 +9498,17 @@ function unitColors(side) {
     else if (randomScenario.matchup === 'red_elite_outnumbered') matchupLabel = 'red elite outnumbered by blue levy';
 
     const doctrineLabel = `doctrine B:${randomScenario.blueDoctrine || 'balanced'} / R:${randomScenario.redDoctrine || 'balanced'}`;
+    const formationLabelText =
+      `formation B:${formationLabel(randomScenario.blueFormation || 'triplex')} / ` +
+      `R:${formationLabel(randomScenario.redFormation || 'triplex')}`;
+    const roleLabelText = `roles B:${randomScenario.blueRole || 'even'} / R:${randomScenario.redRole || 'even'}`;
 
     log(
       `Booted ${GAME_NAME}. Randomized startup loaded and battle started ` +
       `(${randomScenario.size} battle, ${matchupLabel}, ` +
       `B ${randomScenario.blueUnits} / R ${randomScenario.redUnits}, ` +
-      `${doctrineLabel}, terrain=${randomScenario.terrain.length}, ` +
+      `${doctrineLabel}, ${formationLabelText}, ${roleLabelText}, ` +
+      `terrain=${randomScenario.terrain.length}, ` +
       `axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}).`
     );
     updateHud();
