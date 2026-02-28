@@ -465,7 +465,7 @@
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
   const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR on hills gain +1 ranged die and +1 max range. Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR in woods fire only from tree-line. ARC/SKR on hills gain +1 ranged die and +1 max range. Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
     <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
@@ -476,7 +476,7 @@
     <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender terrain can reduce attacker dice (minimum 1).</p>
     <p>Tree-line rule: Archers and skirmishers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
     <p>Hill missile rule: ARC/SKR on Hills get +1 ranged die and +1 max range.</p>
-    <p>Friction rule: all units that enter Rough must pause movement on their next turn. INF also pause after entering Woods/Hills, ARC pause after entering Woods, and MED pause after entering Woods.</p>
+    <p>Friction rule: all units that enter Rough must pause movement on their next turn. SKR and RUN move one hex at a time while in or entering Woods/Hills. INF also pause after entering Woods/Hills, ARC pause after entering Woods, and MED pause after entering Woods.</p>
     <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
@@ -511,7 +511,7 @@
       <li>MED HP 1/1/1, UP 4</li>
     </ul>
     <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods/Hills at cost 2 (one hex at a time), and can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV cannot enter Woods or Hills and enters Rough at cost 2. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods/Hills at cost 2 and is limited to one-step movement while in/entering Woods/Hills; SKR can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV cannot enter Woods or Hills and enters Rough at cost 2. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
     <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die and +1 max range. Any attack launched from Rough suffers -1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
@@ -5769,6 +5769,23 @@ function unitColors(side) {
     return true;
   }
 
+  function movementPauseTerrainFromPath(unit, pathKeys) {
+    if (!unit || !Array.isArray(pathKeys) || pathKeys.length < 2) return null;
+    for (let i = 1; i < pathKeys.length; i++) {
+      const h = board.byKey.get(pathKeys[i]);
+      if (!h) continue;
+      if (movementPauseAppliesForEntry(unit.type, h.terrain)) return h.terrain;
+    }
+    return null;
+  }
+
+  function markMovementPauseFromPathIfNeeded(unit, pathKeys) {
+    const terrainId = movementPauseTerrainFromPath(unit, pathKeys);
+    if (!terrainId) return null;
+    unit.movePauseUntilTurn = state.turn + 1;
+    return terrainId;
+  }
+
   function terrainMoveCost(unitType, terrainId) {
     if (terrainId === 'water') return Infinity;
     if (terrainId === 'clear') return 1;
@@ -8914,7 +8931,7 @@ function unitColors(side) {
     unitsByHex.set(destKey, u);
     state.selectedKey = destKey;
     state.act.moved = true;
-    const movementPaused = markMovementPauseIfNeeded(u, destKey);
+    const pauseTerrainId = markMovementPauseFromPathIfNeeded(u, pathKeys);
     startMoveAnimation(pathKeys, u, isAiControlledSide(u.side));
     startActionPulse({
       type: 'move',
@@ -8937,9 +8954,8 @@ function unitColors(side) {
       return;
     }
 
-    if (movementPaused) {
-      const destHex = board.byKey.get(destKey);
-      const terrainName = terrainLabel(destHex?.terrain || 'clear');
+    if (pauseTerrainId) {
+      const terrainName = terrainLabel(pauseTerrainId);
       log(`Moved to ${destKey}. Terrain friction: ${UNIT_BY_ID.get(u.type)?.abbrev || u.type} must pause movement on turn ${u.movePauseUntilTurn} after entering ${terrainName}.`);
     } else {
       log(`Moved to ${destKey}.`);
