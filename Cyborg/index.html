@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-jupiter-v2" />
+  <link rel="stylesheet" href="style.css?v=20260228-jupiter-v3" />
 </head>
 <body>
   <header id="hud">
@@ -22,6 +22,16 @@
     </section>
 
     <aside id="side">
+      <details id="rulesSidePanel" class="panel collapsible" open>
+        <summary class="panelHead"><span class="panelTitle">Rules</span></summary>
+        <div class="panelBody">
+          <div class="rulesDockSide">
+            <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
+            <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
+          </div>
+        </div>
+      </details>
+
       <details id="defensePanel" class="panel collapsible" open>
         <summary class="panelHead"><span class="panelTitle">Unit Quick Sheet</span></summary>
         <div class="panelBody">
@@ -108,15 +118,6 @@
         </div>
       </details>
 
-      <details id="rulesSidePanel" class="panel collapsible" open>
-        <summary class="panelHead"><span class="panelTitle">Rules</span></summary>
-        <div class="panelBody">
-          <div class="rulesDockSide">
-            <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
-            <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
-          </div>
-        </div>
-      </details>
     </aside>
   </main>
 
@@ -234,7 +235,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-jupiter-v2"></script>
-  <script src="main.js?v=20260228-jupiter-v2"></script>
+  <script src="build.js?v=20260228-jupiter-v3"></script>
+  <script src="main.js?v=20260228-jupiter-v3"></script>
 </body>
 </html>
