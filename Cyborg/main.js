@@ -8098,8 +8098,27 @@ function unitColors(side) {
     });
   }
 
-  elToolUnits.addEventListener('click', () => { state.tool = 'units'; updateHud(); });
+  elToolUnits.addEventListener('click', () => {
+    if (onlineModeActive() && net.connected && !net.isHost) {
+      log('Online: host controls setup and mode.');
+      updateHud();
+      return;
+    }
+    if (state.mode !== 'edit') {
+      enterEdit();
+    }
+    state.tool = 'units';
+    updateHud();
+  });
   elToolTerrain.addEventListener('click', () => {
+    if (onlineModeActive() && net.connected && !net.isHost) {
+      log('Online: host controls setup and mode.');
+      updateHud();
+      return;
+    }
+    if (state.mode !== 'edit') {
+      enterEdit();
+    }
     if (state.draft.active) {
       log('Custom draft locks terrain editing.');
       updateHud();
