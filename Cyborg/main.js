@@ -428,8 +428,6 @@
   const elScenarioLessonSel = document.getElementById('scenarioLessonSel');
   const elScenarioSizeSel = document.getElementById('scenarioSizeSel');
   const elScenarioTerrainSel = document.getElementById('scenarioTerrainSel');
-  const elLoadScenarioBtn = document.getElementById('loadScenarioBtn');
-  const elClearUnitsBtn = document.getElementById('clearUnitsBtn');
   const elDraftModeSel = document.getElementById('draftModeSel');
   const elDraftBudgetInput = document.getElementById('draftBudgetInput');
   const elStartDraftBtn = document.getElementById('startDraftBtn');
@@ -457,8 +455,8 @@
   const elCombatTerrain = document.getElementById('combatTerrain');
   const elCombatSupport = document.getElementById('combatSupport');
   const elModifierPreview = document.getElementById('modifierPreview');
-  const elCombatOutcome = document.getElementById('combatOutcome');
   const elVictoryTrackBody = document.getElementById('victoryTrackBody');
+  const elForceTotals = document.getElementById('forceTotals');
   const elRulesShortBtn = document.getElementById('rulesShortBtn');
   const elRulesFullBtn = document.getElementById('rulesFullBtn');
   const elRulesModal = document.getElementById('rulesModal');
@@ -4034,12 +4032,11 @@ function unitColors(side) {
     if (elCombatMath) elCombatMath.textContent = 'Dice math: -';
     if (elCombatTerrain) elCombatTerrain.textContent = 'Defense modifiers: -';
     setCombatSupportStatus('Infantry support: -', 'na');
-    if (elCombatOutcome) elCombatOutcome.textContent = 'Outcome: -';
     if (elCombatHint) elCombatHint.textContent = COMBAT_RULE_HINT;
   }
 
   function renderCombatBreakdown(rolls, info) {
-    if (!elCombatSummary || !elCombatMath || !elCombatTerrain || !elCombatOutcome) return;
+    if (!elCombatSummary || !elCombatMath || !elCombatTerrain) return;
     if (!info) {
       clearCombatBreakdown();
       return;
@@ -4076,14 +4073,8 @@ function unitColors(side) {
     const supportStatus = supportStatusForCombat(info);
     setCombatSupportStatus(supportStatus.text, supportStatus.cls);
 
-    const retreatResolved =
-      (typeof info.retreatMoved === 'number' || typeof info.retreatBlocked === 'number')
-        ? ` · Retreat resolve: moved ${info.retreatMoved || 0}, blocked ${info.retreatBlocked || 0}`
-        : '';
-    const destroyedText = info.destroyed ? ' · Defender destroyed.' : '';
-    const hpText = Number.isFinite(info.defenderHpAfter) ? ` · Defender HP now ${Math.max(0, info.defenderHpAfter)}.` : '';
-    elCombatOutcome.textContent =
-      `Outcome: hits ${info.hits}, retreats ${info.retreats}, misses ${info.misses}${retreatResolved}${destroyedText}${hpText}`;
+    const conciseOutcome = `This roll: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
+    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = conciseOutcome;
 
     if (elCombatHint) elCombatHint.textContent = COMBAT_RULE_HINT;
   }
@@ -4935,6 +4926,16 @@ function unitColors(side) {
     document.body.dataset.mode = state.mode;
 
     elHudTitle.textContent = GAME_NAME;
+    if (elHudLast) {
+      if (state.gameOver && state.winner) {
+        const winnerLabel = state.winner === 'red' ? 'Red' : 'Blue';
+        elHudLast.textContent = `Game Over: ${winnerLabel} wins.`;
+        elHudLast.classList.add('show');
+      } else {
+        elHudLast.textContent = '';
+        elHudLast.classList.remove('show');
+      }
+    }
 
     const hideOpponentDuringFog = state.draft.active && state.draft.mode === 'fog' && !state.draft.reveal;
     const modeLabel = (state.mode === 'play') ? 'Play Mode' : 'Setup Mode';
@@ -4976,6 +4977,13 @@ function unitColors(side) {
     meta.push(`Build ${BUILD_ID}`);
     elHudMeta.textContent = meta.join('  ·  ');
     renderVictoryTrack(blue, red, hideOpponentDuringFog);
+    if (elForceTotals) {
+      if (hideOpponentDuringFog) {
+        elForceTotals.textContent = 'Forces: hidden during fog draft setup.';
+      } else {
+        elForceTotals.textContent = `Forces: Blue ${blue.up} UP / ${blue.hp} HP · Red ${red.up} UP / ${red.hp} HP`;
+      }
+    }
 
     elModeBtn.textContent = state.mode === 'edit' ? 'Start Battle' : 'Back to Setup';
     if (elGameModeSel) {
@@ -5093,8 +5101,6 @@ function unitColors(side) {
       if (elScenarioLessonSel) elScenarioLessonSel.disabled = true;
       if (elScenarioSizeSel) elScenarioSizeSel.disabled = true;
       if (elScenarioTerrainSel) elScenarioTerrainSel.disabled = true;
-      if (elLoadScenarioBtn) elLoadScenarioBtn.disabled = true;
-      if (elClearUnitsBtn) elClearUnitsBtn.disabled = true;
       if (elExportStateBtn) elExportStateBtn.disabled = true;
       if (elImportStateBtn) elImportStateBtn.disabled = true;
     }
@@ -8175,9 +8181,15 @@ function unitColors(side) {
     });
   }
 
-  elClearUnitsBtn.addEventListener('click', () => { enterEdit(); clearUnits(); });
-
-  elLoadScenarioBtn.addEventListener('click', () => { loadScenario(elScenarioSel.value); });
+  if (elScenarioSel) {
+    elScenarioSel.addEventListener('change', () => {
+      const scenarioName = elScenarioSel.value;
+      if (!scenarioName || !SCENARIOS[scenarioName]) return;
+      const wasPlay = state.mode === 'play';
+      loadScenario(scenarioName);
+      if (wasPlay) enterPlay();
+    });
+  }
 
   if (elDraftModeSel) {
     elDraftModeSel.addEventListener('change', () => {
@@ -8348,12 +8360,10 @@ function unitColors(side) {
       opt.selected = true;
       elScenarioSel.appendChild(opt);
       elScenarioSel.disabled = true;
-      elLoadScenarioBtn.disabled = true;
       return;
     }
 
     elScenarioSel.disabled = false;
-    elLoadScenarioBtn.disabled = false;
 
     if (prev && [...elScenarioSel.options].some(o => o.value === prev)) {
       elScenarioSel.value = prev;

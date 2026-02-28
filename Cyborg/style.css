@@ -35,7 +35,20 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   line-height:1;
   text-align:center;
 }
-#hudMeta,#hudLast{display:none;}
+#hudMeta{display:none;}
+#hudLast{
+  grid-column:1;
+  justify-self:start;
+  padding-left:12px;
+  font-size:12px;
+  line-height:1.2;
+  color:#f1d697;
+  letter-spacing:0.02em;
+  opacity:0;
+  transition:opacity 120ms ease;
+  pointer-events:none;
+}
+#hudLast.show{opacity:1;}
 
 #layout{
   display:grid;
@@ -605,6 +618,39 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   font-size:12px;
   color:#d7dbe6;
   line-height:1.35;
+}
+
+.forceTotals{
+  font-size:10px;
+  line-height:1.35;
+  color:#cfd3de;
+  padding:4px 6px;
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:8px;
+  background:rgba(255,255,255,0.03);
+}
+
+.outcomeSetup{
+  margin-top:2px;
+  border-top:1px dashed rgba(255,255,255,0.10);
+  padding-top:5px;
+}
+
+.outcomeSetup .row{
+  margin:0;
+  gap:5px;
+}
+
+.outcomeSetup .label{
+  width:54px;
+  font-size:10px;
+}
+
+.outcomeSetup .btn,
+.outcomeSetup .select{
+  min-height:26px;
+  padding:4px 7px;
+  font-size:11px;
 }
 
 .rulesLauncher{

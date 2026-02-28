@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-pre-apollo-v46" />
+  <link rel="stylesheet" href="style.css?v=20260228-pre-apollo-v49" />
 </head>
 <body>
   <header id="hud">
@@ -48,23 +48,6 @@
         <div class="rulesDock">
           <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
           <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
-        </div>
-      </div>
-
-      <div id="setupPanel" class="panel">
-        <div class="panelTitle">Battle Setup</div>
-        <div class="row">
-          <div class="label">Scenario</div>
-          <select id="scenarioSel" class="select"></select>
-        </div>
-        <div class="row">
-          <div class="label">Tool</div>
-          <button id="toolUnits" class="btn">Units</button>
-          <button id="toolTerrain" class="btn">Terrain</button>
-        </div>
-        <div class="row">
-          <button id="loadScenarioBtn" class="btn wide">Load Scenario</button>
-          <button id="clearUnitsBtn" class="btn wide">Clear Units</button>
         </div>
       </div>
 
@@ -176,10 +159,21 @@
       <div id="diceTray" class="diceTray"></div>
     </div>
     <div class="combatCol combatColOutcome">
-      <div class="combatColTitle">Outcome</div>
-      <div id="combatOutcome" class="combatMeta">Outcome: -</div>
       <div class="combatColTitle">Victory Track</div>
       <div id="victoryTrackBody" class="victoryTrackBody">Victory: -</div>
+      <div id="forceTotals" class="forceTotals">Forces: Blue - UP / - HP · Red - UP / - HP</div>
+      <div id="battleSetupMini" class="outcomeSetup">
+        <div class="combatColTitle">Battle Setup</div>
+        <div class="row outcomeSetupRow">
+          <div class="label">Scenario</div>
+          <select id="scenarioSel" class="select scenarioDropup"></select>
+        </div>
+        <div class="row outcomeSetupRow">
+          <div class="label">Tool</div>
+          <button id="toolUnits" class="btn">Units</button>
+          <button id="toolTerrain" class="btn">Terrain</button>
+        </div>
+      </div>
     </div>
     <div class="combatCol combatColOnline">
       <div class="combatColTitle">Online Multiplayer</div>
@@ -231,7 +225,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-pre-apollo-v46"></script>
-  <script src="main.js?v=20260228-pre-apollo-v46"></script>
+  <script src="build.js?v=20260228-pre-apollo-v49"></script>
+  <script src="main.js?v=20260228-pre-apollo-v49"></script>
 </body>
 </html>
