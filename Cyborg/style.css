@@ -441,7 +441,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   background:linear-gradient(180deg, #0f1218 0%, #0b0d12 100%);
   padding:6px 8px 7px;
   display:grid;
-  grid-template-columns:1.35fr 1.12fr 0.95fr 1.05fr 1.2fr;
+  grid-template-columns:1.05fr 1fr 1fr 1fr 1.05fr;
   gap:6px;
   align-items:stretch;
   overflow-x:auto;
@@ -630,39 +630,9 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   background:rgba(255,255,255,0.03);
 }
 
-.outcomeSetup{
-  margin-top:2px;
-  border-top:1px dashed rgba(255,255,255,0.10);
-  padding-top:5px;
-}
-
-.outcomeSetup .row{
-  margin:0;
-  gap:5px;
-}
-
-.outcomeSetup .label{
-  width:54px;
-  font-size:10px;
-}
-
-.outcomeSetup .btn,
-.outcomeSetup .select{
-  min-height:26px;
-  padding:4px 7px;
-  font-size:11px;
-}
-
 .rulesLauncher{
   margin-top:auto;
   display:flex;
-  gap:8px;
-}
-
-.rulesDock{
-  margin-top:8px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
   gap:8px;
 }
 
@@ -670,6 +640,13 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
   flex:1;
   padding:6px 8px;
   font-size:11px;
+}
+
+.rulesUnderDice{
+  margin-top:2px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
 }
 
 .combatColOnline .btn,

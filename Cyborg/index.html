@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-pre-apollo-v49" />
+  <link rel="stylesheet" href="style.css?v=20260228-pre-apollo-v50" />
 </head>
 <body>
   <header id="hud">
@@ -45,9 +45,18 @@
           <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/GEN: 2, CAV: 3</div><div class="terrainCell">No direct dice mod</div>
           <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
         </div>
-        <div class="rulesDock">
-          <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
-          <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
+      </div>
+
+      <div id="battleSetupSide" class="panel">
+        <div class="panelTitle">Battle Setup</div>
+        <div class="row">
+          <div class="label">Scenario</div>
+          <select id="scenarioSel" class="select"></select>
+        </div>
+        <div class="row">
+          <div class="label">Tool</div>
+          <button id="toolUnits" class="btn">Units</button>
+          <button id="toolTerrain" class="btn">Terrain</button>
         </div>
       </div>
 
@@ -106,7 +115,6 @@
       <div id="combatTerrain" class="combatMeta">Defense modifiers: -</div>
       <div id="combatSupport" class="combatSupport na">Infantry support: -</div>
       <div id="modifierPreview" class="modifierPreview">Modifier preview: hover or select a unit.</div>
-      <div id="combatHint" class="combatHint">Rules: 5-6 hit, 4 retreat, 1-3 miss. Defender in Woods gives attacker -1 die (minimum 1). Archers in Woods can fire only from tree-line woods (woods hex adjacent to clear). Reinforcement: two adjacent friendly INF touching defender brace opposite attack sides for -1 die (one line deep only).</div>
     </div>
     <div id="turnOrdersPanel" class="combatCol combatColTurn">
       <div class="combatColTitle">Turn & Orders</div>
@@ -156,24 +164,16 @@
       </div>
       <div id="diceOutcomeBrief" class="combatMeta diceOutcomeBrief">This roll: -</div>
       <div id="diceLegendBrief" class="combatHint diceLegendBrief">Legend: 5-6 = hit, 4 = retreat, 1-3 = miss.</div>
+      <div class="rulesUnderDice">
+        <button id="rulesShortBtn" class="btn rulesBtn">Rules (Short)</button>
+        <button id="rulesFullBtn" class="btn rulesBtn">Rules (Full)</button>
+      </div>
       <div id="diceTray" class="diceTray"></div>
     </div>
     <div class="combatCol combatColOutcome">
       <div class="combatColTitle">Victory Track</div>
       <div id="victoryTrackBody" class="victoryTrackBody">Victory: -</div>
       <div id="forceTotals" class="forceTotals">Forces: Blue - UP / - HP · Red - UP / - HP</div>
-      <div id="battleSetupMini" class="outcomeSetup">
-        <div class="combatColTitle">Battle Setup</div>
-        <div class="row outcomeSetupRow">
-          <div class="label">Scenario</div>
-          <select id="scenarioSel" class="select scenarioDropup"></select>
-        </div>
-        <div class="row outcomeSetupRow">
-          <div class="label">Tool</div>
-          <button id="toolUnits" class="btn">Units</button>
-          <button id="toolTerrain" class="btn">Terrain</button>
-        </div>
-      </div>
     </div>
     <div class="combatCol combatColOnline">
       <div class="combatColTitle">Online Multiplayer</div>
@@ -225,7 +225,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-pre-apollo-v49"></script>
-  <script src="main.js?v=20260228-pre-apollo-v49"></script>
+  <script src="build.js?v=20260228-pre-apollo-v50"></script>
+  <script src="main.js?v=20260228-pre-apollo-v50"></script>
 </body>
 </html>
