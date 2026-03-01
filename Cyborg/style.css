@@ -317,19 +317,7 @@ body{
 .btn:disabled:hover{background:var(--btn);}
 
 .btnGrid{display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;flex:1;}
-.editorOnly .btnGrid{grid-template-columns:repeat(3, 1fr);}
-
-body[data-mode="play"] #editorToolsRail{
-  display:none;
-}
-
-body[data-mode="play"] #combatRail{
-  grid-template-columns:
-    minmax(0, 0.54fr)
-    minmax(0, 0.58fr)
-    minmax(0, 0.82fr)
-    minmax(0, 0.90fr);
-}
+.editorOnly .btnGrid{grid-template-columns:repeat(4, 1fr);}
 
 .select{
   flex:1;
@@ -612,11 +600,11 @@ body[data-mode="play"] #combatRail{
   padding:5px 0 6px 7px;
   display:grid;
   grid-template-columns:
-    minmax(0, 0.50fr)
-    minmax(0, 0.56fr)
-    minmax(0, 0.76fr)
-    minmax(0, 0.74fr)
-    minmax(0, 0.82fr);
+    minmax(0, 0.48fr)
+    minmax(0, 0.52fr)
+    minmax(0, 0.66fr)
+    minmax(0, 0.86fr)
+    minmax(0, 0.72fr);
   gap:6px;
   align-items:stretch;
   margin-right:var(--side-w);
@@ -802,14 +790,30 @@ body[data-mode="play"] #combatRail{
 }
 
 .combatColEditor .label{
-  width:58px;
+  width:46px;
   font-size:10px;
 }
 
 .combatColEditor .btn,
 .combatColEditor .select{
-  min-height:24px;
-  padding:3px 6px;
+  min-height:22px;
+  padding:2px 5px;
+  font-size:10px;
+}
+
+.combatColEditor .row{
+  margin:0;
+  gap:4px;
+}
+
+.combatColOnline .onlineRow{
+  display:grid;
+  grid-template-columns:26px minmax(0, 1fr) auto;
+  gap:4px;
+  align-items:center;
+}
+
+.combatColOnline .onlineLabel{
   font-size:10px;
 }
 
