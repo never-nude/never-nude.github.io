@@ -75,8 +75,8 @@ body{
 }
 
 #layout{
-  display:grid;
-  grid-template-columns:minmax(0, 1fr) var(--side-w);
+  display:block;
+  padding-right:var(--side-w);
   height:auto;
   min-height:0;
 }
@@ -101,7 +101,14 @@ body{
 }
 
 #side{
+  position:fixed;
+  top:var(--hud-h);
+  right:0;
+  bottom:0;
+  width:var(--side-w);
+  z-index:20;
   border-left:1px solid var(--line);
+  background:var(--bg);
   padding:7px;
   overflow-y:hidden;
   overflow-x:hidden;
@@ -573,9 +580,10 @@ body[data-mode="play"] #editorToolsRail{
     minmax(0, 0.54fr)
     minmax(0, 0.78fr)
     minmax(0, 0.82fr)
-    var(--side-w);
+    minmax(0, 0.78fr);
   gap:6px;
   align-items:stretch;
+  margin-right:var(--side-w);
   overflow-x:hidden;
   overflow-y:hidden;
 }
@@ -1019,10 +1027,23 @@ body[data-mode="play"] #editorToolsRail{
   :root{ --combat-h:auto; --hud-h:52px; --side-w:0px; }
   body{display:block;}
   #hud{grid-template-columns:1fr;}
-  #layout{grid-template-columns:1fr; height: auto;}
-  #side{border-left:none;border-top:1px solid var(--line);}
+  #layout{
+    height:auto;
+    padding-right:0;
+  }
+  #side{
+    position:static;
+    width:auto;
+    border-left:none;
+    border-top:1px solid var(--line);
+    overflow-y:auto;
+  }
   .label{width:80px;}
-  #combatRail{grid-template-columns:1fr; gap:8px;}
+  #combatRail{
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-right:0;
+  }
   .combatCol{min-width:0;}
 }
 
