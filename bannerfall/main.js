@@ -542,7 +542,7 @@
       <li>MED HP 1/1/1, UP 4</li>
     </ul>
     <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods at cost 2 and enters Hills at cost 1, but climbing into a Hill ends further movement that activation; SKR can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV enters Woods/Hills/Rough at cost 2 and must pause next turn after entering any of those terrains. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (and entering a Hill ends further movement that activation; INF also pauses next turn after entering Woods/Hills/Rough). SKR enters Woods at cost 2 and enters Hills/Rough at cost 1; SKR are not slowed by Hills. ARC enters Woods/Hills/Rough at cost 1 (entering a Hill ends further movement that activation; entering Woods still causes next-turn pause). GEN enters Hills/Rough at cost 2 (entering a Hill ends further movement that activation). CAV enters Woods/Hills/Rough at cost 2 and must pause next turn after entering any of those terrains. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
     <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die (no range increase). Any attack launched from Rough suffers -1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
@@ -4137,14 +4137,21 @@ function unitColors(side) {
     for (const v of sample) {
       const { shell } = makePhysicalDieShell(v, 'miss', `Sample d6 ${v}`);
       shell.style.setProperty('--dice-rot', `${(v - 2) * 2}deg`);
-      elPhysicalDiceRow.appendChild(shell);
+      const wrap = document.createElement('div');
+      wrap.className = 'physicalDieWrap';
+      const label = document.createElement('div');
+      label.className = 'physicalDieLabel';
+      label.textContent = (v >= 5) ? 'hit' : 'miss';
+      wrap.appendChild(shell);
+      wrap.appendChild(label);
+      elPhysicalDiceRow.appendChild(wrap);
     }
   }
 
   function clearDiceDisplay() {
     diceRenderNonce += 1;
     if (elDiceSummary) elDiceSummary.textContent = 'No rolls yet.';
-    if (elDicePerDie) elDicePerDie.textContent = 'Per die: -';
+    if (elDicePerDie) elDicePerDie.textContent = '';
     if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'Outcome: -';
     if (elDiceTray) elDiceTray.innerHTML = '';
     renderIdlePhysicalDice();
@@ -4330,7 +4337,7 @@ function unitColors(side) {
       `${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ` +
       `${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
     if (elDiceSummary) elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
-    if (elDicePerDie) elDicePerDie.textContent = 'Per die: rolling...';
+    if (elDicePerDie) elDicePerDie.textContent = '';
     if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'Outcome: resolving...';
 
     if (elDiceTray) elDiceTray.innerHTML = '';
@@ -4356,13 +4363,21 @@ function unitColors(side) {
 
       let physicalDie = null;
       let physicalFace = null;
+      let physicalLabel = null;
       if (elPhysicalDiceRow) {
         const shell = makePhysicalDieShell(1 + Math.floor(Math.random() * 6), 'rolling', 'Rolling…');
+        const wrap = document.createElement('div');
+        wrap.className = 'physicalDieWrap';
         physicalDie = shell.shell;
         physicalFace = shell.face;
         physicalDie.className = 'physicalDie rolling';
         physicalDie.style.setProperty('--dice-rot', `${Math.floor(Math.random() * 19) - 9}deg`);
-        elPhysicalDiceRow.appendChild(physicalDie);
+        physicalLabel = document.createElement('div');
+        physicalLabel.className = 'physicalDieLabel';
+        physicalLabel.textContent = '...';
+        wrap.appendChild(physicalDie);
+        wrap.appendChild(physicalLabel);
+        elPhysicalDiceRow.appendChild(wrap);
       }
 
       const settleDelay = 180 + (i * 80);
@@ -4388,10 +4403,8 @@ function unitColors(side) {
           mark.textContent = badge;
           die.title = `Roll ${roll} (${badge})`;
         }
-        perDieText[i] = `${roll} ${word}`;
-        if (elDicePerDie) {
-          elDicePerDie.textContent = `Per die: ${perDieText.join(' · ')}`;
-        }
+        perDieText[i] = word;
+        if (elDicePerDie) elDicePerDie.textContent = perDieText.join(' · ');
 
         if (physicalDie && physicalFace) {
           applyPhysicalDieFace(physicalFace, roll);
@@ -4399,6 +4412,7 @@ function unitColors(side) {
           physicalDie.style.setProperty('--dice-rot', `${Math.floor(Math.random() * 11) - 5}deg`);
           physicalDie.title = `Roll ${roll} (${badge})`;
         }
+        if (physicalLabel) physicalLabel.textContent = word;
       }, settleDelay);
     }
 
@@ -4406,7 +4420,7 @@ function unitColors(side) {
     setTimeout(() => {
       if (renderNonce !== diceRenderNonce) return;
       if (elDiceSummary) elDiceSummary.textContent = finalSummary;
-      if (elDicePerDie) elDicePerDie.textContent = `Per die: ${perDieText.join(' · ')}`;
+      if (elDicePerDie) elDicePerDie.textContent = perDieText.join(' · ');
       if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = briefOutcome;
     }, summaryDelay);
   }
@@ -5890,11 +5904,15 @@ function unitColors(side) {
   }
 
   function isSkirmisherStepStopTerrain(terrainId) {
-    return terrainId === 'woods' || terrainId === 'hills';
+    return terrainId === 'woods';
   }
 
   function isSkirmisherStartSlowTerrain(terrainId) {
     return terrainId === 'woods';
+  }
+
+  function isHillClimbStopUnit(unitType) {
+    return unitType === 'inf' || unitType === 'arc' || unitType === 'gen';
   }
 
   function unitMoveIsPausedThisTurn(unit) {
@@ -6158,6 +6176,7 @@ function unitColors(side) {
         if (u.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
         if (u.type === 'run' && runnerStartingSlow) continue;
         if (u.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
+        if (isHillClimbStopUnit(u.type) && nh.terrain === 'hills') continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -6208,6 +6227,7 @@ function unitColors(side) {
         if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
         if (unit.type === 'run' && runnerStartingSlow) continue;
         if (unit.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
+        if (isHillClimbStopUnit(unit.type) && nh.terrain === 'hills') continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -6260,6 +6280,7 @@ function unitColors(side) {
         if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
         if (unit.type === 'run' && runnerStartingSlow) continue;
         if (unit.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
+        if (isHillClimbStopUnit(unit.type) && nh.terrain === 'hills') continue;
         pq.push({ k: nk, c: nc });
       }
     }
