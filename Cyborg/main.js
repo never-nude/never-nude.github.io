@@ -4466,7 +4466,7 @@ function unitColors(side) {
           <div class="victoryLabel blue">Blue</div>
           <div class="victoryBar"><div class="victoryFill blue" style="width:${bluePct.toFixed(1)}%"></div></div>
           <div class="victoryValue">
-            <span class="victoryMain">${blueCap}/${needBlue} CAP</span>
+            <span class="victoryMain">${blueCap}/${needBlue} Captured UP</span>
             <span class="victorySub">${blueTotals.up} UP · ${blueTotals.hp} HP</span>
           </div>
         </div>
@@ -4474,7 +4474,7 @@ function unitColors(side) {
           <div class="victoryLabel red">Red</div>
           <div class="victoryBar"><div class="victoryFill red" style="width:${redPct.toFixed(1)}%"></div></div>
           <div class="victoryValue">
-            <span class="victoryMain">${redCap}/${needRed} CAP</span>
+            <span class="victoryMain">${redCap}/${needRed} Captured UP</span>
             <span class="victorySub">${redTotals.up} UP · ${redTotals.hp} HP</span>
           </div>
         </div>

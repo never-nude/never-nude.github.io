@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v12" />
+  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v14" />
 </head>
 <body>
   <header id="hud">
@@ -35,15 +35,15 @@
         <div class="panelTitle">Field Reference</div>
         <div class="fieldRefBody">
           <div class="referenceSubhead">Unit Quick Sheet</div>
-          <div class="quickLegend">Quality order: <strong>G / R / V</strong> = Green / Regular / Veteran</div>
+          <div class="quickLegend">All HP and UP values are listed in <strong>Green / Regular / Veteran</strong> order.</div>
           <div class="quickUnitList">
-            <div class="quickUnit"><span class="uType">INF</span><span class="uStat">Move 1</span><span class="uStat">HP G/R/V: 3/4/5</span><span class="uStat">UP G/R/V: 3/5/7</span><span class="uAtk">Front line. Melee: 2 dice. Slows after entering woods, hills, or rough.</span></div>
-            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">Move 2</span><span class="uStat">HP G/R/V: 2/3/4</span><span class="uStat">UP G/R/V: 6/8/10</span><span class="uAtk">Shock arm. Melee: 3 dice. Cannot enter woods/hills.</span></div>
-            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">Move 2</span><span class="uStat">HP G/R/V: 1/2/3</span><span class="uStat">UP G/R/V: 2/3/4</span><span class="uAtk">Screen unit. Melee: 2 dice. Ranged: 1 die at 2 hexes.</span></div>
-            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">Move 1</span><span class="uStat">HP G/R/V: 1/2/3</span><span class="uStat">UP G/R/V: 2/4/6</span><span class="uAtk">Ranged pressure. Melee: 1 die. Ranged: 2 dice at 2 hexes, 1 die at 3.</span></div>
-            <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">Move 2</span><span class="uStat">HP G/R/V: 2/3/4</span><span class="uStat">UP G/R/V: 8/10/12</span><span class="uAtk">Command anchor. Melee: 1 die. Sets command radius.</span></div>
-            <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">Move 3/4/5</span><span class="uStat">HP G/R/V: 2/2/2</span><span class="uStat">UP G/R/V: 1/2/3</span><span class="uAtk">No attack. Carries command relay (radius 1).</span></div>
-            <div class="quickUnit"><span class="uType">MED</span><span class="uStat">Move 1</span><span class="uStat">HP G/R/V: 1/1/1</span><span class="uStat">UP G/R/V: 4/4/4</span><span class="uAtk">No attack. Heals +1 HP to one adjacent ally.</span></div>
+            <div class="quickUnit"><span class="uType">INF</span><span class="uStat">Move 1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">Front line. Melee: 2 dice. Slows after entering woods, hills, or rough.</span></div>
+            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">Shock arm. Melee: 3 dice. Cannot enter woods/hills.</span></div>
+            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Screen unit. Melee: 2 dice. Ranged: 1 die at 2 hexes.</span></div>
+            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">Move 1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">Ranged pressure. Melee: 1 die. Ranged: 2 dice at 2 hexes, 1 die at 3.</span></div>
+            <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">Command anchor. Melee: 1 die. Sets command radius.</span></div>
+            <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">Move 3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack. Carries command relay (radius 1).</span></div>
+            <div class="quickUnit"><span class="uType">MED</span><span class="uStat">Move 1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4/4/4</span><span class="uAtk">No attack. Heals +1 HP to one adjacent ally.</span></div>
           </div>
           <div class="quickSheetNote">Dice: 5-6 hit, 4 retreat, 1-3 miss. Defender modifiers can reduce attacker dice, but attacks always roll at least 1 die. Open Rules for full detail.</div>
           <div class="referenceSubhead">Terrain Guide</div>
@@ -110,9 +110,9 @@
       </div>
       <div class="row">
         <button id="endTurnBtn" class="btn wide">End Turn</button>
+        <button id="lineAdvanceBtn" class="btn wide">Line Advance</button>
       </div>
       <div class="row">
-        <button id="lineAdvanceBtn" class="btn wide">Line Advance</button>
         <select id="lineAdvanceDirSel" class="select lineDirSel"></select>
       </div>
     </div>
@@ -122,7 +122,6 @@
       <div class="combatColTitle">Victory Track</div>
       <div id="forceTotals" class="forceTotals">Score (UP / HP): Blue - / - · Red - / -</div>
       <div id="victoryTrackBody" class="victoryTrackBody">Victory: -</div>
-      <div id="diceOutcomeBrief" class="combatMeta diceOutcomeBrief">Outcome: -</div>
     </div>
     <div id="editorToolsRail" class="combatCol combatColEditor editorOnly">
       <div class="combatColTitle">Editor Tools</div>
@@ -217,7 +216,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260301-agamemnon-v12"></script>
-  <script src="main.js?v=20260301-agamemnon-v12"></script>
+  <script src="build.js?v=20260301-agamemnon-v14"></script>
+  <script src="main.js?v=20260301-agamemnon-v14"></script>
 </body>
 </html>

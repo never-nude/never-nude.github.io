@@ -69,9 +69,12 @@ body{
 }
 
 .hudRulesBtn{
-  min-height:28px;
+  min-height:34px;
   padding:5px 12px;
-  font-size:12px;
+  font-size:15px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  font-weight:700;
 }
 
 #layout{
@@ -785,8 +788,8 @@ body{
 }
 
 .lineDirSel{
-  flex:0 0 120px;
-  min-width:120px;
+  flex:1;
+  min-width:0;
 }
 
 .combatColEditor .label{
