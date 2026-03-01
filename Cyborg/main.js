@@ -490,7 +490,7 @@
   const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
   const elCombatHint = document.getElementById('combatHint');
   const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR in woods fire only from tree-line. ARC/SKR on hills gain +1 ranged die and +1 max range. Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
+  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR in woods fire only from tree-line. ARC/SKR on hills gain +1 ranged die (no range increase). Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_SHORT_HTML = `
     <h4>Core</h4>
     <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
@@ -500,7 +500,7 @@
     <h4>Combat</h4>
     <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender terrain can reduce attacker dice (minimum 1).</p>
     <p>Tree-line rule: Archers and skirmishers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
-    <p>Hill missile rule: ARC/SKR on Hills get +1 ranged die and +1 max range.</p>
+    <p>Hill missile rule: ARC/SKR on Hills get +1 ranged die. Hills do not extend range.</p>
     <p>Friction rule: all units that enter Rough must pause movement on their next turn. SKR and RUN move one hex at a time while in or entering Woods/Hills. INF also pause after entering Woods/Hills, ARC pause after entering Woods, and MED pause after entering Woods.</p>
     <p>Line Advance: select a friendly INF, choose a line direction, then issue the order. The line can advance into one of four non-lateral directions based on its current orientation.</p>
     <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
@@ -538,7 +538,7 @@
     </ul>
     <h4>Terrain And Friction</h4>
     <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods/Hills at cost 2 and is limited to one-step movement while in/entering Woods/Hills; SKR can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV cannot enter Woods or Hills and enters Rough at cost 2. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
-    <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die and +1 max range. Any attack launched from Rough suffers -1 die.</p>
+    <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die (no range increase). Any attack launched from Rough suffers -1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
     <ul>
@@ -4226,7 +4226,6 @@ function unitColors(side) {
     const flankText = info.flankBonus ? ` + flank ${info.flankBonus}` : '';
     const rearText = info.rearBonus ? ` + rear ${info.rearBonus}` : '';
     const hillDiceText = Number(info.hillBonusDice || 0) ? ` + hill-shot ${Math.abs(Number(info.hillBonusDice || 0))}` : '';
-    const hillRangeText = info.rangeExtended ? ' + hill range' : '';
     const attackTerrainText = attackTerrainDelta
       ? ` ${attackTerrainDelta > 0 ? '+' : '-'} atk-terrain ${Math.abs(attackTerrainDelta)}`
       : '';
@@ -4236,7 +4235,7 @@ function unitColors(side) {
     elCombatSummary.textContent =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
     elCombatMath.textContent =
-      `Dice math: base ${info.baseDice}${flankText}${rearText}${hillDiceText}${hillRangeText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
+      `Dice math: base ${info.baseDice}${flankText}${rearText}${hillDiceText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
     elCombatTerrain.textContent =
       `Defense modifiers: ${attackTerrainMath}; terrain ${terrainMath}; infantry support ${supportMath}.`;
     const supportStatus = supportStatusForCombat(info);
@@ -4259,7 +4258,6 @@ function unitColors(side) {
     const flankText = info.flankBonus ? `, flank +${info.flankBonus}` : '';
     const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
     const hillDiceText = Number(info.hillBonusDice || 0) ? `, hill-shot +${Math.abs(Number(info.hillBonusDice || 0))}` : '';
-    const hillRangeText = info.rangeExtended ? ', hill-range +1' : '';
     const attackTerrainText = info.attackTerrainDiceMod
       ? `, atk terrain ${info.attackTerrainDiceMod > 0 ? '+' : ''}${info.attackTerrainDiceMod}`
       : ', atk terrain 0';
@@ -4273,7 +4271,7 @@ function unitColors(side) {
       : `, support 0 (pairs ${supportPairCount}, atk ${supportAttackDir || '?'})`;
     const finalSummary =
       `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
-      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${hillDiceText}${hillRangeText}${attackTerrainText}${terrainText}${supportText}) · ` +
+      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${hillDiceText}${attackTerrainText}${terrainText}${supportText}) · ` +
       `H ${info.hits} / R ${info.retreats} / M ${info.misses}`;
     const briefOutcome =
       `This roll: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ` +
@@ -6705,17 +6703,11 @@ function unitColors(side) {
     }
 
     let baseRangedDice = atkDef.ranged[dist] || 0;
-    let rangeExtended = false;
     let hillBonusDice = 0;
 
     if ((attackerUnit.type === 'arc' || attackerUnit.type === 'skr') && atkHex.terrain === 'hills') {
-      // Hilltop advantage: +1 die and +1 max range for ARC/SKR.
+      // Hilltop advantage: +1 ranged die for ARC/SKR.
       hillBonusDice = 1;
-      const hillMaxRange = (attackerUnit.type === 'arc') ? 4 : 3;
-      if (!baseRangedDice && dist === hillMaxRange) {
-        rangeExtended = true;
-        baseRangedDice = 1;
-      }
     }
 
     if (!baseRangedDice) return null;
@@ -6730,7 +6722,6 @@ function unitColors(side) {
       rearBonus: 0,
       impactPosition: 'none',
       hillBonusDice,
-      rangeExtended,
     };
   }
 
@@ -6946,7 +6937,6 @@ function unitColors(side) {
       attackTerrainDiceMod,
       attackerTerrain,
       hillBonusDice,
-      rangeExtended: !!prof.rangeExtended,
       impactPosition,
       pivoted,
       pivotFrom,
@@ -9031,7 +9021,7 @@ function unitColors(side) {
           notes.push('Deep woods: ranged attacks are disabled until on a woods hex adjacent to clear.');
         }
       } else if (curHex && curHex.terrain === 'hills') {
-        notes.push('Hilltop: ranged attacks gain +1 die and +1 max range.');
+        notes.push('Hilltop: ranged attacks gain +1 die (range unchanged).');
       }
     }
 

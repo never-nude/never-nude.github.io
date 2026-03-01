@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260228-jupiter-v9" />
+  <link rel="stylesheet" href="style.css?v=20260228-jupiter-v10" />
 </head>
 <body>
   <header id="hud">
@@ -94,8 +94,8 @@
           <div class="quickUnitList">
             <div class="quickUnit"><span class="uType">INF</span><span class="uStat">M1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">2M; pause W/H/R</span></div>
             <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">3M; no W/H; rough slow+pause</span></div>
-            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">M2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">2M, 1@r2; W/H step1; tree-line; hill +1D/+1R</span></div>
-            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">M1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">1M, 2@r2, 1@r3; woods pause; tree-line; hill +1D/+1R</span></div>
+            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">M2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">2M, 1@r2; W/H step1; tree-line; hill +1D</span></div>
+            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">M1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">1M, 2@r2, 1@r3; woods pause; tree-line; hill +1D</span></div>
             <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">M2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">1M</span></div>
             <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">M3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No atk; W/H step1</span></div>
             <div class="quickUnit"><span class="uType">MED</span><span class="uStat">M1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4</span><span class="uAtk">Heal +1 adj; woods-only difficult</span></div>
@@ -111,7 +111,7 @@
             <div class="terrainHead">Terrain</div><div class="terrainHead">Move Cost</div><div class="terrainHead">Combat</div>
             <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No modifier</div>
             <div class="terrainCell">Woods</div><div class="terrainCell">INF/ARC/RUN/MED: 1, SKR/GEN: 2, CAV: blocked</div><div class="terrainCell">Defender gives attacker -1 die; ARC/SKR ranged only from tree-line; tree-line ARC/SKR defender gives attacker -1 die</div>
-            <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/RUN: 1, SKR/GEN: 2, CAV/MED: blocked</div><div class="terrainCell">ARC/SKR ranged from hills: +1 die and +1 max range; defending ARC/SKR on hills gives attacker -1 die</div>
+            <div class="terrainCell">Hills</div><div class="terrainCell">INF/ARC/RUN: 1, SKR/GEN: 2, CAV/MED: blocked</div><div class="terrainCell">ARC/SKR ranged from hills: +1 die only (no range boost); defending ARC/SKR on hills gives attacker -1 die</div>
             <div class="terrainCell">Rough</div><div class="terrainCell">INF/ARC/SKR/RUN: 1, CAV/GEN: 2, MED: blocked</div><div class="terrainCell">Any attack launched from rough is -1 die; entering rough causes next-turn movement pause</div>
             <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
           </div>
@@ -239,7 +239,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260228-jupiter-v9"></script>
-  <script src="main.js?v=20260228-jupiter-v9"></script>
+  <script src="build.js?v=20260228-jupiter-v10"></script>
+  <script src="main.js?v=20260228-jupiter-v10"></script>
 </body>
 </html>
