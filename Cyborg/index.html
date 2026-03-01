@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v17" />
+  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v18" />
 </head>
 <body>
   <header id="hud">
@@ -22,12 +22,6 @@
   <main id="layout">
     <section id="canvasWrap">
       <canvas id="c"></canvas>
-      <div id="floatingDice" aria-live="polite">
-        <div id="physicalDiceRow" class="physicalDiceRow">
-          <span class="physicalDiceEmpty">No dice yet.</span>
-        </div>
-        <div id="dicePerDie" class="combatMeta dicePerDie">Per die: -</div>
-      </div>
     </section>
 
     <aside id="side">
@@ -78,6 +72,15 @@
       </section>
     </aside>
   </main>
+
+  <section id="diceStrip" aria-live="polite">
+    <div id="floatingDice">
+      <div id="physicalDiceRow" class="physicalDiceRow">
+        <span class="physicalDiceEmpty">No dice yet.</span>
+      </div>
+      <div id="dicePerDie" class="combatMeta dicePerDie">Per die: -</div>
+    </div>
+  </section>
 
   <section id="combatRail" aria-live="polite">
     <div class="combatCol combatColUnit">
@@ -235,7 +238,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260301-agamemnon-v17"></script>
-  <script src="main.js?v=20260301-agamemnon-v17"></script>
+  <script src="build.js?v=20260301-agamemnon-v18"></script>
+  <script src="main.js?v=20260301-agamemnon-v18"></script>
 </body>
 </html>
