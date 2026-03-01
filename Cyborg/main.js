@@ -542,7 +542,7 @@
       <li>MED HP 1/1/1, UP 4</li>
     </ul>
     <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods/Hills at cost 2 and is limited to one-step movement while in/entering Woods/Hills; SKR can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV cannot enter Woods or Hills and enters Rough at cost 2. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods/Hills at cost 2 and is limited to one-step movement while in/entering Woods/Hills; SKR can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV enters Woods/Hills/Rough at cost 2 and must pause next turn after entering any of those terrains. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
     <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die (no range increase). Any attack launched from Rough suffers -1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
@@ -5899,6 +5899,7 @@ function unitColors(side) {
     if (terrainId === 'clear' || terrainId === 'water') return false;
     if (terrainId === 'rough') return true; // global rough friction
     if (unitType === 'inf' && (terrainId === 'woods' || terrainId === 'hills')) return true;
+    if (unitType === 'cav' && (terrainId === 'woods' || terrainId === 'hills')) return true;
     if (unitType === 'arc' && terrainId === 'woods') return true;
     if (unitType === 'iat' && terrainId === 'woods') return true;
     return false;
@@ -5934,13 +5935,13 @@ function unitColors(side) {
     if (terrainId === 'water') return Infinity;
     if (terrainId === 'clear') return 1;
     if (terrainId === 'woods') {
-      if (unitType === 'cav') return Infinity;
+      if (unitType === 'cav') return 2;
       if (unitType === 'skr' || unitType === 'gen') return 2;
       if (unitType === 'iat') return 1;
       return 1;
     }
     if (terrainId === 'hills') {
-      if (unitType === 'cav') return Infinity;
+      if (unitType === 'cav') return 2;
       if (unitType === 'iat') return Infinity;
       if (unitType === 'skr' || unitType === 'gen') return 2;
       return 1;

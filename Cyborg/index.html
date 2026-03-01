@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v14" />
+  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v16" />
 </head>
 <body>
   <header id="hud">
@@ -38,7 +38,7 @@
           <div class="quickLegend">All HP and UP values are listed in <strong>Green / Regular / Veteran</strong> order.</div>
           <div class="quickUnitList">
             <div class="quickUnit"><span class="uType">INF</span><span class="uStat">Move 1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">Front line. Melee: 2 dice. Slows after entering woods, hills, or rough.</span></div>
-            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">Shock arm. Melee: 3 dice. Cannot enter woods/hills.</span></div>
+            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">Shock arm. Melee: 3 dice. Can enter woods/hills/rough but pauses after entry.</span></div>
             <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Screen unit. Melee: 2 dice. Ranged: 1 die at 2 hexes.</span></div>
             <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">Move 1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">Ranged pressure. Melee: 1 die. Ranged: 2 dice at 2 hexes, 1 die at 3.</span></div>
             <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">Command anchor. Melee: 1 die. Sets command radius.</span></div>
@@ -47,13 +47,32 @@
           </div>
           <div class="quickSheetNote">Dice: 5-6 hit, 4 retreat, 1-3 miss. Defender modifiers can reduce attacker dice, but attacks always roll at least 1 die. Open Rules for full detail.</div>
           <div class="referenceSubhead">Terrain Guide</div>
-          <div class="terrainGuideGrid">
-            <div class="terrainHead">Terrain</div><div class="terrainHead">Move Cost</div><div class="terrainHead">Combat</div>
-            <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No direct combat modifier.</div>
-            <div class="terrainCell">Woods</div><div class="terrainCell">Infantry/archers/runners/medics normal; skirmishers and generals slower; cavalry blocked.</div><div class="terrainCell">Defender gives attacker -1 die. Archers/skirmishers fire only from tree-line woods.</div>
-            <div class="terrainCell">Hills</div><div class="terrainCell">Infantry/archers/runners can climb; skirmishers and generals slower; cavalry and medics blocked.</div><div class="terrainCell">Archers/skirmishers on hills gain +1 ranged die. Attacking them on hills is -1 die.</div>
-            <div class="terrainCell">Rough</div><div class="terrainCell">Most units enter; cavalry and generals slower; medics blocked.</div><div class="terrainCell">Attacks launched from rough are -1 die. Entering rough applies next-turn move pause.</div>
-            <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter.</div>
+          <div class="terrainGuideList">
+            <div class="terrainGuideCard">
+              <div class="terrainName">Clear</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Move:</span> All units cost 1.</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Combat:</span> No direct combat modifier.</div>
+            </div>
+            <div class="terrainGuideCard">
+              <div class="terrainName">Woods</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Move:</span> Infantry, archers, runners, and medics move normally. Skirmishers and generals are slower. Cavalry can enter at cost 2 and pauses next turn.</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Combat:</span> Defender applies attacker −1 die. Archers and skirmishers can fire only from woods that touch clear hexes (tree-line).</div>
+            </div>
+            <div class="terrainGuideCard">
+              <div class="terrainName">Hills</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Move:</span> Infantry, archers, and runners can climb. Skirmishers and generals are slower. Cavalry can enter at cost 2 and pauses next turn. Medics cannot enter.</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Combat:</span> Archers/skirmishers on hills gain +1 ranged die. Attacking those units on hills gives attacker −1 die.</div>
+            </div>
+            <div class="terrainGuideCard">
+              <div class="terrainName">Rough</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Move:</span> Most units can enter. Cavalry and generals are slower, and all units that enter rough pause next turn. Medics cannot enter.</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Combat:</span> Any attack launched from rough is −1 die. Entering rough applies next-turn movement pause.</div>
+            </div>
+            <div class="terrainGuideCard">
+              <div class="terrainName">Water</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Move:</span> Impassable.</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Combat:</span> Cannot enter.</div>
+            </div>
           </div>
         </div>
       </section>
@@ -216,7 +235,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260301-agamemnon-v14"></script>
-  <script src="main.js?v=20260301-agamemnon-v14"></script>
+  <script src="build.js?v=20260301-agamemnon-v16"></script>
+  <script src="main.js?v=20260301-agamemnon-v16"></script>
 </body>
 </html>
