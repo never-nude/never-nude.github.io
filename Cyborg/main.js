@@ -91,7 +91,7 @@
   const MOVE_ANIM_STEP_MS_HUMAN = 170;
   const MOVE_ANIM_STEP_MS_AI = 340;
   const ACTION_PULSE_MOVE_MS = 480;
-  const ACTION_PULSE_ATTACK_MS = 560;
+  const ACTION_PULSE_ATTACK_MS = 900;
   const INF_SUPPORT_MAX_RANKS = 2;
   const INF_SUPPORT_DICE_PER_RANK = 1;
   const AI_DIFFICULTY_PROFILES = {
@@ -132,16 +132,16 @@
   const RANDOM_START_SCENARIO_NAME = 'Randomized Opening (Auto)';
   const RANDOM_START_UNITS_PER_SIDE = 30;
   const HISTORICAL_SCENARIO_ORDER = [
-    'Terrain G — Tuderberg Ring Ambush',
     'Terrain K — Marathon (490 BCE)',
     'Terrain L — Granicus River (334 BCE)',
     'Terrain M — Cannae Double Envelopment (216 BCE)',
-    'Terrain N — Pharsalus Reserve Counterstroke (48 BCE)',
-    'Terrain O — Zama (202 BCE)',
     'Terrain P — Ilipa Reverse Deployment (206 BCE)',
+    'Terrain O — Zama (202 BCE)',
     'Terrain Q — Carhae (Carrhae, 53 BCE)',
+    'Terrain N — Pharsalus Reserve Counterstroke (48 BCE)',
     'Terrain R — Thapsus Coastal Pressure (46 BCE)',
     'Terrain S — Philippi Twin Camps (42 BCE)',
+    'Terrain G — Teutoburg Ambush (9 CE)',
   ];
   const HISTORICAL_SCENARIO_INDEX = new Map(HISTORICAL_SCENARIO_ORDER.map((name, idx) => [name, idx]));
   const SCENARIO_SECTION_ORDER = ['quick', 'mirrored', 'nonMirrored', 'historical', 'demo', 'other'];
@@ -485,6 +485,7 @@
   const elStateFileInput = document.getElementById('stateFileInput');
   const elDiceSummary = document.getElementById('diceSummary');
   const elPhysicalDiceRow = document.getElementById('physicalDiceRow');
+  const elDicePerDie = document.getElementById('dicePerDie');
   const elDiceOutcomeBrief = document.getElementById('diceOutcomeBrief');
   const elDiceTray = document.getElementById('diceTray');
   const elInspectorTitle = document.getElementById('inspectorTitle');
@@ -492,11 +493,10 @@
   const elInspectorSide = document.getElementById('inspectorSide');
   const elInspectorType = document.getElementById('inspectorType');
   const elInspectorQuality = document.getElementById('inspectorQuality');
-  const elInspectorHex = document.getElementById('inspectorHex');
   const elInspectorHp = document.getElementById('inspectorHp');
   const elInspectorUp = document.getElementById('inspectorUp');
-  const elInspectorCommand = document.getElementById('inspectorCommand');
-  const elInspectorRadius = document.getElementById('inspectorRadius');
+  const elInspectorMove = document.getElementById('inspectorMove');
+  const elInspectorAttack = document.getElementById('inspectorAttack');
   const elCombatSummary = document.getElementById('combatSummary');
   const elCombatMath = document.getElementById('combatMath');
   const elCombatTerrain = document.getElementById('combatTerrain');
@@ -504,8 +504,7 @@
   const elModifierPreview = document.getElementById('modifierPreview');
   const elVictoryTrackBody = document.getElementById('victoryTrackBody');
   const elForceTotals = document.getElementById('forceTotals');
-  const elRulesShortBtn = document.getElementById('rulesShortBtn');
-  const elRulesFullBtn = document.getElementById('rulesFullBtn');
+  const elRulesOpenBtn = document.getElementById('rulesOpenBtn');
   const elRulesModal = document.getElementById('rulesModal');
   const elRulesModalTitle = document.getElementById('rulesModalTitle');
   const elRulesModalBody = document.getElementById('rulesModalBody');
@@ -513,22 +512,6 @@
   const elCombatHint = document.getElementById('combatHint');
   const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
   const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR in woods fire only from tree-line. ARC/SKR on hills gain +1 ranged die (no range increase). Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
-  const RULES_SHORT_HTML = `
-    <h4>Core</h4>
-    <p>3 activations per turn. Most units act once per turn. A unit occupies one hex; no stacking.</p>
-    <h4>Command</h4>
-    <p>General command radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
-    <p>Out of command: Green INF/ARC/SKR cannot activate. Regular INF/ARC/SKR can attack but cannot move. Veterans and CAV ignore command limits.</p>
-    <h4>Combat</h4>
-    <p>d6: 5-6 hit, 4 retreat, 1-3 miss. Defender terrain can reduce attacker dice (minimum 1).</p>
-    <p>Tree-line rule: Archers and skirmishers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
-    <p>Hill missile rule: ARC/SKR on Hills get +1 ranged die. Hills do not extend range.</p>
-    <p>Friction rule: all units that enter Rough must pause movement on their next turn. SKR and RUN move one hex at a time while in or entering Woods/Hills. INF also pause after entering Woods/Hills, ARC pause after entering Woods, and MED pause after entering Woods.</p>
-    <p>Line Advance: select a friendly INF, then issue the order. The game auto-selects a valid non-lateral advance direction from that line's orientation.</p>
-    <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
-    <h4>Victory</h4>
-    <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
-  `;
   const RULES_FULL_HTML = `
     <h4>Bannerfall At A Glance</h4>
     <p>Bannerfall is a hex-grid tactics game about cohesion, command, and collapse. The central idea is simple: an army wins by staying coordinated while forcing the enemy to lose shape. Units are formations, not heroes. Position and command matter more than flashy abilities.</p>
@@ -575,7 +558,7 @@
     <p>An infantry defender is reinforced only when it has a touching adjacent pair of friendly infantry. If the attack comes from the opposite brace directions, attacker dice are reduced by 1 (minimum 1 die). Reinforcement is one line deep only.</p>
     <p>UI cue: light cyan marks reinforced units; darker cyan marks the units providing the brace.</p>
     <h4>Line Advance</h4>
-    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step in an automatically selected valid non-lateral direction based on the line's orientation. It does not include attacks. Some units may move while blocked units remain in place.</p>
+    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step in your selected non-lateral direction based on the line's orientation. It does not include attacks. Some units may move while blocked units remain in place.</p>
     <h4>Victory Conditions</h4>
     <ul>
       <li>Clear Victory: capture at least half of the opponent's starting UP.</li>
@@ -801,7 +784,7 @@
       ],
     },
   
-    'Terrain G — Tuderberg Ring Ambush': {
+    'Terrain G — Teutoburg Ambush (9 CE)': {
       terrain: [
         { q: 2, r: 2, terrain: 'hills' },
         { q: 4, r: 2, terrain: 'hills' },
@@ -3580,25 +3563,47 @@ function unitColors(side) {
     const t = Math.max(0, Math.min(1, (now - pulse.startedAt) / duration));
     const fade = 1 - t;
 
-    function glowHex(hex, intensity = 1) {
+    const isAttack = pulse.type === 'attack';
+    const isMove = pulse.type === 'move';
+
+    function glowHex(hex, intensity = 1, role = 'target') {
       if (!hex) return;
       const glow = (0.16 + (0.20 * fade)) * intensity;
       const ring = (0.36 + (0.38 * fade)) * intensity;
+      let fill = `rgba(255, 76, 76, ${Math.max(0.08, glow)})`;
+      let stroke = `rgba(255, 134, 134, ${Math.max(0.15, ring)})`;
+      let shadow = `rgba(255, 70, 70, ${Math.max(0.18, 0.42 * fade)})`;
+
+      if (isMove) {
+        fill = `rgba(84, 188, 255, ${Math.max(0.08, glow)})`;
+        stroke = `rgba(146, 218, 255, ${Math.max(0.15, ring)})`;
+        shadow = `rgba(84, 188, 255, ${Math.max(0.18, 0.42 * fade)})`;
+      } else if (isAttack && role === 'source') {
+        fill = `rgba(255, 168, 108, ${Math.max(0.06, glow * 0.72)})`;
+        stroke = `rgba(255, 206, 148, ${Math.max(0.10, ring * 0.65)})`;
+        shadow = `rgba(255, 168, 108, ${Math.max(0.14, 0.30 * fade)})`;
+      }
+
       ctx.save();
       ctx.beginPath();
       ctx.arc(hex.cx, hex.cy, R * 0.64, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 76, 76, ${Math.max(0.08, glow)})`;
+      ctx.fillStyle = fill;
       ctx.fill();
       ctx.lineWidth = Math.max(2, R * 0.11);
-      ctx.strokeStyle = `rgba(255, 134, 134, ${Math.max(0.15, ring)})`;
+      ctx.strokeStyle = stroke;
       ctx.shadowBlur = Math.max(8, Math.floor(R * 0.75));
-      ctx.shadowColor = `rgba(255, 70, 70, ${Math.max(0.18, 0.42 * fade)})`;
+      ctx.shadowColor = shadow;
       ctx.stroke();
       ctx.restore();
     }
 
-    glowHex(fromHex, 1.0);
-    if (!fromHex || !toHex || fromHex.k !== toHex.k) glowHex(toHex, 0.95);
+    if (isAttack) {
+      if (fromHex) glowHex(fromHex, 0.55, 'source');
+      if (toHex) glowHex(toHex, 1.25, 'target');
+    } else {
+      glowHex(fromHex, 1.0, 'source');
+      if (!fromHex || !toHex || fromHex.k !== toHex.k) glowHex(toHex, 0.95, 'target');
+    }
 
     if (fromHex && toHex && fromHex.k !== toHex.k) {
       const dx = toHex.cx - fromHex.cx;
@@ -4008,17 +4013,28 @@ function unitColors(side) {
     el.textContent = String(value);
   }
 
+  function unitAttackSummary(unit, def) {
+    if (!unit || !def) return '-';
+    if (unit.type === 'run') return 'No attack';
+    if (unit.type === 'iat') return 'Heal +1 adjacent';
+    const melee = def.meleeDice ? `Melee ${def.meleeDice}` : '';
+    if (!def.ranged) return melee || 'No attack';
+    const rangedBits = Object.entries(def.ranged)
+      .map(([dist, dice]) => `R${dist}:${dice}`)
+      .join(', ');
+    return `${melee}; ${rangedBits}`;
+  }
+
   function resetInspector(message = '') {
     setInspectorValue(elInspectorTitle, 'No unit selected.');
-    setInspectorValue(elInspectorMeta, message);
+    setInspectorValue(elInspectorMeta, message || 'Click a unit to view details.');
     setInspectorValue(elInspectorSide, '-');
     setInspectorValue(elInspectorType, '-');
     setInspectorValue(elInspectorQuality, '-');
-    setInspectorValue(elInspectorHex, '');
     setInspectorValue(elInspectorHp, '-');
     setInspectorValue(elInspectorUp, '-');
-    setInspectorValue(elInspectorCommand, '');
-    setInspectorValue(elInspectorRadius, '');
+    setInspectorValue(elInspectorMove, '-');
+    setInspectorValue(elInspectorAttack, '-');
   }
 
   function updateInspector() {
@@ -4040,16 +4056,17 @@ function unitColors(side) {
     const qualityText = humanizeQuality(u.quality);
     const maxHp = unitMaxHp(u.type, u.quality);
     const up = unitUpValue(u.type, u.quality);
-    setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.abbrev} (${qualityText})`);
-    setInspectorValue(elInspectorMeta, '');
+    const mp = unitMovePoints(u);
+    const moveText = unitMoveIsPausedThisTurn(u) ? `${mp} (paused)` : `${mp}`;
+    setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.label}`);
+    setInspectorValue(elInspectorMeta, 'Selected formation details');
     setInspectorValue(elInspectorSide, u.side.toUpperCase());
-    setInspectorValue(elInspectorType, def.label);
+    setInspectorValue(elInspectorType, def.abbrev);
     setInspectorValue(elInspectorQuality, qualityText);
-    setInspectorValue(elInspectorHex, '');
     setInspectorValue(elInspectorHp, `${u.hp}/${maxHp}`);
     setInspectorValue(elInspectorUp, up);
-    setInspectorValue(elInspectorCommand, '');
-    setInspectorValue(elInspectorRadius, '');
+    setInspectorValue(elInspectorMove, moveText);
+    setInspectorValue(elInspectorAttack, unitAttackSummary(u, def));
   }
 
   function diePipIndexes(value) {
@@ -4127,7 +4144,8 @@ function unitColors(side) {
   function clearDiceDisplay() {
     diceRenderNonce += 1;
     if (elDiceSummary) elDiceSummary.textContent = 'No rolls yet.';
-    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'This roll: -';
+    if (elDicePerDie) elDicePerDie.textContent = 'Per die: -';
+    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'Outcome: -';
     if (elDiceTray) elDiceTray.innerHTML = '';
     renderIdlePhysicalDice();
     clearCombatBreakdown();
@@ -4243,7 +4261,6 @@ function unitColors(side) {
   }
 
   function renderCombatBreakdown(rolls, info) {
-    if (!elCombatSummary || !elCombatMath || !elCombatTerrain) return;
     if (!info) {
       clearCombatBreakdown();
       return;
@@ -4279,71 +4296,63 @@ function unitColors(side) {
     const terrainText = terrainDelta ? ` ${terrainDelta > 0 ? '+' : '-'} terrain ${Math.abs(terrainDelta)}` : '';
     const supportText = supportDelta ? ` - support ${Math.abs(supportDelta)}` : '';
 
-    elCombatSummary.textContent =
-      `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
-    elCombatMath.textContent =
-      `Dice math: base ${info.baseDice}${flankText}${rearText}${hillDiceText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
-    elCombatTerrain.textContent =
-      `Defense modifiers: ${attackTerrainMath}; terrain ${terrainMath}; infantry support ${supportMath}.`;
+    if (elCombatSummary) {
+      elCombatSummary.textContent =
+        `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
+    }
+    if (elCombatMath) {
+      elCombatMath.textContent =
+        `Dice math: base ${info.baseDice}${flankText}${rearText}${hillDiceText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
+    }
+    if (elCombatTerrain) {
+      elCombatTerrain.textContent =
+        `Defense modifiers: ${attackTerrainMath}; terrain ${terrainMath}; infantry support ${supportMath}.`;
+    }
     const supportStatus = supportStatusForCombat(info);
     setCombatSupportStatus(supportStatus.text, supportStatus.cls);
 
-    const conciseOutcome = `This roll: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
+    const conciseOutcome = `Outcome: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
     if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = conciseOutcome;
 
     if (elCombatHint) elCombatHint.textContent = COMBAT_RULE_HINT;
   }
 
   function renderDiceDisplay(rolls, info) {
-    if (!elDiceSummary || !elDiceTray) return;
+    if (!elPhysicalDiceRow && !elDicePerDie && !elDiceOutcomeBrief && !elDiceSummary) return;
 
     diceRenderNonce += 1;
     const renderNonce = diceRenderNonce;
 
-    const posText = (info.impactPosition && info.impactPosition !== 'none') ? `, ${info.impactPosition}` : '';
-    const pivotText = info.pivoted ? ', pivot' : '';
-    const flankText = info.flankBonus ? `, flank +${info.flankBonus}` : '';
-    const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
-    const hillDiceText = Number(info.hillBonusDice || 0) ? `, hill-shot +${Math.abs(Number(info.hillBonusDice || 0))}` : '';
-    const attackTerrainText = info.attackTerrainDiceMod
-      ? `, atk terrain ${info.attackTerrainDiceMod > 0 ? '+' : ''}${info.attackTerrainDiceMod}`
-      : ', atk terrain 0';
-    const terrainName = terrainLabel(info.defenderTerrain || 'clear');
-    const terrainText = info.terrainDiceMod ? `, ${terrainName.toLowerCase()} ${info.terrainDiceMod > 0 ? '+' : ''}${info.terrainDiceMod}` : `, ${terrainName.toLowerCase()} 0`;
-    const supportPairCount = Math.max(0, Number(info.supportPairCount || 0));
-    const supportMatchingCount = Math.max(0, Number(info.supportMatchingCount || 0));
-    const supportAttackDir = String(info.supportAttackDir || '').toUpperCase();
-    const supportText = info.supportDiceMod
-      ? `, support ${info.supportDiceMod > 0 ? '+' : ''}${info.supportDiceMod} (${Math.max(0, Number(info.supportRanks || 0))} line, match ${supportMatchingCount}/${supportPairCount}, atk ${supportAttackDir})`
-      : `, support 0 (pairs ${supportPairCount}, atk ${supportAttackDir || '?'})`;
     const finalSummary =
-      `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
-      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${hillDiceText}${attackTerrainText}${terrainText}${supportText}) · ` +
-      `H ${info.hits} / R ${info.retreats} / M ${info.misses}`;
+      `${info.attacker} ${info.kind.toUpperCase()} vs ${info.defender} · ${info.dice} dice`;
     const briefOutcome =
-      `This roll: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ` +
+      `Outcome: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ` +
       `${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ` +
       `${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
-    elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
-    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = `This roll: rolling ${info.dice} dice...`;
+    if (elDiceSummary) elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
+    if (elDicePerDie) elDicePerDie.textContent = 'Per die: rolling...';
+    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'Outcome: resolving...';
 
-    elDiceTray.innerHTML = '';
+    if (elDiceTray) elDiceTray.innerHTML = '';
     if (elPhysicalDiceRow) elPhysicalDiceRow.innerHTML = '';
+    const perDieText = Array.from({ length: rolls.length }, () => '...');
     for (let i = 0; i < rolls.length; i++) {
       const roll = rolls[i];
-      const die = document.createElement('div');
-      die.className = 'die rolling';
-
-      const face = makeDieFace(1 + Math.floor(Math.random() * 6));
-      die.appendChild(face);
-
-      const mark = document.createElement('span');
-      mark.className = 'dieBadge';
-      mark.textContent = '?';
-      die.appendChild(mark);
-
-      die.title = 'Rolling…';
-      elDiceTray.appendChild(die);
+      let die = null;
+      let face = null;
+      let mark = null;
+      if (elDiceTray) {
+        die = document.createElement('div');
+        die.className = 'die rolling';
+        face = makeDieFace(1 + Math.floor(Math.random() * 6));
+        die.appendChild(face);
+        mark = document.createElement('span');
+        mark.className = 'dieBadge';
+        mark.textContent = '?';
+        die.appendChild(mark);
+        die.title = 'Rolling…';
+        elDiceTray.appendChild(die);
+      }
 
       let physicalDie = null;
       let physicalFace = null;
@@ -4362,18 +4371,27 @@ function unitColors(side) {
 
         let outcome = 'miss';
         let badge = 'M';
+        let word = 'miss';
         if (DIE_HIT.has(roll)) {
           outcome = 'hit';
           badge = 'H';
+          word = 'hit';
         } else if (roll === DIE_RETREAT) {
           outcome = 'retreat';
           badge = 'R';
+          word = 'retreat';
         }
 
-        applyDieFace(face, roll);
-        die.className = `die ${outcome}`;
-        mark.textContent = badge;
-        die.title = `Roll ${roll} (${badge})`;
+        if (die && face && mark) {
+          applyDieFace(face, roll);
+          die.className = `die ${outcome}`;
+          mark.textContent = badge;
+          die.title = `Roll ${roll} (${badge})`;
+        }
+        perDieText[i] = `${roll} ${word}`;
+        if (elDicePerDie) {
+          elDicePerDie.textContent = `Per die: ${perDieText.join(' · ')}`;
+        }
 
         if (physicalDie && physicalFace) {
           applyPhysicalDieFace(physicalFace, roll);
@@ -4387,7 +4405,8 @@ function unitColors(side) {
     const summaryDelay = 220 + (Math.max(0, rolls.length - 1) * 80);
     setTimeout(() => {
       if (renderNonce !== diceRenderNonce) return;
-      elDiceSummary.textContent = finalSummary;
+      if (elDiceSummary) elDiceSummary.textContent = finalSummary;
+      if (elDicePerDie) elDicePerDie.textContent = `Per die: ${perDieText.join(' · ')}`;
       if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = briefOutcome;
     }, summaryDelay);
   }
@@ -4506,13 +4525,12 @@ function unitColors(side) {
     `;
   }
 
-  function openRulesModal(kind = 'short') {
+  function openRulesModal() {
     if (!elRulesModal || !elRulesModalBody) return;
-    const full = kind === 'full';
     if (elRulesModalTitle) {
-      elRulesModalTitle.textContent = full ? 'Rules — Full' : 'Rules — Short';
+      elRulesModalTitle.textContent = 'Rules Guide';
     }
-    elRulesModalBody.innerHTML = full ? RULES_FULL_HTML : RULES_SHORT_HTML;
+    elRulesModalBody.innerHTML = RULES_FULL_HTML;
     elRulesModal.classList.add('open');
     elRulesModal.setAttribute('aria-hidden', 'false');
   }
@@ -9487,11 +9505,8 @@ function unitColors(side) {
     });
   }
 
-  if (elRulesShortBtn) {
-    elRulesShortBtn.addEventListener('click', () => openRulesModal('short'));
-  }
-  if (elRulesFullBtn) {
-    elRulesFullBtn.addEventListener('click', () => openRulesModal('full'));
+  if (elRulesOpenBtn) {
+    elRulesOpenBtn.addEventListener('click', () => openRulesModal());
   }
   if (elRulesCloseBtn) {
     elRulesCloseBtn.addEventListener('click', closeRulesModal);
