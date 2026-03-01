@@ -3388,6 +3388,35 @@ function unitColors(side) {
     }
   }
 
+  function drawQualityFramedRing(cx, cy, quality) {
+    const ringR = R * 0.55;
+    const ringW = Math.max(2, Math.floor(R * 0.12));
+    const frameW = Math.max(1, Math.floor(ringW * 0.36));
+    const frameOffset = (ringW * 0.5) - (frameW * 0.5);
+    const frameColor = '#0a0a0a';
+
+    // Quality color band.
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+    ctx.lineWidth = ringW;
+    ctx.strokeStyle = qualityStroke(quality);
+    ctx.stroke();
+
+    // Thin black frame on the inside of the quality band.
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR - frameOffset, 0, Math.PI * 2);
+    ctx.lineWidth = frameW;
+    ctx.strokeStyle = frameColor;
+    ctx.stroke();
+
+    // Thin black frame on the outside of the quality band.
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR + frameOffset, 0, Math.PI * 2);
+    ctx.lineWidth = frameW;
+    ctx.strokeStyle = frameColor;
+    ctx.stroke();
+  }
+
   function stopMoveAnimation() {
     if (state.moveAnimRaf) {
       cancelAnimationFrame(state.moveAnimRaf);
@@ -3471,9 +3500,7 @@ function unitColors(side) {
     ctx.fillStyle = c.fill;
     ctx.fill();
 
-    ctx.lineWidth = Math.max(2, Math.floor(R * 0.12));
-    ctx.strokeStyle = qualityStroke(unit.quality);
-    ctx.stroke();
+    drawQualityFramedRing(cx, cy, unit.quality);
 
     if (unit.type === 'run') {
       drawRunnerFootGlyph(cx, cy, R * 0.82);
@@ -3817,10 +3844,8 @@ function unitColors(side) {
       ctx.fillStyle = c.fill;
       ctx.fill();
 
-      // Token ring (quality)
-      ctx.lineWidth = Math.max(2, Math.floor(R * 0.12));
-      ctx.strokeStyle = qualityStroke(u.quality);
-      ctx.stroke();
+      // Token ring (quality + black framing for readability at distance)
+      drawQualityFramedRing(h.cx, h.cy, u.quality);
 
       // Selection ring
       if (state.selectedKey === hk) {
