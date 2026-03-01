@@ -131,6 +131,28 @@
   };
   const RANDOM_START_SCENARIO_NAME = 'Randomized Opening (Auto)';
   const RANDOM_START_UNITS_PER_SIDE = 30;
+  const HISTORICAL_SCENARIO_ORDER = [
+    'Terrain G — Tuderberg Ring Ambush',
+    'Terrain K — Marathon (490 BCE)',
+    'Terrain L — Granicus River (334 BCE)',
+    'Terrain M — Cannae Double Envelopment (216 BCE)',
+    'Terrain N — Pharsalus Reserve Counterstroke (48 BCE)',
+    'Terrain O — Zama (202 BCE)',
+    'Terrain P — Ilipa Reverse Deployment (206 BCE)',
+    'Terrain Q — Carhae (Carrhae, 53 BCE)',
+    'Terrain R — Thapsus Coastal Pressure (46 BCE)',
+    'Terrain S — Philippi Twin Camps (42 BCE)',
+  ];
+  const HISTORICAL_SCENARIO_INDEX = new Map(HISTORICAL_SCENARIO_ORDER.map((name, idx) => [name, idx]));
+  const SCENARIO_SECTION_ORDER = ['quick', 'mirrored', 'nonMirrored', 'historical', 'demo', 'other'];
+  const SCENARIO_SECTION_LABEL = {
+    quick: 'Quick Start',
+    mirrored: 'Mirrored Battles',
+    nonMirrored: 'Non-Mirrored Battles',
+    historical: 'Historical Battles',
+    demo: 'Learning Demos',
+    other: 'Other',
+  };
   const DRAFT_BUDGET_MIN = 20;
   const DRAFT_BUDGET_MAX = 300;
   const DRAFT_BUDGET_DEFAULT = 120;
@@ -502,7 +524,7 @@
     <p>Tree-line rule: Archers and skirmishers in Woods can fire only if that woods hex is adjacent to at least one Clear hex.</p>
     <p>Hill missile rule: ARC/SKR on Hills get +1 ranged die. Hills do not extend range.</p>
     <p>Friction rule: all units that enter Rough must pause movement on their next turn. SKR and RUN move one hex at a time while in or entering Woods/Hills. INF also pause after entering Woods/Hills, ARC pause after entering Woods, and MED pause after entering Woods.</p>
-    <p>Line Advance: select a friendly INF, choose a line direction, then issue the order. The line can advance into one of four non-lateral directions based on its current orientation.</p>
+    <p>Line Advance: select a friendly INF, then issue the order. The game auto-selects a valid non-lateral advance direction from that line's orientation.</p>
     <p>Infantry reinforcement: defender needs two adjacent friendly INF touching it. Attacks from the opposite two hex sides get -1 attacker die. One line deep only.</p>
     <h4>Victory</h4>
     <p>Clear Victory: capture at least half of opponent starting UP. Decapitation: eliminate all enemy generals. Annihilation: eliminate all enemy units.</p>
@@ -553,7 +575,7 @@
     <p>An infantry defender is reinforced only when it has a touching adjacent pair of friendly infantry. If the attack comes from the opposite brace directions, attacker dice are reduced by 1 (minimum 1 die). Reinforcement is one line deep only.</p>
     <p>UI cue: light cyan marks reinforced units; darker cyan marks the units providing the brace.</p>
     <h4>Line Advance</h4>
-    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step in a selected advance direction. The UI offers four non-lateral options based on the line's orientation. It does not include attacks. Some units may move while blocked units remain in place.</p>
+    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step in an automatically selected valid non-lateral direction based on the line's orientation. It does not include attacks. Some units may move while blocked units remain in place.</p>
     <h4>Victory Conditions</h4>
     <ul>
       <li>Clear Victory: capture at least half of the opponent's starting UP.</li>
@@ -7379,9 +7401,10 @@ function unitColors(side) {
 
   function chooseRandomForwardAxis() {
     const roll = Math.random();
-    if (roll < 0.30) return 'vertical';
-    if (roll < 0.60) return 'horizontal';
-    if (roll < 0.80) return 'diag_tl_br';
+    // Startup weighting: 65% orthogonal (top-bottom or left-right), 35% diagonal.
+    if (roll < 0.325) return 'vertical';
+    if (roll < 0.65) return 'horizontal';
+    if (roll < 0.825) return 'diag_tl_br';
     return 'diag_tr_bl';
   }
 
@@ -9810,22 +9833,95 @@ function unitColors(side) {
     return true;
   }
 
+  function scenarioSectionTag(name) {
+    if (name === RANDOM_START_SCENARIO_NAME || name === 'Empty (Island)') return 'quick';
+    if (name.startsWith('Grand ')) return 'mirrored';
+    if (HISTORICAL_SCENARIO_INDEX.has(name)) return 'historical';
+    if (name.startsWith('Berserker ') || name.startsWith('Terrain ')) return 'nonMirrored';
+    if (name.startsWith('Demo ')) return 'demo';
+    return 'other';
+  }
+
+  function scenarioNaturalCompare(a, b) {
+    return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  function sortScenarioNamesForSection(section, names) {
+    const list = Array.isArray(names) ? names.slice() : [];
+    if (section === 'quick') {
+      const quickPriority = new Map([
+        [RANDOM_START_SCENARIO_NAME, 0],
+        ['Empty (Island)', 1],
+      ]);
+      return list.sort((a, b) => {
+        const pa = quickPriority.has(a) ? quickPriority.get(a) : 99;
+        const pb = quickPriority.has(b) ? quickPriority.get(b) : 99;
+        if (pa !== pb) return pa - pb;
+        return scenarioNaturalCompare(a, b);
+      });
+    }
+    if (section === 'historical') {
+      return list.sort((a, b) => {
+        const pa = HISTORICAL_SCENARIO_INDEX.has(a) ? HISTORICAL_SCENARIO_INDEX.get(a) : 999;
+        const pb = HISTORICAL_SCENARIO_INDEX.has(b) ? HISTORICAL_SCENARIO_INDEX.get(b) : 999;
+        if (pa !== pb) return pa - pb;
+        return scenarioNaturalCompare(a, b);
+      });
+    }
+    if (section === 'nonMirrored') {
+      const rank = (name) => {
+        if (name.startsWith('Berserker ')) return 0;
+        if (name.startsWith('Terrain ')) return 1;
+        return 2;
+      };
+      return list.sort((a, b) => {
+        const ra = rank(a);
+        const rb = rank(b);
+        if (ra !== rb) return ra - rb;
+        return scenarioNaturalCompare(a, b);
+      });
+    }
+    return list.sort((a, b) => scenarioNaturalCompare(a, b));
+  }
+
   function populateScenarioSelect() {
     const prev = elScenarioSel.value;
     const filters = readScenarioFilters();
     elScenarioSel.innerHTML = '';
 
-    let shown = 0;
+    const namesBySection = new Map(SCENARIO_SECTION_ORDER.map((section) => [section, []]));
     for (const name of Object.keys(SCENARIOS)) {
       const meta = scenarioMeta(name);
       if (!scenarioMatchesFilters(meta, filters)) continue;
+      const section = scenarioSectionTag(name);
+      if (!namesBySection.has(section)) namesBySection.set(section, []);
+      namesBySection.get(section).push({ name, meta });
+    }
 
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      opt.title = `Group=${meta.group} · Lesson=${meta.lesson} · Size=${meta.size} · Map=${meta.terrain}`;
-      elScenarioSel.appendChild(opt);
-      shown += 1;
+    let shown = 0;
+    for (const section of SCENARIO_SECTION_ORDER) {
+      const items = namesBySection.get(section) || [];
+      if (items.length === 0) continue;
+
+      const orderedNames = sortScenarioNamesForSection(
+        section,
+        items.map(item => item.name),
+      );
+      const metaByName = new Map(items.map(item => [item.name, item.meta]));
+      const groupEl = document.createElement('optgroup');
+      groupEl.label = SCENARIO_SECTION_LABEL[section] || section;
+
+      for (const name of orderedNames) {
+        const meta = metaByName.get(name) || scenarioMeta(name);
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        opt.title = `Group=${meta.group} · Lesson=${meta.lesson} · Size=${meta.size} · Map=${meta.terrain}`;
+        groupEl.appendChild(opt);
+        shown += 1;
+      }
+
+      elScenarioSel.appendChild(groupEl);
     }
 
     if (shown === 0) {
