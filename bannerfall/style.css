@@ -1004,23 +1004,26 @@ body{
 
 .scenarioSelect{
   width:100%;
-  min-height:24px;
+  min-height:22px;
   display:block;
   margin-bottom:2px;
 }
 
-.scenarioSubLabel{
-  color:var(--muted);
-  font-size:10px;
-  letter-spacing:0.04em;
-  text-transform:uppercase;
-  margin:2px 0 3px;
+.scenarioDirTitle{
+  margin-top:2px;
+  margin-bottom:3px;
 }
 
 .scenarioDirSelect{
   width:100%;
+  min-height:22px;
+  margin-bottom:4px;
+}
+
+.scenarioLineAdvanceBtn{
+  width:100%;
   min-height:24px;
-  margin-bottom:5px;
+  margin-bottom:6px;
 }
 
 .quickSheetGrid{

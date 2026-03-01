@@ -181,7 +181,7 @@
       id: 'skr', label: 'Skirmishers', abbrev: 'SKR', symbol: 'SKR', move: 2,
       hpByQuality: { green: 1, regular: 2, veteran: 3 },
       upByQuality: { green: 2, regular: 3, veteran: 4 },
-      meleeDice: 2, ranged: { 2: 1 }, // fixed range 2
+      meleeDice: 1, ranged: { 2: 1 }, // fixed range 2
     },
     {
       id: 'arc', label: 'Archers', abbrev: 'ARC', symbol: '➶', move: 1,
@@ -523,7 +523,7 @@
     <ul>
       <li>INF: line holder, 2 melee dice.</li>
       <li>CAV: shock unit, 3 melee dice.</li>
-      <li>SKR: flexible screen, 2 melee dice, 1 ranged die at range 2.</li>
+      <li>SKR: flexible screen, 1 melee die, 1 ranged die at range 2.</li>
       <li>ARC: ranged pressure, 1 melee die, 2 ranged dice at range 2 and 1 die at range 3.</li>
       <li>GEN: command anchor, 1 melee die.</li>
       <li>RUN: messenger/relay, no attack, command relay radius 1.</li>

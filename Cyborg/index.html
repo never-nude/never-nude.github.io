@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v23" />
+  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v25" />
 </head>
 <body>
   <header id="hud">
@@ -33,7 +33,7 @@
           <div class="quickUnitList">
             <div class="quickUnit"><span class="uType">Infantry</span><span class="uStat">Move 1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">Front line. Melee: 2 dice. Entering hills ends movement; woods/hills/rough also apply next-turn pause.</span></div>
             <div class="quickUnit"><span class="uType">Cavalry</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">Shock arm. Melee: 3 dice. Can enter woods/hills/rough but pauses after entry.</span></div>
-            <div class="quickUnit"><span class="uType">Skirmisher</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Screen unit. Melee: 2 dice. Ranged: 1 die at 2 hexes. Hills do not slow skirmishers.</span></div>
+            <div class="quickUnit"><span class="uType">Skirmisher</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Screen unit. Melee: 1 die. Ranged: 1 die at 2 hexes. Hills do not slow skirmishers.</span></div>
             <div class="quickUnit"><span class="uType">Archer</span><span class="uStat">Move 1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">Ranged pressure. Melee: 1 die. Ranged: 2 dice at 2 hexes, 1 die at 3. Entering hills ends movement.</span></div>
             <div class="quickUnit"><span class="uType">General</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">Command anchor. Melee: 1 die. Sets command radius. Entering hills ends movement.</span></div>
             <div class="quickUnit"><span class="uType">Runner</span><span class="uStat">Move 3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack. Carries command relay (radius 1).</span></div>
@@ -132,14 +132,14 @@
       </div>
       <div class="row">
         <button id="endTurnBtn" class="btn wide">End Turn</button>
-        <button id="lineAdvanceBtn" class="btn wide">Line Advance</button>
       </div>
     </div>
     <div class="combatCol combatColOutcome">
       <div class="combatColTitle">Scenario</div>
       <select id="scenarioSel" class="select scenarioSelect"></select>
-      <div class="scenarioSubLabel">Line Advance Direction</div>
+      <div class="combatColTitle scenarioDirTitle">Line Advance Direction</div>
       <select id="lineAdvanceDirSel" class="select lineDirSel scenarioDirSelect"></select>
+      <button id="lineAdvanceBtn" class="btn wide scenarioLineAdvanceBtn">Line Advance</button>
       <div class="combatColTitle">Victory Track</div>
       <div id="forceTotals" class="forceTotals">Score (UP / HP): Blue - / - · Red - / -</div>
       <div id="victoryTrackBody" class="victoryTrackBody">Victory: -</div>
@@ -235,7 +235,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260301-agamemnon-v23"></script>
-  <script src="main.js?v=20260301-agamemnon-v23"></script>
+  <script src="build.js?v=20260301-agamemnon-v25"></script>
+  <script src="main.js?v=20260301-agamemnon-v25"></script>
 </body>
 </html>
