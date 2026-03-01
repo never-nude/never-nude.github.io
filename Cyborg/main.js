@@ -542,7 +542,7 @@
       <li>MED HP 1/1/1, UP 4</li>
     </ul>
     <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods/Hills at cost 2 and is limited to one-step movement while in/entering Woods/Hills; SKR can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV enters Woods/Hills/Rough at cost 2 and must pause next turn after entering any of those terrains. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (but pauses next turn after entering any of those). SKR enters Woods at cost 2 and enters Hills at cost 1, but climbing into a Hill ends further movement that activation; SKR can enter Rough at cost 1. ARC enters Woods/Hills/Rough at cost 1 (and pauses next turn after entering Woods). CAV enters Woods/Hills/Rough at cost 2 and must pause next turn after entering any of those terrains. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
     <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die (no range increase). Any attack launched from Rough suffers -1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
@@ -5889,6 +5889,14 @@ function unitColors(side) {
     return terrainId === 'woods' || terrainId === 'hills';
   }
 
+  function isSkirmisherStepStopTerrain(terrainId) {
+    return terrainId === 'woods' || terrainId === 'hills';
+  }
+
+  function isSkirmisherStartSlowTerrain(terrainId) {
+    return terrainId === 'woods';
+  }
+
   function unitMoveIsPausedThisTurn(unit) {
     if (!unit) return false;
     const until = Number(unit.movePauseUntilTurn || 0);
@@ -5943,7 +5951,8 @@ function unitColors(side) {
     if (terrainId === 'hills') {
       if (unitType === 'cav') return 2;
       if (unitType === 'iat') return Infinity;
-      if (unitType === 'skr' || unitType === 'gen') return 2;
+      if (unitType === 'skr') return 1;
+      if (unitType === 'gen') return 2;
       return 1;
     }
     if (terrainId === 'rough') {
@@ -6098,7 +6107,7 @@ function unitColors(side) {
     const mp = unitMovePoints(u);
     const startHex = board.byKey.get(fromKey);
     const runnerStartingSlow = !!(u && u.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
-    const skrStartingSlow = !!(u && u.type === 'skr' && startHex && isRunnerSlowTerrain(startHex.terrain));
+    const skrStartingSlow = !!(u && u.type === 'skr' && startHex && isSkirmisherStartSlowTerrain(startHex.terrain));
 
     // If movement isn't allowed, return empty set.
     if (!unitCanMoveThisActivation(u, actCtx, fromKey)) return new Set();
@@ -6148,7 +6157,7 @@ function unitColors(side) {
         out.add(nk);
         if (u.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
         if (u.type === 'run' && runnerStartingSlow) continue;
-        if (u.type === 'skr' && (skrStartingSlow || isRunnerSlowTerrain(nh.terrain))) continue;
+        if (u.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -6163,7 +6172,7 @@ function unitColors(side) {
     if (mp <= 0) return null;
     const startHex = board.byKey.get(fromKey);
     const runnerStartingSlow = !!(unit.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
-    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isRunnerSlowTerrain(startHex.terrain));
+    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isSkirmisherStartSlowTerrain(startHex.terrain));
 
     const best = new Map();
     const pq = [{ k: fromKey, c: 0 }];
@@ -6198,7 +6207,7 @@ function unitColors(side) {
         best.set(nk, nc);
         if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
         if (unit.type === 'run' && runnerStartingSlow) continue;
-        if (unit.type === 'skr' && (skrStartingSlow || isRunnerSlowTerrain(nh.terrain))) continue;
+        if (unit.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -6213,7 +6222,7 @@ function unitColors(side) {
     if (mp <= 0) return [fromKey, toKey];
     const startHex = board.byKey.get(fromKey);
     const runnerStartingSlow = !!(unit.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
-    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isRunnerSlowTerrain(startHex.terrain));
+    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isSkirmisherStartSlowTerrain(startHex.terrain));
 
     const best = new Map();
     const prev = new Map();
@@ -6250,7 +6259,7 @@ function unitColors(side) {
         prev.set(nk, cur.k);
         if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
         if (unit.type === 'run' && runnerStartingSlow) continue;
-        if (unit.type === 'skr' && (skrStartingSlow || isRunnerSlowTerrain(nh.terrain))) continue;
+        if (unit.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
         pq.push({ k: nk, c: nc });
       }
     }

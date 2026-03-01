@@ -813,16 +813,22 @@ body{
   font-size:10px;
 }
 
+.combatColEditor{
+  overflow-y:auto;
+  scrollbar-width:thin;
+  padding-right:4px;
+}
+
 .combatColEditor .btn,
 .combatColEditor .select{
-  min-height:22px;
+  min-height:20px;
   padding:2px 5px;
-  font-size:10px;
+  font-size:9px;
 }
 
 .combatColEditor .row{
   margin:0;
-  gap:4px;
+  gap:3px;
 }
 
 .combatColOnline .onlineRow{

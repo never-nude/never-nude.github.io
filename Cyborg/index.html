@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v18" />
+  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v20" />
 </head>
 <body>
   <header id="hud">
@@ -33,7 +33,7 @@
           <div class="quickUnitList">
             <div class="quickUnit"><span class="uType">INF</span><span class="uStat">Move 1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">Front line. Melee: 2 dice. Slows after entering woods, hills, or rough.</span></div>
             <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">Shock arm. Melee: 3 dice. Can enter woods/hills/rough but pauses after entry.</span></div>
-            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Screen unit. Melee: 2 dice. Ranged: 1 die at 2 hexes.</span></div>
+            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Screen unit. Melee: 2 dice. Ranged: 1 die at 2 hexes. Entering hills ends movement.</span></div>
             <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">Move 1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">Ranged pressure. Melee: 1 die. Ranged: 2 dice at 2 hexes, 1 die at 3.</span></div>
             <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">Command anchor. Melee: 1 die. Sets command radius.</span></div>
             <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">Move 3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack. Carries command relay (radius 1).</span></div>
@@ -54,7 +54,7 @@
             </div>
             <div class="terrainGuideCard">
               <div class="terrainName">Hills</div>
-              <div class="terrainLine"><span class="terrainLineLabel">Move:</span> Infantry, archers, and runners can climb. Skirmishers and generals are slower. Cavalry can enter at cost 2 and pauses next turn. Medics cannot enter.</div>
+              <div class="terrainLine"><span class="terrainLineLabel">Move:</span> Infantry, archers, and runners can climb. Skirmishers can climb at cost 1 but must stop after entering a hill. Generals are slower. Cavalry can enter at cost 2 and pauses next turn. Medics cannot enter.</div>
               <div class="terrainLine"><span class="terrainLineLabel">Combat:</span> Archers/skirmishers on hills gain +1 ranged die. Attacking those units on hills gives attacker −1 die.</div>
             </div>
             <div class="terrainGuideCard">
@@ -238,7 +238,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260301-agamemnon-v18"></script>
-  <script src="main.js?v=20260301-agamemnon-v18"></script>
+  <script src="build.js?v=20260301-agamemnon-v20"></script>
+  <script src="main.js?v=20260301-agamemnon-v20"></script>
 </body>
 </html>
