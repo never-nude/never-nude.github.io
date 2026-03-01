@@ -133,10 +133,10 @@ body{
 
 .quickUnit{
   display:grid;
-  grid-template-columns:34px 44px 56px 56px minmax(0, 1fr);
-  gap:6px;
+  grid-template-columns:30px 28px 48px 50px minmax(0, 1fr);
+  gap:4px;
   align-items:center;
-  padding:5px 6px;
+  padding:4px 6px;
   border:1px solid rgba(255,255,255,0.08);
   border-radius:8px;
   background:rgba(255,255,255,0.02);
@@ -153,12 +153,20 @@ body{
 .uStat,
 .uAtk{
   color:#d9deea;
-  font-size:10px;
+  font-size:9px;
   line-height:1.2;
 }
 
 .uAtk{
   color:#e7ecf8;
+}
+
+#editorToolsSide .panelBody > .row:first-child{
+  margin-top:0;
+}
+
+#editorToolsSide .panelBody > .row:first-child .btn{
+  flex:1;
 }
 
 .terrainGuideGrid{
