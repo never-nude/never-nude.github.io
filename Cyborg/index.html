@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v6" />
+  <link rel="stylesheet" href="style.css?v=20260301-agamemnon-v7" />
 </head>
 <body>
   <header id="hud">
@@ -31,32 +31,31 @@
     </section>
 
     <aside id="side">
-      <details id="defensePanel" class="panel collapsible">
-        <summary class="panelHead"><span class="panelTitle">Field Reference</span></summary>
-        <div class="panelBody">
+      <section id="fieldRefPanel" class="panel fieldRefPanel">
+        <div class="panelTitle">Field Reference</div>
+        <div class="fieldRefBody">
           <div class="referenceSubhead">Unit Quick Sheet</div>
           <div class="quickUnitList">
-            <div class="quickUnit"><span class="uType">INF</span><span class="uStat">Move 1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">Front line. Melee: 2 dice.</span></div>
-            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">Shock unit. Melee: 3 dice.</span></div>
-            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Melee: 2 dice. Ranged: 1 die at 2 hexes.</span></div>
-            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">Move 1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">Melee: 1 die. Ranged: 2 dice at 2 hexes, 1 die at 3.</span></div>
-            <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">Command unit. Melee: 1 die.</span></div>
-            <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">Move 3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack. Carries command.</span></div>
+            <div class="quickUnit"><span class="uType">INF</span><span class="uStat">Move 1</span><span class="uStat">HP 3/4/5</span><span class="uStat">UP 3/5/7</span><span class="uAtk">Front line. Melee: 2 dice. Slows after entering woods, hills, or rough.</span></div>
+            <div class="quickUnit"><span class="uType">CAV</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 6/8/10</span><span class="uAtk">Shock arm. Melee: 3 dice. Cannot enter woods/hills.</span></div>
+            <div class="quickUnit"><span class="uType">SKR</span><span class="uStat">Move 2</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/3/4</span><span class="uAtk">Screen unit. Melee: 2 dice. Ranged: 1 die at 2 hexes.</span></div>
+            <div class="quickUnit"><span class="uType">ARC</span><span class="uStat">Move 1</span><span class="uStat">HP 1/2/3</span><span class="uStat">UP 2/4/6</span><span class="uAtk">Ranged pressure. Melee: 1 die. Ranged: 2 dice at 2 hexes, 1 die at 3.</span></div>
+            <div class="quickUnit"><span class="uType">GEN</span><span class="uStat">Move 2</span><span class="uStat">HP 2/3/4</span><span class="uStat">UP 8/10/12</span><span class="uAtk">Command anchor. Melee: 1 die. Sets command radius.</span></div>
+            <div class="quickUnit"><span class="uType">RUN</span><span class="uStat">Move 3/4/5</span><span class="uStat">HP 2/2/2</span><span class="uStat">UP 1/2/3</span><span class="uAtk">No attack. Carries command relay (radius 1).</span></div>
             <div class="quickUnit"><span class="uType">MED</span><span class="uStat">Move 1</span><span class="uStat">HP 1/1/1</span><span class="uStat">UP 4</span><span class="uAtk">No attack. Heals +1 HP to one adjacent ally.</span></div>
           </div>
-          <div class="quickSheetNote">Dice: 5-6 hit, 4 retreat, 1-3 miss. Terrain can slow movement and change attack dice. Open Rules for full details.</div>
+          <div class="quickSheetNote">Dice: 5-6 hit, 4 retreat, 1-3 miss. Defender modifiers can reduce attacker dice, but attacks always roll at least 1 die. Open Rules for full detail.</div>
           <div class="referenceSubhead">Terrain Guide</div>
           <div class="terrainGuideGrid">
             <div class="terrainHead">Terrain</div><div class="terrainHead">Move Cost</div><div class="terrainHead">Combat</div>
-            <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No modifier</div>
-            <div class="terrainCell">Woods</div><div class="terrainCell">Infantry, archers, runners, medics move normally; skirmishers and generals are slower; cavalry cannot enter.</div><div class="terrainCell">Defender is harder to hit (-1 attack die). Archers and skirmishers can fire only from the tree-line.</div>
-            <div class="terrainCell">Hills</div><div class="terrainCell">Infantry, archers, and runners can climb; skirmishers and generals are slower; cavalry and medics cannot enter.</div><div class="terrainCell">Archers/skirmishers shoot better from hills (+1 die). Attacking them on hills is harder (-1 die).</div>
-            <div class="terrainCell">Rough</div><div class="terrainCell">Most units can enter; cavalry and generals are slower; medics cannot enter.</div><div class="terrainCell">Attacks launched from rough are weaker (-1 die). Entering rough causes next-turn movement pause.</div>
-            <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter</div>
+            <div class="terrainCell">Clear</div><div class="terrainCell">All: 1</div><div class="terrainCell">No direct combat modifier.</div>
+            <div class="terrainCell">Woods</div><div class="terrainCell">Infantry/archers/runners/medics normal; skirmishers and generals slower; cavalry blocked.</div><div class="terrainCell">Defender gives attacker -1 die. Archers/skirmishers fire only from tree-line woods.</div>
+            <div class="terrainCell">Hills</div><div class="terrainCell">Infantry/archers/runners can climb; skirmishers and generals slower; cavalry and medics blocked.</div><div class="terrainCell">Archers/skirmishers on hills gain +1 ranged die. Attacking them on hills is -1 die.</div>
+            <div class="terrainCell">Rough</div><div class="terrainCell">Most units enter; cavalry and generals slower; medics blocked.</div><div class="terrainCell">Attacks launched from rough are -1 die. Entering rough applies next-turn move pause.</div>
+            <div class="terrainCell">Water</div><div class="terrainCell">Impassable</div><div class="terrainCell">Cannot enter.</div>
           </div>
         </div>
-      </details>
-
+      </section>
     </aside>
   </main>
 
@@ -217,7 +216,7 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="build.js?v=20260301-agamemnon-v6"></script>
-  <script src="main.js?v=20260301-agamemnon-v6"></script>
+  <script src="build.js?v=20260301-agamemnon-v7"></script>
+  <script src="main.js?v=20260301-agamemnon-v7"></script>
 </body>
 </html>
