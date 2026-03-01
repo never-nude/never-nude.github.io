@@ -10,7 +10,7 @@
   --accent:#d8bd7e;
   --side-w:314px;
   --hud-h:58px;
-  --combat-h:224px;
+  --combat-h:214px;
 }
 
 *{box-sizing:border-box;}
@@ -77,8 +77,9 @@ body{
 
 #side{
   border-left:1px solid var(--line);
-  padding:8px;
-  overflow:auto;
+  padding:7px;
+  overflow-y:auto;
+  overflow-x:hidden;
   min-height:0;
 }
 
@@ -86,8 +87,8 @@ body{
   background:var(--panel);
   border:1px solid var(--line);
   border-radius:12px;
-  padding:8px;
-  margin-bottom:6px;
+  padding:7px;
+  margin-bottom:5px;
 }
 
 .panelHead{
@@ -123,12 +124,12 @@ body{
 }
 
 .panelBody{
-  margin-top:8px;
+  margin-top:6px;
 }
 
 .quickUnitList{
   display:grid;
-  gap:6px;
+  gap:5px;
 }
 
 .quickUnit{
@@ -348,9 +349,9 @@ body{
 .diceSummary{
   flex:1;
   color:var(--muted);
-  font-size:12px;
-  line-height:1.35;
-  min-height:2.7em;
+  font-size:10px;
+  line-height:1.25;
+  min-height:2.1em;
 }
 
 .diceTray{
@@ -505,12 +506,17 @@ body{
   min-height:0;
   border-top:1px solid var(--line);
   background:linear-gradient(180deg, #0f1218 0%, #0b0d12 100%);
-  padding:6px 8px 7px;
+  padding:5px 7px 6px;
   display:grid;
-  grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.05fr);
-  gap:6px;
+  grid-template-columns:
+    minmax(0, 0.92fr)
+    minmax(0, 0.98fr)
+    minmax(0, 0.70fr)
+    minmax(0, 0.82fr)
+    minmax(0, 0.88fr);
+  gap:5px;
   align-items:stretch;
-  overflow-x:auto;
+  overflow-x:hidden;
   overflow-y:hidden;
 }
 
@@ -518,21 +524,21 @@ body{
   border:1px solid rgba(255,255,255,0.08);
   border-radius:10px;
   background:linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.01) 100%);
-  padding:5px 7px;
+  padding:4px 6px;
   display:flex;
   flex-direction:column;
-  gap:5px;
-  min-width:230px;
+  gap:4px;
+  min-width:0;
   min-height:0;
   overflow-x:hidden;
-  overflow-y:auto;
+  overflow-y:hidden;
   overscroll-behavior:contain;
   scroll-behavior:auto;
   scrollbar-width:thin;
 }
 
 .combatColTitle{
-  font-size:11px;
+  font-size:10px;
   letter-spacing:0.08em;
   text-transform:uppercase;
   color:var(--accent);
@@ -540,15 +546,15 @@ body{
 }
 
 .combatSummary{
-  font-size:10px;
+  font-size:9px;
   font-weight:650;
-  line-height:1.35;
+  line-height:1.25;
 }
 
 .combatMeta{
-  font-size:10px;
+  font-size:9px;
   color:#cfd3de;
-  line-height:1.35;
+  line-height:1.25;
 }
 
 .diceOutcomeBrief{
@@ -592,7 +598,7 @@ body{
   border-radius:8px;
   border:1px solid rgba(255,255,255,0.14);
   background:rgba(255,255,255,0.04);
-  font-size:12px;
+  font-size:10px;
   color:#d9deea;
 }
 
@@ -605,12 +611,23 @@ body{
 
 .combatColDice .physicalDiceRow{
   width:100%;
-  min-height:72px;
+  min-height:56px;
+  padding:6px 8px;
+  gap:7px;
 }
 
 .combatColDice .physicalDie{
-  width:40px;
-  height:40px;
+  width:34px;
+  height:34px;
+}
+
+.combatColDice .physicalPip{
+  width:6px;
+  height:6px;
+}
+
+.combatColDice .physicalFace{
+  inset:5px;
 }
 
 .combatColTurn .row{
@@ -625,24 +642,24 @@ body{
 
 .combatColTurn .btn,
 .combatColTurn .select{
-  min-height:26px;
-  padding:4px 7px;
-  font-size:11px;
+  min-height:24px;
+  padding:3px 6px;
+  font-size:10px;
 }
 
 .victoryTrackBody{
   display:flex;
   flex-direction:column;
-  gap:8px;
-  font-size:12px;
+  gap:6px;
+  font-size:11px;
   color:#dce2ee;
 }
 
 .victoryRow{
   display:grid;
-  grid-template-columns:44px 1fr auto;
+  grid-template-columns:36px 1fr minmax(92px, auto);
   align-items:center;
-  gap:8px;
+  gap:6px;
 }
 
 .victoryLabel{
@@ -654,7 +671,7 @@ body{
 .victoryLabel.red{color:#ffb2b2;}
 
 .victoryBar{
-  height:10px;
+  height:8px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,0.18);
   background:rgba(255,255,255,0.08);
@@ -676,29 +693,33 @@ body{
 }
 
 .victoryValue{
-  font-size:10px;
+  font-size:9px;
   color:#e6e9f2;
   min-width:0;
   text-align:left;
-  line-height:1.25;
+  line-height:1.2;
+}
+
+.victoryMain{
+  display:block;
+  font-weight:700;
+  color:#f1f5ff;
+}
+
+.victorySub{
+  display:block;
+  color:#bcc5d8;
+  margin-top:1px;
 }
 
 .victoryNote{
-  font-size:12px;
+  font-size:10px;
   color:#d7dbe6;
-  line-height:1.35;
+  line-height:1.25;
 }
 
 .forceTotals{
-  font-size:13px;
-  line-height:1.4;
-  color:#f0f2f8;
-  font-weight:700;
-  letter-spacing:0.02em;
-  padding:7px 8px;
-  border:1px solid rgba(121,167,255,0.34);
-  border-radius:8px;
-  background:rgba(54,76,120,0.18);
+  display:none;
 }
 
 .rulesLauncher{
@@ -729,9 +750,9 @@ body{
 .combatColOnline .btn,
 .combatColOnline .input,
 .combatColOnline .select{
-  min-height:27px;
-  padding:4px 7px;
-  font-size:11px;
+  min-height:24px;
+  padding:3px 6px;
+  font-size:10px;
 }
 
 .combatColOnline .roomCode{
@@ -741,8 +762,8 @@ body{
 
 .combatColOnline .onlineRow{
   display:grid;
-  grid-template-columns:34px minmax(0, 1fr) auto;
-  gap:6px;
+  grid-template-columns:30px minmax(0, 1fr) auto;
+  gap:5px;
   align-items:center;
 }
 
