@@ -134,9 +134,10 @@ const SEARCH_FOCUS_MIN_DISTANCE = 0.22;
 const SEARCH_FOCUS_MAX_DISTANCE = 0.78;
 const SEARCH_FOCUS_PADDING = 3.2;
 const ATLAS_MODE_ID = "atlas_explore";
+const DEFAULT_STIMULUS_ID = "resting_state_baseline";
 const STIMULUS_REAL_COURSE_SECONDS = new Map([
   [ATLAS_MODE_ID, 0],
-  ["resting_state_baseline", 600],
+  [DEFAULT_STIMULUS_ID, 600],
   ["joy_positive_affect", 120],
   ["sadness_grief", 180],
   ["anger_reactivity", 120],
@@ -918,6 +919,8 @@ function toggleMobileOverlay(name) {
 function setupMobileOverlayControls() {
   if (!IS_TOUCH_DEVICE || !mobileUi.dock) return;
   document.body.classList.add("mobile-ready");
+  document.body.classList.add("mobile-panel-open");
+  document.body.classList.remove("mobile-log-open");
 
   if (mobileUi.btnPanel) {
     mobileUi.btnPanel.addEventListener("click", () => {
@@ -953,7 +956,7 @@ const state = {
   hoverGroupOn: false,
   hullOn: true,
   hullOpacity: HULL_OPACITY,
-  autoRotate: !IS_TOUCH_DEVICE,
+  autoRotate: true,
   edgeThreshold: IS_TOUCH_DEVICE ? 0.12 : 0.08,
   gain: 1.0,
   speed: 1.0,
@@ -4632,7 +4635,7 @@ function populateStimuliSelect(preferredId = "") {
   atlasOpt.textContent = "Atlas explore (no stimulus)";
   baselineGroup.appendChild(atlasOpt);
 
-  const restingStimulus = (stimulusLibrary.stimuli || []).find((stim) => stim.id === "resting_state_baseline");
+  const restingStimulus = (stimulusLibrary.stimuli || []).find((stim) => stim.id === DEFAULT_STIMULUS_ID);
   if (restingStimulus) {
     const restingOpt = document.createElement("option");
     restingOpt.value = restingStimulus.id;
@@ -4645,7 +4648,7 @@ function populateStimuliSelect(preferredId = "") {
   for (const groupName of STIMULUS_GROUP_ORDER) grouped.set(groupName, []);
 
   for (const stim of stimulusLibrary.stimuli || []) {
-    if (stim.id === "resting_state_baseline") continue;
+    if (stim.id === DEFAULT_STIMULUS_ID) continue;
     const groupName = classifyStimulusGroup(stim);
     if (!grouped.has(groupName)) grouped.set(groupName, []);
     grouped.get(groupName).push(stim);
@@ -4670,9 +4673,9 @@ function populateStimuliSelect(preferredId = "") {
 
   const ids = (stimulusLibrary.stimuli || []).map((s) => s.id);
   const candidates = [
+    DEFAULT_STIMULUS_ID,
     preferredId,
     activeStimulus?.id || "",
-    "resting_state_baseline",
     "music",
     ids[0] || "",
   ];
@@ -4748,7 +4751,7 @@ requestAnimationFrame(animate);
     hud(`${MILESTONE_LABEL}\nPreparing network pathways...`);
     await loadConnectivitySpec();
 
-    setActiveLibrary(state.libraryMode, "resting_state_baseline");
+    setActiveLibrary(state.libraryMode, DEFAULT_STIMULUS_ID);
 
     hud(`${MILESTONE_LABEL}\nLoading cortex layer...`);
     try {
