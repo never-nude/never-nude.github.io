@@ -74,39 +74,74 @@ const SEARCH_CONCEPTS = [
     matchLabel: (canonical) => canonical.startsWith("Vermis_"),
   },
   {
-    id: "corpus_callosum_missing",
+    id: "corpus_callosum_proxy",
     display_label: "Corpus callosum",
-    aliases: ["corpus callosum", "callosum", "corpus callosal"],
-    kind: "missing",
-    note: "Corpus callosum is a white-matter tract and is not represented as a node in this AAL graph.",
+    aliases: [
+      "corpus callosum",
+      "corpus calosum",
+      "callosum",
+      "callosal",
+      "corpus callosal",
+      "interhemispheric tract",
+    ],
+    kind: "proxy",
+    note: "Corpus callosum is a white-matter tract and not a gray-matter node in AAL; showing medial/interhemispheric cortical proxy regions.",
+    matchLabel: (canonical) =>
+      canonical.startsWith("Cingulum_")
+      || canonical.startsWith("Precuneus_")
+      || canonical.startsWith("Frontal_Sup_Medial_"),
   },
   {
-    id: "brainstem_missing",
+    id: "brainstem_proxy",
     display_label: "Brainstem",
     aliases: ["brainstem", "brain stem"],
-    kind: "missing",
-    note: "Brainstem structures are not represented in the current atlas node list.",
+    kind: "proxy",
+    note: "Brainstem nuclei are not explicitly parcellated in this AAL atlas; showing nearby relay/vestibular proxy regions.",
+    matchLabel: (canonical) =>
+      canonical.startsWith("Thalamus_")
+      || canonical.startsWith("Cerebelum_9_")
+      || canonical.startsWith("Cerebelum_10_")
+      || canonical === "Vermis_9"
+      || canonical === "Vermis_10",
   },
   {
-    id: "pons_missing",
+    id: "pons_proxy",
     display_label: "Pons",
     aliases: ["pons", "pontine"],
-    kind: "missing",
-    note: "Pons is not represented in the current atlas node list.",
+    kind: "proxy",
+    note: "Pons is not explicitly represented in AAL; showing cerebellar/vestibular proxy regions most related to pontine pathways.",
+    matchLabel: (canonical) =>
+      canonical.startsWith("Cerebelum_8_")
+      || canonical.startsWith("Cerebelum_9_")
+      || canonical.startsWith("Cerebelum_10_")
+      || canonical === "Vermis_8"
+      || canonical === "Vermis_9"
+      || canonical === "Vermis_10",
   },
   {
-    id: "medulla_missing",
+    id: "medulla_proxy",
     display_label: "Medulla",
     aliases: ["medulla", "medulla oblongata"],
-    kind: "missing",
-    note: "Medulla is not represented in the current atlas node list.",
+    kind: "proxy",
+    note: "Medulla is not explicitly represented in AAL; showing inferior posterior cerebellar and vestibular proxy regions.",
+    matchLabel: (canonical) =>
+      canonical.startsWith("Cerebelum_9_")
+      || canonical.startsWith("Cerebelum_10_")
+      || canonical === "Vermis_9"
+      || canonical === "Vermis_10",
   },
   {
-    id: "midbrain_missing",
+    id: "midbrain_proxy",
     display_label: "Midbrain",
     aliases: ["midbrain", "mesencephalon"],
-    kind: "missing",
-    note: "Midbrain is not represented in the current atlas node list.",
+    kind: "proxy",
+    note: "Midbrain is not explicitly represented in AAL; showing thalamic relay and related cerebellar proxy regions.",
+    matchLabel: (canonical) =>
+      canonical.startsWith("Thalamus_")
+      || canonical.startsWith("Cerebelum_9_")
+      || canonical.startsWith("Cerebelum_10_")
+      || canonical === "Vermis_9"
+      || canonical === "Vermis_10",
   },
 ];
 const SEARCH_HIGHLIGHT_PALETTE = [
@@ -2036,6 +2071,7 @@ function computeConceptSearchMatches(query, tokens) {
     if (bestScore <= 0) continue;
 
     const indices = concept.kind === "proxy" ? conceptIndicesForSearch(concept) : [];
+    if (!indices.length) continue;
     matches.push({
       canonical: concept.id,
       display_label: concept.display_label,
@@ -2106,11 +2142,12 @@ function renderRegionSearchSuggest(entries, cursor = 0) {
 
   for (let i = 0; i < regionSuggestEntries.length; i++) {
     const match = regionSuggestEntries[i];
+    const label = safeText(match.display_label, prettyAalLabel(match.canonical));
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `item${i === regionSuggestCursor ? " active" : ""}`;
     btn.dataset.idx = String(i);
-    btn.textContent = `${prettyAalLabel(match.canonical)} (${match.indices.length})`;
+    btn.textContent = `${label} (${match.indices.length})`;
     ui.regionSearchSuggest.appendChild(btn);
   }
 
@@ -2138,7 +2175,7 @@ function acceptRegionSuggestion(index) {
   if (!entry) return false;
 
   if (ui.regionSearchInput) {
-    ui.regionSearchInput.value = prettyAalLabel(entry.canonical);
+    ui.regionSearchInput.value = safeText(entry.display_label, prettyAalLabel(entry.canonical));
   }
 
   const ok = rebuildRegionSearch(entry.canonical);
@@ -2216,9 +2253,14 @@ function applyRegionSearchMatch(index, reason = "search") {
   }
   applyActivationAtTime(state.t);
 
-  const regionName = prettyAalLabel(match.canonical);
-  setRegionSearchStatus(`Search: ${regionSearchCursor + 1}/${count} ${regionName} (${match.indices.length} nodes)`);
-  setStatus(`search ${reason}: ${regionName} (explore view)`);
+  const regionName = safeText(match.display_label, prettyAalLabel(match.canonical));
+  const proxySuffix = match.concept_note ? " [proxy]" : "";
+  setRegionSearchStatus(`Search: ${regionSearchCursor + 1}/${count} ${regionName} (${match.indices.length} nodes)${proxySuffix}`);
+  if (match.concept_note) {
+    setStatus(`search ${reason}: ${regionName} (proxy)`);
+  } else {
+    setStatus(`search ${reason}: ${regionName} (explore view)`);
+  }
   hideRegionSearchSuggest();
   return true;
 }
