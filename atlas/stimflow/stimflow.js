@@ -902,7 +902,9 @@ const mobileUi = {
   btnPanel: document.getElementById("btnMobilePanel"),
   btnNarration: document.getElementById("btnMobileNarration"),
   btnCanvas: document.getElementById("btnMobileCanvas"),
+  btnStimuli: document.getElementById("btnMobileStimuli"),
 };
+let mobileStimuliActive = false;
 
 function hud(msg, isError = false) {
   hudEl.textContent = msg;
@@ -910,15 +912,17 @@ function hud(msg, isError = false) {
 }
 
 function syncMobileDockState() {
-  if (!mobileUi.btnPanel || !mobileUi.btnNarration || !mobileUi.btnCanvas) return;
+  if (!mobileUi.btnPanel || !mobileUi.btnNarration || !mobileUi.btnCanvas || !mobileUi.btnStimuli) return;
   const panelOpen = document.body.classList.contains("mobile-panel-open");
   const logOpen = document.body.classList.contains("mobile-log-open");
   mobileUi.btnPanel.setAttribute("aria-pressed", panelOpen ? "true" : "false");
   mobileUi.btnNarration.setAttribute("aria-pressed", logOpen ? "true" : "false");
   mobileUi.btnCanvas.setAttribute("aria-pressed", (!panelOpen && !logOpen) ? "true" : "false");
+  mobileUi.btnStimuli.setAttribute("aria-pressed", mobileStimuliActive ? "true" : "false");
 }
 
 function closeMobileOverlays() {
+  mobileStimuliActive = false;
   document.body.classList.remove("mobile-panel-open", "mobile-log-open");
   syncMobileDockState();
 }
@@ -929,6 +933,7 @@ function toggleMobileOverlay(name) {
   const logOpen = document.body.classList.contains("mobile-log-open");
 
   if (name === "panel") {
+    mobileStimuliActive = false;
     if (panelOpen) closeMobileOverlays();
     else {
       document.body.classList.add("mobile-panel-open");
@@ -939,6 +944,7 @@ function toggleMobileOverlay(name) {
   }
 
   if (name === "log") {
+    mobileStimuliActive = false;
     if (logOpen) closeMobileOverlays();
     else {
       document.body.classList.add("mobile-log-open");
@@ -951,11 +957,25 @@ function toggleMobileOverlay(name) {
   closeMobileOverlays();
 }
 
+function openMobileStimulusPicker() {
+  if (!IS_TOUCH_DEVICE) return;
+  document.body.classList.add("mobile-panel-open");
+  document.body.classList.remove("mobile-log-open");
+  mobileStimuliActive = true;
+  syncMobileDockState();
+
+  const block = document.getElementById("stimSelectBlock");
+  if (block) block.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (ui.stimSelect) {
+    ui.stimSelect.focus();
+    // In direct user-gesture handlers on iOS, click often opens the native picker.
+    ui.stimSelect.click();
+  }
+}
+
 function setupMobileOverlayControls() {
   if (!IS_TOUCH_DEVICE || !mobileUi.dock) return;
   document.body.classList.add("mobile-ready");
-  document.body.classList.add("mobile-panel-open");
-  document.body.classList.remove("mobile-log-open");
 
   if (mobileUi.btnPanel) {
     mobileUi.btnPanel.addEventListener("click", () => {
@@ -972,6 +992,12 @@ function setupMobileOverlayControls() {
   if (mobileUi.btnCanvas) {
     mobileUi.btnCanvas.addEventListener("click", () => {
       toggleMobileOverlay("canvas");
+    });
+  }
+
+  if (mobileUi.btnStimuli) {
+    mobileUi.btnStimuli.addEventListener("click", () => {
+      openMobileStimulusPicker();
     });
   }
 
