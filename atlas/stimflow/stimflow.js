@@ -767,9 +767,9 @@ const IS_TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches || naviga
 const MAX_RENDER_PIXEL_RATIO = IS_TOUCH_DEVICE ? 1.5 : 2;
 const query = new URLSearchParams(window.location.search);
 const requestedGraphMode = normalizeGraphMode(query.get("graph_mode"));
-const initialGraphMode = requestedGraphMode === "auto"
+const initialGraphMode = IS_TOUCH_DEVICE
   ? "dense"
-  : requestedGraphMode;
+  : (requestedGraphMode === "auto" ? "dense" : requestedGraphMode);
 const initialBreadthQ = THREE.MathUtils.clamp(Number(query.get("path_breadth_q")) || DEFAULT_ENGAGEMENT.arrival_quantile, 0.60, 0.98);
 
 const ui = {
@@ -1453,7 +1453,7 @@ function fallbackRegionSummary(label) {
     return "Limbic-region node commonly involved in memory, emotional salience, and context encoding.";
   }
 
-  return "Commonly involved in distributed network communication depending on task context.";
+  return "This region participates in the current pathway; a more specific summary is still being curated for this label.";
 }
 
 function regionSummaryForLabel(label) {

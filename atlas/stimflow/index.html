@@ -505,18 +505,22 @@
         border: 1px solid rgba(255, 255, 255, 0.35);
       }
 
-      #routes a {
+      #sourceNotes a {
         color: #bfe5ff;
         text-decoration: none;
       }
 
-      #routes a:hover {
+      #sourceNotes a:hover {
         text-decoration: underline;
       }
 
-      #routes .active {
-        color: #fff;
+      #sourceNotes .src-title {
         font-weight: 600;
+        color: #fff;
+      }
+
+      #sourceNotes .src-line {
+        margin-top: 4px;
       }
 
       #mobileDock {
@@ -851,12 +855,12 @@
         Edges = functional coupling links (educational, non-directional).
       </div>
 
-      <div id="routes" class="small stack">
-        Routes:
-        <a href="../">Model</a> |
-        <a href="../edu/">EDU</a> |
-        <a href="../switchboard/">Switchboard</a> |
-        <span class="active">Pathway Atlas</span>
+      <div id="sourceNotes" class="small stack">
+        <div class="src-title">Sources (fact-check)</div>
+        <div class="src-line">Atlas parcellation and labels: AAL (Automated Anatomical Labeling).</div>
+        <div class="src-line">Scenario + connectivity inputs (this build): <a href="./stimuli.empirical.json" target="_blank" rel="noopener noreferrer">stimuli.empirical.json</a>, <a href="./stimuli.template.json" target="_blank" rel="noopener noreferrer">stimuli.template.json</a>, <a href="./connectivity.empirical.json" target="_blank" rel="noopener noreferrer">connectivity.empirical.json</a>.</div>
+        <div class="src-line">Region role summaries: educational synthesis mapped to AAL regions in <a href="../edu/aal_region_cards.json" target="_blank" rel="noopener noreferrer">aal_region_cards.json</a>.</div>
+        <div class="src-line">External references: <a href="https://doi.org/10.1006/nimg.2001.0978" target="_blank" rel="noopener noreferrer">AAL atlas paper</a>, <a href="https://neurosynth.org/" target="_blank" rel="noopener noreferrer">Neurosynth</a>, <a href="https://www.humanconnectome.org/" target="_blank" rel="noopener noreferrer">Human Connectome Project</a>.</div>
       </div>
     </div>
 

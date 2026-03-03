@@ -3,125 +3,338 @@
   "notes": "Educational summaries. Simplified; phrased as 'commonly involved in'.",
   "disclaimer": "Educational summary (simplified). Not medical advice; not clinical diagnosis.",
   "cards": {
-    "Heschl_L": {
-      "title": "Heschl's gyrus (Left)",
-      "summary": "Contains primary auditory cortex. It supports early cortical processing of sound features like frequency and timing, before higher-order areas interpret meaning. Often engaged by tones, speech, and music.",
+    "Amygdala_L": {
+      "title": "Amygdala (Left)",
+      "summary": "Helps detect biologically relevant salience, especially threat and uncertainty. Supports fear learning and can modulate memory systems so emotionally important events are remembered more strongly. Often engaged during threat-related stimuli and emotional faces tasks.",
       "networks": [
-        "auditory"
+        "limbic"
       ],
       "aliases": [
-        "Heschl_L",
-        "Heschl (Left)",
-        "Heschl gyrus (Left)",
-        "Heschl's gyrus (Left)"
+        "Amygdala_L",
+        "Amygdala (Left)"
       ]
     },
-    "Heschl_R": {
-      "title": "Heschl's gyrus (Right)",
-      "summary": "Contains primary auditory cortex. It supports early cortical processing of sound features like frequency and timing, before higher-order areas interpret meaning. Often engaged by tones, speech, and music.",
+    "Amygdala_R": {
+      "title": "Amygdala (Right)",
+      "summary": "Helps detect biologically relevant salience, especially threat and uncertainty. Supports fear learning and can modulate memory systems so emotionally important events are remembered more strongly. Often engaged during threat-related stimuli and emotional faces tasks.",
       "networks": [
-        "auditory"
+        "limbic"
       ],
       "aliases": [
-        "Heschl_R",
-        "Heschl (Right)",
-        "Heschl gyrus (Right)",
-        "Heschl's gyrus (Right)"
+        "Amygdala_R",
+        "Amygdala (Right)"
       ]
     },
-    "Temporal_Sup_L": {
-      "title": "Superior temporal gyrus (Left)",
-      "summary": "Auditory association cortex that helps analyze complex sounds, including speech. In many people, the left superior temporal region is strongly involved in language comprehension. It often works with frontal language areas during listening.",
+    "Angular_L": {
+      "title": "Angular gyrus (Left)",
+      "summary": "Parietal association cortex commonly involved in semantic processing, number-related operations, and multimodal integration during language and attention tasks.",
       "networks": [
-        "auditory",
-        "language"
+        "language",
+        "attention",
+        "association"
       ],
       "aliases": [
-        "Temporal_Sup_L",
-        "Superior temporal (Left)",
-        "Superior temporal gyrus (Left)"
+        "Angular_L",
+        "Angular gyrus (Left)",
+        "Angular gyrus Left"
       ]
     },
-    "Temporal_Sup_R": {
-      "title": "Superior temporal gyrus (Right)",
-      "summary": "Auditory association cortex that helps analyze complex sounds. The right superior temporal region is often associated with prosody and aspects of music perception, though roles vary by task and person. It collaborates with broader attention and memory systems during listening.",
+    "Angular_R": {
+      "title": "Angular gyrus (Right)",
+      "summary": "Parietal association cortex commonly involved in semantic processing, number-related operations, and multimodal integration during language and attention tasks.",
       "networks": [
-        "auditory"
+        "language",
+        "attention",
+        "association"
       ],
       "aliases": [
-        "Temporal_Sup_R",
-        "Superior temporal (Right)",
-        "Superior temporal gyrus (Right)"
+        "Angular_R",
+        "Angular gyrus (Right)",
+        "Angular gyrus Right"
       ]
     },
-    "Postcentral_L": {
-      "title": "Postcentral gyrus (Left) \u2014 primary somatosensory cortex",
-      "summary": "Primary somatosensory cortex for the body (touch, vibration, proprioception). It maps the opposite (right) side of the body in an orderly 'homunculus-like' organization. Often engaged by tactile stimulation and pain-related input.",
+    "Calcarine_L": {
+      "title": "Calcarine cortex (Left) — primary visual cortex (V1)",
+      "summary": "Primary visual cortex involved in early processing of visual input. It contains a retinotopic map (neighboring neurons represent neighboring points in visual space). Often strongly activated by simple visual stimuli like flashing checkerboards.",
       "networks": [
-        "somatosensory"
+        "visual"
       ],
       "aliases": [
-        "Postcentral_L",
-        "Postcentral (Left)",
-        "Primary somatosensory (Left)"
+        "Calcarine_L",
+        "V1 (Left)",
+        "Primary visual (Left)"
       ]
     },
-    "Postcentral_R": {
-      "title": "Postcentral gyrus (Right) \u2014 primary somatosensory cortex",
-      "summary": "Primary somatosensory cortex for the body (touch, vibration, proprioception). It maps the opposite (left) side of the body in an orderly 'homunculus-like' organization. Often engaged by tactile stimulation and pain-related input.",
+    "Calcarine_R": {
+      "title": "Calcarine cortex (Right) — primary visual cortex (V1)",
+      "summary": "Primary visual cortex involved in early processing of visual input. It contains a retinotopic map (neighboring neurons represent neighboring points in visual space). Often strongly activated by simple visual stimuli like flashing checkerboards.",
       "networks": [
-        "somatosensory"
+        "visual"
       ],
       "aliases": [
-        "Postcentral_R",
-        "Postcentral (Right)",
-        "Primary somatosensory (Right)"
+        "Calcarine_R",
+        "V1 (Right)",
+        "Primary visual (Right)"
       ]
     },
-    "Precentral_L": {
-      "title": "Precentral gyrus (Left) \u2014 primary motor cortex",
-      "summary": "Primary motor cortex involved in initiating voluntary movement. It contains a body map and primarily influences the opposite (right) side of the body. Often engaged during finger tapping, speech motor planning, and other motor tasks.",
+    "Caudate_L": {
+      "title": "Caudate nucleus (Left)",
+      "summary": "Dorsal striatal region commonly involved in action selection, reinforcement learning, and cognitive control loops with frontal cortex.",
       "networks": [
-        "motor"
+        "basal ganglia",
+        "cognitive control",
+        "reward"
       ],
       "aliases": [
-        "Precentral_L",
-        "Precentral (Left)",
-        "Primary motor (Left)"
+        "Caudate_L",
+        "Caudate nucleus (Left)",
+        "Caudate nucleus Left"
       ]
     },
-    "Precentral_R": {
-      "title": "Precentral gyrus (Right) \u2014 primary motor cortex",
-      "summary": "Primary motor cortex involved in initiating voluntary movement. It contains a body map and primarily influences the opposite (left) side of the body. Often engaged during finger tapping and other motor tasks.",
+    "Caudate_R": {
+      "title": "Caudate nucleus (Right)",
+      "summary": "Dorsal striatal region commonly involved in action selection, reinforcement learning, and cognitive control loops with frontal cortex.",
       "networks": [
-        "motor"
+        "basal ganglia",
+        "cognitive control",
+        "reward"
       ],
       "aliases": [
-        "Precentral_R",
-        "Precentral (Right)",
-        "Primary motor (Right)"
+        "Caudate_R",
+        "Caudate nucleus (Right)",
+        "Caudate nucleus Right"
       ]
     },
-    "Insula_L": {
-      "title": "Insula (Left)",
-      "summary": "Integrates internal body-state signals ('interoception') with emotional and cognitive context. Commonly involved in pain, nausea/disgust, and awareness of bodily arousal. Often treated as part of a broader salience system that helps prioritize attention.",
+    "Cerebelum_10_L": {
+      "title": "Cerebellum lobule X (Left)",
+      "summary": "Flocculonodular cerebellar region commonly involved in balance, vestibular processing, and eye-movement stabilization.",
       "networks": [
-        "salience"
+        "vestibular",
+        "oculomotor"
       ],
       "aliases": [
-        "Insula_L",
-        "Insula (Left)"
+        "Cerebelum_10_L",
+        "Cerebellum lobule X (Left)",
+        "Cerebellum lobule X Left"
       ]
     },
-    "Insula_R": {
-      "title": "Insula (Right)",
-      "summary": "Integrates internal body-state signals ('interoception') with emotional and cognitive context. Commonly involved in pain, nausea/disgust, and awareness of bodily arousal. Often treated as part of a broader salience system that helps prioritize attention.",
+    "Cerebelum_10_R": {
+      "title": "Cerebellum lobule X (Right)",
+      "summary": "Flocculonodular cerebellar region commonly involved in balance, vestibular processing, and eye-movement stabilization.",
       "networks": [
-        "salience"
+        "vestibular",
+        "oculomotor"
       ],
       "aliases": [
-        "Insula_R",
-        "Insula (Right)"
+        "Cerebelum_10_R",
+        "Cerebellum lobule X (Right)",
+        "Cerebellum lobule X Right"
+      ]
+    },
+    "Cerebelum_3_L": {
+      "title": "Cerebellum lobule III (Left)",
+      "summary": "Anterior cerebellar lobule commonly involved in fine motor coordination and timing of sensorimotor output.",
+      "networks": [
+        "cerebellar-motor"
+      ],
+      "aliases": [
+        "Cerebelum_3_L",
+        "Cerebellum lobule III (Left)",
+        "Cerebellum lobule III Left"
+      ]
+    },
+    "Cerebelum_3_R": {
+      "title": "Cerebellum lobule III (Right)",
+      "summary": "Anterior cerebellar lobule commonly involved in fine motor coordination and timing of sensorimotor output.",
+      "networks": [
+        "cerebellar-motor"
+      ],
+      "aliases": [
+        "Cerebelum_3_R",
+        "Cerebellum lobule III (Right)",
+        "Cerebellum lobule III Right"
+      ]
+    },
+    "Cerebelum_4_5_L": {
+      "title": "Cerebellum lobules IV-V (Left)",
+      "summary": "Anterior cerebellar lobules commonly involved in motor execution support, proprioceptive integration, and movement calibration.",
+      "networks": [
+        "cerebellar-motor"
+      ],
+      "aliases": [
+        "Cerebelum_4_5_L",
+        "Cerebellum lobules IV-V (Left)",
+        "Cerebellum lobules IV-V Left"
+      ]
+    },
+    "Cerebelum_4_5_R": {
+      "title": "Cerebellum lobules IV-V (Right)",
+      "summary": "Anterior cerebellar lobules commonly involved in motor execution support, proprioceptive integration, and movement calibration.",
+      "networks": [
+        "cerebellar-motor"
+      ],
+      "aliases": [
+        "Cerebelum_4_5_R",
+        "Cerebellum lobules IV-V (Right)",
+        "Cerebellum lobules IV-V Right"
+      ]
+    },
+    "Cerebelum_6_L": {
+      "title": "Cerebellum lobule VI (Left)",
+      "summary": "Cerebellar lobule commonly involved in both motor coordination and cognitive timing/sequence support depending on task demands.",
+      "networks": [
+        "cerebellar-motor",
+        "cerebellar-cognitive"
+      ],
+      "aliases": [
+        "Cerebelum_6_L",
+        "Cerebellum lobule VI (Left)",
+        "Cerebellum lobule VI Left"
+      ]
+    },
+    "Cerebelum_6_R": {
+      "title": "Cerebellum lobule VI (Right)",
+      "summary": "Cerebellar lobule commonly involved in both motor coordination and cognitive timing/sequence support depending on task demands.",
+      "networks": [
+        "cerebellar-motor",
+        "cerebellar-cognitive"
+      ],
+      "aliases": [
+        "Cerebelum_6_R",
+        "Cerebellum lobule VI (Right)",
+        "Cerebellum lobule VI Right"
+      ]
+    },
+    "Cerebelum_7b_L": {
+      "title": "Cerebellum lobule VIIb (Left)",
+      "summary": "Posterior cerebellar lobule commonly involved in higher-order cognitive integration and attention-executive coupling.",
+      "networks": [
+        "cerebellar-cognitive",
+        "attention"
+      ],
+      "aliases": [
+        "Cerebelum_7b_L",
+        "Cerebellum lobule VIIb (Left)",
+        "Cerebellum lobule VIIb Left"
+      ]
+    },
+    "Cerebelum_7b_R": {
+      "title": "Cerebellum lobule VIIb (Right)",
+      "summary": "Posterior cerebellar lobule commonly involved in higher-order cognitive integration and attention-executive coupling.",
+      "networks": [
+        "cerebellar-cognitive",
+        "attention"
+      ],
+      "aliases": [
+        "Cerebelum_7b_R",
+        "Cerebellum lobule VIIb (Right)",
+        "Cerebellum lobule VIIb Right"
+      ]
+    },
+    "Cerebelum_8_L": {
+      "title": "Cerebellum lobule VIII (Left)",
+      "summary": "Posterior cerebellar lobule commonly involved in sensorimotor timing and adaptation during ongoing movement control.",
+      "networks": [
+        "cerebellar-motor",
+        "sensorimotor"
+      ],
+      "aliases": [
+        "Cerebelum_8_L",
+        "Cerebellum lobule VIII (Left)",
+        "Cerebellum lobule VIII Left"
+      ]
+    },
+    "Cerebelum_8_R": {
+      "title": "Cerebellum lobule VIII (Right)",
+      "summary": "Posterior cerebellar lobule commonly involved in sensorimotor timing and adaptation during ongoing movement control.",
+      "networks": [
+        "cerebellar-motor",
+        "sensorimotor"
+      ],
+      "aliases": [
+        "Cerebelum_8_R",
+        "Cerebellum lobule VIII (Right)",
+        "Cerebellum lobule VIII Right"
+      ]
+    },
+    "Cerebelum_9_L": {
+      "title": "Cerebellum lobule IX (Left)",
+      "summary": "Posterior cerebellar lobule commonly involved in vestibular-autonomic integration and broader internal-state coordination.",
+      "networks": [
+        "cerebellar-cognitive",
+        "vestibular"
+      ],
+      "aliases": [
+        "Cerebelum_9_L",
+        "Cerebellum lobule IX (Left)",
+        "Cerebellum lobule IX Left"
+      ]
+    },
+    "Cerebelum_9_R": {
+      "title": "Cerebellum lobule IX (Right)",
+      "summary": "Posterior cerebellar lobule commonly involved in vestibular-autonomic integration and broader internal-state coordination.",
+      "networks": [
+        "cerebellar-cognitive",
+        "vestibular"
+      ],
+      "aliases": [
+        "Cerebelum_9_R",
+        "Cerebellum lobule IX (Right)",
+        "Cerebellum lobule IX Right"
+      ]
+    },
+    "Cerebelum_Crus1_L": {
+      "title": "Cerebellum Crus I (Left)",
+      "summary": "Posterolateral cerebellar region commonly involved in language and executive-network coupling with prefrontal association cortex.",
+      "networks": [
+        "cerebellar-cognitive",
+        "language",
+        "executive control"
+      ],
+      "aliases": [
+        "Cerebelum_Crus1_L",
+        "Cerebellum Crus I (Left)",
+        "Cerebellum Crus I Left"
+      ]
+    },
+    "Cerebelum_Crus1_R": {
+      "title": "Cerebellum Crus I (Right)",
+      "summary": "Posterolateral cerebellar region commonly involved in language and executive-network coupling with prefrontal association cortex.",
+      "networks": [
+        "cerebellar-cognitive",
+        "language",
+        "executive control"
+      ],
+      "aliases": [
+        "Cerebelum_Crus1_R",
+        "Cerebellum Crus I (Right)",
+        "Cerebellum Crus I Right"
+      ]
+    },
+    "Cerebelum_Crus2_L": {
+      "title": "Cerebellum Crus II (Left)",
+      "summary": "Posterolateral cerebellar region commonly involved in high-level association processing, working memory support, and cognitive sequencing.",
+      "networks": [
+        "cerebellar-cognitive",
+        "executive control"
+      ],
+      "aliases": [
+        "Cerebelum_Crus2_L",
+        "Cerebellum Crus II (Left)",
+        "Cerebellum Crus II Left"
+      ]
+    },
+    "Cerebelum_Crus2_R": {
+      "title": "Cerebellum Crus II (Right)",
+      "summary": "Posterolateral cerebellar region commonly involved in high-level association processing, working memory support, and cognitive sequencing.",
+      "networks": [
+        "cerebellar-cognitive",
+        "executive control"
+      ],
+      "aliases": [
+        "Cerebelum_Crus2_R",
+        "Cerebellum Crus II (Right)",
+        "Cerebellum Crus II Right"
       ]
     },
     "Cingulum_Ant_L": {
@@ -150,72 +363,214 @@
         "ACC (Right)"
       ]
     },
-    "Amygdala_L": {
-      "title": "Amygdala (Left)",
-      "summary": "Helps detect biologically relevant salience, especially threat and uncertainty. Supports fear learning and can modulate memory systems so emotionally important events are remembered more strongly. Often engaged during threat-related stimuli and emotional faces tasks.",
+    "Cingulum_Mid_L": {
+      "title": "Middle cingulate cortex (Left)",
+      "summary": "Middle cingulate region commonly involved in response selection, effortful control, and integrating salience with action planning.",
       "networks": [
-        "limbic"
+        "salience",
+        "cognitive control"
       ],
       "aliases": [
-        "Amygdala_L",
-        "Amygdala (Left)"
+        "Cingulum_Mid_L",
+        "Middle cingulate cortex (Left)",
+        "Middle cingulate cortex Left"
       ]
     },
-    "Amygdala_R": {
-      "title": "Amygdala (Right)",
-      "summary": "Helps detect biologically relevant salience, especially threat and uncertainty. Supports fear learning and can modulate memory systems so emotionally important events are remembered more strongly. Often engaged during threat-related stimuli and emotional faces tasks.",
+    "Cingulum_Mid_R": {
+      "title": "Middle cingulate cortex (Right)",
+      "summary": "Middle cingulate region commonly involved in response selection, effortful control, and integrating salience with action planning.",
       "networks": [
-        "limbic"
+        "salience",
+        "cognitive control"
       ],
       "aliases": [
-        "Amygdala_R",
-        "Amygdala (Right)"
+        "Cingulum_Mid_R",
+        "Middle cingulate cortex (Right)",
+        "Middle cingulate cortex Right"
       ]
     },
-    "Hippocampus_L": {
-      "title": "Hippocampus (Left)",
-      "summary": "Supports formation of episodic memories and the binding of context (what happened, where, and when). Important for learning new facts and experiences. Dysfunction is commonly associated with memory impairment.",
+    "Cingulum_Post_L": {
+      "title": "Posterior cingulate cortex (Left)",
+      "summary": "Posterior cingulate region commonly involved in internally directed cognition, memory context, and default-mode network coordination.",
       "networks": [
+        "default mode",
         "memory"
       ],
       "aliases": [
-        "Hippocampus_L",
-        "Hippocampus (Left)"
+        "Cingulum_Post_L",
+        "Posterior cingulate cortex (Left)",
+        "Posterior cingulate cortex Left"
       ]
     },
-    "Hippocampus_R": {
-      "title": "Hippocampus (Right)",
-      "summary": "Supports formation of episodic memories and the binding of context (what happened, where, and when). Often associated with spatial/contextual aspects of memory, though roles vary. Dysfunction is commonly associated with memory impairment.",
+    "Cingulum_Post_R": {
+      "title": "Posterior cingulate cortex (Right)",
+      "summary": "Posterior cingulate region commonly involved in internally directed cognition, memory context, and default-mode network coordination.",
       "networks": [
+        "default mode",
         "memory"
       ],
       "aliases": [
-        "Hippocampus_R",
-        "Hippocampus (Right)"
+        "Cingulum_Post_R",
+        "Posterior cingulate cortex (Right)",
+        "Posterior cingulate cortex Right"
       ]
     },
-    "Thalamus_L": {
-      "title": "Thalamus (Left)",
-      "summary": "A major relay and gating hub for sensory and motor information on the way to cortex. Helps regulate arousal, attention, and the 'broadcasting' of signals to cortical networks. Often involved broadly across many tasks rather than one narrow function.",
+    "Cuneus_L": {
+      "title": "Cuneus (Left)",
+      "summary": "Medial occipital visual cortex commonly involved in early visual processing, especially central-field and basic scene features.",
       "networks": [
-        "relay",
-        "attention"
+        "visual"
       ],
       "aliases": [
-        "Thalamus_L",
-        "Thalamus (Left)"
+        "Cuneus_L",
+        "Cuneus (Left)",
+        "Cuneus Left"
       ]
     },
-    "Thalamus_R": {
-      "title": "Thalamus (Right)",
-      "summary": "A major relay and gating hub for sensory and motor information on the way to cortex. Helps regulate arousal, attention, and the 'broadcasting' of signals to cortical networks. Often involved broadly across many tasks rather than one narrow function.",
+    "Cuneus_R": {
+      "title": "Cuneus (Right)",
+      "summary": "Medial occipital visual cortex commonly involved in early visual processing, especially central-field and basic scene features.",
       "networks": [
-        "relay",
-        "attention"
+        "visual"
       ],
       "aliases": [
-        "Thalamus_R",
-        "Thalamus (Right)"
+        "Cuneus_R",
+        "Cuneus (Right)",
+        "Cuneus Right"
+      ]
+    },
+    "Frontal_Inf_Oper_L": {
+      "title": "Inferior frontal gyrus, opercular part (Left)",
+      "summary": "Inferior frontal opercular cortex commonly involved in language-related sequencing, speech-motor integration, and response inhibition.",
+      "networks": [
+        "language",
+        "cognitive control"
+      ],
+      "aliases": [
+        "Frontal_Inf_Oper_L",
+        "Inferior frontal gyrus, opercular part (Left)",
+        "Inferior frontal gyrus, opercular part Left"
+      ]
+    },
+    "Frontal_Inf_Oper_R": {
+      "title": "Inferior frontal gyrus, opercular part (Right)",
+      "summary": "Inferior frontal opercular cortex commonly involved in language-related sequencing, speech-motor integration, and response inhibition.",
+      "networks": [
+        "language",
+        "cognitive control"
+      ],
+      "aliases": [
+        "Frontal_Inf_Oper_R",
+        "Inferior frontal gyrus, opercular part (Right)",
+        "Inferior frontal gyrus, opercular part Right"
+      ]
+    },
+    "Frontal_Inf_Orb_L": {
+      "title": "Inferior frontal gyrus, orbital part (Left)",
+      "summary": "Orbitofrontal inferior frontal region commonly involved in valuation, affective appraisal, and context-dependent decision processing.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "decision"
+      ],
+      "aliases": [
+        "Frontal_Inf_Orb_L",
+        "Inferior frontal gyrus, orbital part (Left)",
+        "Inferior frontal gyrus, orbital part Left"
+      ]
+    },
+    "Frontal_Inf_Orb_R": {
+      "title": "Inferior frontal gyrus, orbital part (Right)",
+      "summary": "Orbitofrontal inferior frontal region commonly involved in valuation, affective appraisal, and context-dependent decision processing.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "decision"
+      ],
+      "aliases": [
+        "Frontal_Inf_Orb_R",
+        "Inferior frontal gyrus, orbital part (Right)",
+        "Inferior frontal gyrus, orbital part Right"
+      ]
+    },
+    "Frontal_Inf_Tri_L": {
+      "title": "Inferior frontal gyrus, triangular part (Left)",
+      "summary": "Inferior frontal triangular cortex commonly involved in controlled language retrieval, semantic selection, and top-down control of competing representations.",
+      "networks": [
+        "language",
+        "executive control"
+      ],
+      "aliases": [
+        "Frontal_Inf_Tri_L",
+        "Inferior frontal gyrus, triangular part (Left)",
+        "Inferior frontal gyrus, triangular part Left"
+      ]
+    },
+    "Frontal_Inf_Tri_R": {
+      "title": "Inferior frontal gyrus, triangular part (Right)",
+      "summary": "Inferior frontal triangular cortex commonly involved in controlled language retrieval, semantic selection, and top-down control of competing representations.",
+      "networks": [
+        "language",
+        "executive control"
+      ],
+      "aliases": [
+        "Frontal_Inf_Tri_R",
+        "Inferior frontal gyrus, triangular part (Right)",
+        "Inferior frontal gyrus, triangular part Right"
+      ]
+    },
+    "Frontal_Mid_L": {
+      "title": "Middle frontal gyrus (Left)",
+      "summary": "Dorsolateral prefrontal region commonly involved in working memory, planning, and sustained goal-directed control.",
+      "networks": [
+        "executive control",
+        "working memory"
+      ],
+      "aliases": [
+        "Frontal_Mid_L",
+        "Middle frontal gyrus (Left)",
+        "Middle frontal gyrus Left"
+      ]
+    },
+    "Frontal_Mid_Orb_L": {
+      "title": "Middle frontal gyrus, orbital part (Left)",
+      "summary": "Orbital middle frontal region commonly involved in outcome evaluation, affective-context integration, and adaptive decision updates.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "decision"
+      ],
+      "aliases": [
+        "Frontal_Mid_Orb_L",
+        "Middle frontal gyrus, orbital part (Left)",
+        "Middle frontal gyrus, orbital part Left"
+      ]
+    },
+    "Frontal_Mid_Orb_R": {
+      "title": "Middle frontal gyrus, orbital part (Right)",
+      "summary": "Orbital middle frontal region commonly involved in outcome evaluation, affective-context integration, and adaptive decision updates.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "decision"
+      ],
+      "aliases": [
+        "Frontal_Mid_Orb_R",
+        "Middle frontal gyrus, orbital part (Right)",
+        "Middle frontal gyrus, orbital part Right"
+      ]
+    },
+    "Frontal_Mid_R": {
+      "title": "Middle frontal gyrus (Right)",
+      "summary": "Dorsolateral prefrontal region commonly involved in working memory, planning, and sustained goal-directed control.",
+      "networks": [
+        "executive control",
+        "working memory"
+      ],
+      "aliases": [
+        "Frontal_Mid_R",
+        "Middle frontal gyrus (Right)",
+        "Middle frontal gyrus Right"
       ]
     },
     "Frontal_Orb_Med_L": {
@@ -244,28 +599,486 @@
         "mOFC (Right)"
       ]
     },
-    "Calcarine_L": {
-      "title": "Calcarine cortex (Left) \u2014 primary visual cortex (V1)",
-      "summary": "Primary visual cortex involved in early processing of visual input. It contains a retinotopic map (neighboring neurons represent neighboring points in visual space). Often strongly activated by simple visual stimuli like flashing checkerboards.",
+    "Frontal_Sup_L": {
+      "title": "Superior frontal gyrus (Left)",
+      "summary": "Superior frontal cortex commonly involved in high-level executive control, self-monitoring, and maintenance of task goals.",
       "networks": [
-        "visual"
+        "executive control"
       ],
       "aliases": [
-        "Calcarine_L",
-        "V1 (Left)",
-        "Primary visual (Left)"
+        "Frontal_Sup_L",
+        "Superior frontal gyrus (Left)",
+        "Superior frontal gyrus Left"
       ]
     },
-    "Calcarine_R": {
-      "title": "Calcarine cortex (Right) \u2014 primary visual cortex (V1)",
-      "summary": "Primary visual cortex involved in early processing of visual input. It contains a retinotopic map (neighboring neurons represent neighboring points in visual space). Often strongly activated by simple visual stimuli like flashing checkerboards.",
+    "Frontal_Sup_Medial_L": {
+      "title": "Superior medial frontal gyrus (Left)",
+      "summary": "Medial superior frontal region commonly involved in self-referential processing, motivation, and internally guided action selection.",
+      "networks": [
+        "default mode",
+        "executive control"
+      ],
+      "aliases": [
+        "Frontal_Sup_Medial_L",
+        "Superior medial frontal gyrus (Left)",
+        "Superior medial frontal gyrus Left"
+      ]
+    },
+    "Frontal_Sup_Medial_R": {
+      "title": "Superior medial frontal gyrus (Right)",
+      "summary": "Medial superior frontal region commonly involved in self-referential processing, motivation, and internally guided action selection.",
+      "networks": [
+        "default mode",
+        "executive control"
+      ],
+      "aliases": [
+        "Frontal_Sup_Medial_R",
+        "Superior medial frontal gyrus (Right)",
+        "Superior medial frontal gyrus Right"
+      ]
+    },
+    "Frontal_Sup_Orb_L": {
+      "title": "Superior frontal gyrus, orbital part (Left)",
+      "summary": "Superior orbitofrontal region commonly involved in value-based appraisal, social-emotional context processing, and decision biasing.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "social cognition"
+      ],
+      "aliases": [
+        "Frontal_Sup_Orb_L",
+        "Superior frontal gyrus, orbital part (Left)",
+        "Superior frontal gyrus, orbital part Left"
+      ]
+    },
+    "Frontal_Sup_Orb_R": {
+      "title": "Superior frontal gyrus, orbital part (Right)",
+      "summary": "Superior orbitofrontal region commonly involved in value-based appraisal, social-emotional context processing, and decision biasing.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "social cognition"
+      ],
+      "aliases": [
+        "Frontal_Sup_Orb_R",
+        "Superior frontal gyrus, orbital part (Right)",
+        "Superior frontal gyrus, orbital part Right"
+      ]
+    },
+    "Frontal_Sup_R": {
+      "title": "Superior frontal gyrus (Right)",
+      "summary": "Superior frontal cortex commonly involved in high-level executive control, self-monitoring, and maintenance of task goals.",
+      "networks": [
+        "executive control"
+      ],
+      "aliases": [
+        "Frontal_Sup_R",
+        "Superior frontal gyrus (Right)",
+        "Superior frontal gyrus Right"
+      ]
+    },
+    "Fusiform_L": {
+      "title": "Fusiform gyrus (Left)",
+      "summary": "Ventral temporal visual-association cortex commonly involved in high-level object and face-related recognition, with task-dependent specialization.",
+      "networks": [
+        "visual association",
+        "memory"
+      ],
+      "aliases": [
+        "Fusiform_L",
+        "Fusiform gyrus (Left)",
+        "Fusiform gyrus Left"
+      ]
+    },
+    "Fusiform_R": {
+      "title": "Fusiform gyrus (Right)",
+      "summary": "Ventral temporal visual-association cortex commonly involved in high-level object and face-related recognition, with task-dependent specialization.",
+      "networks": [
+        "visual association",
+        "memory"
+      ],
+      "aliases": [
+        "Fusiform_R",
+        "Fusiform gyrus (Right)",
+        "Fusiform gyrus Right"
+      ]
+    },
+    "Heschl_L": {
+      "title": "Heschl's gyrus (Left)",
+      "summary": "Contains primary auditory cortex. It supports early cortical processing of sound features like frequency and timing, before higher-order areas interpret meaning. Often engaged by tones, speech, and music.",
+      "networks": [
+        "auditory"
+      ],
+      "aliases": [
+        "Heschl_L",
+        "Heschl (Left)",
+        "Heschl gyrus (Left)",
+        "Heschl's gyrus (Left)"
+      ]
+    },
+    "Heschl_R": {
+      "title": "Heschl's gyrus (Right)",
+      "summary": "Contains primary auditory cortex. It supports early cortical processing of sound features like frequency and timing, before higher-order areas interpret meaning. Often engaged by tones, speech, and music.",
+      "networks": [
+        "auditory"
+      ],
+      "aliases": [
+        "Heschl_R",
+        "Heschl (Right)",
+        "Heschl gyrus (Right)",
+        "Heschl's gyrus (Right)"
+      ]
+    },
+    "Hippocampus_L": {
+      "title": "Hippocampus (Left)",
+      "summary": "Supports formation of episodic memories and the binding of context (what happened, where, and when). Important for learning new facts and experiences. Dysfunction is commonly associated with memory impairment.",
+      "networks": [
+        "memory"
+      ],
+      "aliases": [
+        "Hippocampus_L",
+        "Hippocampus (Left)"
+      ]
+    },
+    "Hippocampus_R": {
+      "title": "Hippocampus (Right)",
+      "summary": "Supports formation of episodic memories and the binding of context (what happened, where, and when). Often associated with spatial/contextual aspects of memory, though roles vary. Dysfunction is commonly associated with memory impairment.",
+      "networks": [
+        "memory"
+      ],
+      "aliases": [
+        "Hippocampus_R",
+        "Hippocampus (Right)"
+      ]
+    },
+    "Insula_L": {
+      "title": "Insula (Left)",
+      "summary": "Integrates internal body-state signals ('interoception') with emotional and cognitive context. Commonly involved in pain, nausea/disgust, and awareness of bodily arousal. Often treated as part of a broader salience system that helps prioritize attention.",
+      "networks": [
+        "salience"
+      ],
+      "aliases": [
+        "Insula_L",
+        "Insula (Left)"
+      ]
+    },
+    "Insula_R": {
+      "title": "Insula (Right)",
+      "summary": "Integrates internal body-state signals ('interoception') with emotional and cognitive context. Commonly involved in pain, nausea/disgust, and awareness of bodily arousal. Often treated as part of a broader salience system that helps prioritize attention.",
+      "networks": [
+        "salience"
+      ],
+      "aliases": [
+        "Insula_R",
+        "Insula (Right)"
+      ]
+    },
+    "Lingual_L": {
+      "title": "Lingual gyrus (Left)",
+      "summary": "Medial occipital-temporal region commonly involved in visual feature analysis, word-form/scene components, and visual memory interactions.",
+      "networks": [
+        "visual",
+        "memory"
+      ],
+      "aliases": [
+        "Lingual_L",
+        "Lingual gyrus (Left)",
+        "Lingual gyrus Left"
+      ]
+    },
+    "Lingual_R": {
+      "title": "Lingual gyrus (Right)",
+      "summary": "Medial occipital-temporal region commonly involved in visual feature analysis, word-form/scene components, and visual memory interactions.",
+      "networks": [
+        "visual",
+        "memory"
+      ],
+      "aliases": [
+        "Lingual_R",
+        "Lingual gyrus (Right)",
+        "Lingual gyrus Right"
+      ]
+    },
+    "Occipital_Inf_L": {
+      "title": "Inferior occipital gyrus (Left)",
+      "summary": "Inferior occipital visual-association cortex commonly involved in detailed form processing and early stages of object/face pathway analysis.",
       "networks": [
         "visual"
       ],
       "aliases": [
-        "Calcarine_R",
-        "V1 (Right)",
-        "Primary visual (Right)"
+        "Occipital_Inf_L",
+        "Inferior occipital gyrus (Left)",
+        "Inferior occipital gyrus Left"
+      ]
+    },
+    "Occipital_Inf_R": {
+      "title": "Inferior occipital gyrus (Right)",
+      "summary": "Inferior occipital visual-association cortex commonly involved in detailed form processing and early stages of object/face pathway analysis.",
+      "networks": [
+        "visual"
+      ],
+      "aliases": [
+        "Occipital_Inf_R",
+        "Inferior occipital gyrus (Right)",
+        "Inferior occipital gyrus Right"
+      ]
+    },
+    "Occipital_Mid_L": {
+      "title": "Middle occipital gyrus (Left)",
+      "summary": "Middle occipital cortex commonly involved in intermediate visual feature integration, motion/form interactions, and visuospatial analysis.",
+      "networks": [
+        "visual",
+        "attention"
+      ],
+      "aliases": [
+        "Occipital_Mid_L",
+        "Middle occipital gyrus (Left)",
+        "Middle occipital gyrus Left"
+      ]
+    },
+    "Occipital_Mid_R": {
+      "title": "Middle occipital gyrus (Right)",
+      "summary": "Middle occipital cortex commonly involved in intermediate visual feature integration, motion/form interactions, and visuospatial analysis.",
+      "networks": [
+        "visual",
+        "attention"
+      ],
+      "aliases": [
+        "Occipital_Mid_R",
+        "Middle occipital gyrus (Right)",
+        "Middle occipital gyrus Right"
+      ]
+    },
+    "Occipital_Sup_L": {
+      "title": "Superior occipital gyrus (Left)",
+      "summary": "Superior occipital cortex commonly involved in visuospatial processing and dorsal visual-stream coordination with parietal attention systems.",
+      "networks": [
+        "visual",
+        "attention"
+      ],
+      "aliases": [
+        "Occipital_Sup_L",
+        "Superior occipital gyrus (Left)",
+        "Superior occipital gyrus Left"
+      ]
+    },
+    "Occipital_Sup_R": {
+      "title": "Superior occipital gyrus (Right)",
+      "summary": "Superior occipital cortex commonly involved in visuospatial processing and dorsal visual-stream coordination with parietal attention systems.",
+      "networks": [
+        "visual",
+        "attention"
+      ],
+      "aliases": [
+        "Occipital_Sup_R",
+        "Superior occipital gyrus (Right)",
+        "Superior occipital gyrus Right"
+      ]
+    },
+    "Olfactory_L": {
+      "title": "Olfactory cortex (Left)",
+      "summary": "Orbitobasal olfactory region commonly involved in odor-related processing and integration of chemosensory signals with affective valuation.",
+      "networks": [
+        "olfaction",
+        "emotion"
+      ],
+      "aliases": [
+        "Olfactory_L",
+        "Olfactory cortex (Left)",
+        "Olfactory cortex Left"
+      ]
+    },
+    "Olfactory_R": {
+      "title": "Olfactory cortex (Right)",
+      "summary": "Orbitobasal olfactory region commonly involved in odor-related processing and integration of chemosensory signals with affective valuation.",
+      "networks": [
+        "olfaction",
+        "emotion"
+      ],
+      "aliases": [
+        "Olfactory_R",
+        "Olfactory cortex (Right)",
+        "Olfactory cortex Right"
+      ]
+    },
+    "Pallidum_L": {
+      "title": "Globus pallidus (Left)",
+      "summary": "Basal ganglia output nucleus commonly involved in gating motor and cognitive loops via thalamo-cortical regulation.",
+      "networks": [
+        "basal ganglia",
+        "motor control"
+      ],
+      "aliases": [
+        "Pallidum_L",
+        "Globus pallidus (Left)",
+        "Globus pallidus Left"
+      ]
+    },
+    "Pallidum_R": {
+      "title": "Globus pallidus (Right)",
+      "summary": "Basal ganglia output nucleus commonly involved in gating motor and cognitive loops via thalamo-cortical regulation.",
+      "networks": [
+        "basal ganglia",
+        "motor control"
+      ],
+      "aliases": [
+        "Pallidum_R",
+        "Globus pallidus (Right)",
+        "Globus pallidus Right"
+      ]
+    },
+    "Paracentral_Lobule_L": {
+      "title": "Paracentral lobule (Left)",
+      "summary": "Medial sensorimotor region commonly involved in lower-limb motor/somatosensory representations and motor set maintenance.",
+      "networks": [
+        "motor",
+        "somatosensory"
+      ],
+      "aliases": [
+        "Paracentral_Lobule_L",
+        "Paracentral lobule (Left)",
+        "Paracentral lobule Left"
+      ]
+    },
+    "Paracentral_Lobule_R": {
+      "title": "Paracentral lobule (Right)",
+      "summary": "Medial sensorimotor region commonly involved in lower-limb motor/somatosensory representations and motor set maintenance.",
+      "networks": [
+        "motor",
+        "somatosensory"
+      ],
+      "aliases": [
+        "Paracentral_Lobule_R",
+        "Paracentral lobule (Right)",
+        "Paracentral lobule Right"
+      ]
+    },
+    "ParaHippocampal_L": {
+      "title": "Parahippocampal gyrus (Left)",
+      "summary": "Medial temporal region commonly involved in contextual memory encoding, scene representation, and hippocampal memory interface functions.",
+      "networks": [
+        "memory",
+        "limbic"
+      ],
+      "aliases": [
+        "ParaHippocampal_L",
+        "Parahippocampal gyrus (Left)",
+        "Parahippocampal gyrus Left"
+      ]
+    },
+    "ParaHippocampal_R": {
+      "title": "Parahippocampal gyrus (Right)",
+      "summary": "Medial temporal region commonly involved in contextual memory encoding, scene representation, and hippocampal memory interface functions.",
+      "networks": [
+        "memory",
+        "limbic"
+      ],
+      "aliases": [
+        "ParaHippocampal_R",
+        "Parahippocampal gyrus (Right)",
+        "Parahippocampal gyrus Right"
+      ]
+    },
+    "Parietal_Inf_L": {
+      "title": "Inferior parietal lobule (Left)",
+      "summary": "Inferior parietal association region commonly involved in attention reorienting, multimodal integration, and language-related semantic processing.",
+      "networks": [
+        "attention",
+        "language",
+        "association"
+      ],
+      "aliases": [
+        "Parietal_Inf_L",
+        "Inferior parietal lobule (Left)",
+        "Inferior parietal lobule Left"
+      ]
+    },
+    "Parietal_Inf_R": {
+      "title": "Inferior parietal lobule (Right)",
+      "summary": "Inferior parietal association region commonly involved in attention reorienting, multimodal integration, and language-related semantic processing.",
+      "networks": [
+        "attention",
+        "language",
+        "association"
+      ],
+      "aliases": [
+        "Parietal_Inf_R",
+        "Inferior parietal lobule (Right)",
+        "Inferior parietal lobule Right"
+      ]
+    },
+    "Parietal_Sup_L": {
+      "title": "Superior parietal lobule (Left)",
+      "summary": "Superior parietal region commonly involved in visuospatial attention, sensorimotor integration, and top-down spatial control.",
+      "networks": [
+        "attention",
+        "sensorimotor"
+      ],
+      "aliases": [
+        "Parietal_Sup_L",
+        "Superior parietal lobule (Left)",
+        "Superior parietal lobule Left"
+      ]
+    },
+    "Parietal_Sup_R": {
+      "title": "Superior parietal lobule (Right)",
+      "summary": "Superior parietal region commonly involved in visuospatial attention, sensorimotor integration, and top-down spatial control.",
+      "networks": [
+        "attention",
+        "sensorimotor"
+      ],
+      "aliases": [
+        "Parietal_Sup_R",
+        "Superior parietal lobule (Right)",
+        "Superior parietal lobule Right"
+      ]
+    },
+    "Postcentral_L": {
+      "title": "Postcentral gyrus (Left) — primary somatosensory cortex",
+      "summary": "Primary somatosensory cortex for the body (touch, vibration, proprioception). It maps the opposite (right) side of the body in an orderly 'homunculus-like' organization. Often engaged by tactile stimulation and pain-related input.",
+      "networks": [
+        "somatosensory"
+      ],
+      "aliases": [
+        "Postcentral_L",
+        "Postcentral (Left)",
+        "Primary somatosensory (Left)"
+      ]
+    },
+    "Postcentral_R": {
+      "title": "Postcentral gyrus (Right) — primary somatosensory cortex",
+      "summary": "Primary somatosensory cortex for the body (touch, vibration, proprioception). It maps the opposite (left) side of the body in an orderly 'homunculus-like' organization. Often engaged by tactile stimulation and pain-related input.",
+      "networks": [
+        "somatosensory"
+      ],
+      "aliases": [
+        "Postcentral_R",
+        "Postcentral (Right)",
+        "Primary somatosensory (Right)"
+      ]
+    },
+    "Precentral_L": {
+      "title": "Precentral gyrus (Left) — primary motor cortex",
+      "summary": "Primary motor cortex involved in initiating voluntary movement. It contains a body map and primarily influences the opposite (right) side of the body. Often engaged during finger tapping, speech motor planning, and other motor tasks.",
+      "networks": [
+        "motor"
+      ],
+      "aliases": [
+        "Precentral_L",
+        "Precentral (Left)",
+        "Primary motor (Left)"
+      ]
+    },
+    "Precentral_R": {
+      "title": "Precentral gyrus (Right) — primary motor cortex",
+      "summary": "Primary motor cortex involved in initiating voluntary movement. It contains a body map and primarily influences the opposite (left) side of the body. Often engaged during finger tapping and other motor tasks.",
+      "networks": [
+        "motor"
+      ],
+      "aliases": [
+        "Precentral_R",
+        "Precentral (Right)",
+        "Primary motor (Right)"
       ]
     },
     "Precuneus_L": {
@@ -288,6 +1101,401 @@
       "aliases": [
         "Precuneus_R",
         "Precuneus (Right)"
+      ]
+    },
+    "Putamen_L": {
+      "title": "Putamen (Left)",
+      "summary": "Dorsal striatal region commonly involved in motor program selection, habit-related learning, and reinforcement-driven action tuning.",
+      "networks": [
+        "basal ganglia",
+        "motor control",
+        "reward"
+      ],
+      "aliases": [
+        "Putamen_L",
+        "Putamen (Left)",
+        "Putamen Left"
+      ]
+    },
+    "Putamen_R": {
+      "title": "Putamen (Right)",
+      "summary": "Dorsal striatal region commonly involved in motor program selection, habit-related learning, and reinforcement-driven action tuning.",
+      "networks": [
+        "basal ganglia",
+        "motor control",
+        "reward"
+      ],
+      "aliases": [
+        "Putamen_R",
+        "Putamen (Right)",
+        "Putamen Right"
+      ]
+    },
+    "Rectus_L": {
+      "title": "Gyrus rectus (Left)",
+      "summary": "Medial orbitofrontal region commonly involved in reward valuation, affective context, and social-emotional appraisal.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "social cognition"
+      ],
+      "aliases": [
+        "Rectus_L",
+        "Gyrus rectus (Left)",
+        "Gyrus rectus Left"
+      ]
+    },
+    "Rectus_R": {
+      "title": "Gyrus rectus (Right)",
+      "summary": "Medial orbitofrontal region commonly involved in reward valuation, affective context, and social-emotional appraisal.",
+      "networks": [
+        "valuation",
+        "emotion",
+        "social cognition"
+      ],
+      "aliases": [
+        "Rectus_R",
+        "Gyrus rectus (Right)",
+        "Gyrus rectus Right"
+      ]
+    },
+    "Rolandic_Oper_L": {
+      "title": "Rolandic operculum (Left)",
+      "summary": "Peri-sylvian sensorimotor integration region commonly involved in orofacial/speech-motor processing and somatosensory-motor coupling.",
+      "networks": [
+        "sensorimotor",
+        "speech-motor"
+      ],
+      "aliases": [
+        "Rolandic_Oper_L",
+        "Rolandic operculum (Left)",
+        "Rolandic operculum Left"
+      ]
+    },
+    "Rolandic_Oper_R": {
+      "title": "Rolandic operculum (Right)",
+      "summary": "Peri-sylvian sensorimotor integration region commonly involved in orofacial/speech-motor processing and somatosensory-motor coupling.",
+      "networks": [
+        "sensorimotor",
+        "speech-motor"
+      ],
+      "aliases": [
+        "Rolandic_Oper_R",
+        "Rolandic operculum (Right)",
+        "Rolandic operculum Right"
+      ]
+    },
+    "Supp_Motor_Area_L": {
+      "title": "Supplementary motor area (Left)",
+      "summary": "Medial frontal motor region commonly involved in movement initiation, motor sequencing, and internally generated action plans.",
+      "networks": [
+        "motor control",
+        "executive control"
+      ],
+      "aliases": [
+        "Supp_Motor_Area_L",
+        "Supplementary motor area (Left)",
+        "Supplementary motor area Left"
+      ]
+    },
+    "Supp_Motor_Area_R": {
+      "title": "Supplementary motor area (Right)",
+      "summary": "Medial frontal motor region commonly involved in movement initiation, motor sequencing, and internally generated action plans.",
+      "networks": [
+        "motor control",
+        "executive control"
+      ],
+      "aliases": [
+        "Supp_Motor_Area_R",
+        "Supplementary motor area (Right)",
+        "Supplementary motor area Right"
+      ]
+    },
+    "SupraMarginal_L": {
+      "title": "Supramarginal gyrus (Left)",
+      "summary": "Inferior parietal region commonly involved in phonological processing, sensorimotor integration, and attentional reorienting.",
+      "networks": [
+        "language",
+        "attention",
+        "sensorimotor"
+      ],
+      "aliases": [
+        "SupraMarginal_L",
+        "Supramarginal gyrus (Left)",
+        "Supramarginal gyrus Left"
+      ]
+    },
+    "SupraMarginal_R": {
+      "title": "Supramarginal gyrus (Right)",
+      "summary": "Inferior parietal region commonly involved in phonological processing, sensorimotor integration, and attentional reorienting.",
+      "networks": [
+        "language",
+        "attention",
+        "sensorimotor"
+      ],
+      "aliases": [
+        "SupraMarginal_R",
+        "Supramarginal gyrus (Right)",
+        "Supramarginal gyrus Right"
+      ]
+    },
+    "Temporal_Inf_L": {
+      "title": "Inferior temporal gyrus (Left)",
+      "summary": "High-level ventral temporal cortex commonly involved in complex visual object representations and semantic-visual integration.",
+      "networks": [
+        "visual association",
+        "semantic"
+      ],
+      "aliases": [
+        "Temporal_Inf_L",
+        "Inferior temporal gyrus (Left)",
+        "Inferior temporal gyrus Left"
+      ]
+    },
+    "Temporal_Inf_R": {
+      "title": "Inferior temporal gyrus (Right)",
+      "summary": "High-level ventral temporal cortex commonly involved in complex visual object representations and semantic-visual integration.",
+      "networks": [
+        "visual association",
+        "semantic"
+      ],
+      "aliases": [
+        "Temporal_Inf_R",
+        "Inferior temporal gyrus (Right)",
+        "Inferior temporal gyrus Right"
+      ]
+    },
+    "Temporal_Mid_L": {
+      "title": "Middle temporal gyrus (Left)",
+      "summary": "Temporal association cortex commonly involved in semantic processing, multimodal language support, and context-driven integration.",
+      "networks": [
+        "language",
+        "semantic",
+        "association"
+      ],
+      "aliases": [
+        "Temporal_Mid_L",
+        "Middle temporal gyrus (Left)",
+        "Middle temporal gyrus Left"
+      ]
+    },
+    "Temporal_Mid_R": {
+      "title": "Middle temporal gyrus (Right)",
+      "summary": "Temporal association cortex commonly involved in semantic processing, multimodal language support, and context-driven integration.",
+      "networks": [
+        "language",
+        "semantic",
+        "association"
+      ],
+      "aliases": [
+        "Temporal_Mid_R",
+        "Middle temporal gyrus (Right)",
+        "Middle temporal gyrus Right"
+      ]
+    },
+    "Temporal_Pole_Mid_L": {
+      "title": "Middle temporal pole (Left)",
+      "summary": "Anterior temporal pole region commonly involved in semantic memory integration and affective-social meaning representation.",
+      "networks": [
+        "semantic",
+        "social cognition",
+        "limbic"
+      ],
+      "aliases": [
+        "Temporal_Pole_Mid_L",
+        "Middle temporal pole (Left)",
+        "Middle temporal pole Left"
+      ]
+    },
+    "Temporal_Pole_Mid_R": {
+      "title": "Middle temporal pole (Right)",
+      "summary": "Anterior temporal pole region commonly involved in semantic memory integration and affective-social meaning representation.",
+      "networks": [
+        "semantic",
+        "social cognition",
+        "limbic"
+      ],
+      "aliases": [
+        "Temporal_Pole_Mid_R",
+        "Middle temporal pole (Right)",
+        "Middle temporal pole Right"
+      ]
+    },
+    "Temporal_Pole_Sup_L": {
+      "title": "Superior temporal pole (Left)",
+      "summary": "Anterior superior temporal region commonly involved in socio-emotional and auditory-language context integration.",
+      "networks": [
+        "social cognition",
+        "language",
+        "auditory"
+      ],
+      "aliases": [
+        "Temporal_Pole_Sup_L",
+        "Superior temporal pole (Left)",
+        "Superior temporal pole Left"
+      ]
+    },
+    "Temporal_Pole_Sup_R": {
+      "title": "Superior temporal pole (Right)",
+      "summary": "Anterior superior temporal region commonly involved in socio-emotional and auditory-language context integration.",
+      "networks": [
+        "social cognition",
+        "language",
+        "auditory"
+      ],
+      "aliases": [
+        "Temporal_Pole_Sup_R",
+        "Superior temporal pole (Right)",
+        "Superior temporal pole Right"
+      ]
+    },
+    "Temporal_Sup_L": {
+      "title": "Superior temporal gyrus (Left)",
+      "summary": "Auditory association cortex that helps analyze complex sounds, including speech. In many people, the left superior temporal region is strongly involved in language comprehension. It often works with frontal language areas during listening.",
+      "networks": [
+        "auditory",
+        "language"
+      ],
+      "aliases": [
+        "Temporal_Sup_L",
+        "Superior temporal (Left)",
+        "Superior temporal gyrus (Left)"
+      ]
+    },
+    "Temporal_Sup_R": {
+      "title": "Superior temporal gyrus (Right)",
+      "summary": "Auditory association cortex that helps analyze complex sounds. The right superior temporal region is often associated with prosody and aspects of music perception, though roles vary by task and person. It collaborates with broader attention and memory systems during listening.",
+      "networks": [
+        "auditory"
+      ],
+      "aliases": [
+        "Temporal_Sup_R",
+        "Superior temporal (Right)",
+        "Superior temporal gyrus (Right)"
+      ]
+    },
+    "Thalamus_L": {
+      "title": "Thalamus (Left)",
+      "summary": "A major relay and gating hub for sensory and motor information on the way to cortex. Helps regulate arousal, attention, and the 'broadcasting' of signals to cortical networks. Often involved broadly across many tasks rather than one narrow function.",
+      "networks": [
+        "relay",
+        "attention"
+      ],
+      "aliases": [
+        "Thalamus_L",
+        "Thalamus (Left)"
+      ]
+    },
+    "Thalamus_R": {
+      "title": "Thalamus (Right)",
+      "summary": "A major relay and gating hub for sensory and motor information on the way to cortex. Helps regulate arousal, attention, and the 'broadcasting' of signals to cortical networks. Often involved broadly across many tasks rather than one narrow function.",
+      "networks": [
+        "relay",
+        "attention"
+      ],
+      "aliases": [
+        "Thalamus_R",
+        "Thalamus (Right)"
+      ]
+    },
+    "Vermis_1_2": {
+      "title": "Vermis lobules I-II",
+      "summary": "Midline anterior cerebellar vermis region commonly involved in axial motor tone and early sensorimotor coordination.",
+      "networks": [
+        "cerebellar-motor",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_1_2",
+        "Vermis lobules I-II"
+      ]
+    },
+    "Vermis_10": {
+      "title": "Vermis lobule X",
+      "summary": "Flocculonodular midline vermis region commonly involved in balance control, vestibular signaling, and ocular stabilization.",
+      "networks": [
+        "vestibular",
+        "oculomotor",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_10",
+        "Vermis lobule X"
+      ]
+    },
+    "Vermis_3": {
+      "title": "Vermis lobule III",
+      "summary": "Midline cerebellar vermis region commonly involved in postural adjustment and trunk-focused motor coordination.",
+      "networks": [
+        "cerebellar-motor",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_3",
+        "Vermis lobule III"
+      ]
+    },
+    "Vermis_4_5": {
+      "title": "Vermis lobules IV-V",
+      "summary": "Midline cerebellar vermis region commonly involved in gait/posture control and integration of proprioceptive motor feedback.",
+      "networks": [
+        "cerebellar-motor",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_4_5",
+        "Vermis lobules IV-V"
+      ]
+    },
+    "Vermis_6": {
+      "title": "Vermis lobule VI",
+      "summary": "Midline cerebellar vermis region commonly involved in sensorimotor coordination with increasing cognitive-affective coupling.",
+      "networks": [
+        "cerebellar-motor",
+        "cerebellar-cognitive",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_6",
+        "Vermis lobule VI"
+      ]
+    },
+    "Vermis_7": {
+      "title": "Vermis lobule VII",
+      "summary": "Midline posterior vermis region commonly involved in arousal, affective modulation, and cognitive-autonomic coordination.",
+      "networks": [
+        "cerebellar-cognitive",
+        "affective",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_7",
+        "Vermis lobule VII"
+      ]
+    },
+    "Vermis_8": {
+      "title": "Vermis lobule VIII",
+      "summary": "Midline posterior vermis region commonly involved in ongoing motor timing and postural dynamics during movement.",
+      "networks": [
+        "cerebellar-motor",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_8",
+        "Vermis lobule VIII"
+      ]
+    },
+    "Vermis_9": {
+      "title": "Vermis lobule IX",
+      "summary": "Inferior posterior vermis region commonly involved in vestibular and autonomic-state integration with internal regulation.",
+      "networks": [
+        "vestibular",
+        "autonomic",
+        "midline"
+      ],
+      "aliases": [
+        "Vermis_9",
+        "Vermis lobule IX"
       ]
     }
   }
