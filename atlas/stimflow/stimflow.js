@@ -902,9 +902,7 @@ const mobileUi = {
   btnPanel: document.getElementById("btnMobilePanel"),
   btnNarration: document.getElementById("btnMobileNarration"),
   btnCanvas: document.getElementById("btnMobileCanvas"),
-  btnStimuli: document.getElementById("btnMobileStimuli"),
 };
-let mobileStimuliActive = false;
 
 function hud(msg, isError = false) {
   hudEl.textContent = msg;
@@ -912,17 +910,15 @@ function hud(msg, isError = false) {
 }
 
 function syncMobileDockState() {
-  if (!mobileUi.btnPanel || !mobileUi.btnNarration || !mobileUi.btnCanvas || !mobileUi.btnStimuli) return;
+  if (!mobileUi.btnPanel || !mobileUi.btnNarration || !mobileUi.btnCanvas) return;
   const panelOpen = document.body.classList.contains("mobile-panel-open");
   const logOpen = document.body.classList.contains("mobile-log-open");
   mobileUi.btnPanel.setAttribute("aria-pressed", panelOpen ? "true" : "false");
   mobileUi.btnNarration.setAttribute("aria-pressed", logOpen ? "true" : "false");
   mobileUi.btnCanvas.setAttribute("aria-pressed", (!panelOpen && !logOpen) ? "true" : "false");
-  mobileUi.btnStimuli.setAttribute("aria-pressed", mobileStimuliActive ? "true" : "false");
 }
 
 function closeMobileOverlays() {
-  mobileStimuliActive = false;
   document.body.classList.remove("mobile-panel-open", "mobile-log-open");
   syncMobileDockState();
 }
@@ -933,7 +929,6 @@ function toggleMobileOverlay(name) {
   const logOpen = document.body.classList.contains("mobile-log-open");
 
   if (name === "panel") {
-    mobileStimuliActive = false;
     if (panelOpen) closeMobileOverlays();
     else {
       document.body.classList.add("mobile-panel-open");
@@ -944,7 +939,6 @@ function toggleMobileOverlay(name) {
   }
 
   if (name === "log") {
-    mobileStimuliActive = false;
     if (logOpen) closeMobileOverlays();
     else {
       document.body.classList.add("mobile-log-open");
@@ -957,27 +951,10 @@ function toggleMobileOverlay(name) {
   closeMobileOverlays();
 }
 
-function openMobileStimulusPicker() {
-  if (!IS_TOUCH_DEVICE) return;
-  document.body.classList.add("mobile-panel-open");
-  document.body.classList.remove("mobile-log-open");
-  mobileStimuliActive = true;
-  syncMobileDockState();
-
-  const block = document.getElementById("stimSelectBlock");
-  if (block) block.scrollIntoView({ block: "nearest", inline: "nearest" });
-  if (ui.stimSelect) {
-    ui.stimSelect.focus();
-    // In direct user-gesture handlers on iOS, click often opens the native picker.
-    ui.stimSelect.click();
-  }
-}
-
 function setupMobileOverlayControls() {
   if (!IS_TOUCH_DEVICE || !mobileUi.dock) return;
   document.body.classList.add("mobile-ready");
   // Force closed default state even when Safari restores previous page UI state.
-  mobileStimuliActive = false;
   document.body.classList.remove("mobile-panel-open", "mobile-log-open");
 
   if (mobileUi.btnPanel) {
@@ -995,12 +972,6 @@ function setupMobileOverlayControls() {
   if (mobileUi.btnCanvas) {
     mobileUi.btnCanvas.addEventListener("click", () => {
       toggleMobileOverlay("canvas");
-    });
-  }
-
-  if (mobileUi.btnStimuli) {
-    mobileUi.btnStimuli.addEventListener("click", () => {
-      openMobileStimulusPicker();
     });
   }
 
@@ -1118,8 +1089,8 @@ const mouse = new THREE.Vector2();
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 1000);
-const DEFAULT_CAMERA_Z = IS_TOUCH_DEVICE ? 3.15 : 2.95;
-camera.position.set(-0.06, 1.08, DEFAULT_CAMERA_Z);
+const DEFAULT_CAMERA_Z = IS_TOUCH_DEVICE ? 4.15 : 3.75;
+camera.position.set(-0.06, 1.12, DEFAULT_CAMERA_Z);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);

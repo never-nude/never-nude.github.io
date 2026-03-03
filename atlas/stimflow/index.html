@@ -551,13 +551,13 @@
 
         #mobileDock {
           position: fixed;
-          left: calc(var(--safe-left) + 24px);
-          right: calc(var(--safe-right) + 24px);
+          left: calc(var(--safe-left) + 28px);
+          right: calc(var(--safe-right) + 28px);
           bottom: calc(var(--safe-bottom) + 12px);
           z-index: 40;
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 4px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 6px;
           padding: 0;
           pointer-events: auto;
         }
@@ -571,7 +571,7 @@
           border: 1px solid rgba(174, 219, 255, 0.42);
           background: rgba(4, 12, 34, 0.88);
           color: #eff7ff;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1.2;
           font-weight: 600;
           letter-spacing: 0.02em;
@@ -683,7 +683,6 @@
       <button id="btnMobilePanel" type="button" aria-pressed="false">Controls</button>
       <button id="btnMobileNarration" type="button" aria-pressed="false">Narration</button>
       <button id="btnMobileCanvas" type="button" aria-pressed="false">Canvas</button>
-      <button id="btnMobileStimuli" type="button" aria-pressed="false">Stimuli</button>
     </div>
 
     <div id="panel">
@@ -886,6 +885,6 @@
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=4db6f3f"></script>
+    <script type="module" src="./stimflow.js?v=zoom3btn1"></script>
   </body>
 </html>
