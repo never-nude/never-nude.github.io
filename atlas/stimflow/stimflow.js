@@ -762,8 +762,13 @@ function updateConnectivityStatus() {
 
 const buildEl = document.getElementById("build");
 const hudEl = document.getElementById("hud");
+const IS_TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+const MAX_RENDER_PIXEL_RATIO = IS_TOUCH_DEVICE ? 1.5 : 2;
 const query = new URLSearchParams(window.location.search);
-const initialGraphMode = "dense";
+const requestedGraphMode = normalizeGraphMode(query.get("graph_mode"));
+const initialGraphMode = requestedGraphMode === "auto"
+  ? (IS_TOUCH_DEVICE ? "core" : "dense")
+  : requestedGraphMode;
 const initialBreadthQ = THREE.MathUtils.clamp(Number(query.get("path_breadth_q")) || DEFAULT_ENGAGEMENT.arrival_quantile, 0.60, 0.98);
 
 const ui = {
@@ -856,9 +861,83 @@ const ui = {
   edgeVal: document.getElementById("edgeVal"),
 };
 
+const mobileUi = {
+  dock: document.getElementById("mobileDock"),
+  btnPanel: document.getElementById("btnMobilePanel"),
+  btnNarration: document.getElementById("btnMobileNarration"),
+  btnCanvas: document.getElementById("btnMobileCanvas"),
+};
+
 function hud(msg, isError = false) {
   hudEl.textContent = msg;
   hudEl.classList.toggle("error", isError);
+}
+
+function syncMobileDockState() {
+  if (!mobileUi.btnPanel || !mobileUi.btnNarration || !mobileUi.btnCanvas) return;
+  const panelOpen = document.body.classList.contains("mobile-panel-open");
+  const logOpen = document.body.classList.contains("mobile-log-open");
+  mobileUi.btnPanel.setAttribute("aria-pressed", panelOpen ? "true" : "false");
+  mobileUi.btnNarration.setAttribute("aria-pressed", logOpen ? "true" : "false");
+  mobileUi.btnCanvas.setAttribute("aria-pressed", (!panelOpen && !logOpen) ? "true" : "false");
+}
+
+function closeMobileOverlays() {
+  document.body.classList.remove("mobile-panel-open", "mobile-log-open");
+  syncMobileDockState();
+}
+
+function toggleMobileOverlay(name) {
+  if (!IS_TOUCH_DEVICE) return;
+  const panelOpen = document.body.classList.contains("mobile-panel-open");
+  const logOpen = document.body.classList.contains("mobile-log-open");
+
+  if (name === "panel") {
+    if (panelOpen) closeMobileOverlays();
+    else {
+      document.body.classList.add("mobile-panel-open");
+      document.body.classList.remove("mobile-log-open");
+      syncMobileDockState();
+    }
+    return;
+  }
+
+  if (name === "log") {
+    if (logOpen) closeMobileOverlays();
+    else {
+      document.body.classList.add("mobile-log-open");
+      document.body.classList.remove("mobile-panel-open");
+      syncMobileDockState();
+    }
+    return;
+  }
+
+  closeMobileOverlays();
+}
+
+function setupMobileOverlayControls() {
+  if (!IS_TOUCH_DEVICE || !mobileUi.dock) return;
+  document.body.classList.add("mobile-ready");
+
+  if (mobileUi.btnPanel) {
+    mobileUi.btnPanel.addEventListener("click", () => {
+      toggleMobileOverlay("panel");
+    });
+  }
+
+  if (mobileUi.btnNarration) {
+    mobileUi.btnNarration.addEventListener("click", () => {
+      toggleMobileOverlay("log");
+    });
+  }
+
+  if (mobileUi.btnCanvas) {
+    mobileUi.btnCanvas.addEventListener("click", () => {
+      toggleMobileOverlay("canvas");
+    });
+  }
+
+  syncMobileDockState();
 }
 
 buildEl.textContent = `STIMFLOW • ${MILESTONE_LABEL} • BUILD ${STIMFLOW_BUILD_ID}`;
@@ -874,8 +953,8 @@ const state = {
   hoverGroupOn: false,
   hullOn: true,
   hullOpacity: HULL_OPACITY,
-  autoRotate: true,
-  edgeThreshold: 0.08,
+  autoRotate: !IS_TOUCH_DEVICE,
+  edgeThreshold: IS_TOUCH_DEVICE ? 0.12 : 0.08,
   gain: 1.0,
   speed: 1.0,
   compareMode: "off",
@@ -970,7 +1049,7 @@ camera.position.set(-0.06, 1.05, 2.65);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, MAX_RENDER_PIXEL_RATIO));
 document.body.appendChild(renderer.domElement);
 renderer.domElement.style.touchAction = "none";
 
@@ -3169,19 +3248,24 @@ function addNodes(g) {
   scene.add(nodeHaloMesh);
   scene.add(nodeMesh);
 
-  window.addEventListener("pointermove", (ev) => {
-    updateMouseFromEvent(ev);
-    raycaster.setFromCamera(mouse, camera);
-    const hits = raycaster.intersectObject(nodeMesh);
-    setHoveredIndex(hits.length ? hits[0].instanceId : null);
-  });
+  if (!IS_TOUCH_DEVICE) {
+    window.addEventListener("pointermove", (ev) => {
+      updateMouseFromEvent(ev);
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObject(nodeMesh);
+      setHoveredIndex(hits.length ? hits[0].instanceId : null);
+    });
 
-  renderer.domElement.addEventListener("pointerleave", () => {
-    setHoveredIndex(null);
-  });
+    renderer.domElement.addEventListener("pointerleave", () => {
+      setHoveredIndex(null);
+    });
+  }
 
   renderer.domElement.addEventListener("pointerdown", (ev) => {
     cancelCameraFocusTween();
+    if (IS_TOUCH_DEVICE && ev.pointerType === "touch") {
+      closeMobileOverlays();
+    }
     if (ev.button !== 0) return;
     updateMouseFromEvent(ev);
     raycaster.setFromCamera(mouse, camera);
@@ -4320,6 +4404,10 @@ addEventListener("resize", () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, MAX_RENDER_PIXEL_RATIO));
+  if (!window.matchMedia("(max-width: 520px), (pointer: coarse)").matches) {
+    closeMobileOverlays();
+  }
 });
 
 async function loadGraph() {
@@ -4603,6 +4691,7 @@ function setActiveLibrary(preferredMode, preferredStimulusId = "") {
   });
 }
 
+setupMobileOverlayControls();
 syncUI();
 setAutoRotateEnabled(state.autoRotate, false);
 renderTimeline();

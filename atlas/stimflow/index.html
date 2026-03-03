@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>model - Clinical Brain Network Pathway Atlas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>model - Brain Network Pathway Atlas</title>
     <style>
       :root {
         --safe-top: env(safe-area-inset-top, 0px);
@@ -97,6 +97,8 @@
         padding: 12px;
         user-select: none;
         pointer-events: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
       }
 
       #liveNarrationPanel {
@@ -112,6 +114,8 @@
         border-radius: 12px;
         padding: 10px;
         pointer-events: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
       }
 
       #regionQuickCard {
@@ -515,6 +519,10 @@
         font-weight: 600;
       }
 
+      #mobileDock {
+        display: none;
+      }
+
       @media (max-width: 520px), (pointer: coarse) {
         #build,
         #hud {
@@ -537,25 +545,65 @@
           font-size: 11px;
         }
 
+        #mobileDock {
+          position: fixed;
+          left: calc(var(--safe-left) + 12px);
+          right: calc(var(--safe-right) + 12px);
+          bottom: calc(var(--safe-bottom) + 12px);
+          z-index: 40;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 8px;
+          pointer-events: auto;
+        }
+
+        #mobileDock button {
+          min-height: 44px;
+          border-radius: 999px;
+          border: 1px solid rgba(174, 219, 255, 0.42);
+          background: rgba(4, 12, 34, 0.88);
+          color: #eff7ff;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          touch-action: manipulation;
+        }
+
+        #mobileDock button[aria-pressed="true"] {
+          border-color: rgba(176, 237, 255, 0.9);
+          background: rgba(45, 112, 172, 0.9);
+          color: #fff;
+        }
+
         #panel {
           left: calc(var(--safe-left) + 12px);
           right: calc(var(--safe-right) + 12px);
           top: auto;
-          bottom: calc(var(--safe-bottom) + 12px);
+          bottom: calc(var(--safe-bottom) + 64px);
           width: auto;
-          max-height: 66vh;
+          max-height: 58vh;
+          display: none;
         }
 
         #liveNarrationPanel {
           left: calc(var(--safe-left) + 12px);
           right: calc(var(--safe-right) + 12px);
           width: auto;
-          top: calc(var(--safe-top) + 108px);
-          max-height: 26vh;
+          top: calc(var(--safe-top) + 88px);
+          max-height: 30vh;
+          display: none;
         }
 
         #liveNarrationLog {
-          max-height: calc(26vh - 48px);
+          max-height: calc(30vh - 48px);
+        }
+
+        body.mobile-panel-open #panel {
+          display: block;
+        }
+
+        body.mobile-log-open #liveNarrationPanel {
+          display: block;
         }
 
         #regionQuickCard {
@@ -571,6 +619,11 @@
         #panel input[type="checkbox"] {
           transform: scale(1.25);
           transform-origin: left center;
+        }
+
+        body.mobile-panel-open #masthead,
+        body.mobile-log-open #masthead {
+          display: none;
         }
       }
     </style>
@@ -588,7 +641,7 @@
     <div id="build">STIMFLOW • ARISTOTLE • BUILD 1772551001</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
-      <div class="name">Clinical Brain Network Pathway Atlas</div>
+      <div class="name">Brain Network Pathway Atlas</div>
       <div class="sub">Educational 3D map of large-scale brain pathway dynamics across stimuli and sleep stages.</div>
     </div>
     <div id="liveNarrationPanel" aria-live="polite">
@@ -601,9 +654,14 @@
         Region quick card appears here with the region's commonly described functional role.
       </div>
     </div>
+    <div id="mobileDock" aria-label="Mobile overlay controls">
+      <button id="btnMobilePanel" type="button" aria-pressed="false">Controls</button>
+      <button id="btnMobileNarration" type="button" aria-pressed="false">Narration</button>
+      <button id="btnMobileCanvas" type="button" aria-pressed="false">Canvas</button>
+    </div>
 
     <div id="panel">
-      <div class="title">Clinical Brain Network Pathway Atlas</div>
+      <div class="title">Brain Network Pathway Atlas</div>
       <div id="quickStartCard" class="small">
         1) Choose a scenario. 2) Press Play. 3) Watch major regions and click a region for role details.
       </div>
