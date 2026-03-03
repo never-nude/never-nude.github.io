@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "algorithm_version": 2,
+  "graph_file": "aal_graph_dense.json",
+  "stimuli_file": "stimuli.library.json",
+  "connectivity_file": "connectivity.empirical.json",
+  "stimuli": {
+    "music": {
+      "reachable_nodes": 2817,
+      "core_edges": 5845,
+      "extended_edges": 3460,
+      "first12": [
+        {
+          "aal_label": "Heschl_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Heschl_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Temporal_Sup_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Temporal_Sup_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Temporal_Mid_R",
+          "arrival_s": 0.339,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Temporal_Mid_L",
+          "arrival_s": 0.375,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Temporal_Inf_R",
+          "arrival_s": 0.806,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Heschl_L__001",
+          "arrival_s": 0.844,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Heschl_L__002",
+          "arrival_s": 0.844,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Heschl_L__003",
+          "arrival_s": 0.844,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Heschl_L__004",
+          "arrival_s": 0.844,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Heschl_L__005",
+          "arrival_s": 0.844,
+          "tier": "core"
+        }
+      ]
+    },
+    "pain": {
+      "reachable_nodes": 2827,
+      "core_edges": 5796,
+      "extended_edges": 3558,
+      "first12": [
+        {
+          "aal_label": "Insula_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Cingulum_Ant_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Cingulum_Ant_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Postcentral_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Postcentral_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Thalamus_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Thalamus_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Precentral_R",
+          "arrival_s": 0.42,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Precentral_L",
+          "arrival_s": 0.452,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Parietal_Inf_L",
+          "arrival_s": 0.803,
+          "tier": "core"
+        },
+        {
+          "aal_label": "SupraMarginal_R",
+          "arrival_s": 0.803,
+          "tier": "core"
+        }
+      ]
+    },
+    "fear": {
+      "reachable_nodes": 2827,
+      "core_edges": 5761,
+      "extended_edges": 3617,
+      "first12": [
+        {
+          "aal_label": "Insula_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Cingulum_Ant_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Cingulum_Ant_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Amygdala_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Amygdala_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_L__001",
+          "arrival_s": 0.832,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_L__002",
+          "arrival_s": 0.832,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_L__003",
+          "arrival_s": 0.832,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_L__004",
+          "arrival_s": 0.832,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_L__005",
+          "arrival_s": 0.832,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Insula_L__006",
+          "arrival_s": 0.832,
+          "tier": "core"
+        }
+      ]
+    },
+    "reward": {
+      "reachable_nodes": 2825,
+      "core_edges": 5777,
+      "extended_edges": 3562,
+      "first12": [
+        {
+          "aal_label": "Frontal_Med_Orb_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Frontal_Med_Orb_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Caudate_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Caudate_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Putamen_L",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Putamen_R",
+          "arrival_s": 0.0,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Frontal_Med_Orb_L__001",
+          "arrival_s": 0.524,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Frontal_Med_Orb_L__002",
+          "arrival_s": 0.524,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Frontal_Med_Orb_L__003",
+          "arrival_s": 0.524,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Frontal_Med_Orb_L__004",
+          "arrival_s": 0.524,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Frontal_Med_Orb_L__005",
+          "arrival_s": 0.524,
+          "tier": "core"
+        },
+        {
+          "aal_label": "Frontal_Med_Orb_L__006",
+          "arrival_s": 0.524,
+          "tier": "core"
+        }
+      ]
+    }
+  }
+}
