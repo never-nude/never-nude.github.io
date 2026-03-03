@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772567400";
+const STIMFLOW_BUILD_ID = "1772569001";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -1422,7 +1422,7 @@ const mouse = new THREE.Vector2();
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 1000);
-const DEFAULT_CAMERA_Z = IS_TOUCH_DEVICE ? 4.15 : 3.75;
+const DEFAULT_CAMERA_Z = IS_TOUCH_DEVICE ? 5.55 : 3.75;
 camera.position.set(-0.06, 1.12, DEFAULT_CAMERA_Z);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
