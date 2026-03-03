@@ -71,6 +71,25 @@
         color: #d8e8fa;
       }
 
+      #graphSemantics {
+        position: fixed;
+        left: calc(var(--safe-left) + 12px);
+        top: calc(var(--safe-top) + 110px);
+        width: 320px;
+        pointer-events: none;
+        padding: 7px 10px;
+        border-radius: 10px;
+        background: rgba(3, 8, 22, 0.66);
+        border: 1px solid rgba(156, 207, 255, 0.18);
+        color: #d8e8fa;
+        font-size: 12px;
+        line-height: 1.3;
+      }
+
+      #graphSemantics .line + .line {
+        margin-top: 3px;
+      }
+
       #build {
         top: calc(var(--safe-top) + 12px);
       }
@@ -104,7 +123,7 @@
       #liveNarrationPanel {
         position: fixed;
         left: calc(var(--safe-left) + 12px);
-        top: calc(var(--safe-top) + 182px);
+        top: calc(var(--safe-top) + 220px);
         width: 280px;
         max-height: calc(100vh - var(--safe-top) - var(--safe-bottom) - 196px);
         overflow: hidden;
@@ -247,6 +266,58 @@
         font-size: 15px;
         font-weight: 600;
         min-height: 38px;
+      }
+
+      #stimSummaryBlock {
+        border: 1px solid rgba(164, 214, 255, 0.28);
+        border-radius: 10px;
+        background: rgba(130, 172, 220, 0.12);
+        padding: 8px 10px;
+      }
+
+      #stimSummaryLabel {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        opacity: 0.96;
+        margin-bottom: 5px;
+      }
+
+      #stimExplain {
+        font-size: 12.5px;
+        line-height: 1.44;
+        min-height: 52px;
+      }
+
+      #stimSourceBlock {
+        border: 1px solid rgba(160, 206, 255, 0.22);
+        border-radius: 10px;
+        background: rgba(90, 136, 192, 0.12);
+        padding: 8px 10px;
+      }
+
+      #stimSourceLabel {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        opacity: 0.96;
+        margin-bottom: 5px;
+      }
+
+      #stimSourceBlock .src-line {
+        font-size: 12px;
+        line-height: 1.35;
+        opacity: 0.9;
+        margin: 2px 0;
+      }
+
+      #stimSourceBlock a {
+        color: #8fd4ff;
+        text-decoration: none;
+      }
+
+      #stimSourceBlock a:hover {
+        text-decoration: underline;
       }
 
       #basisBlock,
@@ -514,24 +585,6 @@
         border: 1px solid rgba(255, 255, 255, 0.35);
       }
 
-      #sourceNotes a {
-        color: #bfe5ff;
-        text-decoration: none;
-      }
-
-      #sourceNotes a:hover {
-        text-decoration: underline;
-      }
-
-      #sourceNotes .src-title {
-        font-weight: 600;
-        color: #fff;
-      }
-
-      #sourceNotes .src-line {
-        margin-top: 4px;
-      }
-
       #mobileDock {
         display: none;
       }
@@ -556,6 +609,16 @@
 
         #masthead .sub {
           font-size: 11px;
+        }
+
+        #graphSemantics {
+          left: calc(var(--safe-left) + 12px);
+          right: calc(var(--safe-right) + 12px);
+          width: auto;
+          top: calc(var(--safe-top) + 104px);
+          font-size: 11px;
+          line-height: 1.25;
+          padding: 6px 8px;
         }
 
         #mobileDock {
@@ -608,7 +671,7 @@
           left: calc(var(--safe-left) + 12px);
           right: calc(var(--safe-right) + 12px);
           width: auto;
-          top: calc(var(--safe-top) + 88px);
+          top: calc(var(--safe-top) + 146px);
           max-height: 30vh;
           display: none;
         }
@@ -672,25 +735,22 @@
     </script>
   </head>
   <body>
-    <div id="build">STIMFLOW • PLATO • BUILD 1772553304</div>
+    <div id="build">STIMFLOW • VERITAS • BUILD 1772567400</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
       <div class="name">Cortical Flow Atlas</div>
       <div class="sub">
-        Each node is an AAL brain region, and each line shows a functional coupling link used for education.
-        Choose a scenario and press Play to watch major regions activate in sequence over the timeline.
-        Click or search any region to highlight it and read a short summary of its commonly described role.
+        Interactive map of how activity patterns move across brain regions during each scenario.
+        Use this for pathway interpretation and education, not for clinical diagnosis.
       </div>
+    </div>
+    <div id="graphSemantics" aria-hidden="true">
+      <div class="line">Nodes - grouped markers for named brain regions, used to simplify complex anatomy into readable map points.</div>
+      <div class="line">Edges - region pairs that often activate together in brain-imaging research; these show association, not a literal physical cable.</div>
     </div>
     <div id="liveNarrationPanel" aria-live="polite">
       <div class="title">Live narration</div>
       <div id="liveNarrationLog">Waiting for pathway events...</div>
-    </div>
-    <div id="regionQuickCard" class="empty" aria-live="polite">
-      <div id="regionQuickTitle" class="title">Hover or select a region</div>
-      <div id="regionQuickSummary" class="summary">
-        Region quick card appears here with the region's commonly described functional role.
-      </div>
     </div>
     <div id="mobileDock" aria-label="Mobile overlay controls">
       <button id="btnMobilePanel" type="button" aria-pressed="false">Controls</button>
@@ -703,13 +763,16 @@
       <div id="quickStartCard" class="small">
         1) Choose a scenario. 2) Press Play. 3) Watch major regions and click a region for role details.
       </div>
-      <div class="small" style="margin-top: 6px;">
-        Educational simulation only. Not for diagnosis, treatment decisions, or patient-specific inference.
-      </div>
-
       <div class="stack" id="stimSelectBlock">
         <div class="small">Scenario (stimulus)</div>
         <select id="stimSelect"></select>
+      </div>
+
+      <div id="stimSummaryBlock" class="stack">
+        <div id="stimSummaryLabel">Stimulus summary</div>
+        <div id="stimExplain" class="small">
+          Select a scenario to view a 2-4 sentence educational summary of the pathway pattern being simulated.
+        </div>
       </div>
 
       <div class="row">
@@ -881,21 +944,23 @@
       </div>
 
       <div id="miniKey" class="small">
-        <strong>Key:</strong> Nodes = AAL (Automated Anatomical Labeling) atlas regions.
-        <br />
-        Edges = functional coupling links (educational, non-directional).
+        <strong>Controls:</strong>
         <div class="hint mono">Mouse: left-drag rotate | right-drag pan | scroll zoom</div>
       </div>
 
-      <div id="sourceNotes" class="small stack">
-        <div class="src-title">Sources (fact-check)</div>
-        <div class="src-line">Atlas parcellation and labels: AAL (Automated Anatomical Labeling).</div>
-        <div class="src-line">Scenario + connectivity inputs (this build): <a href="./stimuli.empirical.json" target="_blank" rel="noopener noreferrer">stimuli.empirical.json</a>, <a href="./stimuli.template.json" target="_blank" rel="noopener noreferrer">stimuli.template.json</a>, <a href="./connectivity.empirical.json" target="_blank" rel="noopener noreferrer">connectivity.empirical.json</a>.</div>
-        <div class="src-line">Region role summaries: educational synthesis mapped to AAL regions in <a href="../edu/aal_region_cards.json" target="_blank" rel="noopener noreferrer">aal_region_cards.json</a>.</div>
-        <div class="src-line">External references: <a href="https://doi.org/10.1006/nimg.2001.0978" target="_blank" rel="noopener noreferrer">AAL atlas paper</a>, <a href="https://neurosynth.org/" target="_blank" rel="noopener noreferrer">Neurosynth</a>, <a href="https://www.humanconnectome.org/" target="_blank" rel="noopener noreferrer">Human Connectome Project</a>.</div>
+      <div id="stimSourceBlock" class="stack">
+        <div id="stimSourceLabel">Sources & Scenario Detail</div>
+        <div class="src-line">AAL citation: Tzourio-Mazoyer N, Landeau B, Papathanassiou D, et al. (2002). Automated Anatomical Labeling of activations in SPM using a macroscopic anatomical parcellation of the MNI MRI single-subject brain. NeuroImage, 15(1), 273-289. <a href="https://doi.org/10.1006/nimg.2001.0978" target="_blank" rel="noopener noreferrer">https://doi.org/10.1006/nimg.2001.0978</a></div>
+        <div class="src-line">Network references: Van Essen DC, et al. (2013) Human Connectome Project overview; Yarkoni T, et al. (2011) Neurosynth automated synthesis.</div>
+        <div id="stimSourceTier" class="src-line">Scenario source: loading...</div>
+        <div id="stimSourceEvidence" class="src-line">Evidence basis: loading...</div>
+        <div id="stimSourceMechanism" class="src-line">Mechanism context: loading...</div>
+        <div id="stimSourceDatasets" class="src-line">Datasets: loading...</div>
+        <div id="stimSourceCitations" class="src-line">Scenario citation tags: loading...</div>
+        <div id="stimSourceLinks" class="src-line">Links: loading...</div>
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=1772553304"></script>
+    <script type="module" src="./stimflow.js?v=1772567400"></script>
   </body>
 </html>

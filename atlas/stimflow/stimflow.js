@@ -3,8 +3,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772553304";
-const MILESTONE_LABEL = "PLATO";
+const STIMFLOW_BUILD_ID = "1772567400";
+const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
 const GRAPH_DENSE_URL = `../assets/aal_graph_dense.json?v=${CACHE_BUST}`;
@@ -35,9 +35,14 @@ const CARD_LABEL_ALIASES = new Map([
   ["Frontal_Med_Orb_R", "Frontal_Orb_Med_R"],
 ]);
 const PATH_SEQUENCE_LIMIT = 12;
+const NODE_BASE_SCALE_FACTOR = 0.70;
+const SELECTED_REGION_SCALE_MULTIPLIER = 2.50;
 const DEFAULT_SCRUB_STEP_S = 0.5;
 const DEFAULT_TRAVEL_WINDOW_S = 7.0;
 const DEFAULT_MODEL_DURATION_S = 25.0;
+const VERY_LOW_CONFIDENCE_THRESHOLD = 0.26;
+const VERY_LOW_CONFIDENCE_NOTE =
+  "Evidence for a stable canonical pathway is limited, so interpret this map as a provisional network hypothesis.";
 const DEFAULT_CORE_QUANTILE = 0.62;
 const DEFAULT_ENGAGEMENT = {
   arrival_quantile: 0.88,
@@ -144,6 +149,18 @@ const SEARCH_CONCEPTS = [
       || canonical === "Vermis_10",
   },
 ];
+
+const CORE_SOURCE_LINKS = [
+  { label: "AAL DOI", href: "https://doi.org/10.1006/nimg.2001.0978" },
+  { label: "HCP Young Adult", href: "https://www.humanconnectome.org/study/hcp-young-adult" },
+  { label: "HCP Wiki", href: "https://wiki.humanconnectome.org/" },
+  { label: "Neurosynth", href: "https://neurosynth.org/" },
+];
+const MECHANISM_SOURCE_LINKS_COMMON = [
+  { label: "MedlinePlus Drug Info", href: "https://medlineplus.gov/druginformation.html" },
+  { label: "DailyMed", href: "https://dailymed.nlm.nih.gov/dailymed/" },
+  { label: "NCBI Bookshelf", href: "https://www.ncbi.nlm.nih.gov/books/" },
+];
 const SEARCH_HIGHLIGHT_PALETTE = [
   0xffef00,
   0x00e8ff,
@@ -168,6 +185,7 @@ const SEARCH_FOCUS_DURATION_MS = 520;
 const SEARCH_FOCUS_MIN_DISTANCE = 0.22;
 const SEARCH_FOCUS_MAX_DISTANCE = 0.78;
 const SEARCH_FOCUS_PADDING = 3.2;
+const CLICK_DRAG_THRESHOLD_PX = 6;
 const ATLAS_MODE_ID = "atlas_explore";
 const DEFAULT_STIMULUS_ID = "resting_state_baseline";
 const STIMULUS_REAL_COURSE_SECONDS = new Map([
@@ -578,7 +596,7 @@ function normalizeStimulus(rawStimulus, index, libraryHrf = DEFAULT_HRF) {
   const id = deriveStimulusId(rawStimulus, index);
   const label = safeText(rawStimulus?.label, id);
   const tier = normalizeTier(rawStimulus?.tier);
-  const explanation = safeText(rawStimulus?.explanation, "Simplified educational summary.");
+  const explanation = safeText(rawStimulus?.explanation, "Summary unavailable.");
   const rawConfidence = Number(rawStimulus?.confidence);
   const confidence = Number.isFinite(rawConfidence) ? clamp01(rawConfidence) : 0.4;
   const evidenceType = safeText(
@@ -691,6 +709,284 @@ function confidenceLevel(score) {
   return { level: "low", className: "conf-low" };
 }
 
+function joinSourceItems(items, fallback = "not specified", maxItems = 3) {
+  const clean = (Array.isArray(items) ? items : [])
+    .map((x) => safeText(x))
+    .filter(Boolean)
+    .slice(0, maxItems);
+  return clean.length ? clean.join("; ") : fallback;
+}
+
+function isSummaryDisclaimerSentence(sentence) {
+  const text = safeText(sentence);
+  if (!text) return false;
+  return [
+    /\bnon[- ]diagnostic\b/i,
+    /\bsimplified\b/i,
+    /\beducational\b/i,
+    /\bplaceholder\b/i,
+    /\bconservative\b.*\b(approximation|template|placeholder)\b/i,
+    /\bnot\b.*\b(clinical|diagnostic|behavioral|patient|treatment|recommendation|prescribing|dose|efficacy|safety|risk|pharmacokinetic|pharmacodynamic|prediction|model)\b/i,
+    /\bdoes not\b.*\b(infer|imply|represent|model|encode)\b/i,
+    /\btrait-level\b/i,
+    /\bindividual(?:ized)?\b/i,
+  ].some((pattern) => pattern.test(text));
+}
+
+function sanitizeStimulusSummary(explanation, confidenceScore) {
+  const raw = safeText(explanation, "Summary unavailable.");
+  const sentences = raw
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => safeText(part))
+    .filter(Boolean);
+  if (!sentences.length) return "Summary unavailable.";
+
+  const informative = sentences.filter((sentence) => !isSummaryDisclaimerSentence(sentence));
+  let cleaned = informative.join(" ").trim();
+  if (!cleaned) cleaned = sentences[0];
+
+  const confidence = clamp01(Number(confidenceScore) || 0);
+  if (confidence <= VERY_LOW_CONFIDENCE_THRESHOLD) {
+    const hasLowConfidenceCue = /\b(limited|low-confidence|provisional|uncertain|sparse)\b/i.test(cleaned);
+    if (!hasLowConfidenceCue) cleaned = `${cleaned} ${VERY_LOW_CONFIDENCE_NOTE}`;
+  }
+  return cleaned;
+}
+
+function stimulusExperienceSummary(stimulus) {
+  const key = `${safeText(stimulus?.id)} ${safeText(stimulus?.label)} ${safeText(stimulus?.evidence_type)}`.toLowerCase();
+  const withSources = (entry, links = MECHANISM_SOURCE_LINKS_COMMON) => ({ ...entry, mechanismLinks: links });
+
+  if (/\bibuprofen\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is lower inflammatory pain intensity and less tenderness over time.",
+      processing: "In this atlas, thalamic-insular-cingulate pain appraisal networks show reduced nociceptive salience as incoming pain signaling drops.",
+      bridge: "Ibuprofen's anti-inflammatory action is mainly peripheral (outside the brain, via prostaglandin pathway suppression); the brain map reflects how reduced peripheral pain input is represented centrally.",
+      sourceContext: "Mechanism synthesis: NSAID pharmacology (peripheral inflammation signaling) + cortical pain-network representation.",
+    });
+  }
+
+  if (/\bacetaminophen\b|paracetamol/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is reduced pain and fever discomfort, often without strong peripheral anti-inflammatory action.",
+      processing: "This atlas highlights thalamic-insular-cingulate pain and interoceptive pathways where perceived pain burden can decrease.",
+      bridge: "For acetaminophen, central pain and thermoregulatory modulation is emphasized more than classic peripheral anti-inflammatory effects.",
+      sourceContext: "Mechanism synthesis: analgesic/antipyretic pharmacology + cortical pain and interoception networks.",
+    });
+  }
+
+  if (/\bketamine\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effects can include altered perception, dissociation, and shifts in pain experience or mood state.",
+      processing: "This pattern emphasizes thalamo-cortical, insular, cingulate, and frontal-network reconfiguration commonly reported in ketamine challenge paradigms.",
+      bridge: "At systems level, NMDA-related signaling shifts can change sensory integration and prediction, which can manifest as altered conscious experience.",
+      sourceContext: "Mechanism synthesis: NMDA-antagonist challenge literature + large-scale network integration models.",
+    });
+  }
+
+  if (/\b(myocardial|infarction|chest_pain|acute_myocardial)\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is acute chest-pain distress with autonomic symptoms such as diaphoresis, dyspnea, or nausea.",
+      processing: "Insular-cingulate-thalamic and somatosensory pathways commonly represent interoceptive threat and pain salience during cardiac pain states.",
+      bridge: "Primary injury is cardiac/peripheral, while this map shows how intense visceral and autonomic signals are represented centrally in the brain.",
+      sourceContext: "Mechanism synthesis: visceral pain/interoception neuroscience + acute cardiac distress network mapping.",
+    });
+  }
+
+  if (/\b(stroke|ischemic|infarct|hemorrhage|intracerebral)\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is sudden focal neurologic deficit such as weakness, speech disturbance, neglect, or altered awareness.",
+      processing: "Region-specific cortical and subcortical networks lose normal integration, with surrounding systems showing compensatory or disrupted communication.",
+      bridge: "The represented pathway pattern reflects territory-level network disruption rather than a vessel-level diagnostic determination.",
+      sourceContext: "Mechanism synthesis: acute cerebrovascular network disruption literature + territory-level functional mapping.",
+    });
+  }
+
+  if (/\b(seizure|epilep|postictal|status)\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect can include transient sensory/motor events, impaired awareness, convulsions, and post-event confusion.",
+      processing: "Focal or thalamo-cortical circuits enter abnormally synchronized high-excitability states with rapid recruitment of connected regions.",
+      bridge: "Symptoms emerge as synchronized activity propagates across motor, limbic, and association networks, then resolves into postictal network suppression.",
+      sourceContext: "Mechanism synthesis: epilepsy network physiology + focal/generalized propagation models.",
+    });
+  }
+
+  if (/\b(anaphylaxis|allergic|allergy|systemic_reaction)\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is abrupt systemic distress with airway, skin, cardiovascular, and autonomic symptoms.",
+      processing: "Insular-cingulate-amygdalar salience and interoceptive networks commonly represent high-threat internal-body signals.",
+      bridge: "Primary pathology is systemic immune-mediated; this brain map represents central integration of severe autonomic and respiratory distress signals.",
+      sourceContext: "Mechanism synthesis: autonomic/interoceptive distress neuroscience + severe allergic reaction clinical context.",
+    });
+  }
+
+  if (/\b(sepsis|delirium|encephalopathy)\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is fluctuating attention, confusion, altered cognition, and reduced executive clarity.",
+      processing: "Thalamic, frontal-control, posterior-midline, and limbic-memory systems show reduced coordinated signaling.",
+      bridge: "Systemic inflammatory and metabolic stress can disrupt large-scale brain-network integration, which manifests as delirium-like cognitive states.",
+      sourceContext: "Mechanism synthesis: critical-care delirium neuroscience + distributed network-disruption models.",
+    });
+  }
+
+  if (/\b(hypoglycemia|neuroglycopenia|low_glucose)\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is adrenergic warning symptoms plus cognitive slowing, confusion, or altered awareness if severe.",
+      processing: "Insular-cingulate-thalamic warning networks and frontal-control systems track metabolic threat and cognitive load changes.",
+      bridge: "As glucose availability drops, network efficiency declines and autonomic alarm pathways rise, shaping both bodily and cognitive symptoms.",
+      sourceContext: "Mechanism synthesis: hypoglycemia counterregulation physiology + interoceptive/control-network mapping.",
+    });
+  }
+
+  if (/\borgasm\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is peak autonomic arousal with rewarding, climax-associated bodily sensations.",
+      processing: "This map emphasizes limbic-insular-cingulate-frontal valuation and salience integration during climax-associated states.",
+      bridge: "Cortical and limbic signals interact with hypothalamic/brainstem autonomic control and spinal pattern generators that coordinate pelvic output.",
+      sourceContext: "Mechanism synthesis: autonomic and sexual-function neurophysiology + cortical salience/valuation network mapping.",
+    });
+  }
+
+  if (/\bsexual[_ -]?arousal\b/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is heightened arousal, attention to sexual cues, and autonomic bodily readiness.",
+      processing: "Insular, cingulate, limbic, and valuation-related frontal regions commonly coordinate salience and motivational state.",
+      bridge: "Brain-state changes influence autonomic and endocrine pathways that shape genital and cardiovascular arousal responses.",
+      sourceContext: "Mechanism synthesis: sexual-arousal neurophysiology + salience and valuation network models.",
+    });
+  }
+
+  if (/(pain|pinprick|nocicept|analges|nsaid|opioid|morphine|fentanyl|hydromorphone|ketorolac)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is a change in pain intensity, urgency, and body discomfort.",
+      processing: "Somatosensory cortex contributes localization/intensity while insula and anterior cingulate contribute salience and affective load.",
+      bridge: "Changes in peripheral nociceptive input and central modulation together shape how pain is consciously experienced and behaviorally acted on.",
+      sourceContext: "Mechanism synthesis: nociceptive neurophysiology + cortical pain-network mapping.",
+    });
+  }
+
+  if (/(music|auditory|hearing|heschl|temporal[_ -]?sup|voice|language)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is stronger detection of sound patterns, rhythm, timbre, or speech salience.",
+      processing: "Auditory cortex parses frequency/time structure, then temporal-frontal circuits integrate meaning, memory, and attention.",
+      bridge: "The felt percept emerges as sensory decoding is integrated with expectation, context, and memory networks.",
+      sourceContext: "Mechanism synthesis: auditory systems neuroscience + task-fMRI auditory network findings.",
+    });
+  }
+
+  if (/(fear|threat|anx|panic|stress|hypervigil|amygdala)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is heightened vigilance, faster threat appraisal, and autonomic arousal.",
+      processing: "Amygdala-salience circuits detect relevance while cingulate and frontal control regions regulate response selection.",
+      bridge: "When salience weighting rises, body-state and attention systems shift toward rapid protective behavior.",
+      sourceContext: "Mechanism synthesis: threat/salience task families + autonomic state regulation networks.",
+    });
+  }
+
+  if (/(reward|surprise|motivat|dopamin|striat|orbitofrontal)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is increased motivation, salience of outcomes, and reinforcement-driven behavior.",
+      processing: "Fronto-striatal valuation pathways estimate expected value and prediction error, then update action policies.",
+      bridge: "This can manifest as stronger approach behavior, expectancy shifts, and attention toward reward-relevant cues.",
+      sourceContext: "Mechanism synthesis: reward-learning neuroscience + valuation-network task paradigms.",
+    });
+  }
+
+  if (/(sleep|nrem|rem|wake|arousal|melatonin|circadian)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is a stage-dependent shift in alertness, sensory gating, and mentation.",
+      processing: "Thalamo-cortical gating and limbic-frontal balance change across wake, NREM, and REM network states.",
+      bridge: "Those network shifts alter responsiveness, memory consolidation context, and dream-like or internally generated cognition.",
+      sourceContext: "Mechanism synthesis: sleep-stage neurophysiology + fMRI sleep network studies.",
+    });
+  }
+
+  if (/(memory|learning|hippocamp|recall|encoding)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is stronger or weaker encoding, retrieval fluency, and contextual recall.",
+      processing: "Hippocampal-medial temporal systems bind new information, while frontal control networks guide strategy and recall.",
+      bridge: "Experience becomes memory when salience, context binding, and retrieval control are coordinated across these networks.",
+      sourceContext: "Mechanism synthesis: learning/memory systems neuroscience + task-fMRI encoding/retrieval patterns.",
+    });
+  }
+
+  if (/(benzodiazep|klonopin|clonazepam|lorazepam|midazolam|propofol|dexmedetomidine|sedat)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is reduced arousal, anxiolysis/sedation, and slower reactive processing.",
+      processing: "Frontal-limbic and thalamo-cortical signaling shifts toward lower excitatory drive and stronger inhibitory tone.",
+      bridge: "These network changes can manifest as calmer affect, less vigilance, and reduced response intensity.",
+      sourceContext: "Mechanism synthesis: sedative/anxiolytic pharmacology + thalamo-cortical state-regulation networks.",
+    });
+  }
+
+  if (/(losartan|lisinopril|amlodipine|metoprolol|cardio|hypertens|angiotensin|beta[- ]?block)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effects are subtle internal-state shifts rather than a discrete sensory event.",
+      processing: "Interoceptive-insular-cingulate and control networks track cardiovascular body state and contextual salience.",
+      bridge: "Primary drug action is systemic/peripheral; this map shows likely central representation of changing autonomic/interoceptive input.",
+      sourceContext: "Mechanism synthesis: cardiovascular pharmacology + interoceptive/autonomic brain-network representation.",
+    });
+  }
+
+  if (/(touch|tactile|itch|tickle|temperature|warm|cool|pressure|vibration|sneeze|cough|yawn|hunger|thirst|nausea|dizziness|vertigo|dyspnea|heartbeat|bladder|bowel)/.test(key)) {
+    return withSources({
+      manifestation: "Typical person-level effect is a bodily sensation, urge, or autonomic-state signal that biases behavior.",
+      processing: "Primary modality pathways plus insular-cingulate integration map intensity, salience, and action urgency.",
+      bridge: "Cortical representation interacts with autonomic and brainstem-spinal control loops to shape the observable response.",
+      sourceContext: "Mechanism synthesis: interoception/autonomic neurophysiology + salience network mapping.",
+    });
+  }
+
+  return withSources({
+    manifestation: "Person-level effects can appear as shifts in attention, emotion, body state, or behavior depending on context.",
+    processing: "Distributed cortical and subcortical networks coordinate salience detection, integration, and response selection over time.",
+    bridge: "In this atlas, pathways represent network-level communication patterns linked to likely experiential and behavioral manifestations.",
+    sourceContext: "Mechanism synthesis: systems-neuroscience pathway interpretation anchored to the loaded stimulus library.",
+  });
+}
+
+function renderMechanismLinksLine(links = []) {
+  const clean = (Array.isArray(links) ? links : [])
+    .filter((item) => item && safeText(item.label) && safeText(item.href));
+  if (!clean.length) return "";
+  const seen = new Set();
+  const dedup = clean.filter((item) => {
+    const href = safeText(item.href);
+    if (seen.has(href)) return false;
+    seen.add(href);
+    return true;
+  });
+  return `Mechanism links: ${dedup
+    .map((item) => `<a href="${escapeHtml(item.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.label)}</a>`)
+    .join(" | ")}`;
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderSourceLinksLine(sourceFileName = "") {
+  const links = [];
+  if (/^[a-z0-9_.-]+\.json$/i.test(sourceFileName)) {
+    links.push({ label: sourceFileName, href: `./${sourceFileName}` });
+  }
+  links.push(...CORE_SOURCE_LINKS);
+  const seen = new Set();
+  const dedup = links.filter((item) => {
+    if (seen.has(item.href)) return false;
+    seen.add(item.href);
+    return true;
+  });
+  return `Links: ${dedup
+    .map((item) => `<a href="${escapeHtml(item.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.label)}</a>`)
+    .join(" | ")}`;
+}
+
 function activeRealCourseSeconds() {
   const raw = Number(activeStimulus?.timing_profile?.real_course_s);
   if (!Number.isFinite(raw) || raw <= 0) return null;
@@ -706,13 +1002,36 @@ function modelTimeToRealSeconds(modelTimeS, modelDurationS) {
 }
 
 function renderStimulusMeta(stimulus) {
-  const explanation = stimulus.explanation || "Simplified educational summary.";
-  const realCourseS = Number(stimulus?.timing_profile?.real_course_s);
-  const timingSuffix = Number.isFinite(realCourseS) && realCourseS > 0
-    ? ` Educational timing window: approximately ${formatDurationCompact(realCourseS)} from onset to offset (modeled approximation).`
-    : "";
+  const explanation = sanitizeStimulusSummary(stimulus.explanation, stimulus.confidence);
+  const outcome = stimulusExperienceSummary(stimulus);
+  const seeds = Array.isArray(stimulus?.seed_regions)
+    ? stimulus.seed_regions
+        .map((s) => prettyAalLabel(resolveAalAlias(s?.aal_label || "")))
+        .filter(Boolean)
+        .slice(0, 4)
+    : [];
+  const seedLine = seeds.length
+    ? `Primary seeded regions include ${seeds.join(", ")}.`
+    : "Primary seeded regions vary by the selected scenario.";
   if (ui.stimExplain) {
-    ui.stimExplain.textContent = `${explanation}${timingSuffix}`;
+    ui.stimExplain.textContent =
+      `${explanation} ${outcome.manifestation} ${outcome.processing} ${outcome.bridge} ${seedLine}`;
+  }
+
+  const tier = safeText(stimulus?.tier, "not specified");
+  const evidenceType = safeText(stimulus?.evidence_type, "not specified");
+  const datasets = joinSourceItems(stimulus?.datasets, "not specified");
+  const citations = joinSourceItems(stimulus?.citations, "not specified");
+  const sourceFile = safeText(stimulusLibrary?.source_name, "unknown");
+  if (ui.stimSourceTier) ui.stimSourceTier.textContent = `Scenario source: ${sourceFile} | tier ${tier}`;
+  if (ui.stimSourceEvidence) ui.stimSourceEvidence.textContent = `Evidence basis: ${evidenceType}`;
+  if (ui.stimSourceMechanism) ui.stimSourceMechanism.textContent = `Mechanism context: ${outcome.sourceContext}`;
+  if (ui.stimSourceDatasets) ui.stimSourceDatasets.textContent = `Datasets: ${datasets}`;
+  if (ui.stimSourceCitations) ui.stimSourceCitations.textContent = `Scenario citation tags: ${citations}`;
+  if (ui.stimSourceLinks) {
+    const primaryLinks = renderSourceLinksLine(sourceFile);
+    const mechanismLinks = renderMechanismLinksLine(outcome.mechanismLinks);
+    ui.stimSourceLinks.innerHTML = mechanismLinks ? `${primaryLinks}<br/>${mechanismLinks}` : primaryLinks;
   }
 
   if (!ui.stimConfidence) return;
@@ -725,8 +1044,14 @@ function renderStimulusMeta(stimulus) {
 function renderAtlasMeta() {
   if (ui.stimExplain) {
     ui.stimExplain.textContent =
-      "Atlas explore mode: no active stimulus. Use click, hover, search, and edge view to study baseline region organization and connectivity context.";
+      "Atlas explore mode has no active stimulus driving the network. Use click, hover, and region search to inspect baseline organization and connectivity context.";
   }
+  if (ui.stimSourceTier) ui.stimSourceTier.textContent = "Scenario source: atlas explore baseline (no active stimulus)";
+  if (ui.stimSourceEvidence) ui.stimSourceEvidence.textContent = "Evidence basis: baseline exploration";
+  if (ui.stimSourceMechanism) ui.stimSourceMechanism.textContent = "Mechanism context: no active stimulus selected in atlas-explore mode.";
+  if (ui.stimSourceDatasets) ui.stimSourceDatasets.textContent = "Datasets: not applicable";
+  if (ui.stimSourceCitations) ui.stimSourceCitations.textContent = "Scenario citation tags: structural atlas and connectivity context";
+  if (ui.stimSourceLinks) ui.stimSourceLinks.innerHTML = renderSourceLinksLine("stimuli.empirical.json");
   if (ui.stimConfidence) {
     ui.stimConfidence.classList.remove(...CONFIDENCE_CLASSES);
     ui.stimConfidence.textContent = "Signal confidence: n/a (atlas explore)";
@@ -856,6 +1181,12 @@ const ui = {
   progressFill: document.getElementById("progressFill"),
   stimConfidence: document.getElementById("stimConfidence"),
   stimExplain: document.getElementById("stimExplain"),
+  stimSourceTier: document.getElementById("stimSourceTier"),
+  stimSourceEvidence: document.getElementById("stimSourceEvidence"),
+  stimSourceMechanism: document.getElementById("stimSourceMechanism"),
+  stimSourceDatasets: document.getElementById("stimSourceDatasets"),
+  stimSourceCitations: document.getElementById("stimSourceCitations"),
+  stimSourceLinks: document.getElementById("stimSourceLinks"),
   majorRegionWords: document.getElementById("majorRegionWords"),
   majorRegionStatus: document.getElementById("majorRegionStatus"),
   pathSequence: document.getElementById("pathSequence"),
@@ -1028,6 +1359,7 @@ const regionCardLookup = new Map();
 
 let nodeMesh = null;
 let nodeHaloMesh = null;
+let nodeSelectionMesh = null;
 let hullGroup = null;
 let edgeLines = null;
 let edgeHighlightLines = null;
@@ -1038,6 +1370,7 @@ let edgesShown = 0;
 let hoveredIdx = null;
 let selectedIdx = null;
 let selectedNeighbors = new Set();
+let selectedRegionIndices = new Set();
 let hoverGroupLabel = "";
 const hoverGroupIndices = new Set();
 let pathEdgeKeys = new Set();
@@ -2704,7 +3037,11 @@ function renderTimeline() {
 
 function computeSelectedNeighbors() {
   selectedNeighbors = new Set();
+  selectedRegionIndices = new Set();
   if (selectedIdx === null) return;
+  const selectedLabel = canonicalNodeLabel(graph?.nodes?.[selectedIdx]?.name || "");
+  const sameRegion = labelToIndices.get(selectedLabel) || [];
+  for (const idx of sameRegion) selectedRegionIndices.add(idx);
   for (const e of edgesFiltered) {
     if (e.source === selectedIdx) selectedNeighbors.add(e.target);
     else if (e.target === selectedIdx) selectedNeighbors.add(e.source);
@@ -2720,13 +3057,40 @@ function applyNodeStyle() {
   const hrf = stimulusLibrary?.hrf || DEFAULT_HRF;
   const phaseWindowS = Math.max(0.5, (Number(hrf.peak_s) || 6) + (Number(hrf.fall_s) || 12));
 
-  const selectColor = new THREE.Color(0xf2f7ff);
-  const neighColor = new THREE.Color(0xc8d6e8);
+  const neighColor = new THREE.Color(0xffc6b8);
   const hoverColor = new THREE.Color(0xd5e8ff);
   const narrationPreviewColor = new THREE.Color(0xfff3ba);
   const haloDormant = new THREE.Color(0x7d90a6);
   const searchDimColor = new THREE.Color(0x16202e);
   const haloColor = new THREE.Color();
+  const selectOverlayCoreColor = new THREE.Color(0xff7f90);
+  const selectOverlayRegionColor = new THREE.Color(0xffa167);
+  const selectOverlayColor = new THREE.Color();
+  const selectOverlayDormantColor = new THREE.Color(0x000000);
+
+  const updateSelectionOverlay = (nodeIndex, baseNode, isPrimarySelection, isRegionSelection) => {
+    if (!nodeSelectionMesh) return;
+    if (isRegionSelection) {
+      const overlayScale = baseNode.baseScale * (
+        isPrimarySelection
+          ? (SELECTED_REGION_SCALE_MULTIPLIER * 1.22)
+          : (SELECTED_REGION_SCALE_MULTIPLIER * 1.04)
+      );
+      dummy.position.copy(baseNode.pos);
+      dummy.scale.setScalar(overlayScale);
+      dummy.updateMatrix();
+      nodeSelectionMesh.setMatrixAt(nodeIndex, dummy.matrix);
+      selectOverlayColor.copy(isPrimarySelection ? selectOverlayCoreColor : selectOverlayRegionColor);
+      nodeSelectionMesh.setColorAt(nodeIndex, selectOverlayColor);
+      return;
+    }
+
+    dummy.position.copy(baseNode.pos);
+    dummy.scale.setScalar(0.0001);
+    dummy.updateMatrix();
+    nodeSelectionMesh.setMatrixAt(nodeIndex, dummy.matrix);
+    nodeSelectionMesh.setColorAt(nodeIndex, selectOverlayDormantColor);
+  };
 
   for (let i = 0; i < graph.nodes.length; i++) {
     const base = nodeBase[i];
@@ -2737,8 +3101,10 @@ function applyNodeStyle() {
       const isMatch = searchExploreIndices.has(i);
       if (isMatch) {
         color.copy(searchExploreColor(i));
-        scale *= selectedIdx === i ? 1.72 : 1.46;
-        if (selectedIdx === i) color.lerp(selectColor, 0.20);
+        scale *= selectedIdx === i ? 2.08 : 1.46;
+        if (selectedRegionIndices.has(i)) {
+          scale = Math.max(scale, base.baseScale * SELECTED_REGION_SCALE_MULTIPLIER);
+        }
       } else {
         color.copy(searchDimColor);
         scale *= 0.42;
@@ -2752,9 +3118,8 @@ function applyNodeStyle() {
 
       if (nodeHaloMesh) {
         let haloIntensity = isMatch ? 0.22 : 0;
-        if (selectedIdx === i) haloIntensity = Math.max(haloIntensity, 0.38);
         const haloScale = haloIntensity > 0.005
-          ? base.baseScale * (2.20 + (3.60 * haloIntensity))
+          ? base.baseScale * (3.00 + (5.20 * haloIntensity))
           : 0.0001;
         dummy.position.copy(base.pos);
         dummy.scale.setScalar(haloScale);
@@ -2768,6 +3133,7 @@ function applyNodeStyle() {
         }
         nodeHaloMesh.setColorAt(i, haloColor);
       }
+      updateSelectionOverlay(i, base, selectedIdx === i, selectedRegionIndices.has(i));
       continue;
     }
 
@@ -2841,12 +3207,15 @@ function applyNodeStyle() {
     }
 
     if (selectedIdx !== null) {
-      if (i === selectedIdx) {
-        scale *= 1.30;
-        color.lerp(selectColor, 0.70);
+      if (selectedRegionIndices.has(i)) {
+        if (i === selectedIdx) {
+          scale = Math.max(scale, base.baseScale * (SELECTED_REGION_SCALE_MULTIPLIER * 1.18));
+        } else {
+          scale = Math.max(scale, base.baseScale * SELECTED_REGION_SCALE_MULTIPLIER);
+        }
       } else if (selectedNeighbors.has(i)) {
-        scale *= 1.12;
-        color.lerp(neighColor, 0.40);
+        scale *= 1.16;
+        color.lerp(neighColor, 0.52);
       } else {
         color.multiplyScalar(0.33);
       }
@@ -2908,15 +3277,12 @@ function applyNodeStyle() {
         }
       }
 
-      if (selectedIdx !== null && i === selectedIdx) {
-        haloIntensity = Math.max(haloIntensity, 0.24);
-      }
       if (narrationPreviewIndices.has(i)) {
         haloIntensity = Math.max(haloIntensity, 0.30);
       }
 
       const haloScale = haloIntensity > 0.005
-        ? base.baseScale * (2.00 + (4.50 * haloIntensity))
+        ? base.baseScale * (2.40 + (5.30 * haloIntensity))
         : 0.0001;
       dummy.position.copy(base.pos);
       dummy.scale.setScalar(haloScale);
@@ -2932,6 +3298,8 @@ function applyNodeStyle() {
       }
       nodeHaloMesh.setColorAt(i, haloColor);
     }
+
+    updateSelectionOverlay(i, base, selectedIdx === i, selectedRegionIndices.has(i));
   }
 
   nodeMesh.instanceMatrix.needsUpdate = true;
@@ -2939,7 +3307,12 @@ function applyNodeStyle() {
   if (nodeHaloMesh) {
     nodeHaloMesh.instanceMatrix.needsUpdate = true;
     nodeHaloMesh.instanceColor.needsUpdate = true;
-    nodeHaloMesh.visible = searchMode || state.radiationOn;
+    nodeHaloMesh.visible = searchMode || state.radiationOn || narrationPreviewIndices.size > 0;
+  }
+  if (nodeSelectionMesh) {
+    nodeSelectionMesh.instanceMatrix.needsUpdate = true;
+    nodeSelectionMesh.instanceColor.needsUpdate = true;
+    nodeSelectionMesh.visible = selectedIdx !== null;
   }
 }
 
@@ -3261,18 +3634,34 @@ function addHull(obj) {
 
 function addNodes(g) {
   const sphereGeo = new THREE.SphereGeometry(0.014, 14, 14);
-  const sphereMat = new THREE.MeshStandardMaterial({ color: 0x67c6ff });
+  const sphereMat = new THREE.MeshStandardMaterial({
+    color: 0x67c6ff,
+    roughness: 0.88,
+    metalness: 0.02,
+    toneMapped: false,
+  });
   const haloGeo = new THREE.SphereGeometry(0.040, 12, 12);
   const haloMat = new THREE.MeshBasicMaterial({
     color: 0x8ec9ff,
     vertexColors: true,
     transparent: true,
-    opacity: 0.62,
+    opacity: 0.92,
     depthTest: false,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
+    toneMapped: false,
   });
-  const nodeSizeMultiplier = g.nodes.length > 1000 ? 0.72 : 0.84;
+  const selectionGeo = new THREE.SphereGeometry(0.0155, 14, 14);
+  const selectionMat = new THREE.MeshBasicMaterial({
+    color: 0xff7e76,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.96,
+    depthTest: true,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const nodeSizeMultiplier = (g.nodes.length > 1000 ? 0.72 : 0.84) * NODE_BASE_SCALE_FACTOR;
 
   nodeMesh = new THREE.InstancedMesh(sphereGeo, sphereMat, g.nodes.length);
   nodeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -3280,6 +3669,10 @@ function addNodes(g) {
   nodeHaloMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   nodeHaloMesh.renderOrder = 2;
   nodeHaloMesh.frustumCulled = false;
+  nodeSelectionMesh = new THREE.InstancedMesh(selectionGeo, selectionMat, g.nodes.length);
+  nodeSelectionMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  nodeSelectionMesh.renderOrder = 4;
+  nodeSelectionMesh.frustumCulled = false;
 
   labelToIndex.clear();
   labelToIndices.clear();
@@ -3321,6 +3714,11 @@ function addNodes(g) {
     dummy.updateMatrix();
     nodeHaloMesh.setMatrixAt(i, dummy.matrix);
     nodeHaloMesh.setColorAt(i, c.clone().multiplyScalar(0.02));
+
+    dummy.scale.setScalar(0.0001);
+    dummy.updateMatrix();
+    nodeSelectionMesh.setMatrixAt(i, dummy.matrix);
+    nodeSelectionMesh.setColorAt(i, new THREE.Color(0x000000));
   }
 
   for (const e of g.edges) {
@@ -3334,12 +3732,29 @@ function addNodes(g) {
 
   nodeMesh.instanceColor.needsUpdate = true;
   nodeHaloMesh.instanceColor.needsUpdate = true;
+  nodeSelectionMesh.instanceColor.needsUpdate = true;
   nodeHaloMesh.visible = state.radiationOn;
+  nodeSelectionMesh.visible = true;
   scene.add(nodeHaloMesh);
   scene.add(nodeMesh);
+  scene.add(nodeSelectionMesh);
+
+  const clickSelect = {
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    moved: false,
+    hitIdx: null,
+  };
 
   if (!IS_TOUCH_DEVICE) {
     window.addEventListener("pointermove", (ev) => {
+      if (clickSelect.active && ev.pointerId === clickSelect.pointerId) {
+        const dx = ev.clientX - clickSelect.startX;
+        const dy = ev.clientY - clickSelect.startY;
+        if (Math.hypot(dx, dy) >= CLICK_DRAG_THRESHOLD_PX) clickSelect.moved = true;
+      }
       updateMouseFromEvent(ev);
       raycaster.setFromCamera(mouse, camera);
       const hits = raycaster.intersectObject(nodeMesh);
@@ -3357,11 +3772,45 @@ function addNodes(g) {
       closeMobileOverlays();
     }
     if (ev.button !== 0) return;
+    clickSelect.active = true;
+    clickSelect.pointerId = ev.pointerId;
+    clickSelect.startX = ev.clientX;
+    clickSelect.startY = ev.clientY;
+    clickSelect.moved = false;
     updateMouseFromEvent(ev);
     raycaster.setFromCamera(mouse, camera);
     const hits = raycaster.intersectObject(nodeMesh);
-    if (hits.length) setSelection(hits[0].instanceId);
+    clickSelect.hitIdx = hits.length ? hits[0].instanceId : null;
+  });
+
+  window.addEventListener("pointermove", (ev) => {
+    if (!clickSelect.active || ev.pointerId !== clickSelect.pointerId) return;
+    const dx = ev.clientX - clickSelect.startX;
+    const dy = ev.clientY - clickSelect.startY;
+    if (Math.hypot(dx, dy) >= CLICK_DRAG_THRESHOLD_PX) clickSelect.moved = true;
+  });
+
+  window.addEventListener("pointerup", (ev) => {
+    if (ev.button !== 0) return;
+    if (!clickSelect.active || ev.pointerId !== clickSelect.pointerId) return;
+    const didMove = clickSelect.moved;
+    const hitIdx = clickSelect.hitIdx;
+    clickSelect.active = false;
+    clickSelect.pointerId = null;
+    clickSelect.hitIdx = null;
+    clickSelect.moved = false;
+
+    if (didMove) return;
+    if (hitIdx !== null) setSelection(hitIdx);
     else clearSelection();
+  });
+
+  window.addEventListener("pointercancel", (ev) => {
+    if (!clickSelect.active || ev.pointerId !== clickSelect.pointerId) return;
+    clickSelect.active = false;
+    clickSelect.pointerId = null;
+    clickSelect.hitIdx = null;
+    clickSelect.moved = false;
   });
 }
 
@@ -4624,6 +5073,7 @@ async function loadRegionCards() {
 
 const STIMULUS_GROUP_ORDER = [
   "Clinical Medications (ED/ICU/Med-Surg)",
+  "OTC Medications (Generic)",
   "Sensory and Motor",
   "Pain and Somatosensory",
   "Emotion and Threat",
@@ -4643,8 +5093,18 @@ function classifyStimulusGroup(stim) {
     return "Clinical Medications (ED/ICU/Med-Surg)";
   }
 
+  if (text.includes("otc medication template")) {
+    return "OTC Medications (Generic)";
+  }
+
   if (
-    /(morphine|fentanyl|hydromorphone|oxycodone|ketorolac|ondansetron|metoclopramide|pantoprazole|enoxaparin|heparin|insulin|metoprolol|labetalol|furosemide|ceftriaxone|vancomycin|piperacillin|albuterol|ipratropium|dexamethasone|lorazepam|propofol|norepinephrine|acetaminophen|losartan|clonazepam|klonopin)/.test(text)
+    /(acetaminophen|ibuprofen|naproxen|aspirin|diclofenac|diphenhydramine|doxylamine|dextromethorphan|guaifenesin|pseudoephedrine|phenylephrine|loratadine|cetirizine|fexofenadine|famotidine|omeprazole|loperamide|bismuth|calcium carbonate|magnesium hydroxide|polyethylene glycol|senna|psyllium|meclizine|dimenhydrinate|melatonin|nicotine replacement|naloxone nasal)/.test(text)
+  ) {
+    return "OTC Medications (Generic)";
+  }
+
+  if (
+    /(morphine|fentanyl|hydromorphone|oxycodone|ketorolac|ondansetron|metoclopramide|pantoprazole|enoxaparin|heparin|insulin|metoprolol|labetalol|furosemide|ceftriaxone|vancomycin|piperacillin|albuterol|ipratropium|dexamethasone|lorazepam|propofol|norepinephrine|losartan|clonazepam|klonopin)/.test(text)
   ) {
     return "Clinical Medications (ED/ICU/Med-Surg)";
   }

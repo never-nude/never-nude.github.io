@@ -40,6 +40,22 @@
       ]
     },
     {
+      "id": "ibuprofen",
+      "label": "Ibuprofen (OTC medication template)",
+      "tier": "EMPIRICAL_TASK_FMRI",
+      "explanation": "Somatosensory, insular, and cingulate regions are commonly involved in pain-modulation imaging paradigms that include NSAID classes. This educational template is simplified and not a clinical efficacy model.",
+      "seed_regions": [
+        { "aal_label": "Postcentral_L", "w": 0.62 },
+        { "aal_label": "Postcentral_R", "w": 0.62 },
+        { "aal_label": "Insula_L", "w": 0.56 },
+        { "aal_label": "Insula_R", "w": 0.56 },
+        { "aal_label": "Cingulum_Ant_L", "w": 0.48 },
+        { "aal_label": "Cingulum_Ant_R", "w": 0.48 },
+        { "aal_label": "Thalamus_L", "w": 0.44 },
+        { "aal_label": "Thalamus_R", "w": 0.44 }
+      ]
+    },
+    {
       "id": "fear",
       "label": "Fear / threat",
       "tier": "TEMPLATE_META_ANALYTIC",
