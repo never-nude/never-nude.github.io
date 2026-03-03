@@ -663,10 +663,10 @@
         #panel {
           left: calc(var(--safe-left) + 12px);
           right: calc(var(--safe-right) + 12px);
-          top: auto;
-          bottom: calc(var(--safe-bottom) + 72px);
+          top: calc(var(--safe-top) + 8px);
+          bottom: auto;
           width: auto;
-          max-height: 58vh;
+          max-height: min(38vh, 340px);
           display: none;
         }
 
@@ -781,8 +781,9 @@
         }
 
         #panel {
-          bottom: calc(var(--safe-bottom) + 74px);
-          max-height: 62vh;
+          top: calc(var(--safe-top) + 8px);
+          bottom: auto;
+          max-height: min(36vh, 320px);
         }
 
         #liveNarrationPanel {
@@ -821,7 +822,7 @@
     </script>
   </head>
   <body>
-    <div id="build">STIMFLOW • VERITAS • BUILD 1772569601</div>
+    <div id="build">STIMFLOW • VERITAS • BUILD 1772570001</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
       <div class="name">Cortical Flow Atlas</div>
@@ -1047,6 +1048,6 @@
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=1772569601"></script>
+    <script type="module" src="./stimflow.js?v=1772570001"></script>
   </body>
 </html>
