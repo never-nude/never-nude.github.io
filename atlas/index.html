@@ -6,7 +6,8 @@
     <title>atlas redirect</title>
     <meta http-equiv="refresh" content="0; url=./stimflow/" />
     <script>
-      location.replace(`./stimflow/${location.search || ""}${location.hash || ""}`);
+      const qs = location.search && location.search.length > 1 ? location.search : "?v=4db6f3f";
+      location.replace(`./stimflow/${qs}${location.hash || ""}`);
     </script>
   </head>
   <body>
