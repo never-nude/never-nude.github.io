@@ -1421,16 +1421,50 @@ function updateNarrationCursorFromTime() {
   lastNarratedArrivalCursor = cursor;
 }
 
+function fallbackRegionSummary(label) {
+  const canonical = canonicalNodeLabel(label);
+  const noHemi = canonical.replace(/_(L|R)$/, "");
+
+  if (/^Postcentral/.test(noHemi)) {
+    return "Primary somatosensory cortex that processes touch, body position, and sensory input from the opposite side of the body.";
+  }
+  if (/^Precentral/.test(noHemi)) {
+    return "Primary motor cortex involved in planning and executing voluntary movement on the opposite side of the body.";
+  }
+  if (/^Fusiform/.test(noHemi)) {
+    return "Ventral temporal cortex often involved in high-level visual processing such as object, face, and word-form recognition depending on task demands.";
+  }
+  if (/^Temporal_Sup|^Heschl/.test(noHemi)) {
+    return "Auditory cortex network commonly involved in processing sound features, speech, and acoustic context.";
+  }
+  if (/^Cingulum|^Cingulate/.test(noHemi)) {
+    return "Cingulate network region often involved in salience, monitoring, attention allocation, and context-dependent control.";
+  }
+  if (/^Insula/.test(noHemi)) {
+    return "Insular cortex region often involved in interoceptive awareness, salience processing, and state integration.";
+  }
+  if (/^Precuneus|^Cuneus|^Calcarine|^Lingual|^Occipital/.test(noHemi)) {
+    return "Posterior cortical region often involved in visual integration, spatial processing, and internal scene representation.";
+  }
+  if (/^Hippocampus|^ParaHippocampal|^Amygdala/.test(noHemi)) {
+    return "Limbic-region node commonly involved in memory, emotional salience, and context encoding.";
+  }
+
+  return "Commonly involved in distributed network communication depending on task context.";
+}
+
+function regionSummaryForLabel(label) {
+  const card = lookupRegionCard(label);
+  return safeText(card?.summary, fallbackRegionSummary(label));
+}
+
 function narrationTextForEvent(event) {
   if (!graph || !event) return "";
   const node = graph.nodes[event.idx];
   const label = node?.name || "";
   const card = lookupRegionCard(label);
   const title = safeText(card?.title, prettyAalLabel(label) || "region");
-  const summary = safeText(
-    card?.summary,
-    "Commonly involved in distributed network communication depending on task context."
-  );
+  const summary = regionSummaryForLabel(label);
   const firstSentence = safeText(summary.split(/(?<=[.!?])\s+/)[0], summary);
   return `Pathway step ${event.rank}. ${title} reached at ${event.t.toFixed(1)} seconds. ${firstSentence}`;
 }
@@ -1563,7 +1597,7 @@ function renderRegionRole(idx) {
   const label = node?.name || "";
   const card = lookupRegionCard(label);
   const title = card?.title || prettyAalLabel(label);
-  const summary = card?.summary || "Commonly involved in distributed network communication depending on task context.";
+  const summary = regionSummaryForLabel(label);
   const networks = Array.isArray(card?.networks) && card.networks.length ? card.networks.join(", ") : "n/a";
 
   ui.regionTitle.textContent = `Region role: ${title}`;
@@ -1584,10 +1618,7 @@ function renderRegionQuickCard(idx) {
   const label = node?.name || "";
   const card = lookupRegionCard(label);
   const title = safeText(card?.title, prettyAalLabel(label) || "Region");
-  const summaryRaw = safeText(
-    card?.summary,
-    "Commonly involved in distributed network communication depending on task context."
-  );
+  const summaryRaw = regionSummaryForLabel(label);
   const sentences = summaryRaw.split(/(?<=[.!?])\s+/).filter(Boolean);
   const summary = sentences.slice(0, 2).join(" ") || summaryRaw;
 
@@ -1784,7 +1815,10 @@ function buildTextNarrationTimeline() {
     if (!canonical || seenCanonical.has(canonical)) continue;
     seenCanonical.add(canonical);
 
-    const title = prettyAalLabel(rawLabel);
+    const card = lookupRegionCard(rawLabel);
+    const title = safeText(card?.title, prettyAalLabel(rawLabel));
+    const summary = regionSummaryForLabel(rawLabel);
+    const firstSentence = safeText(summary.split(/(?<=[.!?])\s+/)[0], summary);
     const stage = { idx: ev.idx, t: ev.t };
     textNarrationTimeline.push({
       t: ev.t,
@@ -1792,7 +1826,7 @@ function buildTextNarrationTimeline() {
       rank: ev.rank,
       stageKey: narrationStageKey(stage),
       stageIndices: computeNarrationStageIndices(stage),
-      text: `${title} engaged.`,
+      text: `${title}: ${firstSentence}`,
     });
   }
 }
