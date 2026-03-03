@@ -976,6 +976,9 @@ function openMobileStimulusPicker() {
 function setupMobileOverlayControls() {
   if (!IS_TOUCH_DEVICE || !mobileUi.dock) return;
   document.body.classList.add("mobile-ready");
+  // Force closed default state even when Safari restores previous page UI state.
+  mobileStimuliActive = false;
+  document.body.classList.remove("mobile-panel-open", "mobile-log-open");
 
   if (mobileUi.btnPanel) {
     mobileUi.btnPanel.addEventListener("click", () => {
@@ -1002,6 +1005,12 @@ function setupMobileOverlayControls() {
   }
 
   syncMobileDockState();
+}
+
+if (IS_TOUCH_DEVICE) {
+  addEventListener("pageshow", () => {
+    closeMobileOverlays();
+  });
 }
 
 buildEl.textContent = `STIMFLOW • ${MILESTONE_LABEL} • BUILD ${STIMFLOW_BUILD_ID}`;
