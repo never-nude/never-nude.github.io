@@ -1118,7 +1118,8 @@ const mouse = new THREE.Vector2();
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 1000);
-camera.position.set(-0.06, 1.05, 2.65);
+const DEFAULT_CAMERA_Z = IS_TOUCH_DEVICE ? 3.15 : 2.95;
+camera.position.set(-0.06, 1.08, DEFAULT_CAMERA_Z);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
