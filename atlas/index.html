@@ -4,12 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>atlas redirect</title>
-    <meta http-equiv="refresh" content="0; url=./stimflow/?v=1772551001" />
+    <meta http-equiv="refresh" content="0; url=./stimflow/" />
     <script>
-      location.replace("./stimflow/?v=1772551001");
+      location.replace(`./stimflow/${location.search || ""}${location.hash || ""}`);
     </script>
   </head>
   <body>
-    Redirecting to <a href="./stimflow/?v=1772551001">/atlas/stimflow/</a>
+    Redirecting to <a href="./stimflow/">/atlas/stimflow/</a>
   </body>
 </html>
