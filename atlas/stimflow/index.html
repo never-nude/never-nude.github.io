@@ -468,6 +468,15 @@
         background: rgba(120, 160, 205, 0.08);
       }
 
+      #miniKey .hint {
+        margin-top: 4px;
+        opacity: 0.72;
+      }
+
+      #edgeToggleRow {
+        display: none;
+      }
+
       #legendBar {
         height: 10px;
         border-radius: 999px;
@@ -663,11 +672,15 @@
     </script>
   </head>
   <body>
-    <div id="build">STIMFLOW • ARISTOTLE • BUILD 1772551001</div>
+    <div id="build">STIMFLOW • PLATO • BUILD 1772553304</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
-      <div class="name">Brain Network Pathway Atlas</div>
-      <div class="sub">Educational 3D map of large-scale brain pathway dynamics across stimuli and sleep stages.</div>
+      <div class="name">Cortical Flow Atlas</div>
+      <div class="sub">
+        Each node is an AAL brain region, and each line shows a functional coupling link used for education.
+        Choose a scenario and press Play to watch major regions activate in sequence over the timeline.
+        Click or search any region to highlight it and read a short summary of its commonly described role.
+      </div>
     </div>
     <div id="liveNarrationPanel" aria-live="polite">
       <div class="title">Live narration</div>
@@ -686,7 +699,7 @@
     </div>
 
     <div id="panel">
-      <div class="title">Brain Network Pathway Atlas</div>
+      <div class="title">Scenario Control Console</div>
       <div id="quickStartCard" class="small">
         1) Choose a scenario. 2) Press Play. 3) Watch major regions and click a region for role details.
       </div>
@@ -697,6 +710,11 @@
       <div class="stack" id="stimSelectBlock">
         <div class="small">Scenario (stimulus)</div>
         <select id="stimSelect"></select>
+      </div>
+
+      <div class="row">
+        <label><input id="toggleAuto" type="checkbox" checked />Auto-rotate</label>
+        <button id="btnReset" type="button">Reset view</button>
       </div>
 
       <div class="stack" id="basisBlock">
@@ -730,22 +748,17 @@
       </div>
 
       <div class="row small mono">
-        <div id="timelineText">t=0.00s / 25.00s</div>
+        <div id="timelineText">Scenario progress: preparing estimate...</div>
         <div id="statusText">ready</div>
       </div>
 
       <div id="progressWrap"><div id="progressFill"></div></div>
 
       <div class="row">
-        <div>Timeline cursor</div>
-        <div id="scrubVal" class="mono">0.00s</div>
+        <div>Position in scenario</div>
+        <div id="scrubVal" class="mono">0%</div>
       </div>
       <input id="scrubRange" type="range" min="0" max="25" step="0.01" value="0" />
-
-      <div id="stepControls" class="stack">
-        <button id="btnStepBack" type="button">-0.5s</button>
-        <button id="btnStepForward" type="button">+0.5s</button>
-      </div>
 
       <div id="scrubRateBlock">
         <div class="row">
@@ -843,23 +856,20 @@
 
       <hr />
 
-      <div class="row">
+      <div class="row" id="edgeToggleRow">
         <label><input id="toggleEdges" type="checkbox" checked />Show connections</label>
+      </div>
+      <div class="row">
         <label><input id="toggleHull" type="checkbox" checked />Show cortex layer</label>
       </div>
       <div class="row">
         <div>Cortex opacity</div>
-        <div id="hullOpacityVal" class="mono">0.23</div>
+        <div id="hullOpacityVal" class="mono">0.12</div>
       </div>
-      <input id="hullOpacityRange" type="range" min="0.10" max="0.95" step="0.01" value="0.23" />
+      <input id="hullOpacityRange" type="range" min="0.10" max="0.95" step="0.01" value="0.12" />
 
       <div class="row" id="hoverGroupBlock">
         <label><input id="toggleHoverGroup" type="checkbox" />Highlight same-region group on hover</label>
-      </div>
-
-      <div class="row">
-        <label><input id="toggleAuto" type="checkbox" checked />Auto-rotate</label>
-        <button id="btnReset" type="button">Reset view</button>
       </div>
 
       <div id="edgeThresholdBlock">
@@ -874,6 +884,7 @@
         <strong>Key:</strong> Nodes = AAL (Automated Anatomical Labeling) atlas regions.
         <br />
         Edges = functional coupling links (educational, non-directional).
+        <div class="hint mono">Mouse: left-drag rotate | right-drag pan | scroll zoom</div>
       </div>
 
       <div id="sourceNotes" class="small stack">
@@ -885,6 +896,6 @@
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=zoom3btn1"></script>
+    <script type="module" src="./stimflow.js?v=1772553304"></script>
   </body>
 </html>

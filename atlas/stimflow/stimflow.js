@@ -3,8 +3,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772551001";
-const MILESTONE_LABEL = "ARISTOTLE";
+const STIMFLOW_BUILD_ID = "1772553304";
+const MILESTONE_LABEL = "PLATO";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
 const GRAPH_DENSE_URL = `../assets/aal_graph_dense.json?v=${CACHE_BUST}`;
@@ -151,7 +151,7 @@ const SEARCH_HIGHLIGHT_PALETTE = [
   0x61ff7a,
   0xff8a00,
 ];
-const HULL_OPACITY = 0.23;
+const HULL_OPACITY = 0.12;
 const HULL_OPACITY_MIN = 0.10;
 const HULL_OPACITY_MAX = 0.95;
 const TIER_NONE = 0;
@@ -1097,6 +1097,7 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, MAX_RENDER_PIXEL_RATIO));
 document.body.appendChild(renderer.domElement);
 renderer.domElement.style.touchAction = "none";
+renderer.domElement.addEventListener("contextmenu", (ev) => ev.preventDefault());
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -1106,7 +1107,7 @@ const AUTO_ROTATE_SPEED = 1.2;
 controls.autoRotateSpeed = AUTO_ROTATE_SPEED;
 controls.enablePan = true;
 controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
-controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
 controls.target.set(0, 0.16, 0);
 controls.update();
 controls.saveState();
@@ -2679,22 +2680,25 @@ function setTimelinePosition(nextT, reason = "scrub") {
 }
 
 function renderTimeline() {
+  const p = clamp01(state.t / state.durationS);
+  const pct = Math.round(p * 100);
+  const phaseLabel = activePhaseState?.label ? `${activePhaseState.label.toLowerCase()} phase` : "current phase";
   const realTotalS = activeRealCourseSeconds();
   if (Number.isFinite(realTotalS)) {
     const realNowS = modelTimeToRealSeconds(state.t, state.durationS);
     ui.timelineText.textContent =
-      `t=${state.t.toFixed(2)}s / ${state.durationS.toFixed(2)}s | approx real ${formatDurationCompact(realNowS)} / ${formatDurationCompact(realTotalS)}`;
+      `Scenario progress: ${pct}% (${phaseLabel}); this point represents about ${formatDurationCompact(realNowS)} of an estimated ${formatDurationCompact(realTotalS)} course.`;
   } else {
-    ui.timelineText.textContent = `t=${state.t.toFixed(2)}s / ${state.durationS.toFixed(2)}s`;
+    ui.timelineText.textContent =
+      `Scenario progress: ${pct}% (${phaseLabel}); this slider shows educational progression through the pathway sequence.`;
   }
-  const p = clamp01(state.t / state.durationS);
   ui.progressFill.style.width = `${(p * 100).toFixed(1)}%`;
   if (ui.scrubRange) {
     ui.scrubRange.max = state.durationS.toFixed(2);
     ui.scrubRange.value = Math.min(state.t, state.durationS).toFixed(2);
   }
   if (ui.scrubVal) {
-    ui.scrubVal.textContent = `${state.t.toFixed(2)}s`;
+    ui.scrubVal.textContent = `${pct}%`;
   }
 }
 
