@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772570301";
+const STIMFLOW_BUILD_ID = "1772570601";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -1232,7 +1232,6 @@ const mobileUi = {
   dock: document.getElementById("mobileDock"),
   btnPanel: document.getElementById("btnMobilePanel"),
   btnNarration: document.getElementById("btnMobileNarration"),
-  btnCanvas: document.getElementById("btnMobileCanvas"),
 };
 
 function hud(msg, isError = false) {
@@ -1241,12 +1240,11 @@ function hud(msg, isError = false) {
 }
 
 function syncMobileDockState() {
-  if (!mobileUi.btnPanel || !mobileUi.btnNarration || !mobileUi.btnCanvas) return;
+  if (!mobileUi.btnPanel || !mobileUi.btnNarration) return;
   const panelOpen = document.body.classList.contains("mobile-panel-open");
   const logOpen = document.body.classList.contains("mobile-log-open");
   mobileUi.btnPanel.setAttribute("aria-pressed", panelOpen ? "true" : "false");
   mobileUi.btnNarration.setAttribute("aria-pressed", logOpen ? "true" : "false");
-  mobileUi.btnCanvas.setAttribute("aria-pressed", (!panelOpen && !logOpen) ? "true" : "false");
 }
 
 function closeMobileOverlays() {
@@ -1297,12 +1295,6 @@ function setupMobileOverlayControls() {
   if (mobileUi.btnNarration) {
     mobileUi.btnNarration.addEventListener("click", () => {
       toggleMobileOverlay("log");
-    });
-  }
-
-  if (mobileUi.btnCanvas) {
-    mobileUi.btnCanvas.addEventListener("click", () => {
-      toggleMobileOverlay("canvas");
     });
   }
 
