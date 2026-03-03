@@ -822,7 +822,7 @@
     </script>
   </head>
   <body>
-    <div id="build">STIMFLOW • VERITAS • BUILD 1772570601</div>
+    <div id="build">STIMFLOW • VERITAS • BUILD 1772570901</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
       <div class="name">Cortical Flow Atlas</div>
@@ -852,48 +852,6 @@
       <div class="stack" id="stimSelectBlock">
         <div class="small">Scenario (stimulus)</div>
         <select id="stimSelect"></select>
-      </div>
-
-      <div id="stimSummaryBlock" class="stack">
-        <div id="stimSummaryLabel">Stimulus summary</div>
-        <div id="stimExplain" class="small">
-          Select a scenario to view a 2-4 sentence educational summary of the pathway pattern being simulated.
-        </div>
-      </div>
-
-      <div class="row">
-        <label><input id="toggleAuto" type="checkbox" checked />Auto-rotate</label>
-        <button id="btnReset" type="button">Reset view</button>
-      </div>
-
-      <div class="stack" id="basisBlock">
-        <div class="small">Evidence source</div>
-        <select id="basisSelect">
-          <option value="empirical" selected>Empirical Anchors</option>
-          <option value="template">Template Consensus</option>
-        </select>
-        <div class="small mono" id="basisStatus">Basis: loading...</div>
-      </div>
-
-      <div class="stack" id="graphBlock">
-        <div class="small">Detail level</div>
-        <select id="graphSelect">
-          <option value="auto" selected>Auto (prefer dense)</option>
-          <option value="dense">Dense (thousands)</option>
-          <option value="core">Core (AAL 116)</option>
-        </select>
-        <div class="small mono" id="graphStatus">Graph: loading...</div>
-        <div class="small mono" id="connectivityStatus">Connectivity: loading...</div>
-      </div>
-
-      <div class="stack">
-        <div class="small">Region search</div>
-        <div id="regionSearchRow">
-          <input id="regionSearchInput" type="text" placeholder="e.g., insula, hippocampus left" />
-          <button id="btnRegionSearch" type="button">Find</button>
-        </div>
-        <div id="regionSearchSuggest" hidden></div>
-        <div class="small mono" id="regionSearchStatus">Search: enter region</div>
       </div>
 
       <div class="row small mono">
@@ -944,6 +902,41 @@
         <div id="speedVal" class="mono">1.00x</div>
       </div>
       <input id="speedRange" type="range" min="0.25" max="3.00" step="0.05" value="1.00" />
+
+      <div class="row">
+        <label><input id="toggleAuto" type="checkbox" checked />Auto-rotate</label>
+        <button id="btnReset" type="button">Reset view</button>
+      </div>
+
+      <div class="stack" id="basisBlock">
+        <div class="small">Evidence source</div>
+        <select id="basisSelect">
+          <option value="empirical" selected>Empirical Anchors</option>
+          <option value="template">Template Consensus</option>
+        </select>
+        <div class="small mono" id="basisStatus">Basis: loading...</div>
+      </div>
+
+      <div class="stack" id="graphBlock">
+        <div class="small">Detail level</div>
+        <select id="graphSelect">
+          <option value="auto" selected>Auto (prefer dense)</option>
+          <option value="dense">Dense (thousands)</option>
+          <option value="core">Core (AAL 116)</option>
+        </select>
+        <div class="small mono" id="graphStatus">Graph: loading...</div>
+        <div class="small mono" id="connectivityStatus">Connectivity: loading...</div>
+      </div>
+
+      <div class="stack">
+        <div class="small">Region search</div>
+        <div id="regionSearchRow">
+          <input id="regionSearchInput" type="text" placeholder="e.g., insula, hippocampus left" />
+          <button id="btnRegionSearch" type="button">Find</button>
+        </div>
+        <div id="regionSearchSuggest" hidden></div>
+        <div class="small mono" id="regionSearchStatus">Search: enter region</div>
+      </div>
 
       <div id="narrationBlock">
         <div class="row">
@@ -1011,6 +1004,12 @@
       <div class="row">
         <label><input id="toggleHull" type="checkbox" checked />Show cortex layer</label>
       </div>
+      <div id="stimSummaryBlock" class="stack">
+        <div id="stimSummaryLabel">Stimulus summary</div>
+        <div id="stimExplain" class="small">
+          Select a scenario to view a 2-4 sentence educational summary of the pathway pattern being simulated.
+        </div>
+      </div>
       <div class="row">
         <div>Cortex opacity</div>
         <div id="hullOpacityVal" class="mono">0.12</div>
@@ -1047,6 +1046,6 @@
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=1772570601"></script>
+    <script type="module" src="./stimflow.js?v=1772570901"></script>
   </body>
 </html>
