@@ -675,24 +675,41 @@
           right: auto;
           transform: translateX(-50%);
           width: min(420px, calc(100vw - var(--safe-left) - var(--safe-right) - 10px));
-          top: auto;
-          bottom: calc(var(--safe-bottom) + 72px);
-          max-height: 25vh;
-          padding: 8px;
+          top: calc(var(--safe-top) + 8px);
+          bottom: auto;
+          max-height: 16vh;
+          padding: 6px;
           background: rgba(5, 11, 28, 0.9);
           display: none;
         }
 
         #liveNarrationLog {
-          max-height: calc(25vh - 38px);
+          max-height: calc(16vh - 12px);
           font-size: 11.5px;
-          padding: 6px;
+          padding: 5px;
           line-height: 1.3;
+          overflow: hidden;
         }
 
         #liveNarrationPanel .title {
-          margin-bottom: 6px;
-          font-size: 12px;
+          display: none;
+        }
+
+        #liveNarrationLog .line {
+          display: none;
+          margin: 0;
+          padding: 6px 7px;
+        }
+
+        #liveNarrationLog .line.current {
+          display: flex;
+        }
+
+        #liveNarrationLog .line.current > span:last-child {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
         body.mobile-panel-open #panel {
@@ -770,12 +787,13 @@
 
         #liveNarrationPanel {
           width: min(390px, calc(100vw - var(--safe-left) - var(--safe-right) - 6px));
-          bottom: calc(var(--safe-bottom) + 74px);
-          max-height: 23vh;
+          top: calc(var(--safe-top) + 8px);
+          bottom: auto;
+          max-height: 15vh;
         }
 
         #liveNarrationLog {
-          max-height: calc(23vh - 36px);
+          max-height: calc(15vh - 10px);
           font-size: 11px;
         }
 
@@ -803,7 +821,7 @@
     </script>
   </head>
   <body>
-    <div id="build">STIMFLOW • VERITAS • BUILD 1772569301</div>
+    <div id="build">STIMFLOW • VERITAS • BUILD 1772569601</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
       <div class="name">Cortical Flow Atlas</div>
@@ -1029,6 +1047,6 @@
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=1772569301"></script>
+    <script type="module" src="./stimflow.js?v=1772569601"></script>
   </body>
 </html>

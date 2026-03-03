@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772569301";
+const STIMFLOW_BUILD_ID = "1772569601";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -2100,6 +2100,10 @@ function renderTextNarration() {
       activeStageKey = line.stageKey || narrationStageKey(line);
       break;
     }
+  }
+  if (!activeStageKey && textNarrationLines.length) {
+    const fallback = textNarrationLines[0];
+    activeStageKey = fallback.stageKey || narrationStageKey(fallback);
   }
 
   for (const line of textNarrationLines) {
