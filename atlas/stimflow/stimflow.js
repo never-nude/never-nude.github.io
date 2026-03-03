@@ -767,7 +767,7 @@ const MAX_RENDER_PIXEL_RATIO = IS_TOUCH_DEVICE ? 1.5 : 2;
 const query = new URLSearchParams(window.location.search);
 const requestedGraphMode = normalizeGraphMode(query.get("graph_mode"));
 const initialGraphMode = requestedGraphMode === "auto"
-  ? (IS_TOUCH_DEVICE ? "core" : "dense")
+  ? "dense"
   : requestedGraphMode;
 const initialBreadthQ = THREE.MathUtils.clamp(Number(query.get("path_breadth_q")) || DEFAULT_ENGAGEMENT.arrival_quantile, 0.60, 0.98);
 
