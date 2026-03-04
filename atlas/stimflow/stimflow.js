@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772572001";
+const STIMFLOW_BUILD_ID = "1772572401";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -1799,36 +1799,75 @@ function fallbackRegionSummary(label) {
   const noHemi = canonical.replace(/_(L|R)$/, "");
 
   if (/^Postcentral/.test(noHemi)) {
-    return "Primary somatosensory cortex that processes touch, body position, and sensory input from the opposite side of the body.";
+    return "Main touch area. It helps you feel touch and body position from the opposite side of your body.";
   }
   if (/^Precentral/.test(noHemi)) {
-    return "Primary motor cortex involved in planning and executing voluntary movement on the opposite side of the body.";
+    return "Main movement area. It helps start voluntary movement on the opposite side of your body.";
   }
   if (/^Fusiform/.test(noHemi)) {
-    return "Ventral temporal cortex often involved in high-level visual processing such as object, face, and word-form recognition depending on task demands.";
+    return "Visual recognition area. It often helps recognize faces, objects, and written words.";
   }
   if (/^Temporal_Sup|^Heschl/.test(noHemi)) {
-    return "Auditory cortex network commonly involved in processing sound features, speech, and acoustic context.";
+    return "Hearing and speech area. It helps process sound details and spoken language.";
   }
   if (/^Cingulum|^Cingulate/.test(noHemi)) {
-    return "Cingulate network region often involved in salience, monitoring, attention allocation, and context-dependent control.";
+    return "Attention-control area. It helps monitor what matters and shift focus when needed.";
   }
   if (/^Insula/.test(noHemi)) {
-    return "Insular cortex region often involved in interoceptive awareness, salience processing, and state integration.";
+    return "Internal body-state area. It helps combine body signals with attention and emotion.";
   }
   if (/^Precuneus|^Cuneus|^Calcarine|^Lingual|^Occipital/.test(noHemi)) {
-    return "Posterior cortical region often involved in visual integration, spatial processing, and internal scene representation.";
+    return "Visual-spatial area. It helps combine what you see with where things are in space.";
   }
   if (/^Hippocampus|^ParaHippocampal|^Amygdala/.test(noHemi)) {
-    return "Limbic-region node commonly involved in memory, emotional salience, and context encoding.";
+    return "Memory-emotion area. It helps form memories and tag experiences with emotional meaning.";
   }
 
-  return "This region participates in the current pathway; a more specific summary is still being curated for this label.";
+  return "This brain area is active in the current pathway. A more specific simple summary is still being written for this label.";
+}
+
+function plainEnglishRegionSummary(text) {
+  let out = safeText(text, "");
+  if (!out) return out;
+
+  const rewrites = [
+    [/\bcommonly involved in\b/gi, "often helps with"],
+    [/\boften involved in\b/gi, "often helps with"],
+    [/\bparticipates in\b/gi, "helps with"],
+    [/\bdistributed network communication\b/gi, "communication with other brain areas"],
+    [/\bdepending upon task context\b/gi, "depending on what you are doing"],
+    [/\bdepending on task demands\b/gi, "depending on what you are doing"],
+    [/\binteroceptive\b/gi, "internal body-state"],
+    [/\bsalience\b/gi, "importance"],
+    [/\bcontext-dependent\b/gi, "situation-dependent"],
+    [/\bcontext encoding\b/gi, "context memory"],
+    [/\bventral temporal cortex\b/gi, "lower temporal lobe area"],
+    [/\bhigh-level visual processing\b/gi, "advanced visual processing"],
+    [/\bword-form\b/gi, "written-word"],
+    [/\bcontralateral\b/gi, "opposite-side"],
+    [/\bexecuting voluntary movement\b/gi, "starting voluntary movement"],
+    [/\bsomatosensory\b/gi, "touch and body-sense"],
+    [/\bspatial processing\b/gi, "space and location processing"],
+    [/\binternal scene representation\b/gi, "mental scene building"],
+    [/\bmodulation\b/gi, "adjustment"],
+    [/\bintegration\b/gi, "combining information"],
+    [/\bnode\b/gi, "area"],
+    [/\bcurated\b/gi, "written"],
+  ];
+
+  for (const [pattern, value] of rewrites) {
+    out = out.replace(pattern, value);
+  }
+
+  out = out.replace(/\s+([,.!?;:])/g, "$1");
+  out = out.replace(/\s{2,}/g, " ").trim();
+  return out;
 }
 
 function regionSummaryForLabel(label) {
   const card = lookupRegionCard(label);
-  return safeText(card?.summary, fallbackRegionSummary(label));
+  const raw = safeText(card?.summary, fallbackRegionSummary(label));
+  return plainEnglishRegionSummary(raw);
 }
 
 function narrationTextForEvent(event) {
