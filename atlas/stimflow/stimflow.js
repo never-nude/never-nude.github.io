@@ -1,10 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
-import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772573101";
+const STIMFLOW_BUILD_ID = "1772573401";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -4697,27 +4696,16 @@ function rebuildRegionLayer() {
     return;
   }
 
-  let geometry = null;
-  if (points.length >= 4) {
-    try {
-      geometry = new ConvexGeometry(points);
-    } catch (err) {
-      console.warn("Region layer hull generation failed; using sphere fallback:", err);
-    }
+  const center = new THREE.Vector3();
+  for (const p of points) center.add(p);
+  center.multiplyScalar(1 / points.length);
+  let maxDist = 0.018;
+  for (const p of points) {
+    maxDist = Math.max(maxDist, center.distanceTo(p));
   }
-
-  if (!geometry) {
-    const center = new THREE.Vector3();
-    for (const p of points) center.add(p);
-    center.multiplyScalar(1 / points.length);
-    let maxDist = 0.018;
-    for (const p of points) {
-      maxDist = Math.max(maxDist, center.distanceTo(p));
-    }
-    const radius = Math.max(0.028, maxDist * 1.42);
-    geometry = new THREE.SphereGeometry(radius, 20, 14);
-    geometry.translate(center.x, center.y, center.z);
-  }
+  const radius = Math.max(0.028, maxDist * 1.42);
+  const geometry = new THREE.SphereGeometry(radius, 20, 14);
+  geometry.translate(center.x, center.y, center.z);
 
   const material = new THREE.MeshStandardMaterial({
     color: 0xff2d2d,
