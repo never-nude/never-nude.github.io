@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772572401";
+const STIMFLOW_BUILD_ID = "1772572701";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -3108,8 +3108,10 @@ function applyNodeStyle() {
   const haloDormant = new THREE.Color(0x7d90a6);
   const searchDimColor = new THREE.Color(0x16202e);
   const haloColor = new THREE.Color();
-  const selectOverlayCoreColor = new THREE.Color(0xff7f90);
-  const selectOverlayRegionColor = new THREE.Color(0xffa167);
+  const selectedCoreNodeColor = new THREE.Color(0xff1a1a);
+  const selectedRegionNodeColor = new THREE.Color(0xff3a3a);
+  const selectOverlayCoreColor = new THREE.Color(0xff0000);
+  const selectOverlayRegionColor = new THREE.Color(0xff2525);
   const selectOverlayColor = new THREE.Color();
   const selectOverlayDormantColor = new THREE.Color(0x000000);
 
@@ -3144,12 +3146,23 @@ function applyNodeStyle() {
 
     if (searchMode) {
       const isMatch = searchExploreIndices.has(i);
-      if (isMatch) {
+      const isPrimarySelection = selectedIdx === i;
+      const isSelectedRegion = selectedRegionIndices.has(i);
+
+      if (isSelectedRegion) {
+        color.copy(isPrimarySelection ? selectedCoreNodeColor : selectedRegionNodeColor);
+        scale *= isPrimarySelection ? 2.20 : 1.85;
+        scale = Math.max(
+          scale,
+          base.baseScale * (
+            isPrimarySelection
+              ? (SELECTED_REGION_SCALE_MULTIPLIER * 1.22)
+              : (SELECTED_REGION_SCALE_MULTIPLIER * 1.05)
+          )
+        );
+      } else if (isMatch) {
         color.copy(searchExploreColor(i));
-        scale *= selectedIdx === i ? 2.08 : 1.46;
-        if (selectedRegionIndices.has(i)) {
-          scale = Math.max(scale, base.baseScale * SELECTED_REGION_SCALE_MULTIPLIER);
-        }
+        scale *= isPrimarySelection ? 2.08 : 1.46;
       } else {
         color.copy(searchDimColor);
         scale *= 0.42;
@@ -3162,7 +3175,7 @@ function applyNodeStyle() {
       nodeMesh.setColorAt(i, color);
 
       if (nodeHaloMesh) {
-        let haloIntensity = isMatch ? 0.22 : 0;
+        let haloIntensity = isSelectedRegion ? 0.45 : (isMatch ? 0.22 : 0);
         const haloScale = haloIntensity > 0.005
           ? base.baseScale * (3.00 + (5.20 * haloIntensity))
           : 0.0001;
@@ -3172,13 +3185,19 @@ function applyNodeStyle() {
         nodeHaloMesh.setMatrixAt(i, dummy.matrix);
 
         if (haloIntensity > 0.005) {
-          haloColor.copy(searchExploreColor(i)).multiplyScalar(0.58 + (1.45 * haloIntensity));
+          if (isSelectedRegion) {
+            haloColor
+              .copy(isPrimarySelection ? selectOverlayCoreColor : selectOverlayRegionColor)
+              .multiplyScalar(0.85 + (1.40 * haloIntensity));
+          } else {
+            haloColor.copy(searchExploreColor(i)).multiplyScalar(0.58 + (1.45 * haloIntensity));
+          }
         } else {
           haloColor.copy(haloDormant).multiplyScalar(0.01);
         }
         nodeHaloMesh.setColorAt(i, haloColor);
       }
-      updateSelectionOverlay(i, base, selectedIdx === i, selectedRegionIndices.has(i));
+      updateSelectionOverlay(i, base, isPrimarySelection, isSelectedRegion);
       continue;
     }
 
@@ -3255,14 +3274,16 @@ function applyNodeStyle() {
       if (selectedRegionIndices.has(i)) {
         if (i === selectedIdx) {
           scale = Math.max(scale, base.baseScale * (SELECTED_REGION_SCALE_MULTIPLIER * 1.18));
+          color.lerp(selectedCoreNodeColor, 0.96);
         } else {
           scale = Math.max(scale, base.baseScale * SELECTED_REGION_SCALE_MULTIPLIER);
+          color.lerp(selectedRegionNodeColor, 0.88);
         }
       } else if (selectedNeighbors.has(i)) {
         scale *= 1.16;
         color.lerp(neighColor, 0.52);
       } else {
-        color.multiplyScalar(0.33);
+        color.multiplyScalar(0.45);
       }
     }
 
@@ -3704,7 +3725,7 @@ function addNodes(g) {
     vertexColors: true,
     transparent: true,
     opacity: 0.96,
-    depthTest: true,
+    depthTest: false,
     depthWrite: false,
     toneMapped: false,
   });
