@@ -362,6 +362,19 @@
         text-decoration: underline;
       }
 
+      #regionLayerOpacityBlock {
+        margin-top: 2px;
+      }
+
+      #regionLayerOpacityBlock.disabled {
+        opacity: 0.55;
+      }
+
+      #regionLayerStatus {
+        margin-top: 4px;
+        opacity: 0.84;
+      }
+
       #basisBlock,
       #graphBlock,
       #scrubRateBlock,
@@ -875,7 +888,7 @@
     </script>
   </head>
   <body>
-    <div id="build">STIMFLOW • VERITAS • BUILD 1772572701</div>
+    <div id="build">STIMFLOW • VERITAS • BUILD 1772573101</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
       <div class="name">Cortical Flow Atlas</div>
@@ -1064,6 +1077,17 @@
       <div class="row">
         <label><input id="toggleHull" type="checkbox" checked />Show cortex layer</label>
       </div>
+      <div class="row">
+        <label><input id="toggleRegionLayer" type="checkbox" />Show selected region layer</label>
+      </div>
+      <div id="regionLayerOpacityBlock" class="disabled">
+        <div class="row">
+          <div>Region layer opacity</div>
+          <div id="regionLayerOpacityVal" class="mono">0.34</div>
+        </div>
+        <input id="regionLayerOpacityRange" type="range" min="0.10" max="0.95" step="0.01" value="0.34" />
+        <div id="regionLayerStatus" class="small mono">Region layer: off</div>
+      </div>
       <div id="stimSummaryBlock" class="stack">
         <div id="stimSummaryLabel">Stimulus summary</div>
         <div id="stimExplain" class="small">
@@ -1106,6 +1130,6 @@
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=1772572701"></script>
+    <script type="module" src="./stimflow.js?v=1772573101"></script>
   </body>
 </html>

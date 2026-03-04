@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
+import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772572701";
+const STIMFLOW_BUILD_ID = "1772573101";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -171,6 +172,9 @@ const SEARCH_HIGHLIGHT_PALETTE = [
 const HULL_OPACITY = 0.12;
 const HULL_OPACITY_MIN = 0.10;
 const HULL_OPACITY_MAX = 0.95;
+const REGION_LAYER_OPACITY = 0.34;
+const REGION_LAYER_OPACITY_MIN = 0.10;
+const REGION_LAYER_OPACITY_MAX = 0.95;
 const TIER_NONE = 0;
 const TIER_EXTENDED = 1;
 const TIER_CORE = 2;
@@ -1217,6 +1221,11 @@ const ui = {
   toggleHull: document.getElementById("toggleHull"),
   hullOpacityRange: document.getElementById("hullOpacityRange"),
   hullOpacityVal: document.getElementById("hullOpacityVal"),
+  toggleRegionLayer: document.getElementById("toggleRegionLayer"),
+  regionLayerOpacityBlock: document.getElementById("regionLayerOpacityBlock"),
+  regionLayerOpacityRange: document.getElementById("regionLayerOpacityRange"),
+  regionLayerOpacityVal: document.getElementById("regionLayerOpacityVal"),
+  regionLayerStatus: document.getElementById("regionLayerStatus"),
   toggleAuto: document.getElementById("toggleAuto"),
   toggleNarration: document.getElementById("toggleNarration"),
   narrationRateRange: document.getElementById("narrationRateRange"),
@@ -1321,6 +1330,8 @@ const state = {
   hoverGroupOn: false,
   hullOn: true,
   hullOpacity: HULL_OPACITY,
+  regionLayerOn: false,
+  regionLayerOpacity: REGION_LAYER_OPACITY,
   autoRotate: true,
   edgeThreshold: IS_TOUCH_DEVICE ? 0.12 : 0.08,
   gain: 1.0,
@@ -1354,6 +1365,7 @@ let nodeMesh = null;
 let nodeHaloMesh = null;
 let nodeSelectionMesh = null;
 let hullGroup = null;
+let regionLayerMesh = null;
 let edgeLines = null;
 let edgeHighlightLines = null;
 let edgeFlow = [];
@@ -3385,6 +3397,7 @@ function applyNodeStyle() {
 function clearSelection() {
   selectedIdx = null;
   setRegionQuickCardOpen(false);
+  rebuildRegionLayer();
   applyNodeStyle();
   rebuildEdgeHighlight();
   renderHud();
@@ -3393,6 +3406,7 @@ function clearSelection() {
 function setSelection(idx) {
   selectedIdx = idx;
   setRegionQuickCardOpen(Number.isInteger(idx));
+  rebuildRegionLayer();
   applyNodeStyle();
   rebuildEdgeHighlight();
   renderHud();
@@ -3701,6 +3715,7 @@ function addHull(obj) {
 }
 
 function addNodes(g) {
+  disposeRegionLayerMesh();
   const sphereGeo = new THREE.SphereGeometry(0.014, 14, 14);
   const sphereMat = new THREE.MeshStandardMaterial({
     color: 0x67c6ff,
@@ -4587,6 +4602,7 @@ function syncUI() {
   ui.toggleHull.checked = state.hullOn;
   if (ui.hullOpacityRange) ui.hullOpacityRange.value = state.hullOpacity.toFixed(2);
   if (ui.hullOpacityVal) ui.hullOpacityVal.textContent = state.hullOpacity.toFixed(2);
+  updateRegionLayerUiState();
   ui.toggleAuto.checked = state.autoRotate;
   ui.edgeThresh.value = String(state.edgeThreshold);
   ui.edgeVal.textContent = state.edgeThreshold.toFixed(2);
@@ -4622,6 +4638,102 @@ function applyHullOpacity(value) {
     child.material.opacity = state.hullOpacity;
     child.material.needsUpdate = true;
   });
+}
+
+function updateRegionLayerUiState() {
+  if (ui.toggleRegionLayer) ui.toggleRegionLayer.checked = state.regionLayerOn;
+  if (ui.regionLayerOpacityRange) ui.regionLayerOpacityRange.value = state.regionLayerOpacity.toFixed(2);
+  if (ui.regionLayerOpacityVal) ui.regionLayerOpacityVal.textContent = state.regionLayerOpacity.toFixed(2);
+  if (ui.regionLayerOpacityBlock) {
+    ui.regionLayerOpacityBlock.classList.toggle("disabled", !state.regionLayerOn);
+  }
+  if (ui.regionLayerStatus) {
+    if (!state.regionLayerOn) {
+      ui.regionLayerStatus.textContent = "Region layer: off";
+    } else if (!graph || selectedIdx === null || selectedIdx === undefined) {
+      ui.regionLayerStatus.textContent = "Region layer: select a region";
+    } else {
+      const name = prettyAalLabel(graph.nodes[selectedIdx]?.name || "region");
+      ui.regionLayerStatus.textContent = `Region layer: ${name}`;
+    }
+  }
+}
+
+function disposeRegionLayerMesh() {
+  if (!regionLayerMesh) return;
+  scene.remove(regionLayerMesh);
+  if (regionLayerMesh.geometry) regionLayerMesh.geometry.dispose();
+  if (regionLayerMesh.material) regionLayerMesh.material.dispose();
+  regionLayerMesh = null;
+}
+
+function applyRegionLayerOpacity(value) {
+  const nextOpacity = THREE.MathUtils.clamp(Number(value), REGION_LAYER_OPACITY_MIN, REGION_LAYER_OPACITY_MAX);
+  state.regionLayerOpacity = Number.isFinite(nextOpacity) ? nextOpacity : REGION_LAYER_OPACITY;
+  if (regionLayerMesh?.material) {
+    regionLayerMesh.material.opacity = state.regionLayerOpacity;
+    regionLayerMesh.material.needsUpdate = true;
+  }
+  updateRegionLayerUiState();
+}
+
+function rebuildRegionLayer() {
+  disposeRegionLayerMesh();
+
+  if (!state.regionLayerOn || !graph || selectedIdx === null || !nodeBase.length) {
+    updateRegionLayerUiState();
+    return;
+  }
+
+  const canonical = canonicalNodeLabel(graph.nodes[selectedIdx]?.name || "");
+  const indices = labelToIndices.get(canonical) || [];
+  const points = [];
+  for (const idx of indices) {
+    const pos = nodeBase[idx]?.pos;
+    if (pos) points.push(pos.clone());
+  }
+  if (!points.length) {
+    updateRegionLayerUiState();
+    return;
+  }
+
+  let geometry = null;
+  if (points.length >= 4) {
+    try {
+      geometry = new ConvexGeometry(points);
+    } catch (err) {
+      console.warn("Region layer hull generation failed; using sphere fallback:", err);
+    }
+  }
+
+  if (!geometry) {
+    const center = new THREE.Vector3();
+    for (const p of points) center.add(p);
+    center.multiplyScalar(1 / points.length);
+    let maxDist = 0.018;
+    for (const p of points) {
+      maxDist = Math.max(maxDist, center.distanceTo(p));
+    }
+    const radius = Math.max(0.028, maxDist * 1.42);
+    geometry = new THREE.SphereGeometry(radius, 20, 14);
+    geometry.translate(center.x, center.y, center.z);
+  }
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xff2d2d,
+    transparent: true,
+    opacity: state.regionLayerOpacity,
+    roughness: 0.78,
+    metalness: 0.02,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  regionLayerMesh = new THREE.Mesh(geometry, material);
+  regionLayerMesh.renderOrder = 1;
+  regionLayerMesh.frustumCulled = false;
+  scene.add(regionLayerMesh);
+  updateRegionLayerUiState();
 }
 
 window.addEventListener("keydown", (ev) => {
@@ -4940,6 +5052,21 @@ ui.toggleHull.addEventListener("change", () => {
 if (ui.hullOpacityRange) {
   ui.hullOpacityRange.addEventListener("input", () => {
     applyHullOpacity(ui.hullOpacityRange.value);
+    renderHud();
+  });
+}
+
+if (ui.toggleRegionLayer) {
+  ui.toggleRegionLayer.addEventListener("change", () => {
+    state.regionLayerOn = ui.toggleRegionLayer.checked;
+    rebuildRegionLayer();
+    renderHud();
+  });
+}
+
+if (ui.regionLayerOpacityRange) {
+  ui.regionLayerOpacityRange.addEventListener("input", () => {
+    applyRegionLayerOpacity(ui.regionLayerOpacityRange.value);
     renderHud();
   });
 }
