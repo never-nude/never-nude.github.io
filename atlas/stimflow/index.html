@@ -149,19 +149,48 @@
         border: 1px solid rgba(155, 206, 255, 0.38);
         border-radius: 12px;
         padding: 10px;
+        z-index: 36;
+        display: none;
         pointer-events: none;
+      }
+
+      #regionQuickCard.open {
+        display: block;
+        pointer-events: auto;
+      }
+
+      #regionQuickCard .head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      #regionQuickCard .close {
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        border: 1px solid rgba(170, 215, 255, 0.55);
+        background: rgba(8, 18, 44, 0.95);
+        color: #f0f7ff;
+        font-size: 18px;
+        line-height: 1;
+        font-weight: 700;
+        cursor: pointer;
       }
 
       #regionQuickCard .title {
         font-weight: 700;
         letter-spacing: 0.02em;
-        margin-bottom: 6px;
+        margin: 0;
       }
 
       #regionQuickCard .summary {
         font-size: 12px;
         line-height: 1.35;
         opacity: 0.92;
+        margin-top: 6px;
       }
 
       #regionQuickCard.empty .title {
@@ -721,7 +750,12 @@
         }
 
         #regionQuickCard {
-          display: none;
+          left: calc(var(--safe-left) + 10px);
+          right: calc(var(--safe-right) + 10px);
+          width: auto;
+          top: calc(var(--safe-top) + 58px);
+          bottom: auto;
+          max-height: min(24vh, 220px);
         }
 
         #panel button,
@@ -753,7 +787,9 @@
         body.mobile-panel-open #masthead,
         body.mobile-log-open #masthead,
         body.mobile-panel-open #graphSemantics,
-        body.mobile-log-open #graphSemantics {
+        body.mobile-log-open #graphSemantics,
+        body.mobile-panel-open #regionQuickCard,
+        body.mobile-log-open #regionQuickCard {
           display: none;
         }
       }
@@ -798,6 +834,10 @@
           font-size: 11px;
         }
 
+        #regionQuickCard {
+          max-height: min(22vh, 200px);
+        }
+
         #mobileDock {
           width: min(390px, calc(100vw - var(--safe-left) - var(--safe-right) - 6px));
           padding: 0 3px;
@@ -822,7 +862,7 @@
     </script>
   </head>
   <body>
-    <div id="build">STIMFLOW • VERITAS • BUILD 1772570901</div>
+    <div id="build">STIMFLOW • VERITAS • BUILD 1772571201</div>
     <div id="hud">Loading...</div>
     <div id="masthead" aria-hidden="true">
       <div class="name">Cortical Flow Atlas</div>
@@ -842,6 +882,13 @@
     <div id="mobileDock" aria-label="Mobile overlay controls">
       <button id="btnMobilePanel" type="button" aria-pressed="false">Controls</button>
       <button id="btnMobileNarration" type="button" aria-pressed="false">Narration</button>
+    </div>
+    <div id="regionQuickCard" class="empty" aria-live="polite" hidden>
+      <div class="head">
+        <div id="regionQuickTitle" class="title">Region details</div>
+        <button id="btnRegionQuickClose" class="close" type="button" aria-label="Close region details">×</button>
+      </div>
+      <div id="regionQuickSummary" class="summary">Tap a region to view its simplified role summary.</div>
     </div>
 
     <div id="panel">
@@ -1046,6 +1093,6 @@
       </div>
     </div>
 
-    <script type="module" src="./stimflow.js?v=1772570901"></script>
+    <script type="module" src="./stimflow.js?v=1772571201"></script>
   </body>
 </html>

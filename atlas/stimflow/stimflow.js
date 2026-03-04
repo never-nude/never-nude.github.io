@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772570901";
+const STIMFLOW_BUILD_ID = "1772571201";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -1158,6 +1158,7 @@ const ui = {
   regionQuickCard: document.getElementById("regionQuickCard"),
   regionQuickTitle: document.getElementById("regionQuickTitle"),
   regionQuickSummary: document.getElementById("regionQuickSummary"),
+  btnRegionQuickClose: document.getElementById("btnRegionQuickClose"),
   modeSelect: document.getElementById("modeSelect"),
   speedRange: document.getElementById("speedRange"),
   speedVal: document.getElementById("speedVal"),
@@ -1361,6 +1362,7 @@ let edgesFiltered = [];
 let edgesShown = 0;
 let hoveredIdx = null;
 let selectedIdx = null;
+let regionQuickCardOpen = false;
 let selectedNeighbors = new Set();
 let selectedRegionIndices = new Set();
 let hoverGroupLabel = "";
@@ -1976,12 +1978,20 @@ function renderRegionRole(idx) {
   ui.regionNetworks.textContent = `Networks: ${networks}`;
 }
 
+function setRegionQuickCardOpen(nextOpen) {
+  if (!ui.regionQuickCard) return;
+  regionQuickCardOpen = Boolean(nextOpen);
+  ui.regionQuickCard.classList.toggle("open", regionQuickCardOpen);
+  ui.regionQuickCard.hidden = !regionQuickCardOpen;
+}
+
 function renderRegionQuickCard(idx) {
   if (!ui.regionQuickCard || !ui.regionQuickTitle || !ui.regionQuickSummary) return;
   if (!graph || !Number.isInteger(idx)) {
     ui.regionQuickCard.classList.add("empty");
     ui.regionQuickTitle.textContent = "Hover or select a region";
     ui.regionQuickSummary.textContent = "Region quick card appears here with the region's commonly described functional role.";
+    if (!regionQuickCardOpen) ui.regionQuickCard.hidden = true;
     return;
   }
 
@@ -2958,7 +2968,7 @@ function renderHud() {
     lines.push("Hover: none");
   }
 
-  const quickCardIdx = hoveredIdx !== null ? hoveredIdx : selectedIdx;
+  const quickCardIdx = selectedIdx;
   renderRegionQuickCard(quickCardIdx);
 
   hud(lines.join("\n"));
@@ -3314,6 +3324,7 @@ function applyNodeStyle() {
 
 function clearSelection() {
   selectedIdx = null;
+  setRegionQuickCardOpen(false);
   applyNodeStyle();
   rebuildEdgeHighlight();
   renderHud();
@@ -3321,6 +3332,7 @@ function clearSelection() {
 
 function setSelection(idx) {
   selectedIdx = idx;
+  setRegionQuickCardOpen(Number.isInteger(idx));
   applyNodeStyle();
   rebuildEdgeHighlight();
   renderHud();
@@ -4598,6 +4610,13 @@ if (ui.btnNextArrival) {
 }
 if (ui.btnExportJson) ui.btnExportJson.addEventListener("click", () => exportPathReportJson());
 if (ui.btnExportCsv) ui.btnExportCsv.addEventListener("click", () => exportPathReportCsv());
+if (ui.btnRegionQuickClose) {
+  ui.btnRegionQuickClose.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    setRegionQuickCardOpen(false);
+  });
+}
 if (ui.btnRegionSearch && ui.regionSearchInput) {
   ui.btnRegionSearch.addEventListener("click", () => {
     rebuildRegionSearch(ui.regionSearchInput.value);
