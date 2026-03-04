@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772573401";
+const STIMFLOW_BUILD_ID = "1772573801";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -174,6 +174,9 @@ const HULL_OPACITY_MAX = 0.95;
 const REGION_LAYER_OPACITY = 0.34;
 const REGION_LAYER_OPACITY_MIN = 0.10;
 const REGION_LAYER_OPACITY_MAX = 0.95;
+const REGION_LAYER_MIN_RING_STEPS = 8;
+const REGION_LAYER_MAX_RING_STEPS = 20;
+const REGION_LAYER_MIN_TRIANGLES = 28;
 const TIER_NONE = 0;
 const TIER_EXTENDED = 1;
 const TIER_CORE = 2;
@@ -1365,6 +1368,10 @@ let nodeHaloMesh = null;
 let nodeSelectionMesh = null;
 let hullGroup = null;
 let regionLayerMesh = null;
+let regionLayerEdgeLines = null;
+let hullSurfaceVertices = [];
+let hullSurfaceTriangles = [];
+let hullSurfaceAdjacency = [];
 let edgeLines = null;
 let edgeHighlightLines = null;
 let edgeFlow = [];
@@ -3682,6 +3689,68 @@ function rebuildEdgeHighlight() {
   scene.add(edgeHighlightLines);
 }
 
+function resetHullSurfaceCache() {
+  hullSurfaceVertices = [];
+  hullSurfaceTriangles = [];
+  hullSurfaceAdjacency = [];
+}
+
+function cacheHullSurfaceData() {
+  resetHullSurfaceCache();
+  if (!hullGroup) return;
+
+  hullGroup.updateMatrixWorld(true);
+  let vertexOffset = 0;
+  const pos = new THREE.Vector3();
+
+  hullGroup.traverse((child) => {
+    if (!child.isMesh || !child.geometry) return;
+    const geom = child.geometry;
+    const posAttr = geom.getAttribute("position");
+    if (!posAttr || !posAttr.count) return;
+
+    for (let i = 0; i < posAttr.count; i++) {
+      pos.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+      pos.applyMatrix4(child.matrixWorld);
+      hullSurfaceVertices.push(pos.clone());
+    }
+
+    const idxAttr = geom.index;
+    if (idxAttr && idxAttr.array && idxAttr.array.length >= 3) {
+      const arr = idxAttr.array;
+      for (let i = 0; i + 2 < arr.length; i += 3) {
+        const a = vertexOffset + Number(arr[i]);
+        const b = vertexOffset + Number(arr[i + 1]);
+        const c = vertexOffset + Number(arr[i + 2]);
+        if (a === b || b === c || a === c) continue;
+        hullSurfaceTriangles.push([a, b, c]);
+      }
+    } else {
+      for (let i = 0; i + 2 < posAttr.count; i += 3) {
+        const a = vertexOffset + i;
+        const b = vertexOffset + i + 1;
+        const c = vertexOffset + i + 2;
+        hullSurfaceTriangles.push([a, b, c]);
+      }
+    }
+
+    vertexOffset += posAttr.count;
+  });
+
+  if (!hullSurfaceVertices.length || !hullSurfaceTriangles.length) {
+    resetHullSurfaceCache();
+    return;
+  }
+
+  const adjacencySets = Array.from({ length: hullSurfaceVertices.length }, () => new Set());
+  for (const [a, b, c] of hullSurfaceTriangles) {
+    adjacencySets[a].add(b); adjacencySets[a].add(c);
+    adjacencySets[b].add(a); adjacencySets[b].add(c);
+    adjacencySets[c].add(a); adjacencySets[c].add(b);
+  }
+  hullSurfaceAdjacency = adjacencySets.map((s) => Array.from(s));
+}
+
 function addHull(obj) {
   obj.traverse((child) => {
     if (child.isMesh) {
@@ -3710,7 +3779,9 @@ function addHull(obj) {
   hullGroup.scale.setScalar(SCALE);
   hullGroup.visible = state.hullOn;
   scene.add(hullGroup);
+  cacheHullSurfaceData();
   applyHullOpacity(state.hullOpacity);
+  if (state.regionLayerOn && selectedIdx !== null) rebuildRegionLayer();
 }
 
 function addNodes(g) {
@@ -4659,11 +4730,18 @@ function updateRegionLayerUiState() {
 }
 
 function disposeRegionLayerMesh() {
-  if (!regionLayerMesh) return;
-  scene.remove(regionLayerMesh);
-  if (regionLayerMesh.geometry) regionLayerMesh.geometry.dispose();
-  if (regionLayerMesh.material) regionLayerMesh.material.dispose();
-  regionLayerMesh = null;
+  if (regionLayerMesh) {
+    scene.remove(regionLayerMesh);
+    if (regionLayerMesh.geometry) regionLayerMesh.geometry.dispose();
+    if (regionLayerMesh.material) regionLayerMesh.material.dispose();
+    regionLayerMesh = null;
+  }
+  if (regionLayerEdgeLines) {
+    scene.remove(regionLayerEdgeLines);
+    if (regionLayerEdgeLines.geometry) regionLayerEdgeLines.geometry.dispose();
+    if (regionLayerEdgeLines.material) regionLayerEdgeLines.material.dispose();
+    regionLayerEdgeLines = null;
+  }
 }
 
 function applyRegionLayerOpacity(value) {
@@ -4673,7 +4751,93 @@ function applyRegionLayerOpacity(value) {
     regionLayerMesh.material.opacity = state.regionLayerOpacity;
     regionLayerMesh.material.needsUpdate = true;
   }
+  if (regionLayerEdgeLines?.material) {
+    regionLayerEdgeLines.material.opacity = Math.min(1, state.regionLayerOpacity + 0.20);
+    regionLayerEdgeLines.material.needsUpdate = true;
+  }
   updateRegionLayerUiState();
+}
+
+function nearestHullVertexIndex(point) {
+  let bestIdx = -1;
+  let bestDistSq = Infinity;
+  for (let i = 0; i < hullSurfaceVertices.length; i++) {
+    const d2 = hullSurfaceVertices[i].distanceToSquared(point);
+    if (d2 < bestDistSq) {
+      bestDistSq = d2;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+function buildRegionLayerGeometryFromHull(points) {
+  if (!hullSurfaceVertices.length || !hullSurfaceTriangles.length || !hullSurfaceAdjacency.length) {
+    return null;
+  }
+
+  const seedSet = new Set();
+  for (const point of points) {
+    const seedIdx = nearestHullVertexIndex(point);
+    if (seedIdx >= 0) seedSet.add(seedIdx);
+  }
+  if (!seedSet.size) return null;
+
+  const ringSteps = THREE.MathUtils.clamp(
+    8 + Math.round(Math.log2(points.length + 1) * 3),
+    REGION_LAYER_MIN_RING_STEPS,
+    REGION_LAYER_MAX_RING_STEPS
+  );
+  const visited = new Set(seedSet);
+  let frontier = Array.from(seedSet);
+  for (let step = 0; step < ringSteps; step++) {
+    if (!frontier.length) break;
+    const next = [];
+    for (const v of frontier) {
+      const neighbors = hullSurfaceAdjacency[v] || [];
+      for (const nb of neighbors) {
+        if (visited.has(nb)) continue;
+        visited.add(nb);
+        next.push(nb);
+      }
+    }
+    frontier = next;
+  }
+
+  const selectedTriangles = [];
+  for (const tri of hullSurfaceTriangles) {
+    const [a, b, c] = tri;
+    let inside = 0;
+    if (visited.has(a)) inside++;
+    if (visited.has(b)) inside++;
+    if (visited.has(c)) inside++;
+    if (inside >= 2) selectedTriangles.push(tri);
+  }
+  if (selectedTriangles.length < REGION_LAYER_MIN_TRIANGLES) return null;
+
+  const positions = [];
+  const indices = [];
+  const remap = new Map();
+  let nextIndex = 0;
+  const addVertex = (oldIdx) => {
+    if (remap.has(oldIdx)) return remap.get(oldIdx);
+    const v = hullSurfaceVertices[oldIdx];
+    positions.push(v.x, v.y, v.z);
+    remap.set(oldIdx, nextIndex);
+    nextIndex += 1;
+    return nextIndex - 1;
+  };
+
+  for (const [a, b, c] of selectedTriangles) {
+    indices.push(addVertex(a), addVertex(b), addVertex(c));
+  }
+
+  if (indices.length < REGION_LAYER_MIN_TRIANGLES * 3) return null;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 function rebuildRegionLayer() {
@@ -4696,16 +4860,13 @@ function rebuildRegionLayer() {
     return;
   }
 
-  const center = new THREE.Vector3();
-  for (const p of points) center.add(p);
-  center.multiplyScalar(1 / points.length);
-  let maxDist = 0.018;
-  for (const p of points) {
-    maxDist = Math.max(maxDist, center.distanceTo(p));
+  const geometry = buildRegionLayerGeometryFromHull(points);
+  if (!geometry) {
+    if (ui.regionLayerStatus) {
+      ui.regionLayerStatus.textContent = "Region layer: cortex patch unavailable for this selection";
+    }
+    return;
   }
-  const radius = Math.max(0.028, maxDist * 1.42);
-  const geometry = new THREE.SphereGeometry(radius, 20, 14);
-  geometry.translate(center.x, center.y, center.z);
 
   const material = new THREE.MeshStandardMaterial({
     color: 0xff2d2d,
@@ -4718,9 +4879,23 @@ function rebuildRegionLayer() {
     toneMapped: false,
   });
   regionLayerMesh = new THREE.Mesh(geometry, material);
-  regionLayerMesh.renderOrder = 1;
+  regionLayerMesh.renderOrder = 3;
   regionLayerMesh.frustumCulled = false;
   scene.add(regionLayerMesh);
+
+  const edgeGeo = new THREE.EdgesGeometry(geometry, 35);
+  const edgeMat = new THREE.LineBasicMaterial({
+    color: 0xff8a8a,
+    transparent: true,
+    opacity: Math.min(1, state.regionLayerOpacity + 0.20),
+    toneMapped: false,
+    depthWrite: false,
+  });
+  regionLayerEdgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
+  regionLayerEdgeLines.renderOrder = 4;
+  regionLayerEdgeLines.frustumCulled = false;
+  scene.add(regionLayerEdgeLines);
+
   updateRegionLayerUiState();
 }
 
