@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772571201";
+const STIMFLOW_BUILD_ID = "1772571501";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
