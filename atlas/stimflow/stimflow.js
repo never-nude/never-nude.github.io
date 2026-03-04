@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
+import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772573801";
+const STIMFLOW_BUILD_ID = "1772574601";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -177,6 +178,15 @@ const REGION_LAYER_OPACITY_MAX = 0.95;
 const REGION_LAYER_MIN_RING_STEPS = 8;
 const REGION_LAYER_MAX_RING_STEPS = 20;
 const REGION_LAYER_MIN_TRIANGLES = 28;
+const REGION_LAYER_POINT_DEDUP_DIST = 0.010;
+const REGION_LAYER_KEEP_RADIUS_MIN = 0.055;
+const REGION_LAYER_KEEP_RADIUS_SCALE = 1.65;
+const REGION_LAYER_POINT_SAMPLE_MAX = 84;
+const REGION_LAYER_CONVEX_MIN_POINTS = 4;
+const REGION_LAYER_CONVEX_MIN_VERTICES = 18;
+const REGION_LAYER_CLOUD_MAX_POINTS = 36;
+const REGION_LAYER_CLOUD_MIN_RADIUS = 0.008;
+const REGION_LAYER_CLOUD_MAX_RADIUS = 0.020;
 const TIER_NONE = 0;
 const TIER_EXTENDED = 1;
 const TIER_CORE = 2;
@@ -1369,6 +1379,8 @@ let nodeSelectionMesh = null;
 let hullGroup = null;
 let regionLayerMesh = null;
 let regionLayerEdgeLines = null;
+let regionLayerCloudMesh = null;
+let regionLayerMode = "off";
 let hullSurfaceVertices = [];
 let hullSurfaceTriangles = [];
 let hullSurfaceAdjacency = [];
@@ -4724,7 +4736,13 @@ function updateRegionLayerUiState() {
       ui.regionLayerStatus.textContent = "Region layer: select a region";
     } else {
       const name = prettyAalLabel(graph.nodes[selectedIdx]?.name || "region");
-      ui.regionLayerStatus.textContent = `Region layer: ${name}`;
+      if (regionLayerMode === "parcel") {
+        ui.regionLayerStatus.textContent = `Region layer: ${name} (parcel shell)`;
+      } else if (regionLayerMode === "cloud") {
+        ui.regionLayerStatus.textContent = `Region layer: ${name} (parcel cloud)`;
+      } else {
+        ui.regionLayerStatus.textContent = `Region layer: ${name}`;
+      }
     }
   }
 }
@@ -4742,6 +4760,13 @@ function disposeRegionLayerMesh() {
     if (regionLayerEdgeLines.material) regionLayerEdgeLines.material.dispose();
     regionLayerEdgeLines = null;
   }
+  if (regionLayerCloudMesh) {
+    scene.remove(regionLayerCloudMesh);
+    if (regionLayerCloudMesh.geometry) regionLayerCloudMesh.geometry.dispose();
+    if (regionLayerCloudMesh.material) regionLayerCloudMesh.material.dispose();
+    regionLayerCloudMesh = null;
+  }
+  regionLayerMode = "off";
 }
 
 function applyRegionLayerOpacity(value) {
@@ -4754,6 +4779,10 @@ function applyRegionLayerOpacity(value) {
   if (regionLayerEdgeLines?.material) {
     regionLayerEdgeLines.material.opacity = Math.min(1, state.regionLayerOpacity + 0.20);
     regionLayerEdgeLines.material.needsUpdate = true;
+  }
+  if (regionLayerCloudMesh?.material) {
+    regionLayerCloudMesh.material.opacity = state.regionLayerOpacity;
+    regionLayerCloudMesh.material.needsUpdate = true;
   }
   updateRegionLayerUiState();
 }
@@ -4840,6 +4869,103 @@ function buildRegionLayerGeometryFromHull(points) {
   return geometry;
 }
 
+function prepareRegionLayerPoints(points) {
+  if (!Array.isArray(points) || !points.length) return [];
+
+  const dedupeDistSq = REGION_LAYER_POINT_DEDUP_DIST * REGION_LAYER_POINT_DEDUP_DIST;
+  const unique = [];
+  for (const point of points) {
+    if (!(point instanceof THREE.Vector3)) continue;
+    let tooClose = false;
+    for (const existing of unique) {
+      if (existing.distanceToSquared(point) <= dedupeDistSq) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (!tooClose) unique.push(point.clone());
+  }
+  if (!unique.length) return [];
+
+  const center = new THREE.Vector3();
+  for (const point of unique) center.add(point);
+  center.multiplyScalar(1 / unique.length);
+
+  const distances = unique
+    .map((point) => point.distanceTo(center))
+    .sort((a, b) => a - b);
+  const q85 = distances[Math.floor((distances.length - 1) * 0.85)] || 0;
+  const keepRadius = Math.max(REGION_LAYER_KEEP_RADIUS_MIN, q85 * REGION_LAYER_KEEP_RADIUS_SCALE);
+
+  let trimmed = unique.filter((point) => point.distanceTo(center) <= keepRadius);
+  if (trimmed.length < REGION_LAYER_CONVEX_MIN_POINTS) trimmed = unique;
+  if (trimmed.length <= REGION_LAYER_POINT_SAMPLE_MAX) return trimmed;
+
+  const sampled = [];
+  const step = trimmed.length / REGION_LAYER_POINT_SAMPLE_MAX;
+  for (let i = 0; i < REGION_LAYER_POINT_SAMPLE_MAX; i++) {
+    sampled.push(trimmed[Math.floor(i * step)]);
+  }
+  return sampled;
+}
+
+function buildRegionLayerGeometryFromPoints(points) {
+  const prepared = prepareRegionLayerPoints(points);
+  if (prepared.length < REGION_LAYER_CONVEX_MIN_POINTS) return null;
+
+  try {
+    const geometry = new ConvexGeometry(prepared);
+    const posAttr = geometry.getAttribute("position");
+    if (!posAttr || posAttr.count < REGION_LAYER_CONVEX_MIN_VERTICES) {
+      geometry.dispose();
+      return null;
+    }
+    geometry.computeVertexNormals();
+    return geometry;
+  } catch (_err) {
+    return null;
+  }
+}
+
+function buildRegionLayerCloud(points) {
+  const prepared = prepareRegionLayerPoints(points).slice(0, REGION_LAYER_CLOUD_MAX_POINTS);
+  if (!prepared.length) return null;
+
+  const center = new THREE.Vector3();
+  for (const point of prepared) center.add(point);
+  center.multiplyScalar(1 / prepared.length);
+
+  let spread = 0;
+  for (const point of prepared) {
+    spread = Math.max(spread, point.distanceTo(center));
+  }
+  const radius = THREE.MathUtils.clamp(spread * 0.22, REGION_LAYER_CLOUD_MIN_RADIUS, REGION_LAYER_CLOUD_MAX_RADIUS);
+
+  const geometry = new THREE.SphereGeometry(radius, 10, 10);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xff2d2d,
+    transparent: true,
+    opacity: state.regionLayerOpacity,
+    roughness: 0.80,
+    metalness: 0.02,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const mesh = new THREE.InstancedMesh(geometry, material, prepared.length);
+  const marker = new THREE.Object3D();
+  for (let i = 0; i < prepared.length; i++) {
+    marker.position.copy(prepared[i]);
+    const wobble = 0.88 + ((i % 7) * 0.04);
+    marker.scale.setScalar(wobble);
+    marker.updateMatrix();
+    mesh.setMatrixAt(i, marker.matrix);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.renderOrder = 3;
+  mesh.frustumCulled = false;
+  return mesh;
+}
+
 function rebuildRegionLayer() {
   disposeRegionLayerMesh();
 
@@ -4860,41 +4986,54 @@ function rebuildRegionLayer() {
     return;
   }
 
-  const geometry = buildRegionLayerGeometryFromHull(points);
+  let geometry = buildRegionLayerGeometryFromHull(points);
+  regionLayerMode = geometry ? "cortex" : "off";
+
   if (!geometry) {
-    if (ui.regionLayerStatus) {
-      ui.regionLayerStatus.textContent = "Region layer: cortex patch unavailable for this selection";
-    }
-    return;
+    geometry = buildRegionLayerGeometryFromPoints(points);
+    if (geometry) regionLayerMode = "parcel";
   }
 
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xff2d2d,
-    transparent: true,
-    opacity: state.regionLayerOpacity,
-    roughness: 0.78,
-    metalness: 0.02,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-    toneMapped: false,
-  });
-  regionLayerMesh = new THREE.Mesh(geometry, material);
-  regionLayerMesh.renderOrder = 3;
-  regionLayerMesh.frustumCulled = false;
-  scene.add(regionLayerMesh);
+  if (geometry) {
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xff2d2d,
+      transparent: true,
+      opacity: state.regionLayerOpacity,
+      roughness: 0.78,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    regionLayerMesh = new THREE.Mesh(geometry, material);
+    regionLayerMesh.renderOrder = 3;
+    regionLayerMesh.frustumCulled = false;
+    scene.add(regionLayerMesh);
 
-  const edgeGeo = new THREE.EdgesGeometry(geometry, 35);
-  const edgeMat = new THREE.LineBasicMaterial({
-    color: 0xff8a8a,
-    transparent: true,
-    opacity: Math.min(1, state.regionLayerOpacity + 0.20),
-    toneMapped: false,
-    depthWrite: false,
-  });
-  regionLayerEdgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
-  regionLayerEdgeLines.renderOrder = 4;
-  regionLayerEdgeLines.frustumCulled = false;
-  scene.add(regionLayerEdgeLines);
+    const edgeGeo = new THREE.EdgesGeometry(geometry, 35);
+    const edgeMat = new THREE.LineBasicMaterial({
+      color: 0xff8a8a,
+      transparent: true,
+      opacity: Math.min(1, state.regionLayerOpacity + 0.20),
+      toneMapped: false,
+      depthWrite: false,
+    });
+    regionLayerEdgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
+    regionLayerEdgeLines.renderOrder = 4;
+    regionLayerEdgeLines.frustumCulled = false;
+    scene.add(regionLayerEdgeLines);
+  } else {
+    regionLayerCloudMesh = buildRegionLayerCloud(points);
+    if (!regionLayerCloudMesh) {
+      regionLayerMode = "off";
+      if (ui.regionLayerStatus) {
+        ui.regionLayerStatus.textContent = "Region layer: unavailable for this selection";
+      }
+      return;
+    }
+    regionLayerMode = "cloud";
+    scene.add(regionLayerCloudMesh);
+  }
 
   updateRegionLayerUiState();
 }
