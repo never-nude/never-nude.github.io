@@ -4,7 +4,7 @@ import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
 
 const CORE_BUILD_ID = "1772481939";
-const STIMFLOW_BUILD_ID = "1772574601";
+const STIMFLOW_BUILD_ID = "1772575001";
 const MILESTONE_LABEL = "VERITAS";
 const CACHE_BUST = `${CORE_BUILD_ID}-${STIMFLOW_BUILD_ID}`;
 
@@ -187,6 +187,24 @@ const REGION_LAYER_CONVEX_MIN_VERTICES = 18;
 const REGION_LAYER_CLOUD_MAX_POINTS = 36;
 const REGION_LAYER_CLOUD_MIN_RADIUS = 0.008;
 const REGION_LAYER_CLOUD_MAX_RADIUS = 0.020;
+const REGION_LAYER_DEEP_PREFIXES = [
+  "Hippocampus_",
+  "Amygdala_",
+  "ParaHippocampal_",
+  "Thalamus_",
+  "Caudate_",
+  "Putamen_",
+  "Pallidum_",
+  "Accumbens_",
+];
+const REGION_LAYER_AUTO_SELECT_CANONICALS = [
+  "Hippocampus_L",
+  "Hippocampus_R",
+  "Amygdala_L",
+  "Amygdala_R",
+  "Thalamus_L",
+  "Thalamus_R",
+];
 const TIER_NONE = 0;
 const TIER_EXTENDED = 1;
 const TIER_CORE = 2;
@@ -4733,7 +4751,7 @@ function updateRegionLayerUiState() {
     if (!state.regionLayerOn) {
       ui.regionLayerStatus.textContent = "Region layer: off";
     } else if (!graph || selectedIdx === null || selectedIdx === undefined) {
-      ui.regionLayerStatus.textContent = "Region layer: select a region";
+      ui.regionLayerStatus.textContent = "Region layer: select a region (click node or search + Find)";
     } else {
       const name = prettyAalLabel(graph.nodes[selectedIdx]?.name || "region");
       if (regionLayerMode === "parcel") {
@@ -4869,6 +4887,36 @@ function buildRegionLayerGeometryFromHull(points) {
   return geometry;
 }
 
+function isDeepRegionCanonical(canonical) {
+  if (!canonical) return false;
+  return REGION_LAYER_DEEP_PREFIXES.some((prefix) => canonical.startsWith(prefix));
+}
+
+function autoSelectRegionForLayer() {
+  if (!graph || !nodeBase.length || selectedIdx !== null) return false;
+
+  const typed = normalizeSearchText(ui.regionSearchInput?.value || "");
+  if (typed) {
+    const ok = rebuildRegionSearch(typed);
+    if (ok) return true;
+  }
+
+  for (const canonical of REGION_LAYER_AUTO_SELECT_CANONICALS) {
+    const indices = labelToIndices.get(canonical) || [];
+    const idx = indices.find((v) => Number.isInteger(v));
+    if (!Number.isInteger(idx)) continue;
+    setSelection(idx);
+    setHoveredIndex(idx);
+    focusCameraOnIndices(indices);
+    const name = prettyAalLabel(canonical);
+    setRegionSearchStatus(`Search: auto-selected ${name} for region layer`);
+    setStatus(`region layer ready: ${name}`);
+    return true;
+  }
+
+  return false;
+}
+
 function prepareRegionLayerPoints(points) {
   if (!Array.isArray(points) || !points.length) return [];
 
@@ -4944,10 +4992,13 @@ function buildRegionLayerCloud(points) {
   const geometry = new THREE.SphereGeometry(radius, 10, 10);
   const material = new THREE.MeshStandardMaterial({
     color: 0xff2d2d,
+    emissive: 0x5a0000,
+    emissiveIntensity: 0.45,
     transparent: true,
     opacity: state.regionLayerOpacity,
     roughness: 0.80,
     metalness: 0.02,
+    depthTest: false,
     depthWrite: false,
     toneMapped: false,
   });
@@ -4961,7 +5012,7 @@ function buildRegionLayerCloud(points) {
     mesh.setMatrixAt(i, marker.matrix);
   }
   mesh.instanceMatrix.needsUpdate = true;
-  mesh.renderOrder = 3;
+  mesh.renderOrder = 18;
   mesh.frustumCulled = false;
   return mesh;
 }
@@ -4986,27 +5037,41 @@ function rebuildRegionLayer() {
     return;
   }
 
-  let geometry = buildRegionLayerGeometryFromHull(points);
-  regionLayerMode = geometry ? "cortex" : "off";
+  const deepPreferred = isDeepRegionCanonical(canonical);
 
-  if (!geometry) {
+  let geometry = null;
+  if (deepPreferred) {
     geometry = buildRegionLayerGeometryFromPoints(points);
     if (geometry) regionLayerMode = "parcel";
+    if (!geometry) {
+      geometry = buildRegionLayerGeometryFromHull(points);
+      if (geometry) regionLayerMode = "cortex";
+    }
+  } else {
+    geometry = buildRegionLayerGeometryFromHull(points);
+    if (geometry) regionLayerMode = "cortex";
+    if (!geometry) {
+      geometry = buildRegionLayerGeometryFromPoints(points);
+      if (geometry) regionLayerMode = "parcel";
+    }
   }
 
   if (geometry) {
     const material = new THREE.MeshStandardMaterial({
       color: 0xff2d2d,
+      emissive: 0x5a0000,
+      emissiveIntensity: 0.50,
       transparent: true,
       opacity: state.regionLayerOpacity,
       roughness: 0.78,
       metalness: 0.02,
       side: THREE.DoubleSide,
+      depthTest: false,
       depthWrite: false,
       toneMapped: false,
     });
     regionLayerMesh = new THREE.Mesh(geometry, material);
-    regionLayerMesh.renderOrder = 3;
+    regionLayerMesh.renderOrder = 18;
     regionLayerMesh.frustumCulled = false;
     scene.add(regionLayerMesh);
 
@@ -5016,10 +5081,11 @@ function rebuildRegionLayer() {
       transparent: true,
       opacity: Math.min(1, state.regionLayerOpacity + 0.20),
       toneMapped: false,
+      depthTest: false,
       depthWrite: false,
     });
     regionLayerEdgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
-    regionLayerEdgeLines.renderOrder = 4;
+    regionLayerEdgeLines.renderOrder = 19;
     regionLayerEdgeLines.frustumCulled = false;
     scene.add(regionLayerEdgeLines);
   } else {
@@ -5361,6 +5427,9 @@ if (ui.hullOpacityRange) {
 if (ui.toggleRegionLayer) {
   ui.toggleRegionLayer.addEventListener("change", () => {
     state.regionLayerOn = ui.toggleRegionLayer.checked;
+    if (state.regionLayerOn && selectedIdx === null) {
+      autoSelectRegionForLayer();
+    }
     rebuildRegionLayer();
     renderHud();
   });
