@@ -1,11 +1,11 @@
 (() => {
   'use strict';
 
-  // ===== Bannerfall (D-Day baseline -> RB01 rules engine alignment) =====
-  // This build intentionally keeps the Bannerfall UI calm/legible while
+  // ===== Ad Arma (D-Day baseline -> RB01 rules engine alignment) =====
+  // This build intentionally keeps the Ad Arma UI calm/legible while
   // tightening the mechanics to the rules spec you provided.
 
-  const GAME_NAME = 'Bannerfall';
+  const GAME_NAME = 'AD ARMA';
   const BUILD_ID = (window.POLEMO_BUILD_ID || window.POLEMO_BUILD || 'DEV');
 
   // --- Board shape (157-hex "island")
@@ -133,15 +133,25 @@
   const RANDOM_START_UNITS_PER_SIDE = 30;
   const HISTORICAL_SCENARIO_ORDER = [
     'Terrain K — Marathon (490 BCE)',
+    'Terrain T — Thermopylae (Spartans at the Hot Gates, 480 BCE)',
+    'Terrain U — Plataea (479 BCE)',
     'Terrain L — Granicus River (334 BCE)',
+    'Terrain V — Gaugamela (331 BCE)',
+    'Terrain W — Hydaspes River Crossing (326 BCE)',
     'Terrain M — Cannae Double Envelopment (216 BCE)',
     'Terrain P — Ilipa Reverse Deployment (206 BCE)',
     'Terrain O — Zama (202 BCE)',
+    'Terrain X — Cynoscephalae Broken Hills (197 BCE)',
+    'Terrain Y — Magnesia Plain And River (190 BCE)',
+    'Terrain Z — Pydna Broken Ground (168 BCE)',
     'Terrain Q — Carhae (Carrhae, 53 BCE)',
+    'Terrain AA — Alesia Double Ring (52 BCE)',
     'Terrain N — Pharsalus Reserve Counterstroke (48 BCE)',
     'Terrain R — Thapsus Coastal Pressure (46 BCE)',
     'Terrain S — Philippi Twin Camps (42 BCE)',
+    'Terrain AB — Actium Shoreline Clash (31 BCE)',
     'Terrain G — Teutoburg Ambush (9 CE)',
+    'Terrain AC — Mons Graupius Ridge (83 CE)',
   ];
   const HISTORICAL_SCENARIO_INDEX = new Map(HISTORICAL_SCENARIO_ORDER.map((name, idx) => [name, idx]));
   const SCENARIO_SECTION_ORDER = ['quick', 'mirrored', 'nonMirrored', 'historical', 'demo', 'other'];
@@ -161,7 +171,7 @@
   const DIE_HIT = new Set([5, 6]);
   const DIE_RETREAT = 4;
 
-  // --- Units (Bannerfall quality-aware stats)
+  // --- Units (Ad Arma quality-aware stats)
   // HP and UP vary by quality (green / regular / veteran).
   const UNIT_DEFS = [
     // id, label, abbrev, symbol, MP, quality stats, combat profile
@@ -513,8 +523,8 @@
   const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
   const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR in woods fire only from tree-line. ARC/SKR on hills gain +1 ranged die (no range increase). Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
   const RULES_FULL_HTML = `
-    <h4>Bannerfall At A Glance</h4>
-    <p>Bannerfall is a hex-grid tactics game about cohesion, command, and collapse. The central idea is simple: an army wins by staying coordinated while forcing the enemy to lose shape. Units are formations, not heroes. Position and command matter more than flashy abilities.</p>
+    <h4>Ad Arma At A Glance</h4>
+    <p>Ad Arma is a hex-grid tactics game about cohesion, command, and collapse. The central idea is simple: an army wins by staying coordinated while forcing the enemy to lose shape. Units are formations, not heroes. Position and command matter more than flashy abilities.</p>
     <h4>How A Battle Starts</h4>
     <p>In local play, Blue always acts first. In online multiplayer, once both players connect and the battle begins, the starting side is randomized between Blue and Red.</p>
     <p>Every turn has up to 3 activations. Most units can act once each turn. You can end your turn early, but if you spend all 3 activations, the turn ends automatically.</p>
@@ -522,12 +532,12 @@
     <p>Base movement: INF 1, ARC 1, CAV 2, SKR 2, GEN 2, RUN 3/4/5 by quality, MED 1. Veterans, skirmishers, and runners can withdraw 1 hex from engagement if the destination is safe.</p>
     <ul>
       <li>INF: line holder, 2 melee dice.</li>
-      <li>CAV: shock unit, 3 melee dice.</li>
+      <li>CAV: shock unit, 3 melee dice. Lightning strike: if it moves 1 hex to attack and has movement left, it may disengage 1 hex after the attack (not if already engaged from being attacked first).</li>
       <li>SKR: flexible screen, 1 melee die, 1 ranged die at range 2.</li>
       <li>ARC: ranged pressure, 1 melee die, 2 ranged dice at range 2 and 1 die at range 3.</li>
       <li>GEN: command anchor, 1 melee die.</li>
       <li>RUN: messenger/relay, no attack, command relay radius 1.</li>
-      <li>MED: healer, no attack, restores +1 HP to one adjacent friendly unit as its action.</li>
+      <li>MED: healer, no attack, restores +1 HP to one adjacent friendly unit; healed units are spent for the rest of that turn.</li>
     </ul>
     <h4>HP, UP, And Why They Matter</h4>
     <p>HP is durability. A unit at 0 HP is destroyed. UP is strategic value used for force totals and Clear Victory scoring. Experience (Green/Regular/Veteran) mainly changes HP/UP and command independence, not your basic hit table.</p>
@@ -542,7 +552,7 @@
       <li>MED HP 1/1/1, UP 4</li>
     </ul>
     <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. INF enters Woods/Hills/Rough at cost 1 (and entering a Hill ends further movement that activation; INF also pauses next turn after entering Woods/Hills/Rough). SKR enters Woods at cost 2 and enters Hills/Rough at cost 1; SKR are not slowed by Hills. ARC enters Woods/Hills/Rough at cost 1 (entering a Hill ends further movement that activation; entering Woods still causes next-turn pause). GEN enters Hills/Rough at cost 2 (entering a Hill ends further movement that activation). CAV enters Woods/Hills/Rough at cost 2 and must pause next turn after entering any of those terrains. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
+    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. In Woods, INF/ARC/MED/CAV pause next turn after each woods entry; RUN/SKR/GEN move one woods hex per activation and do not take woods pause. INF enters Hills/Rough at cost 1 (entering a Hill ends further movement that activation). ARC enters Hills/Rough at cost 1 (entering a Hill ends further movement that activation). GEN enters Hills/Rough at cost 2 (entering a Hill ends further movement that activation). SKR enters Woods at cost 2 and enters Hills/Rough at cost 1; SKR are not slowed by Hills, and SKR may jump over adjacent friendly INF to land two hexes away if the landing hex is open. CAV enters Woods/Rough at cost 2 and pauses next turn after those entries, but CAV cannot climb onto Hills unless already starting from a Hill hex. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. Any unit entering Rough is fully inactive on the next turn (cannot activate at all). MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
     <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die (no range increase). Any attack launched from Rough suffers -1 die.</p>
     <h4>Command System</h4>
     <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
@@ -613,7 +623,7 @@
     selectedKey: null,
 
     // Current activation context (only while a unit is selected in Play)
-    // { unitId, committed, moved, attacked, healed, inCommandStart, moveSpent, postAttackWithdrawOnly }
+    // { unitId, committed, moved, attacked, healed, inCommandStart, startedEngaged, moveSpent, postAttackWithdrawOnly }
     act: null,
 
     victoryMode: 'clear',
@@ -2961,6 +2971,738 @@
   // === END BERSERKER FORMATIONS ===
 };
 
+Object.assign(SCENARIOS, {
+  'Terrain T — Thermopylae (Spartans at the Hot Gates, 480 BCE)': {
+    terrain: [
+      { q: 2, r: 2, terrain: 'hills' },
+      { q: 2, r: 3, terrain: 'hills' },
+      { q: 1, r: 4, terrain: 'hills' },
+      { q: 0, r: 5, terrain: 'hills' },
+      { q: 1, r: 6, terrain: 'hills' },
+      { q: 2, r: 7, terrain: 'hills' },
+      { q: 14, r: 2, terrain: 'water' },
+      { q: 14, r: 3, terrain: 'water' },
+      { q: 15, r: 4, terrain: 'water' },
+      { q: 15, r: 5, terrain: 'water' },
+      { q: 15, r: 6, terrain: 'water' },
+      { q: 14, r: 7, terrain: 'water' },
+      { q: 13, r: 8, terrain: 'water' },
+      { q: 6, r: 4, terrain: 'rough' },
+      { q: 7, r: 4, terrain: 'rough' },
+      { q: 8, r: 4, terrain: 'rough' },
+      { q: 6, r: 5, terrain: 'rough' },
+      { q: 7, r: 5, terrain: 'rough' },
+      { q: 8, r: 5, terrain: 'rough' },
+      { q: 6, r: 6, terrain: 'rough' },
+      { q: 7, r: 6, terrain: 'rough' },
+      { q: 8, r: 6, terrain: 'rough' },
+    ],
+    units: [
+      { q: 5, r: 8, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 7, r: 8, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 6, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 5, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 4, r: 7, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 10, r: 7, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 4, r: 6, side: 'blue', type: 'skr', quality: 'veteran' },
+      { q: 10, r: 6, side: 'blue', type: 'skr', quality: 'veteran' },
+      { q: 3, r: 9, side: 'blue', type: 'cav', quality: 'green' },
+
+      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 8, r: 0, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 12, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 3, r: 3, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 12, r: 3, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain U — Plataea (479 BCE)': {
+    terrain: [
+      { q: 4, r: 2, terrain: 'hills' },
+      { q: 5, r: 2, terrain: 'hills' },
+      { q: 6, r: 2, terrain: 'hills' },
+      { q: 9, r: 2, terrain: 'hills' },
+      { q: 10, r: 2, terrain: 'hills' },
+      { q: 11, r: 2, terrain: 'hills' },
+      { q: 6, r: 5, terrain: 'rough' },
+      { q: 7, r: 5, terrain: 'rough' },
+      { q: 8, r: 5, terrain: 'rough' },
+      { q: 7, r: 6, terrain: 'rough' },
+      { q: 1, r: 7, terrain: 'woods' },
+      { q: 2, r: 7, terrain: 'woods' },
+      { q: 3, r: 7, terrain: 'woods' },
+      { q: 1, r: 8, terrain: 'woods' },
+      { q: 2, r: 8, terrain: 'woods' },
+    ],
+    units: [
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 3, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 10, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 6, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 8, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 9, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 3, r: 1, side: 'red', type: 'arc', quality: 'veteran' },
+      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 10, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'veteran' },
+      { q: 2, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 12, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 3, r: 2, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 11, r: 2, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain V — Gaugamela (331 BCE)': {
+    terrain: [
+      { q: 0, r: 5, terrain: 'rough' },
+      { q: 1, r: 5, terrain: 'rough' },
+      { q: 14, r: 5, terrain: 'rough' },
+      { q: 15, r: 5, terrain: 'rough' },
+      { q: 2, r: 2, terrain: 'hills' },
+      { q: 13, r: 8, terrain: 'hills' },
+    ],
+    units: [
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
+      { q: 4, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
+      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
+      { q: 12, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
+      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 13, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 10, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 7, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 11, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 6, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 10, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 4, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 12, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 3, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 12, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 4, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 11, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 2, r: 2, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 13, r: 2, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 8, r: 0, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 12, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 3, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 11, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain W — Hydaspes River Crossing (326 BCE)': {
+    terrain: [
+      { q: 6, r: 1, terrain: 'water' },
+      { q: 6, r: 2, terrain: 'water' },
+      { q: 7, r: 2, terrain: 'water' },
+      { q: 6, r: 3, terrain: 'water' },
+      { q: 7, r: 3, terrain: 'water' },
+      { q: 6, r: 4, terrain: 'water' },
+      { q: 7, r: 4, terrain: 'water' },
+      { q: 6, r: 5, terrain: 'water' },
+      { q: 6, r: 6, terrain: 'water' },
+      { q: 7, r: 6, terrain: 'water' },
+      { q: 6, r: 7, terrain: 'water' },
+      { q: 7, r: 7, terrain: 'water' },
+      { q: 6, r: 8, terrain: 'water' },
+      { q: 7, r: 8, terrain: 'water' },
+      { q: 6, r: 9, terrain: 'water' },
+      { q: 8, r: 4, terrain: 'rough' },
+      { q: 8, r: 5, terrain: 'rough' },
+      { q: 8, r: 6, terrain: 'rough' },
+      { q: 10, r: 3, terrain: 'woods' },
+      { q: 11, r: 3, terrain: 'woods' },
+      { q: 10, r: 7, terrain: 'woods' },
+      { q: 11, r: 7, terrain: 'woods' },
+    ],
+    units: [
+      { q: 3, r: 6, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 4, r: 8, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 4, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 4, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 5, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 4, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 4, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 3, r: 7, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 3, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
+      { q: 2, r: 7, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 2, r: 6, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 3, r: 8, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 5, r: 8, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 2, r: 5, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 3, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 10, r: 3, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 12, r: 5, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 11, r: 4, side: 'red', type: 'run', quality: 'green' },
+      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 5, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 5, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 11, r: 5, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 6, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 10, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 11, r: 6, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 13, r: 4, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 13, r: 5, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 13, r: 6, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 9, r: 3, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 11, r: 3, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 12, r: 3, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 8, r: 5, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 9, r: 7, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain X — Cynoscephalae Broken Hills (197 BCE)': {
+    terrain: [
+      { q: 4, r: 3, terrain: 'hills' },
+      { q: 5, r: 3, terrain: 'hills' },
+      { q: 6, r: 3, terrain: 'hills' },
+      { q: 7, r: 3, terrain: 'hills' },
+      { q: 8, r: 3, terrain: 'hills' },
+      { q: 5, r: 4, terrain: 'hills' },
+      { q: 6, r: 4, terrain: 'hills' },
+      { q: 7, r: 4, terrain: 'hills' },
+      { q: 8, r: 4, terrain: 'hills' },
+      { q: 9, r: 4, terrain: 'hills' },
+      { q: 6, r: 5, terrain: 'hills' },
+      { q: 7, r: 5, terrain: 'hills' },
+      { q: 8, r: 5, terrain: 'hills' },
+      { q: 9, r: 6, terrain: 'hills' },
+      { q: 10, r: 6, terrain: 'hills' },
+      { q: 11, r: 6, terrain: 'hills' },
+      { q: 3, r: 5, terrain: 'rough' },
+      { q: 4, r: 5, terrain: 'rough' },
+      { q: 5, r: 5, terrain: 'rough' },
+      { q: 10, r: 5, terrain: 'rough' },
+      { q: 11, r: 5, terrain: 'rough' },
+      { q: 2, r: 6, terrain: 'woods' },
+      { q: 3, r: 6, terrain: 'woods' },
+      { q: 12, r: 4, terrain: 'woods' },
+      { q: 13, r: 4, terrain: 'woods' },
+    ],
+    units: [
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 3, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 3, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 5, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 10, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain Y — Magnesia Plain And River (190 BCE)': {
+    terrain: [
+      { q: 14, r: 2, terrain: 'water' },
+      { q: 14, r: 3, terrain: 'water' },
+      { q: 15, r: 4, terrain: 'water' },
+      { q: 15, r: 5, terrain: 'water' },
+      { q: 14, r: 6, terrain: 'water' },
+      { q: 13, r: 7, terrain: 'water' },
+      { q: 1, r: 3, terrain: 'hills' },
+      { q: 2, r: 3, terrain: 'hills' },
+      { q: 3, r: 3, terrain: 'hills' },
+      { q: 1, r: 4, terrain: 'hills' },
+      { q: 2, r: 4, terrain: 'hills' },
+      { q: 6, r: 4, terrain: 'rough' },
+      { q: 7, r: 4, terrain: 'rough' },
+      { q: 8, r: 4, terrain: 'rough' },
+      { q: 6, r: 5, terrain: 'rough' },
+      { q: 7, r: 5, terrain: 'rough' },
+      { q: 8, r: 5, terrain: 'rough' },
+      { q: 0, r: 6, terrain: 'woods' },
+      { q: 1, r: 6, terrain: 'woods' },
+      { q: 2, r: 6, terrain: 'woods' },
+    ],
+    units: [
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 10, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 7, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 9, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 11, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 12, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 4, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 11, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 4, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 11, r: 2, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 2, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 13, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 9, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 12, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 5, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 9, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 11, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain Z — Pydna Broken Ground (168 BCE)': {
+    terrain: [
+      { q: 5, r: 2, terrain: 'hills' },
+      { q: 6, r: 2, terrain: 'hills' },
+      { q: 7, r: 2, terrain: 'hills' },
+      { q: 8, r: 2, terrain: 'hills' },
+      { q: 9, r: 2, terrain: 'hills' },
+      { q: 4, r: 3, terrain: 'hills' },
+      { q: 5, r: 3, terrain: 'hills' },
+      { q: 6, r: 3, terrain: 'hills' },
+      { q: 9, r: 3, terrain: 'hills' },
+      { q: 10, r: 3, terrain: 'hills' },
+      { q: 6, r: 4, terrain: 'rough' },
+      { q: 7, r: 4, terrain: 'rough' },
+      { q: 8, r: 4, terrain: 'rough' },
+      { q: 5, r: 5, terrain: 'rough' },
+      { q: 6, r: 5, terrain: 'rough' },
+      { q: 7, r: 5, terrain: 'rough' },
+      { q: 8, r: 5, terrain: 'rough' },
+      { q: 9, r: 5, terrain: 'rough' },
+      { q: 4, r: 6, terrain: 'rough' },
+      { q: 5, r: 6, terrain: 'rough' },
+      { q: 6, r: 6, terrain: 'rough' },
+      { q: 2, r: 7, terrain: 'woods' },
+      { q: 3, r: 7, terrain: 'woods' },
+      { q: 12, r: 3, terrain: 'woods' },
+      { q: 13, r: 3, terrain: 'woods' },
+    ],
+    units: [
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 3, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 3, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 4, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 6, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 7, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 5, r: 5, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 10, r: 5, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain AA — Alesia Double Ring (52 BCE)': {
+    terrain: [
+      { q: 6, r: 4, terrain: 'hills' },
+      { q: 7, r: 4, terrain: 'hills' },
+      { q: 8, r: 4, terrain: 'hills' },
+      { q: 9, r: 4, terrain: 'hills' },
+      { q: 5, r: 5, terrain: 'hills' },
+      { q: 10, r: 5, terrain: 'hills' },
+      { q: 5, r: 6, terrain: 'hills' },
+      { q: 10, r: 6, terrain: 'hills' },
+      { q: 6, r: 7, terrain: 'hills' },
+      { q: 7, r: 7, terrain: 'hills' },
+      { q: 8, r: 7, terrain: 'hills' },
+      { q: 9, r: 7, terrain: 'hills' },
+      { q: 7, r: 5, terrain: 'rough' },
+      { q: 8, r: 5, terrain: 'rough' },
+      { q: 7, r: 6, terrain: 'rough' },
+      { q: 8, r: 6, terrain: 'rough' },
+      { q: 1, r: 2, terrain: 'woods' },
+      { q: 2, r: 2, terrain: 'woods' },
+      { q: 12, r: 2, terrain: 'woods' },
+      { q: 13, r: 2, terrain: 'woods' },
+      { q: 1, r: 8, terrain: 'woods' },
+      { q: 2, r: 8, terrain: 'woods' },
+      { q: 12, r: 8, terrain: 'woods' },
+      { q: 13, r: 8, terrain: 'woods' },
+    ],
+    units: [
+      { q: 6, r: 2, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 10, r: 2, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 8, r: 2, side: 'blue', type: 'run', quality: 'green' },
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 10, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 5, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 6, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 7, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 9, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 11, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 11, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 3, r: 5, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 3, r: 6, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 12, r: 5, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 12, r: 6, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 2, r: 5, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 13, r: 5, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 4, r: 2, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 12, r: 2, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 4, r: 9, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 12, r: 9, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 4, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 11, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 4, r: 7, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 11, r: 7, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 7, r: 5, side: 'red', type: 'gen', quality: 'veteran' },
+      { q: 8, r: 6, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 9, r: 5, side: 'red', type: 'run', quality: 'green' },
+      { q: 6, r: 5, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 5, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 6, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 7, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 7, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 7, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 5, r: 5, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 10, r: 6, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 5, r: 6, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 10, r: 5, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 5, r: 7, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 10, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain AB — Actium Shoreline Clash (31 BCE)': {
+    terrain: [
+      { q: 5, r: 4, terrain: 'water' },
+      { q: 6, r: 4, terrain: 'water' },
+      { q: 7, r: 4, terrain: 'water' },
+      { q: 8, r: 4, terrain: 'water' },
+      { q: 9, r: 4, terrain: 'water' },
+      { q: 10, r: 4, terrain: 'water' },
+      { q: 6, r: 5, terrain: 'water' },
+      { q: 7, r: 5, terrain: 'water' },
+      { q: 8, r: 5, terrain: 'water' },
+      { q: 9, r: 5, terrain: 'water' },
+      { q: 7, r: 6, terrain: 'water' },
+      { q: 8, r: 6, terrain: 'water' },
+      { q: 12, r: 2, terrain: 'water' },
+      { q: 13, r: 2, terrain: 'water' },
+      { q: 14, r: 2, terrain: 'water' },
+      { q: 10, r: 6, terrain: 'rough' },
+      { q: 11, r: 6, terrain: 'rough' },
+      { q: 12, r: 6, terrain: 'rough' },
+    ],
+    units: [
+      { q: 4, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 6, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 9, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 9, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 4, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 8, r: 10, side: 'blue', type: 'arc', quality: 'veteran' },
+      { q: 3, r: 9, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 9, r: 9, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 12, r: 4, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 11, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 11, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 12, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 12, r: 1, side: 'red', type: 'inf', quality: 'green' },
+      { q: 13, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 13, r: 5, side: 'red', type: 'cav', quality: 'veteran' },
+      { q: 10, r: 0, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 12, r: 0, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 13, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 9, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 11, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+
+  'Terrain AC — Mons Graupius Ridge (83 CE)': {
+    terrain: [
+      { q: 4, r: 2, terrain: 'hills' },
+      { q: 5, r: 2, terrain: 'hills' },
+      { q: 6, r: 2, terrain: 'hills' },
+      { q: 7, r: 2, terrain: 'hills' },
+      { q: 8, r: 2, terrain: 'hills' },
+      { q: 9, r: 2, terrain: 'hills' },
+      { q: 10, r: 2, terrain: 'hills' },
+      { q: 11, r: 2, terrain: 'hills' },
+      { q: 5, r: 3, terrain: 'hills' },
+      { q: 6, r: 3, terrain: 'hills' },
+      { q: 7, r: 3, terrain: 'hills' },
+      { q: 8, r: 3, terrain: 'hills' },
+      { q: 9, r: 3, terrain: 'hills' },
+      { q: 10, r: 3, terrain: 'hills' },
+      { q: 1, r: 3, terrain: 'woods' },
+      { q: 2, r: 3, terrain: 'woods' },
+      { q: 1, r: 4, terrain: 'woods' },
+      { q: 2, r: 4, terrain: 'woods' },
+      { q: 12, r: 4, terrain: 'woods' },
+      { q: 13, r: 4, terrain: 'woods' },
+      { q: 12, r: 5, terrain: 'woods' },
+      { q: 13, r: 5, terrain: 'woods' },
+      { q: 6, r: 6, terrain: 'rough' },
+      { q: 7, r: 6, terrain: 'rough' },
+      { q: 8, r: 6, terrain: 'rough' },
+      { q: 9, r: 6, terrain: 'rough' },
+      { q: 7, r: 7, terrain: 'rough' },
+      { q: 8, r: 7, terrain: 'rough' },
+    ],
+    units: [
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
+      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
+      { q: 4, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
+
+      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
+      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
+      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 3, r: 3, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 12, r: 3, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 2, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 13, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    ],
+  },
+});
+
 // === Terrain Pack (Berserker) ===
 // Adds terrain-focused variants of the existing Grand scenarios.
 // Board-aware: these generators only emit coordinates on active board hexes.
@@ -4774,6 +5516,7 @@ function unitColors(side) {
       existing.quality = quality;
       existing.hp = unitMaxHp(type, quality);
       delete existing.movePauseUntilTurn;
+      delete existing.actionPauseUntilTurn;
       log(`Draft replace at ${hexKey} -> ${side.toUpperCase()} ${def.abbrev} (${newCost} UP).`);
     } else {
       unitsByHex.set(hexKey, {
@@ -4783,6 +5526,7 @@ function unitColors(side) {
         quality,
         hp: unitMaxHp(type, quality),
         movePauseUntilTurn: 0,
+        actionPauseUntilTurn: 0,
       });
       log(`Draft placed ${side.toUpperCase()} ${def.abbrev} at ${hexKey} (${newCost} UP).`);
     }
@@ -5915,9 +6659,22 @@ function unitColors(side) {
     return unitType === 'inf' || unitType === 'arc' || unitType === 'gen';
   }
 
+  function canEnterTerrainFrom(unitType, fromTerrainId, toTerrainId) {
+    if (toTerrainId === 'water') return false;
+    // Cavalry can only be on hills if they already started the step on hills.
+    if (unitType === 'cav' && toTerrainId === 'hills' && fromTerrainId !== 'hills') return false;
+    return true;
+  }
+
   function unitMoveIsPausedThisTurn(unit) {
     if (!unit) return false;
     const until = Number(unit.movePauseUntilTurn || 0);
+    return Number.isFinite(until) && until >= state.turn;
+  }
+
+  function unitActionIsPausedThisTurn(unit) {
+    if (!unit) return false;
+    const until = Number(unit.actionPauseUntilTurn || 0);
     return Number.isFinite(until) && until >= state.turn;
   }
 
@@ -5937,6 +6694,7 @@ function unitColors(side) {
     if (!destHex) return false;
     if (!movementPauseAppliesForEntry(unit.type, destHex.terrain)) return false;
     unit.movePauseUntilTurn = state.turn + 1;
+    if (destHex.terrain === 'rough') unit.actionPauseUntilTurn = state.turn + 1;
     return true;
   }
 
@@ -5954,6 +6712,7 @@ function unitColors(side) {
     const terrainId = movementPauseTerrainFromPath(unit, pathKeys);
     if (!terrainId) return null;
     unit.movePauseUntilTurn = state.turn + 1;
+    if (terrainId === 'rough') unit.actionPauseUntilTurn = state.turn + 1;
     return terrainId;
   }
 
@@ -6046,6 +6805,7 @@ function unitColors(side) {
     if (u.side !== state.side) return false;
     if (state.actsUsed >= ACT_LIMIT) return false;
     if (state.actedUnitIds.has(u.id)) return false;
+    if (unitActionIsPausedThisTurn(u)) return false;
 
     // Green command-dependent units out-of-command cannot be activated.
     if (!unitIgnoresCommand(u) && u.quality === 'green') {
@@ -6062,6 +6822,9 @@ function unitColors(side) {
     if (u.side !== state.side) return null; // stay calm; don’t narrate enemy clicks
     if (state.actsUsed >= ACT_LIMIT) return 'No activations left — End Turn.';
     if (state.actedUnitIds.has(u.id)) return 'Already acted this turn.';
+    if (unitActionIsPausedThisTurn(u)) {
+      return `Recovering from rough terrain: cannot activate until turn ${u.actionPauseUntilTurn + 1}.`;
+    }
 
     if (!unitIgnoresCommand(u) && u.quality === 'green') {
       const cmd = inCommandAt(hexKey, u.side);
@@ -6087,6 +6850,7 @@ function unitColors(side) {
       const nh = board.byKey.get(nk);
       if (!nh) continue;
 
+      if (!canEnterTerrainFrom(u.type, h.terrain, nh.terrain)) continue;
       const cost = terrainMoveCost(u.type, nh.terrain);
       if (!Number.isFinite(cost) || cost > mp) continue;
 
@@ -6097,6 +6861,42 @@ function unitColors(side) {
     }
 
     return out;
+  }
+
+  function computeSkirmisherInfantryJumpTargets(fromKey, u) {
+    const out = new Set();
+    if (!u || u.type !== 'skr') return out;
+
+    const fromHex = board.byKey.get(fromKey);
+    if (!fromHex) return out;
+    const dirs = ['e', 'ur', 'ul', 'w', 'dl', 'dr'];
+    const mp = unitMovePoints(u);
+    if (mp < 2) return out;
+
+    for (const d of dirs) {
+      const midKey = stepKeyInDirection(fromKey, d);
+      const landKey = midKey ? stepKeyInDirection(midKey, d) : null;
+      if (!midKey || !landKey || !board.activeSet.has(landKey)) continue;
+      if (isOccupied(landKey)) continue;
+
+      const midUnit = unitsByHex.get(midKey);
+      if (!midUnit || midUnit.side !== u.side || midUnit.type !== 'inf') continue;
+
+      const landHex = board.byKey.get(landKey);
+      if (!landHex) continue;
+      if (!canEnterTerrainFrom(u.type, fromHex.terrain, landHex.terrain)) continue;
+      const cost = terrainMoveCost(u.type, landHex.terrain);
+      if (!Number.isFinite(cost) || cost > mp) continue;
+
+      out.add(landKey);
+    }
+
+    return out;
+  }
+
+  function isSkirmisherInfantryJumpMove(fromKey, toKey, unit) {
+    if (!unit || unit.type !== 'skr') return false;
+    return computeSkirmisherInfantryJumpTargets(fromKey, unit).has(toKey);
   }
 
   function unitCanMoveThisActivation(u, actCtx, startKey) {
@@ -6161,6 +6961,7 @@ function unitColors(side) {
         if (isOccupied(nk)) continue;
         const nh = board.byKey.get(nk);
         if (!nh) continue;
+        if (!canEnterTerrainFrom(u.type, h.terrain, nh.terrain)) continue;
 
         const stepCost = terrainMoveCost(u.type, nh.terrain);
         if (!Number.isFinite(stepCost)) continue; // water/impassable
@@ -6181,12 +6982,18 @@ function unitColors(side) {
       }
     }
 
+    if (u.type === 'skr' && !skrStartingSlow) {
+      const jumpTargets = computeSkirmisherInfantryJumpTargets(fromKey, u);
+      for (const k of jumpTargets) out.add(k);
+    }
+
     return out;
   }
 
   function movementPathCost(fromKey, toKey, unit) {
     if (fromKey === toKey) return 0;
     if (!unit) return null;
+    if (isSkirmisherInfantryJumpMove(fromKey, toKey, unit)) return 2;
     const mp = unitMovePoints(unit);
     if (mp <= 0) return null;
     const startHex = board.byKey.get(fromKey);
@@ -6213,6 +7020,7 @@ function unitColors(side) {
         if (isOccupied(nk) && nk !== toKey) continue;
         const nh = board.byKey.get(nk);
         if (!nh) continue;
+        if (!canEnterTerrainFrom(unit.type, h.terrain, nh.terrain)) continue;
 
         const stepCost = terrainMoveCost(unit.type, nh.terrain);
         if (!Number.isFinite(stepCost)) continue;
@@ -6238,6 +7046,7 @@ function unitColors(side) {
   function movementPathKeys(fromKey, toKey, unit) {
     if (fromKey === toKey) return [fromKey];
     if (!unit) return [fromKey, toKey];
+    if (isSkirmisherInfantryJumpMove(fromKey, toKey, unit)) return [fromKey, toKey];
     const mp = unitMovePoints(unit);
     if (mp <= 0) return [fromKey, toKey];
     const startHex = board.byKey.get(fromKey);
@@ -6265,6 +7074,7 @@ function unitColors(side) {
         if (isOccupied(nk) && nk !== toKey) continue;
         const nh = board.byKey.get(nk);
         if (!nh) continue;
+        if (!canEnterTerrainFrom(unit.type, h.terrain, nh.terrain)) continue;
 
         const stepCost = terrainMoveCost(unit.type, nh.terrain);
         if (!Number.isFinite(stepCost)) continue;
@@ -6436,6 +7246,7 @@ function unitColors(side) {
     if (u.side !== state.side) return false;
     if (state.actsUsed >= ACT_LIMIT) return false;
     if (state.actedUnitIds.has(u.id)) return false;
+    if (unitActionIsPausedThisTurn(u)) return false;
     if (unitMoveIsPausedThisTurn(u)) return false;
     if (isEngaged(hexKey, u.side)) return false;
     return true;
@@ -6718,15 +7529,24 @@ function unitColors(side) {
     if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
 
-  function veteranCavPostAttackWithdrawTargets(fromKey, u, actCtx) {
+  function cavalryPostAttackWithdrawTargets(fromKey, u, actCtx) {
     const out = new Set();
-    if (!u || u.type !== 'cav' || u.quality !== 'veteran') return out;
-    if (!isEngaged(fromKey, u.side)) return out;
+    if (!u || u.type !== 'cav') return out;
 
     const moveDef = UNIT_BY_ID.get(u.type);
     const maxMp = moveDef ? moveDef.move : 0;
     const remainingMp = Math.max(0, maxMp - (actCtx?.moveSpent || 0));
     if (remainingMp <= 0) return out;
+
+    const veteranWithdraw = (u.quality === 'veteran') && isEngaged(fromKey, u.side);
+    const lightningStrikeWithdraw =
+      !!actCtx &&
+      !!actCtx.moved &&
+      !actCtx.startedEngaged &&
+      (actCtx.moveSpent || 0) >= 1 &&
+      remainingMp >= 1;
+
+    if (!veteranWithdraw && !lightningStrikeWithdraw) return out;
 
     const h = board.byKey.get(fromKey);
     if (!h) return out;
@@ -6735,6 +7555,7 @@ function unitColors(side) {
       if (isOccupied(nk)) continue;
       const nh = board.byKey.get(nk);
       if (!nh) continue;
+      if (!canEnterTerrainFrom(u.type, h.terrain, nh.terrain)) continue;
 
       const cost = terrainMoveCost(u.type, nh.terrain);
       if (!Number.isFinite(cost) || cost > remainingMp) continue;
@@ -6881,6 +7702,7 @@ function unitColors(side) {
 
     const aHex = board.byKey.get(attackerKey);
     const dHex = board.byKey.get(defenderKey);
+    const defU = unitsByHex.get(defenderKey);
     if (!aHex || !dHex) return null;
 
     const curDist = axialDistance(aHex.q, aHex.r, dHex.q, dHex.r);
@@ -6909,6 +7731,7 @@ function unitColors(side) {
     if (!bh) return null;
 
     if (bh.terrain === 'water') return null;
+    if (defU && !canEnterTerrainFrom(defU.type, dHex.terrain, bh.terrain)) return null;
     if (isOccupied(bestKey)) return null;
 
     return bestKey;
@@ -7302,6 +8125,7 @@ function unitColors(side) {
       existing.quality = quality;
       existing.hp = unitMaxHp(type, quality);
       delete existing.movePauseUntilTurn;
+      delete existing.actionPauseUntilTurn;
       log(`Replaced at ${hexKey} → ${state.editSide} ${def.abbrev}`);
     } else {
       unitsByHex.set(hexKey, {
@@ -7311,6 +8135,7 @@ function unitColors(side) {
         quality,
         hp: unitMaxHp(type, quality),
         movePauseUntilTurn: 0,
+        actionPauseUntilTurn: 0,
       });
       log(`Placed ${state.editSide} ${def.abbrev} at ${hexKey}`);
     }
@@ -7708,6 +8533,8 @@ function unitColors(side) {
       const nh = board.byKey.get(nk);
       if (!nh) continue;
       const nTerrain = terrainAtForLayout(nk, terrainByHex);
+      const fromTerrain = terrainAtForLayout(hex.k, terrainByHex);
+      if (!canEnterTerrainFrom(type, fromTerrain, nTerrain)) continue;
       const stepCost = terrainMoveCost(type, nTerrain);
       if (Number.isFinite(stepCost) && stepCost <= mp) return true;
     }
@@ -8638,6 +9465,9 @@ function unitColors(side) {
         movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
           ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
           : 0,
+        actionPauseUntilTurn: Number.isFinite(Number(u.actionPauseUntilTurn))
+          ? Math.max(0, Math.trunc(Number(u.actionPauseUntilTurn)))
+          : 0,
       });
       stats.unitsPlaced += 1;
     }
@@ -8699,6 +9529,9 @@ function unitColors(side) {
         hp: u.hp,
         movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
           ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
+          : 0,
+        actionPauseUntilTurn: Number.isFinite(Number(u.actionPauseUntilTurn))
+          ? Math.max(0, Math.trunc(Number(u.actionPauseUntilTurn)))
           : 0,
       });
     }
@@ -8790,7 +9623,7 @@ function unitColors(side) {
       Object.prototype.hasOwnProperty.call(raw, 'victoryMode');
 
     if (!looksLikeState) {
-      return { ok: false, error: 'Import failed: this JSON does not look like a Bannerfall state file.' };
+      return { ok: false, error: 'Import failed: this JSON does not look like an Ad Arma state file.' };
     }
 
     return { ok: true, payload: raw };
@@ -8926,6 +9759,9 @@ function unitColors(side) {
         hp,
         movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
           ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
+          : 0,
+        actionPauseUntilTurn: Number.isFinite(Number(u.actionPauseUntilTurn))
+          ? Math.max(0, Math.trunc(Number(u.actionPauseUntilTurn)))
           : 0,
       });
       report.unitsPlaced += 1;
@@ -9089,6 +9925,7 @@ function unitColors(side) {
     if (!unitCanActivate(u, hexKey)) return;
 
     const inCmd = unitIgnoresCommand(u) ? true : inCommandAt(hexKey, u.side);
+    const startedEngaged = isEngaged(hexKey, u.side);
 
     state.selectedKey = hexKey;
     state.act = {
@@ -9098,6 +9935,7 @@ function unitColors(side) {
       attacked: false,
       healed: false,
       inCommandStart: inCmd,
+      startedEngaged,
       moveSpent: 0,
       postAttackWithdrawOnly: false,
     };
@@ -9110,9 +9948,12 @@ function unitColors(side) {
     const def = UNIT_BY_ID.get(u.type);
     const engaged = isEngaged(hexKey, u.side);
     const notes = [];
+    const actionPaused = unitActionIsPausedThisTurn(u);
     const movePaused = unitMoveIsPausedThisTurn(u);
 
-    if (movePaused) {
+    if (actionPaused) {
+      notes.push(`Terrain shock: cannot activate this turn (ready again on turn ${u.actionPauseUntilTurn + 1}).`);
+    } else if (movePaused) {
       notes.push(`Terrain fatigue: cannot move this turn (ready again on turn ${u.movePauseUntilTurn + 1}).`);
     } else if (engaged) {
       if (u.type === 'skr') notes.push('Engaged: SKR may disengage 1 hex.');
@@ -9189,7 +10030,7 @@ function unitColors(side) {
     });
 
     if (isPostAttackWithdraw) {
-      log(`Veteran CAV disengaged to ${destKey}.`);
+      log(`CAV disengaged to ${destKey}.`);
       clearSelection();
       if (!maybeAutoEndTurnAfterAction()) updateHud();
       return;
@@ -9204,7 +10045,11 @@ function unitColors(side) {
 
     if (pauseTerrainId) {
       const terrainName = terrainLabel(pauseTerrainId);
-      log(`Moved to ${destKey}. Terrain friction: ${UNIT_BY_ID.get(u.type)?.abbrev || u.type} must pause movement on turn ${u.movePauseUntilTurn} after entering ${terrainName}.`);
+      if (pauseTerrainId === 'rough') {
+        log(`Moved to ${destKey}. Rough terrain shock: ${UNIT_BY_ID.get(u.type)?.abbrev || u.type} is inactive on turn ${u.actionPauseUntilTurn} after entering ${terrainName}.`);
+      } else {
+        log(`Moved to ${destKey}. Terrain friction: ${UNIT_BY_ID.get(u.type)?.abbrev || u.type} must pause movement on turn ${u.movePauseUntilTurn} after entering ${terrainName}.`);
+      }
     } else {
       log(`Moved to ${destKey}.`);
     }
@@ -9253,9 +10098,11 @@ function unitColors(side) {
     state.act.committed = true;
     state.act.healed = true;
     target.hp = Math.min(maxHp, target.hp + 1);
+    // Healing stabilizes a unit but also keeps it out of further action this turn.
+    state.actedUnitIds.add(target.id);
     const tdef = UNIT_BY_ID.get(target.type);
 
-    log(`Medic restored 1 HP to ${target.side.toUpperCase()} ${tdef ? tdef.abbrev : target.type} (${target.hp}/${maxHp}).`);
+    log(`Medic restored 1 HP to ${target.side.toUpperCase()} ${tdef ? tdef.abbrev : target.type} (${target.hp}/${maxHp}). Healed unit is spent for the rest of this turn.`);
     clearSelection();
     if (!maybeAutoEndTurnAfterAction()) updateHud();
   }
@@ -9302,13 +10149,13 @@ function unitColors(side) {
 
     const afterAtk = unitsByHex.get(attackerKey);
     if (afterAtk) {
-      const withdrawTargets = veteranCavPostAttackWithdrawTargets(attackerKey, afterAtk, state.act);
+      const withdrawTargets = cavalryPostAttackWithdrawTargets(attackerKey, afterAtk, state.act);
       if (withdrawTargets.size > 0) {
         state.act.postAttackWithdrawOnly = true;
         state._moveTargets = withdrawTargets;
         state._attackTargets = new Set();
         state._healTargets = new Set();
-        log('Veteran CAV may disengage: choose a withdrawal hex or click selected unit to end activation.');
+        log('Cavalry may disengage: choose a withdrawal hex or click selected unit to end activation.');
         updateHud();
         return;
       }
