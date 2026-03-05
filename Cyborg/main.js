@@ -2974,51 +2974,90 @@
 Object.assign(SCENARIOS, {
   'Terrain T — Thermopylae (Spartans at the Hot Gates, 480 BCE)': {
     terrain: [
+      // West mountain shoulder pressing toward the center.
+      { q: 1, r: 3, terrain: 'hills' },
+      { q: 1, r: 4, terrain: 'hills' },
+      { q: 1, r: 5, terrain: 'hills' },
+      { q: 1, r: 6, terrain: 'hills' },
+      { q: 1, r: 7, terrain: 'hills' },
       { q: 2, r: 2, terrain: 'hills' },
       { q: 2, r: 3, terrain: 'hills' },
-      { q: 1, r: 4, terrain: 'hills' },
-      { q: 0, r: 5, terrain: 'hills' },
-      { q: 1, r: 6, terrain: 'hills' },
+      { q: 2, r: 4, terrain: 'hills' },
+      { q: 2, r: 6, terrain: 'hills' },
       { q: 2, r: 7, terrain: 'hills' },
+      { q: 2, r: 8, terrain: 'hills' },
+      { q: 3, r: 2, terrain: 'hills' },
+      { q: 3, r: 3, terrain: 'hills' },
+      { q: 3, r: 7, terrain: 'hills' },
+      { q: 3, r: 8, terrain: 'hills' },
+      { q: 4, r: 3, terrain: 'hills' },
+      { q: 4, r: 7, terrain: 'hills' },
+
+      // East coastline squeezing toward a narrow center corridor.
+      { q: 12, r: 2, terrain: 'water' },
+      { q: 13, r: 2, terrain: 'water' },
       { q: 14, r: 2, terrain: 'water' },
+      { q: 12, r: 3, terrain: 'water' },
+      { q: 13, r: 3, terrain: 'water' },
       { q: 14, r: 3, terrain: 'water' },
-      { q: 15, r: 4, terrain: 'water' },
-      { q: 15, r: 5, terrain: 'water' },
-      { q: 15, r: 6, terrain: 'water' },
-      { q: 14, r: 7, terrain: 'water' },
-      { q: 13, r: 8, terrain: 'water' },
+      { q: 11, r: 4, terrain: 'water' },
+      { q: 12, r: 4, terrain: 'water' },
+      { q: 13, r: 4, terrain: 'water' },
+      { q: 14, r: 4, terrain: 'water' },
+      { q: 11, r: 5, terrain: 'water' },
+      { q: 12, r: 5, terrain: 'water' },
+      { q: 13, r: 5, terrain: 'water' },
+      { q: 14, r: 5, terrain: 'water' },
+      { q: 11, r: 6, terrain: 'water' },
+      { q: 12, r: 6, terrain: 'water' },
+      { q: 13, r: 6, terrain: 'water' },
+      { q: 11, r: 7, terrain: 'water' },
+      { q: 12, r: 7, terrain: 'water' },
+      { q: 13, r: 7, terrain: 'water' },
+      { q: 11, r: 8, terrain: 'water' },
+      { q: 12, r: 8, terrain: 'water' },
+
+      // Chokepoint shoulders around the gate itself.
+      { q: 4, r: 4, terrain: 'rough' },
+      { q: 4, r: 5, terrain: 'rough' },
+      { q: 4, r: 6, terrain: 'rough' },
+      { q: 5, r: 4, terrain: 'rough' },
+      { q: 5, r: 6, terrain: 'rough' },
       { q: 6, r: 4, terrain: 'rough' },
-      { q: 7, r: 4, terrain: 'rough' },
-      { q: 8, r: 4, terrain: 'rough' },
-      { q: 6, r: 5, terrain: 'rough' },
-      { q: 7, r: 5, terrain: 'rough' },
-      { q: 8, r: 5, terrain: 'rough' },
       { q: 6, r: 6, terrain: 'rough' },
-      { q: 7, r: 6, terrain: 'rough' },
+      { q: 8, r: 4, terrain: 'rough' },
       { q: 8, r: 6, terrain: 'rough' },
+      { q: 9, r: 4, terrain: 'rough' },
+      { q: 9, r: 6, terrain: 'rough' },
+      { q: 10, r: 5, terrain: 'rough' },
     ],
     units: [
-      { q: 5, r: 8, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 7, r: 8, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 6, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      // Greek / Spartan-led defense: stacked center at the narrow gate.
+      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+      { q: 8, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
+      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
+      { q: 7, r: 10, side: 'blue', type: 'med', quality: 'regular' },
       { q: 5, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
       { q: 6, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
       { q: 7, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
       { q: 8, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
       { q: 9, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
       { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
       { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
       { q: 4, r: 7, side: 'blue', type: 'arc', quality: 'regular' },
       { q: 10, r: 7, side: 'blue', type: 'arc', quality: 'regular' },
       { q: 4, r: 6, side: 'blue', type: 'skr', quality: 'veteran' },
       { q: 10, r: 6, side: 'blue', type: 'skr', quality: 'veteran' },
       { q: 3, r: 9, side: 'blue', type: 'cav', quality: 'green' },
 
+      // Persian attack mass: wider front forced into the central pass.
       { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+      { q: 9, r: 1, side: 'red', type: 'gen', quality: 'regular' },
       { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
+      { q: 7, r: 1, side: 'red', type: 'med', quality: 'regular' },
       { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
       { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
       { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
@@ -3032,14 +3071,18 @@ Object.assign(SCENARIOS, {
       { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
       { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
       { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
+      { q: 5, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 6, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 7, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 9, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 10, r: 4, side: 'red', type: 'inf', quality: 'green' },
+      { q: 3, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
+      { q: 4, r: 2, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 11, r: 2, side: 'red', type: 'skr', quality: 'regular' },
       { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 8, r: 0, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 12, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 3, r: 3, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 12, r: 3, side: 'red', type: 'skr', quality: 'regular' },
+      { q: 10, r: 1, side: 'red', type: 'cav', quality: 'regular' },
     ],
   },
 
@@ -8331,11 +8374,18 @@ function unitColors(side) {
 
   function createRandomTerrainLayout(axis, geometry) {
     const terrainByHex = new Map();
-    const centerLaneHalf = 0.17 + (Math.random() * 0.05);
-    const clashBandHalf = 0.20 + (Math.random() * 0.06);
+    // Keep the central clash corridor mostly open; terrain should frame, not clog, the fight.
+    const centerLaneHalf = 0.24 + (Math.random() * 0.04);
+    const clashBandHalf = 0.27 + (Math.random() * 0.05);
     const deploymentBand = 0.18;
     const advantageRoll = Math.random();
     const advantageSide = (advantageRoll < 0.35) ? 'blue' : ((advantageRoll < 0.70) ? 'red' : 'none');
+    const terrainStyle = weightedPick([
+      { value: 'open_plain', weight: 44 },
+      { value: 'flank_cover', weight: 26 },
+      { value: 'ridge_shoulders', weight: 18 },
+      { value: 'broken_wings', weight: 12 },
+    ], 'open_plain');
 
     function metaAtHex(hex) {
       return geometry.byKey.get(hex.k) || null;
@@ -8354,7 +8404,7 @@ function unitColors(side) {
     }
 
     function isFlank(meta) {
-      return Math.abs(meta.lateralN - 0.5) >= 0.28;
+      return Math.abs(meta.lateralN - 0.5) >= 0.24;
     }
 
     function isEdge(meta) {
@@ -8422,13 +8472,17 @@ function unitColors(side) {
     }
 
     const midFlank = () => filteredCandidates(e => {
-      return isFlank(e) && e.approachN >= 0.20 && e.approachN <= 0.80;
+      return isFlank(e) && e.approachN >= 0.16 && e.approachN <= 0.84;
     });
     const edgeFlank = () => filteredCandidates(e => {
       return isFlank(e) && isEdge(e) && !isDeployment(e);
     });
     const roughBand = () => filteredCandidates(e => {
-      return !isDeployment(e) && (!isCenterLane(e) || !isClashBand(e));
+      return (
+        !isDeployment(e) &&
+        Math.abs(e.lateralN - 0.5) >= (centerLaneHalf + 0.08) &&
+        (!isCenterLane(e) || !isClashBand(e))
+      );
     });
 
     const biasMatch = (meta) => {
@@ -8436,8 +8490,34 @@ function unitColors(side) {
       return sideDepthNorm(meta, advantageSide) <= 0.45;
     };
 
+    // Terrain profile controls how "open plain" the battlefield feels.
+    let woodsClusters = randInt(1, 2);
+    let hillsClusters = randInt(1, 2);
+    let roughClusters = randInt(1, 2);
+    let waterClusters = 0;
+    if (terrainStyle === 'flank_cover') {
+      woodsClusters = randInt(2, 3);
+      hillsClusters = randInt(1, 2);
+      roughClusters = randInt(1, 2);
+      waterClusters = (Math.random() < 0.20) ? 1 : 0;
+    } else if (terrainStyle === 'ridge_shoulders') {
+      woodsClusters = randInt(1, 2);
+      hillsClusters = randInt(2, 3);
+      roughClusters = randInt(1, 2);
+      waterClusters = 0;
+    } else if (terrainStyle === 'broken_wings') {
+      woodsClusters = randInt(2, 3);
+      hillsClusters = randInt(1, 2);
+      roughClusters = randInt(2, 3);
+      waterClusters = (Math.random() < 0.35) ? 1 : 0;
+    } else { // open_plain
+      woodsClusters = randInt(1, 2);
+      hillsClusters = randInt(1, 2);
+      roughClusters = randInt(1, 2);
+      waterClusters = (Math.random() < 0.10) ? 1 : 0;
+    }
+
     // Water is intentionally sparse and pushed to flank/edge pockets.
-    const waterClusters = (Math.random() < 0.45) ? 1 : 0;
     for (let i = 0; i < waterClusters; i++) {
       const seed = pickSeed(edgeFlank());
       paintCluster('water', seed, randInt(2, 4), (meta) => {
@@ -8446,7 +8526,6 @@ function unitColors(side) {
     }
 
     // Woods: ambush-friendly flank cover.
-    const woodsClusters = randInt(2, 3);
     for (let i = 0; i < woodsClusters; i++) {
       let seeds = midFlank();
       if (advantageSide !== 'none' && Math.random() < 0.55) {
@@ -8458,7 +8537,6 @@ function unitColors(side) {
     }
 
     // Hills: flank high ground and approach shoulders.
-    const hillsClusters = randInt(2, 3);
     for (let i = 0; i < hillsClusters; i++) {
       let seeds = midFlank();
       if (advantageSide !== 'none' && Math.random() < 0.60) {
@@ -8469,8 +8547,7 @@ function unitColors(side) {
       paintCluster('hills', seed, randInt(3, 5), (meta) => isFlank(meta) && meta.approachN >= 0.12 && meta.approachN <= 0.88);
     }
 
-    // Rough: friction near the side corridors, avoiding the core clash lane.
-    const roughClusters = randInt(2, 4);
+    // Rough: friction near side corridors, avoiding the core clash lane.
     for (let i = 0; i < roughClusters; i++) {
       const seed = pickSeed(roughBand());
       paintCluster('rough', seed, randInt(2, 5), (meta) => !isDeployment(meta) && (!isCenterLane(meta) || !isClashBand(meta)));
@@ -8484,9 +8561,19 @@ function unitColors(side) {
         terrainByHex.delete(hk);
       }
     }
+    // Keep deployment corridors clear too.
+    for (const [hk] of terrainByHex) {
+      const meta = geometry.byKey.get(hk);
+      if (!meta) continue;
+      if (isDeployment(meta) && Math.abs(meta.lateralN - 0.5) <= (centerLaneHalf + 0.06)) {
+        terrainByHex.delete(hk);
+      }
+    }
 
     // Cap density so movement stays fluid.
-    const maxTerrain = randInt(24, 34);
+    const maxTerrain = (terrainStyle === 'open_plain')
+      ? randInt(14, 22)
+      : randInt(18, 28);
     if (terrainByHex.size > maxTerrain) {
       const keys = shuffledCopy([...terrainByHex.keys()]);
       for (const hk of keys) {
