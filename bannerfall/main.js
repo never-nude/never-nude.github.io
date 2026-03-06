@@ -8701,57 +8701,57 @@ function unitColors(side) {
     if (doctrine === 'elite') {
       if (role === 'outnumbered') {
         return weightedPick([
-          { value: 'oblique', weight: 36 },
-          { value: 'refused_flank', weight: 29 },
-          { value: 'triplex', weight: 21 },
-          { value: 'crescent', weight: 10 },
-          { value: 'phalanx', weight: 4 },
+          { value: 'oblique', weight: 40 },
+          { value: 'refused_flank', weight: 31 },
+          { value: 'triplex', weight: 22 },
+          { value: 'phalanx', weight: 5 },
+          { value: 'crescent', weight: 2 },
         ], 'oblique');
       }
       return weightedPick([
-        { value: 'triplex', weight: 32 },
-        { value: 'oblique', weight: 26 },
+        { value: 'triplex', weight: 36 },
+        { value: 'oblique', weight: 28 },
         { value: 'refused_flank', weight: 20 },
-        { value: 'phalanx', weight: 14 },
-        { value: 'crescent', weight: 8 },
+        { value: 'phalanx', weight: 12 },
+        { value: 'crescent', weight: 4 },
       ], 'triplex');
     }
 
     if (doctrine === 'levy') {
       if (role === 'advantaged') {
         return weightedPick([
-          { value: 'phalanx', weight: 38 },
-          { value: 'crescent', weight: 26 },
-          { value: 'triplex', weight: 18 },
-          { value: 'refused_flank', weight: 10 },
-          { value: 'oblique', weight: 8 },
+          { value: 'phalanx', weight: 46 },
+          { value: 'triplex', weight: 28 },
+          { value: 'crescent', weight: 12 },
+          { value: 'refused_flank', weight: 9 },
+          { value: 'oblique', weight: 5 },
         ], 'phalanx');
       }
       return weightedPick([
-        { value: 'phalanx', weight: 34 },
-        { value: 'triplex', weight: 24 },
-        { value: 'crescent', weight: 24 },
+        { value: 'phalanx', weight: 40 },
+        { value: 'triplex', weight: 30 },
+        { value: 'crescent', weight: 14 },
         { value: 'refused_flank', weight: 10 },
-        { value: 'oblique', weight: 8 },
+        { value: 'oblique', weight: 6 },
       ], 'phalanx');
     }
 
     if (role === 'outnumbered') {
       return weightedPick([
-        { value: 'triplex', weight: 29 },
-        { value: 'oblique', weight: 24 },
-        { value: 'refused_flank', weight: 22 },
-        { value: 'phalanx', weight: 15 },
-        { value: 'crescent', weight: 10 },
+        { value: 'triplex', weight: 34 },
+        { value: 'refused_flank', weight: 27 },
+        { value: 'oblique', weight: 22 },
+        { value: 'phalanx', weight: 14 },
+        { value: 'crescent', weight: 3 },
       ], 'triplex');
     }
 
     return weightedPick([
-      { value: 'triplex', weight: 24 },
-      { value: 'phalanx', weight: 23 },
-      { value: 'crescent', weight: 20 },
-      { value: 'oblique', weight: 17 },
-      { value: 'refused_flank', weight: 16 },
+      { value: 'triplex', weight: 34 },
+      { value: 'phalanx', weight: 30 },
+      { value: 'oblique', weight: 16 },
+      { value: 'refused_flank', weight: 14 },
+      { value: 'crescent', weight: 6 },
     ], 'triplex');
   }
 
@@ -8772,11 +8772,11 @@ function unitColors(side) {
     let blueRole = 'even';
     let redRole = 'even';
 
-    if (modeRoll < 0.27) {
+    if (modeRoll < 0.24) {
       // Classic "quality vs quantity" setup.
       const eliteIsBlue = Math.random() < 0.5;
-      const eliteUnits = randInt(15, 22);
-      const levyUnits = randInt(27, 35);
+      const eliteUnits = randInt(15, 20);
+      const levyUnits = randInt(22, 30);
       matchup = eliteIsBlue ? 'blue_elite_outnumbered' : 'red_elite_outnumbered';
       blueUnits = eliteIsBlue ? eliteUnits : levyUnits;
       redUnits = eliteIsBlue ? levyUnits : eliteUnits;
@@ -8784,32 +8784,32 @@ function unitColors(side) {
       redDoctrine = eliteIsBlue ? 'levy' : 'elite';
       blueRole = eliteIsBlue ? 'outnumbered' : 'advantaged';
       redRole = eliteIsBlue ? 'advantaged' : 'outnumbered';
-    } else if (modeRoll < 0.62) {
+    } else if (modeRoll < 0.78) {
       // Even baseline battles.
-      const evenUnits = randInt(18, 32);
+      const evenUnits = randInt(17, 26);
       blueUnits = evenUnits;
       redUnits = evenUnits;
       matchup = 'even';
-      if (Math.random() < 0.20) {
+      if (Math.random() < 0.18) {
         blueDoctrine = 'elite';
         redDoctrine = 'balanced';
-      } else if (Math.random() < 0.20) {
+      } else if (Math.random() < 0.18) {
         redDoctrine = 'elite';
         blueDoctrine = 'balanced';
       }
     } else {
       // Moderate asymmetry (still within requested 15-35 window).
-      const base = randInt(18, 30);
-      const delta = randInt(3, 8);
+      const base = randInt(17, 25);
+      const delta = randInt(2, 6);
       if (Math.random() < 0.5) {
         matchup = 'blue_advantage';
-        blueUnits = clampInt(base + delta, 15, 35, base);
+        blueUnits = clampInt(base + delta, 15, 31, base);
         redUnits = clampInt(base, 15, 35, base);
         blueRole = 'advantaged';
         redRole = 'outnumbered';
       } else {
         matchup = 'red_advantage';
-        redUnits = clampInt(base + delta, 15, 35, base);
+        redUnits = clampInt(base + delta, 15, 31, base);
         blueUnits = clampInt(base, 15, 35, base);
         redRole = 'advantaged';
         blueRole = 'outnumbered';
@@ -8843,9 +8843,9 @@ function unitColors(side) {
 
   function forceMixCounts(totalNeeded, doctrine = 'balanced', formation = 'phalanx', role = 'even') {
     const counts = {
-      gen: totalNeeded >= 30 ? 3 : (totalNeeded >= 18 ? 2 : 1),
-      run: totalNeeded >= 16 ? 1 : 0,
-      iat: totalNeeded >= 22 ? 1 : 0,
+      gen: totalNeeded >= 29 ? 2 : 1,
+      run: totalNeeded >= 22 ? 1 : 0,
+      iat: totalNeeded >= 26 ? 1 : 0,
       inf: 0,
       cav: 0,
       arc: 0,
@@ -8853,43 +8853,43 @@ function unitColors(side) {
     };
 
     const baseRatios = {
-      phalanx: { inf: 0.56, cav: 0.18, arc: 0.12, skr: 0.14 },
-      triplex: { inf: 0.53, cav: 0.18, arc: 0.13, skr: 0.16 },
-      oblique: { inf: 0.46, cav: 0.25, arc: 0.11, skr: 0.18 },
-      crescent: { inf: 0.49, cav: 0.23, arc: 0.11, skr: 0.17 },
-      refused_flank: { inf: 0.51, cav: 0.22, arc: 0.11, skr: 0.16 },
+      phalanx: { inf: 0.64, cav: 0.14, arc: 0.10, skr: 0.12 },
+      triplex: { inf: 0.58, cav: 0.16, arc: 0.12, skr: 0.14 },
+      oblique: { inf: 0.52, cav: 0.24, arc: 0.09, skr: 0.15 },
+      crescent: { inf: 0.55, cav: 0.22, arc: 0.08, skr: 0.15 },
+      refused_flank: { inf: 0.58, cav: 0.20, arc: 0.09, skr: 0.13 },
     };
     const ratios = { ...(baseRatios[formation] || baseRatios.triplex) };
 
     if (doctrine === 'elite') {
-      ratios.cav += 0.03;
+      ratios.cav += 0.02;
       ratios.inf -= 0.01;
-      ratios.arc -= 0.01;
-      ratios.skr -= 0.01;
+      ratios.arc -= 0.005;
+      ratios.skr -= 0.005;
     } else if (doctrine === 'levy') {
       ratios.inf += 0.04;
-      ratios.skr += 0.02;
+      ratios.skr += 0.01;
       ratios.cav -= 0.03;
-      ratios.arc -= 0.03;
+      ratios.arc -= 0.02;
     }
 
     if (role === 'outnumbered') {
-      ratios.cav += 0.02;
-      ratios.inf -= 0.01;
+      ratios.cav += 0.015;
+      ratios.inf -= 0.005;
       ratios.arc -= 0.01;
     } else if (role === 'advantaged') {
-      ratios.inf += 0.02;
+      ratios.inf += 0.025;
       ratios.skr += 0.01;
       ratios.cav -= 0.02;
-      ratios.arc -= 0.01;
+      ratios.arc -= 0.015;
     }
 
     let remaining = Math.max(0, totalNeeded - counts.gen - counts.run - counts.iat);
     const min = {
-      inf: Math.max(4, Math.floor(remaining * 0.34)),
-      cav: remaining >= 20 ? 2 : 1,
-      arc: remaining >= 18 ? 2 : 1,
-      skr: remaining >= 18 ? 2 : 1,
+      inf: Math.max(6, Math.floor(remaining * 0.45)),
+      cav: remaining >= 26 ? 2 : 1,
+      arc: remaining >= 22 ? 1 : 0,
+      skr: remaining >= 20 ? 1 : 0,
     };
     counts.inf = Math.max(min.inf, Math.floor(remaining * ratios.inf));
     counts.cav = Math.max(min.cav, Math.floor(remaining * ratios.cav));
@@ -8898,8 +8898,8 @@ function unitColors(side) {
 
     let used = counts.inf + counts.cav + counts.arc + counts.skr;
     const upOrder = (formation === 'oblique' || formation === 'refused_flank')
-      ? ['inf', 'cav', 'inf', 'skr', 'arc']
-      : ['inf', 'inf', 'skr', 'arc', 'cav'];
+      ? ['inf', 'cav', 'inf', 'inf', 'skr', 'arc']
+      : ['inf', 'inf', 'inf', 'skr', 'arc', 'cav'];
     let upIdx = 0;
     while (used < remaining) {
       const t = upOrder[upIdx % upOrder.length];
@@ -9334,23 +9334,36 @@ function unitColors(side) {
 
       const originalPositions = force.map(u => ({ q: u.q, r: u.r }));
       const baseline = forceCoverageRatio();
-      const strongLateralTarget = strongWing === 'left' ? 0.34 : 0.66;
-      const weakLateralTarget = strongWing === 'left' ? 0.66 : 0.34;
+      const strongLateralTarget = strongWing === 'left' ? 0.40 : 0.60;
+      const weakLateralTarget = strongWing === 'left' ? 0.60 : 0.40;
+      const rearCoreDepth = Math.max(0.06, Math.min(0.19, supportDepthMin - 0.01));
+      const rearSupportDepth = Math.max(0.08, Math.min(0.23, frontDepthMin - 0.015));
       const desiredAnchors = [
-        { depth: 0.24, lateral: 0.50 },
-        { depth: 0.40, lateral: 0.50 },
-        { depth: 0.38, lateral: strongLateralTarget },
-        { depth: 0.35, lateral: weakLateralTarget },
+        { depth: rearCoreDepth, lateral: 0.50 },
+        { depth: rearSupportDepth, lateral: strongLateralTarget },
+        { depth: rearSupportDepth, lateral: weakLateralTarget },
+        { depth: rearCoreDepth, lateral: strongLateralTarget },
       ];
 
       const used = new Set();
+      const claimedAnchors = [];
       const nonWater = force.filter(u => {
         const h = board.byKey.get(key(u.q, u.r));
         return h && h.terrain !== 'water';
       });
 
+      function farEnoughFromClaimed(hexUnit) {
+        for (const c of claimedAnchors) {
+          if (axialDistance(hexUnit.q, hexUnit.r, c.q, c.r) < 3) return false;
+        }
+        return true;
+      }
+
       function pickAnchor(targetDepth, targetLateral) {
-        const candidates = nonWater.filter(u => !used.has(key(u.q, u.r)));
+        let candidates = nonWater.filter(u => !used.has(key(u.q, u.r)) && farEnoughFromClaimed(u));
+        if (candidates.length === 0) {
+          candidates = nonWater.filter(u => !used.has(key(u.q, u.r)));
+        }
         if (candidates.length === 0) return null;
         candidates.sort((a, b) => {
           const da = Math.abs(forceDepth(a) - targetDepth) * 1.9 + Math.abs(forceLateral(a) - targetLateral);
@@ -9358,7 +9371,10 @@ function unitColors(side) {
           return da - db;
         });
         const winner = candidates[0] || null;
-        if (winner) used.add(key(winner.q, winner.r));
+        if (winner) {
+          used.add(key(winner.q, winner.r));
+          claimedAnchors.push({ q: winner.q, r: winner.r });
+        }
         return winner;
       }
 
@@ -9370,40 +9386,8 @@ function unitColors(side) {
         swapForcePositions(cmd, anchor);
       }
 
-      const mobileCommanders = [...commanders].sort((a, b) => commandRadiusForForceUnit(a) - commandRadiusForForceUnit(b));
-      for (let pass = 0; pass < 2; pass++) {
-        const now = forceCoverageRatio();
-        if (now >= 0.78) break;
-
-        const controlled = force.filter(u => {
-          if (u.side !== side) return false;
-          if (u.type !== 'inf' && u.type !== 'arc' && u.type !== 'skr') return false;
-          return u.quality !== 'veteran';
-        });
-        if (controlled.length === 0 || mobileCommanders.length === 0) break;
-
-        let uncovered = null;
-        let bestGap = -1;
-        for (const t of controlled) {
-          let nearest = Infinity;
-          for (const src of commanders) {
-            const d = axialDistance(t.q, t.r, src.q, src.r) - commandRadiusForForceUnit(src);
-            if (d < nearest) nearest = d;
-          }
-          if (nearest > bestGap) {
-            bestGap = nearest;
-            uncovered = t;
-          }
-        }
-        if (!uncovered || bestGap <= 0) break;
-
-        const mover = mobileCommanders[pass % mobileCommanders.length];
-        if (!mover) break;
-        swapForcePositions(mover, uncovered);
-      }
-
       const after = forceCoverageRatio();
-      if (after + 0.06 < baseline) {
+      if (after < 0.52 && after + 0.10 < baseline) {
         // If rebalancing somehow hurts command coverage badly, fall back to the original placement.
         // This keeps random starts stable.
         for (let i = 0; i < force.length; i++) {
