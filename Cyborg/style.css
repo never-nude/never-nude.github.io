@@ -8,7 +8,7 @@
   --btn2:#1a1c22;
   --focus:#79a7ff;
   --accent:#d8bd7e;
-  --combat-h:126px;
+  --combat-h:112px;
   --hud-h:72px;
   --side-w:328px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -41,7 +41,7 @@ body{
   font-family:'Cinzel','Trajan Pro','Times New Roman',serif;
   font-weight:700;
   letter-spacing:0.09em;
-  font-size:clamp(28px, 1.35vw + 8px, 44px);
+  font-size:clamp(32px, 1.9vw + 6px, 56px);
   text-transform:uppercase;
   text-align:center;
   width:calc(100% - var(--side-w));
@@ -90,6 +90,7 @@ body{
   position:relative;
   min-height:0;
   flex:1 1 auto;
+  overflow:hidden;
 }
 #c{
   display:block;
@@ -118,8 +119,8 @@ body{
 #boardDiceDock{
   position:relative;
   z-index:5;
-  width:min(95%, 680px);
-  margin:0 auto 2px;
+  width:min(96%, 760px);
+  margin:0 auto 1px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -129,8 +130,8 @@ body{
 
 #boardDiceDock .physicalDiceRow{
   width:100%;
-  min-height:clamp(66px, 7.2vh, 96px);
-  padding:10px 12px;
+  min-height:clamp(72px, 7.8vh, 104px);
+  padding:11px 12px;
   border-color:rgba(216,189,126,0.28);
   background:rgba(8,10,14,0.62);
   backdrop-filter:blur(2px);
@@ -138,20 +139,20 @@ body{
 
 #boardDiceResult{
   min-height:18px;
-  font-size:clamp(13px, 0.45vw + 10px, 18px);
+  font-size:clamp(14px, 0.55vw + 10px, 20px);
   color:#d3d9e4;
   letter-spacing:0.02em;
   text-align:center;
 }
 
 #boardDiceDock .physicalDie{
-  width:clamp(52px, 2.1vw + 18px, 78px);
-  height:clamp(52px, 2.1vw + 18px, 78px);
+  width:clamp(60px, 2.4vw + 20px, 92px);
+  height:clamp(60px, 2.4vw + 20px, 92px);
   border-radius:clamp(10px, 0.4vw + 8px, 14px);
 }
 
 #boardDiceDock .physicalFace{
-  inset:clamp(6px, 0.35vw + 4px, 10px);
+  inset:clamp(7px, 0.4vw + 4px, 11px);
 }
 
 #boardDiceDock .physicalPip{
@@ -1339,7 +1340,7 @@ body[data-mode="play"] #side{
   #layout{grid-template-rows:minmax(280px, 52dvh) auto;}
   #canvasWrap{
     min-height:280px;
-    height:min(56dvh, 620px);
+    height:min(58dvh, 620px);
   }
   #side{
     padding:10px;
@@ -1368,15 +1369,15 @@ body[data-mode="play"] #side{
     width:min(96%, 420px);
   }
   #boardDiceDock .physicalDiceRow{
-    min-height:64px;
+    min-height:62px;
     padding:8px 10px;
   }
   #boardDiceDock .physicalDie{
-    width:46px;
-    height:46px;
+    width:50px;
+    height:50px;
   }
   #boardDiceResult{
-    font-size:13px;
+    font-size:14px;
   }
   .rulesSideOverlay{
     padding:6px;
@@ -1409,7 +1410,7 @@ body[data-mode="play"] #side{
     padding:8px 12px 6px;
   }
   #hudTitle{
-    font-size:22px;
+    font-size:24px;
     letter-spacing:0.1em;
   }
 }
@@ -1417,7 +1418,7 @@ body[data-mode="play"] #side{
 @media (min-width: 1800px){
   :root{
     --side-w:380px;
-    --combat-h:142px;
+    --combat-h:120px;
   }
   #hudMeta{
     font-size:16px;

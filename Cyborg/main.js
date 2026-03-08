@@ -646,6 +646,7 @@
   // --- DOM
   const elCanvas = document.getElementById('c');
   const ctx = elCanvas.getContext('2d');
+  const elBoardStage = document.getElementById('boardStage');
 
   const elHudTitle = document.getElementById('hudTitle');
   const elHudMeta = document.getElementById('hudMeta');
@@ -3753,9 +3754,9 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
 
   function resize() {
     syncLayoutChromeHeights();
-    // Canvas fills left pane.
-    const wrap = document.getElementById('canvasWrap');
-    const rect = wrap.getBoundingClientRect();
+    // Canvas should size to the dedicated board stage (not the whole wrap that includes dice dock).
+    const stage = elBoardStage || document.getElementById('canvasWrap');
+    const rect = stage.getBoundingClientRect();
     elCanvas.width = Math.floor(rect.width * devicePixelRatio);
     elCanvas.height = Math.floor(rect.height * devicePixelRatio);
     elCanvas.style.width = `${Math.floor(rect.width)}px`;
