@@ -5,7 +5,7 @@
   // This build intentionally keeps the Ad Arma UI calm/legible while
   // tightening the mechanics to the rules spec you provided.
 
-  const GAME_NAME = 'AD ARMA';
+  const GAME_NAME = 'Ad Arma';
   const BUILD_ID = (window.POLEMO_BUILD_ID || window.POLEMO_BUILD || 'DEV');
 
   // --- Board shape (157-hex "island")
@@ -31,6 +31,7 @@
     { id: 'woods', label: 'Woods' },
     { id: 'rough', label: 'Rough' },
     { id: 'water', label: 'Water' },
+    { id: 'mountains', label: 'Mountains' },
   ];
   const TERRAIN_IDS = new Set(TERRAIN_DEFS.map(t => t.id));
   const TERRAIN_LABEL_BY_ID = new Map(TERRAIN_DEFS.map(t => [t.id, t.label]));
@@ -38,10 +39,12 @@
   const SCENARIO_FILTER_OPTIONS = {
     group: [
       { id: 'all', label: 'All Groups' },
+      { id: 'tutorial', label: 'Tutorial' },
       { id: 'demo', label: 'Demo' },
       { id: 'grand', label: 'Grand Battle' },
       { id: 'terrain', label: 'Terrain Pack' },
       { id: 'berserker', label: 'Berserker' },
+      { id: 'history', label: 'History Pack' },
       { id: 'other', label: 'Other' },
     ],
     lesson: [
@@ -68,13 +71,13 @@
       { id: 'woods', label: 'Woods' },
       { id: 'rough', label: 'Rough' },
       { id: 'water', label: 'Water' },
+      { id: 'mountains', label: 'Mountains' },
       { id: 'mixed', label: 'Mixed Terrain' },
     ],
   };
   const SCENARIO_FILTER_IDS = Object.fromEntries(
     Object.entries(SCENARIO_FILTER_OPTIONS).map(([k, opts]) => [k, new Set(opts.map(o => o.id))])
   );
-  const HEX_DIRECTIONS = ['e', 'w', 'ur', 'ul', 'dr', 'dl'];
 
   // --- Core rules constants
   const ACT_LIMIT = 3; // activations per turn
@@ -85,93 +88,151 @@
   const ENABLE_CAV_ANGLE_BONUS = false;
   const CAV_FLANK_BONUS = 1;
   const CAV_REAR_BONUS = 2;
-  // AI pace intentionally slowed so piece-by-piece actions are easier to follow.
-  const AI_STEP_DELAY_MS = 400; // ~60% slower than the previous 240ms pace
-  const AI_START_DELAY_MS = 300;
-  const MOVE_ANIM_STEP_MS_HUMAN = 170;
-  const MOVE_ANIM_STEP_MS_AI = 340;
-  const ACTION_PULSE_MOVE_MS = 480;
-  const ACTION_PULSE_ATTACK_MS = 900;
-  const INF_SUPPORT_MAX_RANKS = 2;
-  const INF_SUPPORT_DICE_PER_RANK = 1;
-  const AI_DIFFICULTY_PROFILES = {
-    levy: {
-      label: 'Levy',
-      attackScale: 0.82,
-      moveScale: 0.90,
-      genFocusBonus: 2,
-      attackNoise: 8,
-      moveNoise: 5,
-      passChance: 0.18,
-      attackBias: -1.0,
-      moveBias: 1.4,
-    },
-    cohort: {
-      label: 'Cohort',
-      attackScale: 1.00,
-      moveScale: 1.00,
-      genFocusBonus: 6,
-      attackNoise: 3.2,
-      moveNoise: 2.3,
-      passChance: 0.06,
-      attackBias: 0.0,
-      moveBias: 0.0,
-    },
-    legion: {
-      label: 'Legion',
-      attackScale: 1.14,
-      moveScale: 1.08,
-      genFocusBonus: 12,
-      attackNoise: 1.0,
-      moveNoise: 0.8,
-      passChance: 0.01,
-      attackBias: 1.5,
-      moveBias: -0.2,
-    },
+  const AI_DIFFICULTY_IDS = new Set(['easy', 'standard', 'hard']);
+  // Different pacing/quality profiles by AI difficulty.
+  const AI_TIMING_BY_DIFFICULTY = {
+    easy: { startMs: 900, stepMs: 1280, intentMs: 560, movePauseMs: 680, combatPauseMs: 1600 },
+    standard: { startMs: 680, stepMs: 980, intentMs: 430, movePauseMs: 520, combatPauseMs: 1360 },
+    hard: { startMs: 460, stepMs: 760, intentMs: 320, movePauseMs: 420, combatPauseMs: 1180 },
   };
   const RANDOM_START_SCENARIO_NAME = 'Randomized Opening (Auto)';
-  const RANDOM_START_UNITS_PER_SIDE = 30;
-  const HISTORICAL_SCENARIO_ORDER = [
-    'Terrain K — Marathon (490 BCE)',
-    'Terrain T — Thermopylae (Spartans at the Hot Gates, 480 BCE)',
-    'Terrain U — Plataea (479 BCE)',
-    'Terrain L — Granicus River (334 BCE)',
-    'Terrain V — Gaugamela (331 BCE)',
-    'Terrain W — Hydaspes River Crossing (326 BCE)',
-    'Terrain M — Cannae Double Envelopment (216 BCE)',
-    'Terrain P — Ilipa Reverse Deployment (206 BCE)',
-    'Terrain O — Zama (202 BCE)',
-    'Terrain X — Cynoscephalae Broken Hills (197 BCE)',
-    'Terrain Y — Magnesia Plain And River (190 BCE)',
-    'Terrain Z — Pydna Broken Ground (168 BCE)',
-    'Terrain Q — Carhae (Carrhae, 53 BCE)',
-    'Terrain AA — Alesia Double Ring (52 BCE)',
-    'Terrain N — Pharsalus Reserve Counterstroke (48 BCE)',
-    'Terrain R — Thapsus Coastal Pressure (46 BCE)',
-    'Terrain S — Philippi Twin Camps (42 BCE)',
-    'Terrain AB — Actium Shoreline Clash (31 BCE)',
-    'Terrain G — Teutoburg Ambush (9 CE)',
-    'Terrain AC — Mons Graupius Ridge (83 CE)',
-  ];
-  const HISTORICAL_SCENARIO_INDEX = new Map(HISTORICAL_SCENARIO_ORDER.map((name, idx) => [name, idx]));
-  const SCENARIO_SECTION_ORDER = ['quick', 'mirrored', 'nonMirrored', 'historical', 'demo', 'other'];
-  const SCENARIO_SECTION_LABEL = {
-    quick: 'Quick Start',
-    mirrored: 'Mirrored Battles',
-    nonMirrored: 'Non-Mirrored Battles',
-    historical: 'Historical Battles',
-    demo: 'Learning Demos',
-    other: 'Other',
-  };
+  const RANDOM_START_UNITS_PER_SIDE_MIN = 22;
+  const RANDOM_START_UNITS_PER_SIDE_MAX = 30;
+  const SCENARIO_UNIT_CAP_PER_SIDE = 30;
   const DRAFT_BUDGET_MIN = 20;
   const DRAFT_BUDGET_MAX = 300;
   const DRAFT_BUDGET_DEFAULT = 120;
+  const DICE_SETTLE_BASE_MS = 340;
+  const DICE_SETTLE_STEP_MS = 210;
+  const DICE_SUMMARY_BASE_MS = 520;
+  const DICE_SUMMARY_STEP_MS = 210;
+  const DICE_POST_HOLD_MS = 420;
+  const MOVE_ANIM_MS_HUMAN = 220;
+  const MOVE_ANIM_MS_AI = 520;
+  const ATTACK_FLASH_MS = 920;
+  const COMMAND_COSTS = [1, 2, 3];
+  const COMMANDS_PER_COST = 3;
+  const VICTORY_MODE_IDS = new Set(['clear', 'decapitation', 'annihilation', 'points', 'keyground', 'strategic']);
+  const POINT_VICTORY_CAPTURE_RATIO = 0.45;
+  const STRATEGIC_CAPTURE_RATIO = 0.40;
 
-  // Dice faces: 5–6 = Hit, 4 = Retreat.
+  const COMMAND_POOL = [
+    // Cost 1
+    { id: 'quick_dress', name: 'Quick Dress', cost: 1, persistence: 'persistent', category: 'formation', targeting: 'Up to 3 adjacent INF in same row', explain: 'Shift up to 3 adjacent infantry 1 hex sideways in formation. No attacks.', resolver: 'quick_dress' },
+    { id: 'runner_burst', name: 'Runner Burst', cost: 1, persistence: 'spent', category: 'command', targeting: '1 RUN + nearby allies', explain: 'One runner gets +3 movement this turn; nearby allies gain temporary command relay support.', resolver: 'runner_burst' },
+    { id: 'javelin_volley', name: 'Javelin Volley', cost: 1, persistence: 'spent', category: 'skirmish', targeting: 'Up to 2 SKR/ARC', explain: 'Up to 2 skirmishers/archers gain +2 ranged dice on their next attack this turn.', resolver: 'javelin_volley' },
+    { id: 'quick_withdraw', name: 'Quick Withdraw', cost: 1, persistence: 'persistent', category: 'positional', targeting: '1 SKR/ARC not surrounded', explain: 'One unsurrounded skirmisher or archer steps back 1 hex without attacking.', resolver: 'quick_withdraw' },
+    { id: 'close_ranks', name: 'Close Ranks', cost: 1, persistence: 'persistent', category: 'infantry', targeting: '1 INF', explain: 'One infantry braces: enemy melee against it is -1 die until enemy turn ends.', resolver: 'close_ranks' },
+    { id: 'spur_horses', name: 'Spur the Horses', cost: 1, persistence: 'persistent', category: 'cavalry', targeting: '1 CAV in command', explain: 'One cavalry in command gets +1 movement this turn.', resolver: 'spur_horses' },
+    { id: 'signal_call', name: 'Signal Call', cost: 1, persistence: 'spent', category: 'command', targeting: '1 GEN + up to 2 nearby out-of-command units', explain: 'A general briefly extends command to up to two nearby out-of-command units this turn.', resolver: 'signal_call' },
+    { id: 'loose_screen', name: 'Loose Screen', cost: 1, persistence: 'persistent', category: 'skirmish', targeting: 'Up to 2 SKR/ARC adjacent to INF', explain: 'Up to 2 skirmishers/archers can slip through friendly infantry by 1 hex.', resolver: 'loose_screen' },
+    { id: 'covering_fire', name: 'Covering Fire', cost: 1, persistence: 'spent', category: 'missile', targeting: 'Up to 2 ARC/SKR attacks this turn', explain: 'Your next two ranged attacks ignore terrain-based ranged penalties.', resolver: 'covering_fire' },
+    { id: 'hold_fast', name: 'Hold Fast', cost: 1, persistence: 'spent', category: 'formation', targeting: '1 unit', explain: 'One unit ignores two retreat results before your next turn and gains +1 melee defense.', resolver: 'hold_fast' },
+    // Cost 2
+    { id: 'shield_wall', name: 'Shield Wall', cost: 2, persistence: 'persistent', category: 'infantry', targeting: '3-6 contiguous INF', explain: '3-6 connected infantry form a shield wall: enemy melee -1 die until your next turn.', resolver: 'shield_wall' },
+    { id: 'cavalry_exploit', name: 'Cavalry Exploit', cost: 2, persistence: 'persistent', category: 'cavalry', targeting: 'Up to 3 CAV in one sector', explain: 'Up to 3 cavalry gain shock pressure this turn when they move into clear-ground attacks.', resolver: 'cavalry_exploit' },
+    { id: 'refuse_flank', name: 'Refuse the Flank', cost: 2, persistence: 'persistent', category: 'formation', targeting: '2-5 INF on one wing', explain: 'Pull 2-5 infantry on one wing backward/inward to avoid being wrapped.', resolver: 'refuse_flank' },
+    { id: 'forced_march', name: 'Forced March', cost: 2, persistence: 'persistent', category: 'reserve', targeting: 'Up to 4 INF/SKR in one sector', explain: 'Up to 4 infantry/skirmishers gain +1 move, but they cannot attack this turn.', resolver: 'forced_march' },
+    { id: 'strengthen_center', name: 'Strengthen the Center', cost: 2, persistence: 'persistent', category: 'infantry', targeting: 'Up to 4 INF within 2 of GEN', explain: 'Up to 4 central infantry ignore the first retreat result until your next turn.', resolver: 'strengthen_center' },
+    { id: 'wing_screen', name: 'Wing Screen', cost: 2, persistence: 'spent', category: 'missile', targeting: 'Up to 4 SKR/ARC on flank', explain: 'Up to 4 flank missile units may attack, then step 1 hex, with +1 move this turn.', resolver: 'wing_screen' },
+    { id: 'countercharge', name: 'Countercharge', cost: 2, persistence: 'spent', category: 'cavalry', targeting: 'Up to 3 CAV reaction', explain: 'Up to 3 cavalry can react with a melee strike when enemies close in, with stronger impact.', resolver: 'countercharge' },
+    { id: 'jaws_inward', name: 'Jaws Inward', cost: 2, persistence: 'spent', category: 'formation', targeting: '2-5 veteran/regular INF', explain: 'Experienced infantry from both sides of a fight move inward to compress the enemy line.', resolver: 'jaws_inward' },
+    { id: 'local_reserve', name: 'Local Reserve', cost: 2, persistence: 'spent', category: 'reserve', targeting: 'Up to 3 rear-line units', explain: 'Release up to 3 reserve/rear units for immediate action this turn.', resolver: 'local_reserve' },
+    { id: 'drive_them_back', name: 'Drive Them Back', cost: 2, persistence: 'spent', category: 'infantry', targeting: 'Up to 4 INF', explain: 'Up to 4 infantry gain disarray pressure and +1 attack die this turn.', resolver: 'drive_them_back' },
+    // Cost 3
+    { id: 'full_line_advance', name: 'Full Line Advance', cost: 3, persistence: 'persistent', category: 'formation', targeting: 'One large row', explain: 'Push one major line forward together; blocked units stay put, others advance.', resolver: 'full_line_advance' },
+    { id: 'grand_shield_wall', name: 'Grand Shield Wall', cost: 3, persistence: 'spent', category: 'infantry', targeting: '5-8 contiguous INF', explain: '5-8 infantry form a major wall: very high melee defense, strong retreat resistance, cannot move, persists through your next turn.', resolver: 'grand_shield_wall' },
+    { id: 'all_out_cavalry_sweep', name: 'All-Out Cavalry Sweep', cost: 3, persistence: 'spent', category: 'cavalry', targeting: 'Up to 4 CAV on one wing (fallback: up to 3 INF/SKR/ARC)', explain: 'Cavalry wing gains major shock bonuses through your next turn; if cavalry are gone, convert to a strong wing assault package.', resolver: 'all_out_cavalry_sweep' },
+    { id: 'commit_reserves', name: 'Commit Reserves', cost: 3, persistence: 'spent', category: 'reserve', targeting: 'Up to 4 rear-third non-GEN units', explain: 'Commit deep reserves: selected units step toward the front and gain command/mobility/attack support through your next turn.', resolver: 'commit_reserves' },
+    { id: 'general_assault', name: 'General Assault', cost: 3, persistence: 'persistent', category: 'command', targeting: 'One sector around GEN (up to 4 units)', explain: 'Up to 4 units near a general each get one coordinated move or attack.', resolver: 'general_assault' },
+    { id: 'collapse_center', name: 'Collapse the Center', cost: 3, persistence: 'persistent', category: 'formation', targeting: 'Center INF + inward wings', explain: 'Center yields while wings fold inward to set a compression trap.', resolver: 'collapse_center' },
+    { id: 'last_push', name: 'Last Push', cost: 3, persistence: 'spent', category: 'formation', targeting: 'Up to 4 INF/CAV', explain: 'Up to 4 infantry/cavalry gain +2 attack dice if they attack this turn.', resolver: 'last_push' },
+    { id: 'reforge_line', name: 'Reforge the Line', cost: 3, persistence: 'persistent', category: 'formation', targeting: 'Up to 6 connected INF', explain: 'Reposition up to 6 connected infantry by 1 hex each to rebuild the line.', resolver: 'reforge_line' },
+    { id: 'command_surge', name: 'Command Surge', cost: 3, persistence: 'persistent', category: 'command', targeting: '1 GEN', explain: 'One general extends command radius by +1 this turn and pulls units back in command.', resolver: 'command_surge' },
+    { id: 'stand_or_die', name: 'Stand or Die', cost: 3, persistence: 'spent', category: 'infantry', targeting: '3-5 INF around GEN', explain: '3-5 infantry near a general ignore retreat results and gain +1 melee defense until your next turn.', resolver: 'stand_or_die' },
+  ];
+  const COMMAND_BY_ID = new Map(COMMAND_POOL.map(c => [c.id, c]));
+  function commandUsageLabel(persistence) {
+    return persistence === 'spent' ? 'Single-Use' : 'Reusable';
+  }
+  function commandActionSpend(cmd) {
+    if (!cmd) return 0;
+    const rebate = (cmd.persistence === 'spent' && cmd.cost >= 2) ? 1 : 0;
+    return Math.max(1, Number(cmd.cost || 0) - rebate);
+  }
+  function commandUsageBadge(persistence) {
+    return persistence === 'spent' ? '1x' : 'R';
+  }
+  function commandExplainText(cmd) {
+    if (!cmd) return '';
+    return (typeof cmd.explain === 'string' && cmd.explain.trim())
+      ? cmd.explain.trim()
+      : String(cmd.targeting || '');
+  }
+  const COMMAND_LAYMAN_TEXT = {
+    quick_dress: 'Slide a short infantry section sideways to tighten your line or close a gap.',
+    runner_burst: 'Give one runner a major speed burst and temporarily steady nearby allies with relay support.',
+    javelin_volley: 'Two light missile units throw much harder this turn with a big ranged spike.',
+    quick_withdraw: 'Pull one exposed skirmisher or archer back before it gets trapped in melee.',
+    close_ranks: 'One infantry unit braces with shields, making incoming melee less effective.',
+    spur_horses: 'Push one cavalry unit to ride farther and reposition for a better angle.',
+    signal_call: 'A general briefly reaches up to two nearby units just outside command range.',
+    loose_screen: 'Let light troops pass through your infantry screen to reposition quickly.',
+    covering_fire: 'Two missile attacks can ignore terrain firing penalties this turn.',
+    hold_fast: 'One unit hardens up, resisting multiple retreats and taking less melee pressure.',
+    shield_wall: 'A connected infantry block locks shields and becomes harder to break in melee.',
+    cavalry_exploit: 'A cavalry wing gets a stronger open-ground strike against infantry this turn.',
+    refuse_flank: 'Pull a wing inward or backward to avoid being surrounded on that side.',
+    forced_march: 'Move a small group farther than normal, but they cannot attack this turn.',
+    strengthen_center: 'Reinforce the middle so core infantry are less likely to get pushed back.',
+    wing_screen: 'A larger flank missile group fires and repositions with extra mobility this turn.',
+    countercharge: 'Ready more cavalry to punish enemies that move too close, with stronger impact.',
+    jaws_inward: 'Experienced infantry from both sides close in and compress the enemy line.',
+    local_reserve: 'Release a larger reserve packet so reinforcements hit the fight immediately.',
+    drive_them_back: 'More infantry pressure the enemy line with both stronger hits and disarray risk.',
+    full_line_advance: 'Push one major row forward together; units blocked by terrain or bodies stay put.',
+    grand_shield_wall: 'Lock a major infantry block into an elite defensive wall that can absorb extreme pressure.',
+    all_out_cavalry_sweep: 'Launch a decisive wing assault with major shock power; fallback still hits hard.',
+    commit_reserves: 'Release deeper reserves into the fight with temporary command and attack support.',
+    general_assault: 'Units near a general execute a coordinated local attack this turn.',
+    collapse_center: 'Your center yields while both wings bend inward to create a trap.',
+    last_push: 'A short all-in surge: selected attackers spike hard right now.',
+    reforge_line: 'Re-shape a connected infantry line by one hex each to restore formation.',
+    command_surge: 'One general temporarily projects command farther to re-link nearby units.',
+    stand_or_die: 'Infantry near a general hold position, refuse retreats, and harden defense for one turn.',
+  };
+  function commandLaymanText(cmd) {
+    if (!cmd) return '';
+    return COMMAND_LAYMAN_TEXT[cmd.id] || commandExplainText(cmd);
+  }
+
+  function sentenceize(text) {
+    const raw = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!raw) return '';
+    return /[.!?]$/.test(raw) ? raw : `${raw}.`;
+  }
+
+  function commandDictionaryText(cmd) {
+    if (!cmd) return '';
+    const plain = sentenceize(commandLaymanText(cmd));
+    const usage = commandUsageLabel(cmd.persistence);
+    const targeting = String(cmd.targeting || 'eligible units').trim();
+    const second = sentenceize(`${usage} order targeting ${targeting}`);
+    return `${plain} ${second}`.trim();
+  }
+
+  // Dice faces:
+  // 6 = Hit + Retreat + Disarray
+  // 5 = Hit
+  // 4 = Retreat
+  // 3 = Disarray
+  // 1-2 = Miss
   const DIE_HIT = new Set([5, 6]);
   const DIE_RETREAT = 4;
+  const DIE_DISARRAY = 3;
+  const EVENT_TRACE_MAX = 600;
 
-  // --- Units (Ad Arma quality-aware stats)
+  // --- Units (Bannerfall quality-aware stats)
   // HP and UP vary by quality (green / regular / veteran).
   const UNIT_DEFS = [
     // id, label, abbrev, symbol, MP, quality stats, combat profile
@@ -191,7 +252,7 @@
       id: 'skr', label: 'Skirmishers', abbrev: 'SKR', symbol: 'SKR', move: 2,
       hpByQuality: { green: 1, regular: 2, veteran: 3 },
       upByQuality: { green: 2, regular: 3, veteran: 4 },
-      meleeDice: 1, ranged: { 2: 1 }, // fixed range 2
+      meleeDice: 2, ranged: { 2: 1 }, // fixed range 2
     },
     {
       id: 'arc', label: 'Archers', abbrev: 'ARC', symbol: '➶', move: 1,
@@ -222,6 +283,155 @@
 
   const UNIT_BY_ID = new Map(UNIT_DEFS.map(u => [u.id, u]));
 
+  function commandIdsByCost(cost) {
+    return COMMAND_POOL.filter(c => c.cost === cost).map(c => c.id);
+  }
+
+  function makeDoctrineSideState() {
+    return {
+      loadout: [],
+      byId: {},
+      source: 'recommended',
+      history: [],
+    };
+  }
+
+  function cloneArray(arr) {
+    return Array.isArray(arr) ? arr.slice() : [];
+  }
+
+  function randomSample(arr, count) {
+    const src = cloneArray(arr);
+    const out = [];
+    while (src.length > 0 && out.length < count) {
+      const i = Math.floor(Math.random() * src.length);
+      out.push(src.splice(i, 1)[0]);
+    }
+    return out;
+  }
+
+  function buildDoctrineByIds(ids, source = 'manual') {
+    const sideState = makeDoctrineSideState();
+    sideState.source = source;
+    sideState.loadout = cloneArray(ids);
+    for (const id of sideState.loadout) {
+      const cmd = COMMAND_BY_ID.get(id);
+      if (!cmd) continue;
+      sideState.byId[id] = {
+        revealed: false,
+        spent: false,
+        usedCount: 0,
+      };
+    }
+    return sideState;
+  }
+
+  function validateDoctrineLoadout(ids) {
+    if (!Array.isArray(ids)) return false;
+    if (ids.length !== (COMMANDS_PER_COST * COMMAND_COSTS.length)) return false;
+    const uniq = new Set(ids);
+    if (uniq.size !== ids.length) return false;
+    for (const cost of COMMAND_COSTS) {
+      const count = ids.filter(id => COMMAND_BY_ID.get(id)?.cost === cost).length;
+      if (count !== COMMANDS_PER_COST) return false;
+    }
+    return true;
+  }
+
+  function makeRandomDoctrineLoadout() {
+    const out = [];
+    for (const cost of COMMAND_COSTS) {
+      out.push(...randomSample(commandIdsByCost(cost), COMMANDS_PER_COST));
+    }
+    return out;
+  }
+
+  function makeRecommendedDoctrineLoadout() {
+    // Balanced "combined arms" baseline for quick play.
+    return [
+      'quick_dress', 'close_ranks', 'hold_fast',
+      'shield_wall', 'forced_march', 'cavalry_exploit',
+      'full_line_advance', 'general_assault', 'last_push',
+    ];
+  }
+
+  function buildCompleteDoctrineLoadout(preferredIds) {
+    const preferred = Array.isArray(preferredIds) ? preferredIds : [];
+    const out = [];
+    const used = new Set();
+    for (const cost of COMMAND_COSTS) {
+      const pref = preferred.filter((id) => {
+        if (used.has(id)) return false;
+        return COMMAND_BY_ID.get(id)?.cost === cost;
+      });
+      for (const id of pref) {
+        if (out.filter((x) => COMMAND_BY_ID.get(x)?.cost === cost).length >= COMMANDS_PER_COST) break;
+        out.push(id);
+        used.add(id);
+      }
+      if (out.filter((x) => COMMAND_BY_ID.get(x)?.cost === cost).length < COMMANDS_PER_COST) {
+        const fallback = commandIdsByCost(cost).filter((id) => !used.has(id));
+        for (const id of fallback) {
+          if (out.filter((x) => COMMAND_BY_ID.get(x)?.cost === cost).length >= COMMANDS_PER_COST) break;
+          out.push(id);
+          used.add(id);
+        }
+      }
+    }
+    return out;
+  }
+
+  function scenarioDoctrinePreset(name, side = 'blue') {
+    const sc = SCENARIOS[name];
+    const meta = (sc && sc.meta && typeof sc.meta === 'object') ? sc.meta : null;
+    const explicitPreset = meta && meta.doctrinePreset;
+    if (Array.isArray(explicitPreset) && validateDoctrineLoadout(explicitPreset)) {
+      return cloneArray(explicitPreset);
+    }
+    if (explicitPreset && typeof explicitPreset === 'object') {
+      const bySide = Array.isArray(explicitPreset[side]) ? explicitPreset[side] : null;
+      if (bySide && validateDoctrineLoadout(bySide)) return cloneArray(bySide);
+    }
+
+    const n = String(name || '').toLowerCase();
+    if (n.includes('thermopylae') || n.includes('hot gates')) {
+      return [
+        'close_ranks', 'hold_fast', 'signal_call',
+        'shield_wall', 'strengthen_center', 'refuse_flank',
+        'grand_shield_wall', 'stand_or_die', 'collapse_center',
+      ];
+    }
+    if (n.includes('cannae') || n.includes('zama') || n.includes('ilipa')) {
+      return [
+        'spur_horses', 'quick_withdraw', 'javelin_volley',
+        'cavalry_exploit', 'wing_screen', 'jaws_inward',
+        'all_out_cavalry_sweep', 'commit_reserves', 'last_push',
+      ];
+    }
+    if (n.includes('granicus') || n.includes('river') || n.includes('ford')) {
+      return [
+        'signal_call', 'covering_fire', 'quick_dress',
+        'forced_march', 'strengthen_center', 'local_reserve',
+        'general_assault', 'command_surge', 'reforge_line',
+      ];
+    }
+    if (n.includes('marathon') || n.includes('pharsalus') || n.includes('thapsus') || n.includes('philippi')) {
+      return [
+        'close_ranks', 'spur_horses', 'hold_fast',
+        'shield_wall', 'cavalry_exploit', 'drive_them_back',
+        'full_line_advance', 'general_assault', 'last_push',
+      ];
+    }
+    // Side-aware small variation for default maps.
+    return side === 'blue'
+      ? makeRecommendedDoctrineLoadout()
+      : [
+          'quick_withdraw', 'signal_call', 'covering_fire',
+          'wing_screen', 'refuse_flank', 'drive_them_back',
+          'commit_reserves', 'collapse_center', 'stand_or_die',
+        ];
+  }
+
   function qualityStatValue(table, quality, fallback = 0) {
     if (!table || typeof table !== 'object') return fallback;
     if (quality && Object.prototype.hasOwnProperty.call(table, quality)) return table[quality];
@@ -243,16 +453,18 @@
     if (!unit) return 0;
     const def = UNIT_BY_ID.get(unit.type);
     if (!def) return 0;
+    const doctrineMoveBonus = Number(state?.doctrine?.effects?.bonusMove?.[unit.id] || 0) +
+      doctrineLongEffectValue('bonusMove', unit.id, unit.side);
 
     // Runner quality affects mobility only:
     // Green = base, Regular = +1, Veteran = +2.
     if (unit.type === 'run') {
-      if (unit.quality === 'veteran') return def.move + 2;
-      if (unit.quality === 'regular') return def.move + 1;
-      return def.move;
+      if (unit.quality === 'veteran') return Math.max(0, def.move + 2 + doctrineMoveBonus);
+      if (unit.quality === 'regular') return Math.max(0, def.move + 1 + doctrineMoveBonus);
+      return Math.max(0, def.move + doctrineMoveBonus);
     }
 
-    return def.move;
+    return Math.max(0, def.move + doctrineMoveBonus);
   }
 
   const FORWARD_AXIS_IDS = new Set(['vertical', 'horizontal', 'diag_tl_br', 'diag_tr_bl']);
@@ -261,24 +473,28 @@
     return FORWARD_AXIS_IDS.has(axis) ? axis : 'vertical';
   }
 
+  function normalizeAiDifficulty(level) {
+    return AI_DIFFICULTY_IDS.has(level) ? level : 'standard';
+  }
+
+  function aiDifficultyLabel(level) {
+    const id = normalizeAiDifficulty(level);
+    if (id === 'easy') return 'Easy';
+    if (id === 'hard') return 'Hard';
+    return 'Standard';
+  }
+
+  function aiTimingForDifficulty(level) {
+    const id = normalizeAiDifficulty(level);
+    return AI_TIMING_BY_DIFFICULTY[id] || AI_TIMING_BY_DIFFICULTY.standard;
+  }
+
   function forwardAxisLabel(axis) {
     const a = normalizeForwardAxis(axis);
     if (a === 'horizontal') return 'Horizontal (Blue right)';
     if (a === 'diag_tl_br') return 'Diagonal TL->BR (Blue down-right)';
     if (a === 'diag_tr_bl') return 'Diagonal TR->BL (Blue down-left)';
     return 'Vertical (Blue down)';
-  }
-
-  function normalizeAiDifficulty(level) {
-    return Object.prototype.hasOwnProperty.call(AI_DIFFICULTY_PROFILES, level) ? level : 'cohort';
-  }
-
-  function aiDifficultyProfile(level = state.aiDifficulty) {
-    return AI_DIFFICULTY_PROFILES[normalizeAiDifficulty(level)] || AI_DIFFICULTY_PROFILES.cohort;
-  }
-
-  function aiDifficultyLabel(level = state.aiDifficulty) {
-    return aiDifficultyProfile(level).label;
   }
 
   function sideForwardDirection(side, axis = state.forwardAxis) {
@@ -301,38 +517,6 @@
       case 'down': return 'up';
       default: return null;
     }
-  }
-
-  function adjacentDirection(fromKey, toKey) {
-    for (const d of HEX_DIRECTIONS) {
-      if (stepKeyInDirection(fromKey, d) === toKey) return d;
-    }
-    return null;
-  }
-
-  const LINE_AXIS_PAIRS = [
-    ['w', 'e'],
-    ['ul', 'dr'],
-    ['ur', 'dl'],
-  ];
-  const LINE_ADVANCE_DIRECTION_ORDER = ['ul', 'ur', 'e', 'dr', 'dl', 'w'];
-  const LINE_ADVANCE_DIRECTION_LABELS = {
-    e: 'Right',
-    w: 'Left',
-    ur: 'Up-Right',
-    ul: 'Up-Left',
-    dr: 'Down-Right',
-    dl: 'Down-Left',
-  };
-
-  function normalizeLineAdvanceDirection(dir) {
-    return HEX_DIRECTIONS.includes(dir) ? dir : null;
-  }
-
-  function lineAdvanceDirectionLabel(dir) {
-    const k = normalizeLineAdvanceDirection(dir);
-    if (!k) return 'Auto';
-    return LINE_ADVANCE_DIRECTION_LABELS[k] || k.toUpperCase();
   }
 
   function axisLateralDirections(axis = state.forwardAxis) {
@@ -380,7 +564,12 @@
 
   function commandRadiusForUnit(unit) {
     if (!unit) return 0;
-    if (unit.type === 'gen') return generalCommandRadius(unit);
+    if (unit.type === 'gen') {
+      const base = generalCommandRadius(unit);
+      const bonusTurn = Number(state?.doctrine?.effects?.commandRadiusBonusByGeneralId?.[unit.id] || 0);
+      const bonusLong = doctrineLongEffectValue('commandRadiusBonusByGeneralId', unit.id, unit.side);
+      return Math.max(0, base + bonusTurn + bonusLong);
+    }
     if (unit.type === 'run') return RUNNER_COMMAND_RADIUS;
     return 0;
   }
@@ -451,6 +640,8 @@
   // Odd-r offset neighbors (pointy-top).
   const NEIGH_EVEN = [[+1, 0], [0, -1], [-1, -1], [-1, 0], [-1, +1], [0, +1]];
   const NEIGH_ODD = [[+1, 0], [+1, -1], [0, -1], [-1, 0], [0, +1], [+1, +1]];
+  // Clockwise-ish ring used for infantry brace detection.
+  const BRACE_DIR_RING = ['e', 'ur', 'ul', 'w', 'dl', 'dr'];
 
   // --- DOM
   const elCanvas = document.getElementById('c');
@@ -459,11 +650,15 @@
   const elHudTitle = document.getElementById('hudTitle');
   const elHudMeta = document.getElementById('hudMeta');
   const elHudLast = document.getElementById('hudLast');
+  const elStatusMeta = document.getElementById('statusMeta');
+  const elStatusLast = document.getElementById('statusLast');
 
   const elModeBtn = document.getElementById('modeBtn');
   const elGameModeSel = document.getElementById('gameModeSel');
-  const elPlayerSideSel = document.getElementById('playerSideSel');
+  const elAiDifficultyRow = document.getElementById('aiDifficultyRow');
   const elAiDifficultySel = document.getElementById('aiDifficultySel');
+  const elHumanSideRow = document.getElementById('humanSideRow');
+  const elHumanSideSel = document.getElementById('humanSideSel');
   const elForwardAxisSel = document.getElementById('forwardAxisSel');
   const elToolUnits = document.getElementById('toolUnits');
   const elToolTerrain = document.getElementById('toolTerrain');
@@ -481,10 +676,13 @@
   const elTerrainBtns = document.getElementById('terrainBtns');
 
   const elScenarioSel = document.getElementById('scenarioSel');
+  const elScenarioSides = document.getElementById('scenarioSides');
   const elScenarioGroupSel = document.getElementById('scenarioGroupSel');
   const elScenarioLessonSel = document.getElementById('scenarioLessonSel');
   const elScenarioSizeSel = document.getElementById('scenarioSizeSel');
   const elScenarioTerrainSel = document.getElementById('scenarioTerrainSel');
+  const elLoadScenarioBtn = document.getElementById('loadScenarioBtn');
+  const elClearUnitsBtn = document.getElementById('clearUnitsBtn');
   const elDraftModeSel = document.getElementById('draftModeSel');
   const elDraftBudgetInput = document.getElementById('draftBudgetInput');
   const elStartDraftBtn = document.getElementById('startDraftBtn');
@@ -495,89 +693,95 @@
   const elStateFileInput = document.getElementById('stateFileInput');
   const elDiceSummary = document.getElementById('diceSummary');
   const elPhysicalDiceRow = document.getElementById('physicalDiceRow');
-  const elDicePerDie = document.getElementById('dicePerDie');
-  const elDiceOutcomeBrief = document.getElementById('diceOutcomeBrief');
+  const elBoardDiceResult = document.getElementById('boardDiceResult');
+  const elCornerDiceHud = document.getElementById('cornerDiceHud');
+  const elCornerDiceRow = document.getElementById('cornerDiceRow');
   const elDiceTray = document.getElementById('diceTray');
   const elInspectorTitle = document.getElementById('inspectorTitle');
   const elInspectorMeta = document.getElementById('inspectorMeta');
   const elInspectorSide = document.getElementById('inspectorSide');
   const elInspectorType = document.getElementById('inspectorType');
   const elInspectorQuality = document.getElementById('inspectorQuality');
+  const elInspectorHex = document.getElementById('inspectorHex');
   const elInspectorHp = document.getElementById('inspectorHp');
   const elInspectorUp = document.getElementById('inspectorUp');
-  const elInspectorMove = document.getElementById('inspectorMove');
-  const elInspectorAttack = document.getElementById('inspectorAttack');
+  const elInspectorCommand = document.getElementById('inspectorCommand');
+  const elInspectorRadius = document.getElementById('inspectorRadius');
   const elCombatSummary = document.getElementById('combatSummary');
   const elCombatMath = document.getElementById('combatMath');
   const elCombatTerrain = document.getElementById('combatTerrain');
-  const elCombatSupport = document.getElementById('combatSupport');
-  const elModifierPreview = document.getElementById('modifierPreview');
-  const elVictoryTrackBody = document.getElementById('victoryTrackBody');
-  const elForceTotals = document.getElementById('forceTotals');
-  const elRulesOpenBtn = document.getElementById('rulesOpenBtn');
-  const elRulesModal = document.getElementById('rulesModal');
-  const elRulesModalTitle = document.getElementById('rulesModalTitle');
-  const elRulesModalBody = document.getElementById('rulesModalBody');
-  const elRulesCloseBtn = document.getElementById('rulesCloseBtn');
+  const elCombatOutcome = document.getElementById('combatOutcome');
+  const elCombatForces = document.getElementById('combatForces');
   const elCombatHint = document.getElementById('combatHint');
-  const elCombatCols = Array.from(document.querySelectorAll('#combatRail .combatCol'));
-  const COMBAT_RULE_HINT = 'Rules: 5-6 hit, 4 retreat, 1-3 miss. Woods and some hill/tree-line positions reduce attacker dice (minimum 1). ARC/SKR in woods fire only from tree-line. ARC/SKR on hills gain +1 ranged die (no range increase). Rough attacks are -1 die. Reinforcement: two adjacent friendly INF touching the defender brace opposite attack sides for -1 die (one line deep only).';
-  const RULES_FULL_HTML = `
-    <h4>Ad Arma At A Glance</h4>
-    <p>Ad Arma is a hex-grid tactics game about cohesion, command, and collapse. The central idea is simple: an army wins by staying coordinated while forcing the enemy to lose shape. Units are formations, not heroes. Position and command matter more than flashy abilities.</p>
-    <h4>How A Battle Starts</h4>
-    <p>In local play, Blue always acts first. In online multiplayer, once both players connect and the battle begins, the starting side is randomized between Blue and Red.</p>
-    <p>Every turn has up to 3 activations. Most units can act once each turn. You can end your turn early, but if you spend all 3 activations, the turn ends automatically.</p>
-    <h4>Unit Types, Movement, And Role</h4>
-    <p>Base movement: INF 1, ARC 1, CAV 2, SKR 2, GEN 2, RUN 3/4/5 by quality, MED 1. Veterans, skirmishers, and runners can withdraw 1 hex from engagement if the destination is safe.</p>
-    <ul>
-      <li>INF: line holder, 2 melee dice.</li>
-      <li>CAV: shock unit, 3 melee dice. Lightning strike: if it moves 1 hex to attack and has movement left, it may disengage 1 hex after the attack (not if already engaged from being attacked first).</li>
-      <li>SKR: flexible screen, 1 melee die, 1 ranged die at range 2.</li>
-      <li>ARC: ranged pressure, 1 melee die, 2 ranged dice at range 2 and 1 die at range 3.</li>
-      <li>GEN: command anchor, 1 melee die.</li>
-      <li>RUN: messenger/relay, no attack, command relay radius 1.</li>
-      <li>MED: healer, no attack, restores +1 HP to one adjacent friendly unit; healed units are spent for the rest of that turn.</li>
-    </ul>
-    <h4>HP, UP, And Why They Matter</h4>
-    <p>HP is durability. A unit at 0 HP is destroyed. UP is strategic value used for force totals and Clear Victory scoring. Experience (Green/Regular/Veteran) mainly changes HP/UP and command independence, not your basic hit table.</p>
-    <p>Reference values:</p>
-    <ul>
-      <li>INF HP 3/4/5, UP 3/5/7</li>
-      <li>CAV HP 2/3/4, UP 6/8/10</li>
-      <li>SKR HP 1/2/3, UP 2/3/4</li>
-      <li>ARC HP 1/2/3, UP 2/4/6</li>
-      <li>GEN HP 2/3/4, UP 8/10/12</li>
-      <li>RUN HP 2/2/2, UP 1/2/3</li>
-      <li>MED HP 1/1/1, UP 4</li>
-    </ul>
-    <h4>Terrain And Friction</h4>
-    <p>Terrain defines lanes and tempo. Clear costs 1 move for all units. In Woods, INF/ARC/MED/CAV pause next turn after each woods entry; RUN/SKR/GEN move one woods hex per activation and do not take woods pause. INF enters Hills/Rough at cost 1 (entering a Hill ends further movement that activation). ARC enters Hills/Rough at cost 1 (entering a Hill ends further movement that activation). GEN enters Hills/Rough at cost 2 (entering a Hill ends further movement that activation). SKR enters Woods at cost 2 and enters Hills/Rough at cost 1; SKR are not slowed by Hills, and SKR may jump over adjacent friendly INF to land two hexes away if the landing hex is open. CAV enters Woods/Rough at cost 2 and pauses next turn after those entries, but CAV cannot climb onto Hills unless already starting from a Hill hex. RUN enters Woods/Hills one hex at a time and enters Rough normally but still pauses next turn after entering Rough. Any unit entering Rough is fully inactive on the next turn (cannot activate at all). MED can only enter Woods among difficult terrain, and pauses next turn after entering Woods. Water is impassable for all units.</p>
-    <p>Woods provide defense: attacker rolls -1 die (minimum 1). Archers and skirmishers in Woods can only fire if their woods hex is adjacent to Clear (tree-line fire). ARC/SKR defending from tree-line also give attacker -1 die. ARC/SKR defending on Hills give attacker -1 die. ARC/SKR attacking from Hills gain +1 ranged die (no range increase). Any attack launched from Rough suffers -1 die.</p>
-    <h4>Command System</h4>
-    <p>Most units need command coverage to function fully. General radius: Green 3, Regular 4, Veteran 5. Runner relay radius: 1.</p>
-    <ul>
-      <li>Green INF/ARC/SKR out of command: cannot activate.</li>
-      <li>Regular INF/ARC/SKR out of command: can attack but cannot move.</li>
-      <li>CAV and all Veteran units ignore command restrictions.</li>
-    </ul>
-    <h4>Combat Resolution</h4>
-    <p>Each die is read as: 5-6 hit, 4 retreat, 1-3 miss. Hits remove 1 HP each. Retreats push the defender away from the attacker. If a retreat is blocked by map edge, water, terrain legality, or occupation, that retreat converts into an additional hit.</p>
-    <p>This makes combat about geometry as much as damage: displacement can open gaps, break fronts, and trigger collapse.</p>
-    <h4>Infantry Reinforcement Rule</h4>
-    <p>An infantry defender is reinforced only when it has a touching adjacent pair of friendly infantry. If the attack comes from the opposite brace directions, attacker dice are reduced by 1 (minimum 1 die). Reinforcement is one line deep only.</p>
-    <p>UI cue: light cyan marks reinforced units; darker cyan marks the units providing the brace.</p>
-    <h4>Line Advance</h4>
-    <p>Line Advance is an infantry-only formation action. It spends 1 activation and attempts to move a contiguous eligible infantry line one step in your selected non-lateral direction based on the line's orientation. It does not include attacks. Some units may move while blocked units remain in place.</p>
-    <h4>Victory Conditions</h4>
-    <ul>
-      <li>Clear Victory: capture at least half of the opponent's starting UP.</li>
-      <li>Decapitation: eliminate all enemy generals.</li>
-      <li>Annihilation: eliminate all enemy units.</li>
-    </ul>
-    <p>Once battle starts, the selected victory condition is locked until you return to Setup.</p>
-  `;
+  const elOpenQuickRulesBtn = document.getElementById('openQuickRulesBtn');
+  const elOpenFullRulesBtn = document.getElementById('openFullRulesBtn');
+  const elDoctrineOpenHeroBtn = document.getElementById('doctrineOpenHeroBtn');
+  const elOpenCommandRulesBtn = document.getElementById('openCommandRulesBtn');
+  const elDoctrineOpenBtn = document.getElementById('doctrineOpenBtn');
+  const elDoctrineOpenTurnBtn = document.getElementById('doctrineOpenTurnBtn');
+  const elDoctrineRecommendedBtn = document.getElementById('doctrineRecommendedBtn');
+  const elDoctrineRandomBtn = document.getElementById('doctrineRandomBtn');
+  const elDoctrineBlankBtn = document.getElementById('doctrineBlankBtn');
+  const elDoctrineScenarioBtn = document.getElementById('doctrineScenarioBtn');
+  const elDoctrineSummary = document.getElementById('doctrineSummary');
+  const elOrdersViewBlueBtn = document.getElementById('ordersViewBlueBtn');
+  const elOrdersViewRedBtn = document.getElementById('ordersViewRedBtn');
+  const elOrdersExplainList = document.getElementById('ordersExplainList');
+  const elOrdersPanel = document.getElementById('ordersPanel');
+  const elOrdersReadyNote = document.getElementById('ordersReadyNote');
+  const elDoctrineOwnList = document.getElementById('doctrineOwnList');
+  const elDoctrineKnownList = document.getElementById('doctrineKnownList');
+  const elDoctrineSpentList = document.getElementById('doctrineSpentList');
+  const elDoctrineHistoryList = document.getElementById('doctrineHistoryList');
+  const elCommandSel = document.getElementById('commandSel');
+  const elCommandUseBtn = document.getElementById('commandUseBtn');
+  const elCommandSkipBtn = document.getElementById('commandSkipBtn');
+  const elOpenOrdersKeyBtn = document.getElementById('openOrdersKeyBtn');
+  const elCommandPhaseNote = document.getElementById('commandPhaseNote');
+  const elDoctrineOverlay = document.getElementById('doctrineOverlay');
+  const elCloseDoctrineBtn = document.getElementById('closeDoctrineBtn');
+  const elDoctrineSideSel = document.getElementById('doctrineSideSel');
+  const elDoctrineRandomizeBtn = document.getElementById('doctrineRandomizeBtn');
+  const elDoctrineRecommendBtn = document.getElementById('doctrineRecommendBtn');
+  const elDoctrineBlankizeBtn = document.getElementById('doctrineBlankizeBtn');
+  const elDoctrineScenarioApplyBtn = document.getElementById('doctrineScenarioApplyBtn');
+  const elDoctrineBuilderCounts = document.getElementById('doctrineBuilderCounts');
+  const elDoctrineExplain = document.getElementById('doctrineExplain');
+  const elDoctrineCost1Col = document.getElementById('doctrineCost1Col');
+  const elDoctrineCost2Col = document.getElementById('doctrineCost2Col');
+  const elDoctrineCost3Col = document.getElementById('doctrineCost3Col');
+  const elDoctrineCost1Title = document.getElementById('doctrineCost1Title');
+  const elDoctrineCost2Title = document.getElementById('doctrineCost2Title');
+  const elDoctrineCost3Title = document.getElementById('doctrineCost3Title');
+  const elDoctrineCost1List = document.getElementById('doctrineCost1List');
+  const elDoctrineCost2List = document.getElementById('doctrineCost2List');
+  const elDoctrineCost3List = document.getElementById('doctrineCost3List');
+  const elDoctrineConfirmBtn = document.getElementById('doctrineConfirmBtn');
+  const elRulesSideOverlay = document.getElementById('rulesSideOverlay');
+  const elCloseRulesSideBtn = document.getElementById('closeRulesSideBtn');
+  const elRulesTabQuickBtn = document.getElementById('rulesTabQuickBtn');
+  const elRulesTabFullBtn = document.getElementById('rulesTabFullBtn');
+  const elRulesTabCommandsBtn = document.getElementById('rulesTabCommandsBtn');
+  const elRulesQuickDoc = document.getElementById('rulesQuickDoc');
+  const elRulesFullDoc = document.getElementById('rulesFullDoc');
+  const elRulesCommandsDoc = document.getElementById('rulesCommandsDoc');
+  const elRulesCommandsList = document.getElementById('rulesCommandsList');
+  const elRulesCommandsSelectedBtn = document.getElementById('rulesCommandsSelectedBtn');
+  const elRulesCommandsAllBtn = document.getElementById('rulesCommandsAllBtn');
+  const elRulesCommandsContext = document.getElementById('rulesCommandsContext');
+  const COMBAT_RULE_HINT =
+    'Rules: 6=hit+retreat+disarray, 5=hit, 4=retreat, 3=disarray, 1-2=miss. Woods -1 die (min 1).';
   let diceRenderNonce = 0;
+  let rulesCommandsViewMode = 'selected'; // 'selected' | 'all'
+  let rulesCommandsViewSide = 'blue';
+  const PANEL_COLLAPSE_PREF_KEY = 'bannerfall-panel-collapse-v1';
+  const PANEL_COLLAPSE_DEFAULTS_TOUCH = {
+    turnOrdersPanel: false,
+    statusPanel: false,
+    setupPanel: true,
+    dicePanel: true,
+    editorPanel: true,
+  };
 
   const elVictorySel = document.getElementById('victorySel');
   const elEndTurnBtn = document.getElementById('endTurnBtn');
@@ -588,12 +792,7 @@
   const elOnlineLeaveBtn = document.getElementById('onlineLeaveBtn');
   const elOnlineMyCode = document.getElementById('onlineMyCode');
   const elOnlineJoinCode = document.getElementById('onlineJoinCode');
-  const elOnlineRoleHint = document.getElementById('onlineRoleHint');
   const elOnlineStatus = document.getElementById('onlineStatus');
-
-  if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
-    history.scrollRestoration = 'manual';
-  }
 
   // --- State
   const state = {
@@ -607,11 +806,13 @@
     editTerrain: 'clear',
 
     // Play
-    gameMode: 'hvai', // 'hvh' | 'hvai' | 'online'
-    humanSide: 'blue', // local player side in Human vs AI
-    aiDifficulty: 'cohort', // 'levy' | 'cohort' | 'legion'
+    gameMode: 'hvai', // 'hvai' | 'online'
+    aiDifficulty: 'standard', // 'easy' | 'standard' | 'hard'
+    humanSide: 'blue', // 'blue' | 'red'
     forwardAxis: 'vertical', // 'vertical' | 'horizontal' | 'diag_tl_br' | 'diag_tr_bl'
+    lineAdvanceDirection: 'forward', // 'forward' | 'backward' | 'left' | 'right'
     turn: 1,
+    turnSerial: 1,
     side: 'blue',
     actsUsed: 0,
     actedUnitIds: new Set(),
@@ -623,10 +824,10 @@
     selectedKey: null,
 
     // Current activation context (only while a unit is selected in Play)
-    // { unitId, committed, moved, attacked, healed, inCommandStart, startedEngaged, moveSpent, postAttackWithdrawOnly }
+    // { unitId, committed, moved, attacked, healed, inCommandStart, moveSpent, postAttackWithdrawOnly, postAttackPursuitOnly }
     act: null,
 
-    victoryMode: 'clear',
+    victoryMode: 'decapitation',
     initialUP: { blue: 0, red: 0 },
     capturedUP: { blue: 0, red: 0 },
 
@@ -635,17 +836,26 @@
 
     // Minimal "event trace" (future UI can display this without changing rules)
     events: [],
+    // Structured replay/event hook stream for future AI + multiplayer + replay.
+    // Keep this compact and serializable.
+    eventTrace: [],
 
     lastImport: null, // { source, at }
     aiBusy: false,
     aiTimer: null,
-    lastCombat: null,
+    aiQueuedFollowup: null,
+    combatBusy: false,
+    combatBusyUntil: 0,
     moveAnim: null,
-    moveAnimRaf: null,
-    actionPulse: null,
-    actionPulseRaf: null,
-    lineAdvancePreviewHover: false,
-    lineAdvanceDir: null,
+    moveAnimUntil: 0,
+    attackFlash: null,
+    animFrame: null,
+    lastCombat: null,
+    loadedScenarioName: RANDOM_START_SCENARIO_NAME,
+    loadedScenarioSides: { blue: 'Blue Army', red: 'Red Army', named: false },
+    loadedScenarioMeta: { description: '', historical: '', notes: '', pointTarget: null },
+    ordersPreviewSide: 'blue',
+    enemyDirectiveNotice: null, // { text, atSerial }
 
     draft: {
       active: false,
@@ -657,6 +867,52 @@
       reveal: true,
     },
 
+    doctrine: {
+      commandPhaseOpen: false,
+      commandIssuedThisTurn: false,
+      selectedCommandId: '',
+      activeCommandThisTurn: null,
+      bySide: {
+        blue: null,
+        red: null,
+      },
+      history: [],
+      longEffects: [],
+      // temporary effect maps keyed by unitId or side
+      effects: {
+        bonusMove: {},
+        bonusAttackDice: {},
+        rangedBonusDice: {},
+        meleeDefenseBonus: {},
+        ignoreRetreatCount: {},
+        ignoreAllRetreat: {},
+        cannotMove: {},
+        cannotAttack: {},
+        commandOverrideUnitIds: {},
+        counterchargeUnitIds: {},
+        coverFireIgnoreTerrain: {},
+        wingScreenUnitIds: {},
+        driveThemBackUnitIds: {},
+        commandRadiusBonusByGeneralId: {},
+        reserveReleaseUnitIds: {},
+      },
+      builder: {
+        open: false,
+        side: 'blue',
+        preBattleReady: false,
+        confirmed: { blue: false, red: false },
+        focusCommandId: '',
+        draft: {
+          blue: [],
+          red: [],
+        },
+      },
+    },
+
+    scenarioObjectives: [],
+    objectiveCheckpointTurn: 8,
+    objectiveLastSummary: null,
+
     last: 'Booting…',
   };
 
@@ -667,7 +923,7 @@
     connected: false,
     myCode: '',
     remoteCode: '',
-    status: 'Online: idle.',
+    status: 'Not connected.',
     applyingRemoteSnapshot: false,
   };
 
@@ -675,20 +931,184 @@
   const ONLINE_CODE_LENGTH = 4;
   const ONLINE_PEER_PREFIX = 'cyb-';
 
-  function normalizeSide(side) {
-    return side === 'red' ? 'red' : 'blue';
+  function ensureDoctrineEffectMaps() {
+    if (!state.doctrine.effects || typeof state.doctrine.effects !== 'object') {
+      state.doctrine.effects = {};
+    }
+    const maps = [
+      'bonusMove',
+      'bonusAttackDice',
+      'rangedBonusDice',
+      'meleeDefenseBonus',
+      'ignoreRetreatCount',
+      'ignoreAllRetreat',
+      'cannotMove',
+      'cannotAttack',
+      'commandOverrideUnitIds',
+      'counterchargeUnitIds',
+      'coverFireIgnoreTerrain',
+      'wingScreenUnitIds',
+      'driveThemBackUnitIds',
+      'commandRadiusBonusByGeneralId',
+      'reserveReleaseUnitIds',
+    ];
+    for (const k of maps) {
+      if (!state.doctrine.effects[k] || typeof state.doctrine.effects[k] !== 'object') {
+        state.doctrine.effects[k] = {};
+      }
+    }
   }
 
-  function opposingSide(side) {
-    return normalizeSide(side) === 'blue' ? 'red' : 'blue';
+  function clearDoctrineTurnEffects() {
+    ensureDoctrineEffectMaps();
+    state.doctrine.effects.bonusMove = {};
+    state.doctrine.effects.bonusAttackDice = {};
+    state.doctrine.effects.rangedBonusDice = {};
+    state.doctrine.effects.meleeDefenseBonus = {};
+    state.doctrine.effects.ignoreRetreatCount = {};
+    state.doctrine.effects.ignoreAllRetreat = {};
+    state.doctrine.effects.cannotMove = {};
+    state.doctrine.effects.cannotAttack = {};
+    state.doctrine.effects.commandOverrideUnitIds = {};
+    state.doctrine.effects.counterchargeUnitIds = {};
+    state.doctrine.effects.coverFireIgnoreTerrain = {};
+    state.doctrine.effects.wingScreenUnitIds = {};
+    state.doctrine.effects.driveThemBackUnitIds = {};
+    state.doctrine.effects.commandRadiusBonusByGeneralId = {};
+    state.doctrine.effects.reserveReleaseUnitIds = {};
   }
 
-  function aiSide() {
-    return opposingSide(state.humanSide);
+  function ensureDoctrineStateInitialized(force = false) {
+    if (force || !state.doctrine.bySide.blue) {
+      state.doctrine.bySide.blue = buildDoctrineByIds(buildCompleteDoctrineLoadout(makeRecommendedDoctrineLoadout()), 'recommended');
+    }
+    if (force || !state.doctrine.bySide.red) {
+      state.doctrine.bySide.red = buildDoctrineByIds(buildCompleteDoctrineLoadout(makeRecommendedDoctrineLoadout()), 'recommended');
+    }
   }
 
-  function randomStartSide() {
-    return Math.random() < 0.5 ? 'blue' : 'red';
+  function doctrineStateForSide(side) {
+    ensureDoctrineStateInitialized(false);
+    if (side !== 'blue' && side !== 'red') return null;
+    return state.doctrine.bySide[side];
+  }
+
+  function clearDoctrineLoadoutForSide(side, source = 'blank') {
+    if (side !== 'blue' && side !== 'red') return;
+    const blank = makeDoctrineSideState();
+    blank.source = source;
+    state.doctrine.bySide[side] = blank;
+  }
+
+  function setDoctrineLoadoutForSide(side, ids, source = 'manual', opts = {}) {
+    if (side !== 'blue' && side !== 'red') return false;
+    const strict = !!opts.strict;
+    const normalized = strict ? cloneArray(ids) : buildCompleteDoctrineLoadout(ids);
+    if (!validateDoctrineLoadout(normalized)) return false;
+    state.doctrine.bySide[side] = buildDoctrineByIds(normalized, source);
+    return true;
+  }
+
+  function commandEntryForSide(side, commandId) {
+    const ds = doctrineStateForSide(side);
+    if (!ds || !ds.byId[commandId]) return null;
+    return ds.byId[commandId];
+  }
+
+  function isCommandAvailableForUse(side, commandId) {
+    const cmd = COMMAND_BY_ID.get(commandId);
+    if (!cmd) return false;
+    const entry = commandEntryForSide(side, commandId);
+    if (!entry) return false;
+    if (entry.spent) return false;
+    if (state.doctrine.commandIssuedThisTurn) return false;
+    if (cmd.cost > (ACT_LIMIT - state.actsUsed)) return false;
+    return true;
+  }
+
+  function markCommandUsed(side, commandId) {
+    const cmd = COMMAND_BY_ID.get(commandId);
+    const entry = commandEntryForSide(side, commandId);
+    if (!cmd || !entry) return false;
+
+    entry.revealed = true;
+    entry.usedCount = (entry.usedCount || 0) + 1;
+    if (cmd.persistence === 'spent') entry.spent = true;
+
+    const rec = {
+      turn: state.turn,
+      side,
+      id: cmd.id,
+      name: cmd.name,
+      cost: cmd.cost,
+      persistence: cmd.persistence,
+      spent: !!entry.spent,
+      at: Date.now(),
+    };
+    doctrineStateForSide(side).history.push(rec);
+    state.doctrine.history.push(rec);
+    pushEventTrace('command.used', {
+      commandId: cmd.id,
+      name: cmd.name,
+      side,
+      cost: cmd.cost,
+      persistence: cmd.persistence,
+      revealed: true,
+      spent: !!entry.spent,
+      usedCount: entry.usedCount,
+    });
+    return true;
+  }
+
+  function openCommandPhaseForCurrentTurn() {
+    pruneExpiredDoctrineLongEffects();
+    state.doctrine.commandPhaseOpen = false;
+    state.doctrine.commandIssuedThisTurn = false;
+    state.doctrine.selectedCommandId = '';
+    state.doctrine.activeCommandThisTurn = null;
+    clearDoctrineTurnEffects();
+  }
+
+  function closeCommandPhase() {
+    state.doctrine.selectedCommandId = '';
+  }
+
+  function addDoctrineLongEffect(effect) {
+    if (!effect || typeof effect !== 'object') return;
+    state.doctrine.longEffects.push({
+      ...effect,
+      expiresOnSide: effect.expiresOnSide || state.side,
+      expiresAfterSerial: Number.isFinite(effect.expiresAfterSerial) ? effect.expiresAfterSerial : state.turnSerial,
+    });
+  }
+
+  function pruneExpiredDoctrineLongEffects() {
+    state.doctrine.longEffects = state.doctrine.longEffects.filter((eff) => {
+      if (!eff) return false;
+      if (state.side !== eff.expiresOnSide) return true;
+      return state.turnSerial <= eff.expiresAfterSerial;
+    });
+  }
+
+  function doctrineLongEffectValue(mapName, unitId, side = null) {
+    let total = 0;
+    for (const eff of state.doctrine.longEffects) {
+      if (!eff || eff.map !== mapName) continue;
+      if (side && eff.side && eff.side !== side) continue;
+      if (unitId != null && eff.unitId != null && eff.unitId !== unitId) continue;
+      total += Number(eff.value || 0);
+    }
+    return total;
+  }
+
+  function doctrineLongEffectFlag(mapName, unitId, side = null) {
+    for (const eff of state.doctrine.longEffects) {
+      if (!eff || eff.map !== mapName) continue;
+      if (side && eff.side && eff.side !== side) continue;
+      if (unitId != null && eff.unitId != null && eff.unitId !== unitId) continue;
+      if (eff.value) return true;
+    }
+    return false;
   }
 
   // --- Board model
@@ -794,7 +1214,7 @@
       ],
     },
   
-    'Terrain G — Teutoburg Ambush (9 CE)': {
+    'Terrain G — Tuderberg Ring Ambush': {
       terrain: [
         { q: 2, r: 2, terrain: 'hills' },
         { q: 4, r: 2, terrain: 'hills' },
@@ -2263,6 +2683,91 @@
       ],
     },
 
+    'Terrain T — Twin Tree-Line Crossfire (Archer Test)': {
+      terrain: [
+        { q: 0, r: 3, terrain: 'woods' },
+        { q: 1, r: 3, terrain: 'woods' },
+        { q: 2, r: 3, terrain: 'woods' },
+        { q: 0, r: 4, terrain: 'woods' },
+        { q: 1, r: 4, terrain: 'woods' },
+        { q: 2, r: 4, terrain: 'woods' },
+        { q: 3, r: 4, terrain: 'woods' },
+        { q: -1, r: 5, terrain: 'woods' },
+        { q: 0, r: 5, terrain: 'woods' },
+        { q: 1, r: 5, terrain: 'woods' },
+        { q: 2, r: 5, terrain: 'woods' },
+        { q: 3, r: 5, terrain: 'woods' },
+        { q: 0, r: 6, terrain: 'woods' },
+        { q: 1, r: 6, terrain: 'woods' },
+        { q: 2, r: 6, terrain: 'woods' },
+        { q: 3, r: 6, terrain: 'woods' },
+        { q: 0, r: 7, terrain: 'woods' },
+        { q: 1, r: 7, terrain: 'woods' },
+        { q: 2, r: 7, terrain: 'woods' },
+        { q: 13, r: 3, terrain: 'woods' },
+        { q: 14, r: 3, terrain: 'woods' },
+        { q: 15, r: 3, terrain: 'woods' },
+        { q: 12, r: 4, terrain: 'woods' },
+        { q: 13, r: 4, terrain: 'woods' },
+        { q: 14, r: 4, terrain: 'woods' },
+        { q: 15, r: 4, terrain: 'woods' },
+        { q: 12, r: 5, terrain: 'woods' },
+        { q: 13, r: 5, terrain: 'woods' },
+        { q: 14, r: 5, terrain: 'woods' },
+        { q: 15, r: 5, terrain: 'woods' },
+        { q: 12, r: 6, terrain: 'woods' },
+        { q: 13, r: 6, terrain: 'woods' },
+        { q: 14, r: 6, terrain: 'woods' },
+        { q: 15, r: 6, terrain: 'woods' },
+        { q: 13, r: 7, terrain: 'woods' },
+        { q: 14, r: 7, terrain: 'woods' },
+        { q: 15, r: 7, terrain: 'woods' },
+      ],
+      units: [
+        { q: 1, r: 5, side: 'blue', type: 'gen', quality: 'regular' },
+        { q: 6, r: 5, side: 'blue', type: 'gen', quality: 'regular' },
+        { q: 3, r: 4, side: 'blue', type: 'arc', quality: 'regular' },
+        { q: 3, r: 5, side: 'blue', type: 'arc', quality: 'veteran' },
+        { q: 3, r: 6, side: 'blue', type: 'arc', quality: 'regular' },
+        { q: 4, r: 4, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 4, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 4, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 5, r: 4, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 5, r: 5, side: 'blue', type: 'inf', quality: 'veteran' },
+        { q: 5, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 6, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 6, r: 4, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 6, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 6, r: 7, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 7, r: 4, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 7, r: 5, side: 'blue', type: 'inf', quality: 'veteran' },
+        { q: 7, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
+        { q: 5, r: 3, side: 'blue', type: 'cav', quality: 'regular' },
+        { q: 5, r: 7, side: 'blue', type: 'cav', quality: 'regular' },
+
+        { q: 14, r: 5, side: 'red', type: 'gen', quality: 'regular' },
+        { q: 9, r: 5, side: 'red', type: 'gen', quality: 'regular' },
+        { q: 12, r: 4, side: 'red', type: 'arc', quality: 'regular' },
+        { q: 12, r: 5, side: 'red', type: 'arc', quality: 'veteran' },
+        { q: 12, r: 6, side: 'red', type: 'arc', quality: 'regular' },
+        { q: 11, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 11, r: 5, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 11, r: 6, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 10, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 10, r: 5, side: 'red', type: 'inf', quality: 'veteran' },
+        { q: 10, r: 6, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 9, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 9, r: 6, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 9, r: 7, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 8, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 8, r: 5, side: 'red', type: 'inf', quality: 'veteran' },
+        { q: 8, r: 6, side: 'red', type: 'inf', quality: 'regular' },
+        { q: 10, r: 3, side: 'red', type: 'cav', quality: 'regular' },
+        { q: 10, r: 7, side: 'red', type: 'cav', quality: 'regular' },
+      ],
+    },
+
   // === GRAND BATTLE SCENARIOS (Thor) ===
   'Grand A — Even Lines (30v30, mirrored)': {
     terrain: [
@@ -2971,780 +3476,80 @@
   // === END BERSERKER FORMATIONS ===
 };
 
-Object.assign(SCENARIOS, {
-  'Terrain T — Thermopylae (Spartans at the Hot Gates, 480 BCE)': {
-    terrain: [
-      // West mountain shoulder pressing toward the center.
-      { q: 1, r: 3, terrain: 'hills' },
-      { q: 1, r: 4, terrain: 'hills' },
-      { q: 1, r: 5, terrain: 'hills' },
-      { q: 1, r: 6, terrain: 'hills' },
-      { q: 1, r: 7, terrain: 'hills' },
-      { q: 2, r: 2, terrain: 'hills' },
-      { q: 2, r: 3, terrain: 'hills' },
-      { q: 2, r: 4, terrain: 'hills' },
-      { q: 2, r: 6, terrain: 'hills' },
-      { q: 2, r: 7, terrain: 'hills' },
-      { q: 2, r: 8, terrain: 'hills' },
-      { q: 3, r: 2, terrain: 'hills' },
-      { q: 3, r: 3, terrain: 'hills' },
-      { q: 3, r: 7, terrain: 'hills' },
-      { q: 3, r: 8, terrain: 'hills' },
-      { q: 4, r: 3, terrain: 'hills' },
-      { q: 4, r: 7, terrain: 'hills' },
+SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
+  terrain: [
+    { q: 4, r: 3, terrain: 'mountains' }, { q: 5, r: 3, terrain: 'mountains' }, { q: 6, r: 3, terrain: 'mountains' },
+    { q: 7, r: 3, terrain: 'mountains' }, { q: 8, r: 3, terrain: 'mountains' }, { q: 9, r: 3, terrain: 'mountains' },
+    { q: 10, r: 3, terrain: 'mountains' }, { q: 11, r: 3, terrain: 'mountains' }, { q: 12, r: 3, terrain: 'mountains' },
+    { q: 5, r: 4, terrain: 'mountains' }, { q: 6, r: 4, terrain: 'mountains' }, { q: 10, r: 4, terrain: 'mountains' }, { q: 11, r: 4, terrain: 'mountains' },
+    { q: 4, r: 7, terrain: 'water' }, { q: 5, r: 7, terrain: 'water' }, { q: 6, r: 7, terrain: 'water' },
+    { q: 7, r: 7, terrain: 'water' }, { q: 8, r: 7, terrain: 'water' }, { q: 9, r: 7, terrain: 'water' },
+    { q: 10, r: 7, terrain: 'water' }, { q: 11, r: 7, terrain: 'water' }, { q: 12, r: 7, terrain: 'water' },
+    { q: 5, r: 6, terrain: 'water' }, { q: 6, r: 6, terrain: 'water' }, { q: 10, r: 6, terrain: 'water' }, { q: 11, r: 6, terrain: 'water' },
+    { q: 7, r: 5, terrain: 'rough' }, { q: 8, r: 5, terrain: 'rough' },
+  ],
+  units: [
+    { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
+    { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
+    { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
+    { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+    { q: 10, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
+    { q: 6, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 7, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 8, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 9, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
+    { q: 5, r: 9, side: 'blue', type: 'skr', quality: 'regular' },
+    { q: 10, r: 9, side: 'blue', type: 'skr', quality: 'regular' },
+    { q: 4, r: 9, side: 'blue', type: 'arc', quality: 'regular' },
+    { q: 11, r: 9, side: 'blue', type: 'arc', quality: 'regular' },
+    { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
 
-      // East coastline squeezing toward a narrow center corridor.
-      { q: 12, r: 2, terrain: 'water' },
-      { q: 13, r: 2, terrain: 'water' },
-      { q: 14, r: 2, terrain: 'water' },
-      { q: 12, r: 3, terrain: 'water' },
-      { q: 13, r: 3, terrain: 'water' },
-      { q: 14, r: 3, terrain: 'water' },
-      { q: 11, r: 4, terrain: 'water' },
-      { q: 12, r: 4, terrain: 'water' },
-      { q: 13, r: 4, terrain: 'water' },
-      { q: 14, r: 4, terrain: 'water' },
-      { q: 11, r: 5, terrain: 'water' },
-      { q: 12, r: 5, terrain: 'water' },
-      { q: 13, r: 5, terrain: 'water' },
-      { q: 14, r: 5, terrain: 'water' },
-      { q: 11, r: 6, terrain: 'water' },
-      { q: 12, r: 6, terrain: 'water' },
-      { q: 13, r: 6, terrain: 'water' },
-      { q: 11, r: 7, terrain: 'water' },
-      { q: 12, r: 7, terrain: 'water' },
-      { q: 13, r: 7, terrain: 'water' },
-      { q: 11, r: 8, terrain: 'water' },
-      { q: 12, r: 8, terrain: 'water' },
-
-      // Chokepoint shoulders around the gate itself.
-      { q: 4, r: 4, terrain: 'rough' },
-      { q: 4, r: 5, terrain: 'rough' },
-      { q: 4, r: 6, terrain: 'rough' },
-      { q: 5, r: 4, terrain: 'rough' },
-      { q: 5, r: 6, terrain: 'rough' },
-      { q: 6, r: 4, terrain: 'rough' },
-      { q: 6, r: 6, terrain: 'rough' },
-      { q: 8, r: 4, terrain: 'rough' },
-      { q: 8, r: 6, terrain: 'rough' },
-      { q: 9, r: 4, terrain: 'rough' },
-      { q: 9, r: 6, terrain: 'rough' },
-      { q: 10, r: 5, terrain: 'rough' },
-    ],
-    units: [
-      // Greek / Spartan-led defense: stacked center at the narrow gate.
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 7, r: 10, side: 'blue', type: 'med', quality: 'regular' },
-      { q: 5, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 4, r: 7, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 10, r: 7, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 4, r: 6, side: 'blue', type: 'skr', quality: 'veteran' },
-      { q: 10, r: 6, side: 'blue', type: 'skr', quality: 'veteran' },
-      { q: 3, r: 9, side: 'blue', type: 'cav', quality: 'green' },
-
-      // Persian attack mass: wider front forced into the central pass.
-      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 9, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 7, r: 1, side: 'red', type: 'med', quality: 'regular' },
-      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 6, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 7, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 3, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 4, r: 2, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 11, r: 2, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 10, r: 1, side: 'red', type: 'cav', quality: 'regular' },
+    { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+    { q: 9, r: 1, side: 'red', type: 'gen', quality: 'regular' },
+    { q: 7, r: 1, side: 'red', type: 'run', quality: 'green' },
+    { q: 4, r: 2, side: 'red', type: 'arc', quality: 'regular' },
+    { q: 5, r: 2, side: 'red', type: 'arc', quality: 'regular' },
+    { q: 8, r: 2, side: 'red', type: 'arc', quality: 'regular' },
+    { q: 10, r: 2, side: 'red', type: 'arc', quality: 'regular' },
+    { q: 11, r: 2, side: 'red', type: 'arc', quality: 'regular' },
+    { q: 3, r: 3, side: 'red', type: 'inf', quality: 'green' },
+    { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
+    { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
+    { q: 6, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+    { q: 7, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+    { q: 8, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+    { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
+    { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
+    { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
+    { q: 12, r: 3, side: 'red', type: 'inf', quality: 'green' },
+    { q: 4, r: 4, side: 'red', type: 'inf', quality: 'green' },
+    { q: 5, r: 4, side: 'red', type: 'inf', quality: 'green' },
+    { q: 6, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+    { q: 7, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+    { q: 8, r: 4, side: 'red', type: 'inf', quality: 'regular' },
+    { q: 9, r: 4, side: 'red', type: 'inf', quality: 'green' },
+    { q: 10, r: 4, side: 'red', type: 'inf', quality: 'green' },
+    { q: 11, r: 4, side: 'red', type: 'inf', quality: 'green' },
+    { q: 3, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    { q: 12, r: 4, side: 'red', type: 'skr', quality: 'regular' },
+    { q: 2, r: 3, side: 'red', type: 'cav', quality: 'regular' },
+    { q: 13, r: 3, side: 'red', type: 'cav', quality: 'regular' },
+  ],
+  meta: {
+    group: 'history',
+    historical: '480 BCE',
+    description: 'Spartan-led defense in a narrow pass bounded by sea and impassable heights.',
+    sideLabels: { blue: 'Greek', red: 'Persian', named: true },
+    checkpointTurn: 6,
+    objectives: [
+      { id: 'hot-gates', name: 'Hot Gates Chokepoint', value: 3, contestAdjacent: true, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }] },
     ],
   },
-
-  'Terrain U — Plataea (479 BCE)': {
-    terrain: [
-      { q: 4, r: 2, terrain: 'hills' },
-      { q: 5, r: 2, terrain: 'hills' },
-      { q: 6, r: 2, terrain: 'hills' },
-      { q: 9, r: 2, terrain: 'hills' },
-      { q: 10, r: 2, terrain: 'hills' },
-      { q: 11, r: 2, terrain: 'hills' },
-      { q: 6, r: 5, terrain: 'rough' },
-      { q: 7, r: 5, terrain: 'rough' },
-      { q: 8, r: 5, terrain: 'rough' },
-      { q: 7, r: 6, terrain: 'rough' },
-      { q: 1, r: 7, terrain: 'woods' },
-      { q: 2, r: 7, terrain: 'woods' },
-      { q: 3, r: 7, terrain: 'woods' },
-      { q: 1, r: 8, terrain: 'woods' },
-      { q: 2, r: 8, terrain: 'woods' },
-    ],
-    units: [
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 3, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 10, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 6, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 8, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 9, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 3, r: 1, side: 'red', type: 'arc', quality: 'veteran' },
-      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 10, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'veteran' },
-      { q: 2, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 12, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 3, r: 2, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 11, r: 2, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain V — Gaugamela (331 BCE)': {
-    terrain: [
-      { q: 0, r: 5, terrain: 'rough' },
-      { q: 1, r: 5, terrain: 'rough' },
-      { q: 14, r: 5, terrain: 'rough' },
-      { q: 15, r: 5, terrain: 'rough' },
-      { q: 2, r: 2, terrain: 'hills' },
-      { q: 13, r: 8, terrain: 'hills' },
-    ],
-    units: [
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
-      { q: 4, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
-      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
-      { q: 12, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
-      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 13, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 10, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 7, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 11, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 6, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 10, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 4, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 12, r: 10, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 3, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 12, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 4, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 11, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 2, r: 2, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 13, r: 2, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 8, r: 0, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 12, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 3, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 11, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain W — Hydaspes River Crossing (326 BCE)': {
-    terrain: [
-      { q: 6, r: 1, terrain: 'water' },
-      { q: 6, r: 2, terrain: 'water' },
-      { q: 7, r: 2, terrain: 'water' },
-      { q: 6, r: 3, terrain: 'water' },
-      { q: 7, r: 3, terrain: 'water' },
-      { q: 6, r: 4, terrain: 'water' },
-      { q: 7, r: 4, terrain: 'water' },
-      { q: 6, r: 5, terrain: 'water' },
-      { q: 6, r: 6, terrain: 'water' },
-      { q: 7, r: 6, terrain: 'water' },
-      { q: 6, r: 7, terrain: 'water' },
-      { q: 7, r: 7, terrain: 'water' },
-      { q: 6, r: 8, terrain: 'water' },
-      { q: 7, r: 8, terrain: 'water' },
-      { q: 6, r: 9, terrain: 'water' },
-      { q: 8, r: 4, terrain: 'rough' },
-      { q: 8, r: 5, terrain: 'rough' },
-      { q: 8, r: 6, terrain: 'rough' },
-      { q: 10, r: 3, terrain: 'woods' },
-      { q: 11, r: 3, terrain: 'woods' },
-      { q: 10, r: 7, terrain: 'woods' },
-      { q: 11, r: 7, terrain: 'woods' },
-    ],
-    units: [
-      { q: 3, r: 6, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 4, r: 8, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 4, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 4, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 5, r: 7, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 4, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 6, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 4, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 3, r: 7, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 3, r: 5, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'veteran' },
-      { q: 2, r: 7, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 2, r: 6, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 3, r: 8, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 5, r: 8, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 2, r: 5, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 3, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 10, r: 3, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 12, r: 5, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 11, r: 4, side: 'red', type: 'run', quality: 'green' },
-      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 4, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 4, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 5, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 5, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 11, r: 5, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 6, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 10, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 11, r: 6, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 13, r: 4, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 13, r: 5, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 13, r: 6, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 9, r: 3, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 11, r: 3, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 12, r: 3, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 8, r: 5, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 9, r: 7, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain X — Cynoscephalae Broken Hills (197 BCE)': {
-    terrain: [
-      { q: 4, r: 3, terrain: 'hills' },
-      { q: 5, r: 3, terrain: 'hills' },
-      { q: 6, r: 3, terrain: 'hills' },
-      { q: 7, r: 3, terrain: 'hills' },
-      { q: 8, r: 3, terrain: 'hills' },
-      { q: 5, r: 4, terrain: 'hills' },
-      { q: 6, r: 4, terrain: 'hills' },
-      { q: 7, r: 4, terrain: 'hills' },
-      { q: 8, r: 4, terrain: 'hills' },
-      { q: 9, r: 4, terrain: 'hills' },
-      { q: 6, r: 5, terrain: 'hills' },
-      { q: 7, r: 5, terrain: 'hills' },
-      { q: 8, r: 5, terrain: 'hills' },
-      { q: 9, r: 6, terrain: 'hills' },
-      { q: 10, r: 6, terrain: 'hills' },
-      { q: 11, r: 6, terrain: 'hills' },
-      { q: 3, r: 5, terrain: 'rough' },
-      { q: 4, r: 5, terrain: 'rough' },
-      { q: 5, r: 5, terrain: 'rough' },
-      { q: 10, r: 5, terrain: 'rough' },
-      { q: 11, r: 5, terrain: 'rough' },
-      { q: 2, r: 6, terrain: 'woods' },
-      { q: 3, r: 6, terrain: 'woods' },
-      { q: 12, r: 4, terrain: 'woods' },
-      { q: 13, r: 4, terrain: 'woods' },
-    ],
-    units: [
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 3, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 3, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 5, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 10, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain Y — Magnesia Plain And River (190 BCE)': {
-    terrain: [
-      { q: 14, r: 2, terrain: 'water' },
-      { q: 14, r: 3, terrain: 'water' },
-      { q: 15, r: 4, terrain: 'water' },
-      { q: 15, r: 5, terrain: 'water' },
-      { q: 14, r: 6, terrain: 'water' },
-      { q: 13, r: 7, terrain: 'water' },
-      { q: 1, r: 3, terrain: 'hills' },
-      { q: 2, r: 3, terrain: 'hills' },
-      { q: 3, r: 3, terrain: 'hills' },
-      { q: 1, r: 4, terrain: 'hills' },
-      { q: 2, r: 4, terrain: 'hills' },
-      { q: 6, r: 4, terrain: 'rough' },
-      { q: 7, r: 4, terrain: 'rough' },
-      { q: 8, r: 4, terrain: 'rough' },
-      { q: 6, r: 5, terrain: 'rough' },
-      { q: 7, r: 5, terrain: 'rough' },
-      { q: 8, r: 5, terrain: 'rough' },
-      { q: 0, r: 6, terrain: 'woods' },
-      { q: 1, r: 6, terrain: 'woods' },
-      { q: 2, r: 6, terrain: 'woods' },
-    ],
-    units: [
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 10, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 7, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 9, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 11, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 12, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 4, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 11, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 4, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 11, r: 2, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 2, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 13, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 9, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 12, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 5, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 9, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 11, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain Z — Pydna Broken Ground (168 BCE)': {
-    terrain: [
-      { q: 5, r: 2, terrain: 'hills' },
-      { q: 6, r: 2, terrain: 'hills' },
-      { q: 7, r: 2, terrain: 'hills' },
-      { q: 8, r: 2, terrain: 'hills' },
-      { q: 9, r: 2, terrain: 'hills' },
-      { q: 4, r: 3, terrain: 'hills' },
-      { q: 5, r: 3, terrain: 'hills' },
-      { q: 6, r: 3, terrain: 'hills' },
-      { q: 9, r: 3, terrain: 'hills' },
-      { q: 10, r: 3, terrain: 'hills' },
-      { q: 6, r: 4, terrain: 'rough' },
-      { q: 7, r: 4, terrain: 'rough' },
-      { q: 8, r: 4, terrain: 'rough' },
-      { q: 5, r: 5, terrain: 'rough' },
-      { q: 6, r: 5, terrain: 'rough' },
-      { q: 7, r: 5, terrain: 'rough' },
-      { q: 8, r: 5, terrain: 'rough' },
-      { q: 9, r: 5, terrain: 'rough' },
-      { q: 4, r: 6, terrain: 'rough' },
-      { q: 5, r: 6, terrain: 'rough' },
-      { q: 6, r: 6, terrain: 'rough' },
-      { q: 2, r: 7, terrain: 'woods' },
-      { q: 3, r: 7, terrain: 'woods' },
-      { q: 12, r: 3, terrain: 'woods' },
-      { q: 13, r: 3, terrain: 'woods' },
-    ],
-    units: [
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 3, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 3, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 4, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 6, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 7, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 4, side: 'red', type: 'inf', quality: 'green' },
-      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 5, r: 5, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 10, r: 5, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain AA — Alesia Double Ring (52 BCE)': {
-    terrain: [
-      { q: 6, r: 4, terrain: 'hills' },
-      { q: 7, r: 4, terrain: 'hills' },
-      { q: 8, r: 4, terrain: 'hills' },
-      { q: 9, r: 4, terrain: 'hills' },
-      { q: 5, r: 5, terrain: 'hills' },
-      { q: 10, r: 5, terrain: 'hills' },
-      { q: 5, r: 6, terrain: 'hills' },
-      { q: 10, r: 6, terrain: 'hills' },
-      { q: 6, r: 7, terrain: 'hills' },
-      { q: 7, r: 7, terrain: 'hills' },
-      { q: 8, r: 7, terrain: 'hills' },
-      { q: 9, r: 7, terrain: 'hills' },
-      { q: 7, r: 5, terrain: 'rough' },
-      { q: 8, r: 5, terrain: 'rough' },
-      { q: 7, r: 6, terrain: 'rough' },
-      { q: 8, r: 6, terrain: 'rough' },
-      { q: 1, r: 2, terrain: 'woods' },
-      { q: 2, r: 2, terrain: 'woods' },
-      { q: 12, r: 2, terrain: 'woods' },
-      { q: 13, r: 2, terrain: 'woods' },
-      { q: 1, r: 8, terrain: 'woods' },
-      { q: 2, r: 8, terrain: 'woods' },
-      { q: 12, r: 8, terrain: 'woods' },
-      { q: 13, r: 8, terrain: 'woods' },
-    ],
-    units: [
-      { q: 6, r: 2, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 10, r: 2, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 8, r: 2, side: 'blue', type: 'run', quality: 'green' },
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 10, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 5, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 6, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 7, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 9, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 11, r: 3, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 11, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 3, r: 5, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 3, r: 6, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 12, r: 5, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 12, r: 6, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 2, r: 5, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 13, r: 5, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 4, r: 2, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 12, r: 2, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 4, r: 9, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 12, r: 9, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 4, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 11, r: 4, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 4, r: 7, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 11, r: 7, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 7, r: 5, side: 'red', type: 'gen', quality: 'veteran' },
-      { q: 8, r: 6, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 9, r: 5, side: 'red', type: 'run', quality: 'green' },
-      { q: 6, r: 5, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 5, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 6, side: 'red', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 6, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 4, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 4, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 7, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 7, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 7, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 5, r: 5, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 10, r: 6, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 5, r: 6, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 10, r: 5, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 5, r: 7, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 10, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain AB — Actium Shoreline Clash (31 BCE)': {
-    terrain: [
-      { q: 5, r: 4, terrain: 'water' },
-      { q: 6, r: 4, terrain: 'water' },
-      { q: 7, r: 4, terrain: 'water' },
-      { q: 8, r: 4, terrain: 'water' },
-      { q: 9, r: 4, terrain: 'water' },
-      { q: 10, r: 4, terrain: 'water' },
-      { q: 6, r: 5, terrain: 'water' },
-      { q: 7, r: 5, terrain: 'water' },
-      { q: 8, r: 5, terrain: 'water' },
-      { q: 9, r: 5, terrain: 'water' },
-      { q: 7, r: 6, terrain: 'water' },
-      { q: 8, r: 6, terrain: 'water' },
-      { q: 12, r: 2, terrain: 'water' },
-      { q: 13, r: 2, terrain: 'water' },
-      { q: 14, r: 2, terrain: 'water' },
-      { q: 10, r: 6, terrain: 'rough' },
-      { q: 11, r: 6, terrain: 'rough' },
-      { q: 12, r: 6, terrain: 'rough' },
-    ],
-    units: [
-      { q: 4, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 6, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 4, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 9, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 2, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 9, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 4, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 8, r: 10, side: 'blue', type: 'arc', quality: 'veteran' },
-      { q: 3, r: 9, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 9, r: 9, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 12, r: 4, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 11, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 11, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 12, r: 3, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 12, r: 1, side: 'red', type: 'inf', quality: 'green' },
-      { q: 13, r: 3, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 13, r: 5, side: 'red', type: 'cav', quality: 'veteran' },
-      { q: 10, r: 0, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 12, r: 0, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 13, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 9, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 11, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-
-  'Terrain AC — Mons Graupius Ridge (83 CE)': {
-    terrain: [
-      { q: 4, r: 2, terrain: 'hills' },
-      { q: 5, r: 2, terrain: 'hills' },
-      { q: 6, r: 2, terrain: 'hills' },
-      { q: 7, r: 2, terrain: 'hills' },
-      { q: 8, r: 2, terrain: 'hills' },
-      { q: 9, r: 2, terrain: 'hills' },
-      { q: 10, r: 2, terrain: 'hills' },
-      { q: 11, r: 2, terrain: 'hills' },
-      { q: 5, r: 3, terrain: 'hills' },
-      { q: 6, r: 3, terrain: 'hills' },
-      { q: 7, r: 3, terrain: 'hills' },
-      { q: 8, r: 3, terrain: 'hills' },
-      { q: 9, r: 3, terrain: 'hills' },
-      { q: 10, r: 3, terrain: 'hills' },
-      { q: 1, r: 3, terrain: 'woods' },
-      { q: 2, r: 3, terrain: 'woods' },
-      { q: 1, r: 4, terrain: 'woods' },
-      { q: 2, r: 4, terrain: 'woods' },
-      { q: 12, r: 4, terrain: 'woods' },
-      { q: 13, r: 4, terrain: 'woods' },
-      { q: 12, r: 5, terrain: 'woods' },
-      { q: 13, r: 5, terrain: 'woods' },
-      { q: 6, r: 6, terrain: 'rough' },
-      { q: 7, r: 6, terrain: 'rough' },
-      { q: 8, r: 6, terrain: 'rough' },
-      { q: 9, r: 6, terrain: 'rough' },
-      { q: 7, r: 7, terrain: 'rough' },
-      { q: 8, r: 7, terrain: 'rough' },
-    ],
-    units: [
-      { q: 6, r: 9, side: 'blue', type: 'gen', quality: 'veteran' },
-      { q: 9, r: 9, side: 'blue', type: 'gen', quality: 'regular' },
-      { q: 7, r: 9, side: 'blue', type: 'run', quality: 'green' },
-      { q: 5, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 6, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 7, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 8, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 9, r: 8, side: 'blue', type: 'inf', quality: 'veteran' },
-      { q: 4, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 5, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 8, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 10, r: 9, side: 'blue', type: 'inf', quality: 'regular' },
-      { q: 3, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 11, r: 8, side: 'blue', type: 'cav', quality: 'regular' },
-      { q: 5, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 9, r: 10, side: 'blue', type: 'arc', quality: 'regular' },
-      { q: 4, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-      { q: 10, r: 8, side: 'blue', type: 'skr', quality: 'regular' },
-
-      { q: 6, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 10, r: 1, side: 'red', type: 'gen', quality: 'regular' },
-      { q: 8, r: 1, side: 'red', type: 'run', quality: 'green' },
-      { q: 4, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 6, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 7, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 8, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 9, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 10, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 11, r: 3, side: 'red', type: 'inf', quality: 'green' },
-      { q: 5, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 6, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 7, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 8, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 9, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 10, r: 2, side: 'red', type: 'inf', quality: 'regular' },
-      { q: 3, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 12, r: 2, side: 'red', type: 'cav', quality: 'regular' },
-      { q: 4, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 11, r: 1, side: 'red', type: 'arc', quality: 'regular' },
-      { q: 3, r: 3, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 12, r: 3, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 2, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-      { q: 13, r: 4, side: 'red', type: 'skr', quality: 'regular' },
-    ],
-  },
-});
+};
 
 // === Terrain Pack (Berserker) ===
 // Adds terrain-focused variants of the existing Grand scenarios.
@@ -3931,7 +3736,23 @@ Object.assign(SCENARIOS, {
   let ORIGIN_X = 0;
   let ORIGIN_Y = 0;
 
+  function syncLayoutChromeHeights() {
+    const root = document.documentElement;
+    if (!root) return;
+    const hud = document.getElementById('hud');
+    const rail = document.getElementById('combatRail');
+    if (hud) {
+      const h = Math.max(1, Math.ceil(hud.getBoundingClientRect().height || 0));
+      root.style.setProperty('--hud-h', `${h}px`);
+    }
+    if (rail) {
+      const h = Math.max(1, Math.ceil(rail.getBoundingClientRect().height || 0));
+      root.style.setProperty('--combat-h', `${h}px`);
+    }
+  }
+
   function resize() {
+    syncLayoutChromeHeights();
     // Canvas fills left pane.
     const wrap = document.getElementById('canvasWrap');
     const rect = wrap.getBoundingClientRect();
@@ -3946,16 +3767,19 @@ Object.assign(SCENARIOS, {
     const rows = (board.maxR - board.minR + 1);
     const availW = rect.width;
     const availH = rect.height;
+    const smallViewport = window.matchMedia('(max-width: 980px)').matches;
+    const boardPad = smallViewport ? 10 : 12;
+    const fitW = Math.max(1, availW - (boardPad * 2));
+    const fitH = Math.max(1, availH - (boardPad * 2));
 
     // For pointy-top hexes with odd-r offset:
     // width ≈ sqrt(3)*R*(cols + 0.5)
     // height ≈ R*((rows-1)*1.5 + 2)
-    const rByW = availW / (Math.sqrt(3) * (cols + 0.5));
-    const rByH = availH / (((rows - 1) * 1.5) + 2);
-    // On large/ultrawide displays, allow a larger token scale so the board
-    // doesn't look undersized.
-    const maxR = (availW >= 2200 && availH >= 900) ? 52 : 42;
-    R = Math.max(18, Math.min(maxR, Math.floor(Math.min(rByW, rByH))));
+    const rByW = fitW / (Math.sqrt(3) * (cols + 0.5));
+    const rByH = fitH / (((rows - 1) * 1.5) + 2);
+    const minRadius = smallViewport ? 6 : 18;
+    const maxRadius = smallViewport ? 34 : 42;
+    R = Math.max(minRadius, Math.min(maxRadius, Math.floor(Math.min(rByW, rByH))));
 
     HEX_W = Math.sqrt(3) * R;
     HEX_H = 2 * R;
@@ -3964,8 +3788,8 @@ Object.assign(SCENARIOS, {
     const boardW = HEX_W * (cols + 0.5);
     const boardH = R * (((rows - 1) * 1.5) + 2);
 
-    ORIGIN_X = (availW - boardW) / 2 + HEX_W / 2;
-    ORIGIN_Y = (availH - boardH) / 2 + R;
+    ORIGIN_X = boardPad + ((fitW - boardW) / 2) + HEX_W / 2;
+    ORIGIN_Y = boardPad + ((fitH - boardH) / 2) + R;
 
     for (const h of board.active) {
       const x = ORIGIN_X + (h.q - board.minQ) * HEX_W + ((h.r & 1) ? (HEX_W / 2) : 0);
@@ -4170,136 +3994,130 @@ function unitColors(side) {
     ctx.restore();
   }
 
-  function qualityStroke(q) {
+  function qualityRingColor(q) {
     switch (q) {
-      case 'veteran': return '#d7b84b';
-      case 'regular': return '#d0d0d0';
-      default: return '#57d26a';
+      case 'veteran': return '#ffd34d';
+      case 'regular': return '#e8f0ff';
+      default: return '#4df07b';
     }
   }
 
-  function drawQualityFramedRing(cx, cy, quality) {
+  function drawQualityRing(cx, cy, quality) {
     const ringR = R * 0.55;
-    const ringW = Math.max(2, Math.floor(R * 0.12));
-    const frameW = Math.max(1, Math.floor(ringW * 0.36));
+    const ringW = Math.max(5, Math.floor(R * 0.22));
+    const frameW = Math.max(2, Math.floor(ringW * 0.44));
     const frameOffset = (ringW * 0.5) - (frameW * 0.5);
-    const frameColor = '#0a0a0a';
 
-    // Quality color band.
-    ctx.beginPath();
-    ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-    ctx.lineWidth = ringW;
-    ctx.strokeStyle = qualityStroke(quality);
-    ctx.stroke();
-
-    // Thin black frame on the inside of the quality band.
-    ctx.beginPath();
-    ctx.arc(cx, cy, ringR - frameOffset, 0, Math.PI * 2);
-    ctx.lineWidth = frameW;
-    ctx.strokeStyle = frameColor;
-    ctx.stroke();
-
-    // Thin black frame on the outside of the quality band.
+    // Outer dark frame so the ring separates from light terrain.
     ctx.beginPath();
     ctx.arc(cx, cy, ringR + frameOffset, 0, Math.PI * 2);
     ctx.lineWidth = frameW;
-    ctx.strokeStyle = frameColor;
+    ctx.strokeStyle = 'rgba(8, 10, 14, 0.95)';
+    ctx.stroke();
+
+    // Main quality band.
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+    ctx.lineWidth = ringW;
+    ctx.strokeStyle = qualityRingColor(quality);
+    ctx.shadowColor = qualityRingColor(quality);
+    ctx.shadowBlur = Math.max(2, Math.round(R * 0.08));
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Inner dark frame so silver/gold rings still read against token fills.
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR - frameOffset, 0, Math.PI * 2);
+    ctx.lineWidth = frameW;
+    ctx.strokeStyle = 'rgba(8, 10, 14, 0.95)';
     ctx.stroke();
   }
 
-  function stopMoveAnimation() {
-    if (state.moveAnimRaf) {
-      cancelAnimationFrame(state.moveAnimRaf);
-      state.moveAnimRaf = null;
-    }
-    state.moveAnim = null;
+  function ensureVisualAnimationLoop() {
+    if (state.animFrame) return;
+    state.animFrame = requestAnimationFrame(function tick() {
+      state.animFrame = null;
+      const now = Date.now();
+      const moveActive = !!(state.moveAnim && now < state.moveAnim.endAt);
+      const flashActive = !!(state.attackFlash && now < state.attackFlash.endAt);
+      draw();
+      if (moveActive || flashActive) ensureVisualAnimationLoop();
+    });
   }
 
-  function stopActionPulse() {
-    if (state.actionPulseRaf) {
-      cancelAnimationFrame(state.actionPulseRaf);
-      state.actionPulseRaf = null;
-    }
-    state.actionPulse = null;
-  }
+  function startMoveAnimation(fromKey, toKey, unit) {
+    if (!unit || !fromKey || !toKey || fromKey === toKey) return;
+    if (!board.activeSet.has(fromKey) || !board.activeSet.has(toKey)) return;
 
-  function startActionPulse({ type = 'attack', fromKey = null, toKey = null, durationMs = 500 } = {}) {
-    if (!fromKey && !toKey) return;
-
-    stopActionPulse();
-
-    const now = performance.now();
-    state.actionPulse = {
-      type,
+    const aiSideMove = isAiTurnActive() && unit.side === state.side;
+    const durationMs = aiSideMove ? MOVE_ANIM_MS_AI : MOVE_ANIM_MS_HUMAN;
+    const now = Date.now();
+    state.moveAnim = {
+      unitId: unit.id,
       fromKey,
       toKey,
-      startedAt: now,
-      durationMs: Math.max(120, Number(durationMs) || 500),
+      startAt: now,
+      endAt: now + durationMs,
+      unit: {
+        side: unit.side,
+        type: unit.type,
+        quality: unit.quality,
+        hp: unit.hp,
+      },
     };
-
-    const tick = (ts) => {
-      const pulse = state.actionPulse;
-      if (!pulse) {
-        state.actionPulseRaf = null;
-        return;
-      }
-      const t = (ts - pulse.startedAt) / pulse.durationMs;
-      if (t >= 1) {
-        state.actionPulse = null;
-        state.actionPulseRaf = null;
-        draw();
-        return;
-      }
-      draw();
-      state.actionPulseRaf = requestAnimationFrame(tick);
-    };
-
-    draw();
-    state.actionPulseRaf = requestAnimationFrame(tick);
+    state.moveAnimUntil = state.moveAnim.endAt;
+    ensureVisualAnimationLoop();
   }
 
-  function moveAnimationPosition(anim) {
-    if (!anim || !Array.isArray(anim.pathKeys) || anim.pathKeys.length < 2) return null;
-    const totalSegments = anim.pathKeys.length - 1;
-    const clamped = Math.max(0, Math.min(1, Number(anim.t || 0)));
-    const segmentProgress = clamped * totalSegments;
-    const segIndex = Math.min(totalSegments - 1, Math.floor(segmentProgress));
-    const localT = segmentProgress - segIndex;
-
-    const fromHex = board.byKey.get(anim.pathKeys[segIndex]);
-    const toHex = board.byKey.get(anim.pathKeys[segIndex + 1]);
-    if (!fromHex || !toHex) return null;
-
-    return {
-      cx: fromHex.cx + ((toHex.cx - fromHex.cx) * localT),
-      cy: fromHex.cy + ((toHex.cy - fromHex.cy) * localT),
+  function setAttackFlash(hexKey, durationMs = ATTACK_FLASH_MS) {
+    if (!hexKey || !board.activeSet.has(hexKey)) return;
+    const now = Date.now();
+    state.attackFlash = {
+      hexKey,
+      startAt: now,
+      endAt: now + Math.max(120, durationMs),
     };
+    ensureVisualAnimationLoop();
   }
 
-  function drawTokenAt(unit, cx, cy) {
-    if (!unit) return;
-    const c = unitColors(unit.side);
-    const def = UNIT_BY_ID.get(unit.type);
-    if (!def) return;
+  function drawAnimatedUnitToken(anim, nowMs) {
+    if (!anim) return;
+    const hFrom = board.byKey.get(anim.fromKey);
+    const hTo = board.byKey.get(anim.toKey);
+    if (!hFrom || !hTo || !anim.unit) return;
 
+    const span = Math.max(1, anim.endAt - anim.startAt);
+    const tRaw = (nowMs - anim.startAt) / span;
+    const t = Math.max(0, Math.min(1, tRaw));
+    const ease = t < 0.5 ? (2 * t * t) : (1 - (Math.pow(-2 * t + 2, 2) / 2));
+    const cx = hFrom.cx + ((hTo.cx - hFrom.cx) * ease);
+    const cy = hFrom.cy + ((hTo.cy - hFrom.cy) * ease);
+    const u = anim.unit;
+
+    const c = unitColors(u.side);
     ctx.save();
-    ctx.globalAlpha = 0.96;
+    ctx.globalAlpha = 0.98;
 
     ctx.beginPath();
     ctx.arc(cx, cy, R * 0.55, 0, Math.PI * 2);
     ctx.fillStyle = c.fill;
     ctx.fill();
+    ctx.lineWidth = Math.max(1.5, Math.round(R * 0.08));
+    ctx.strokeStyle = 'rgba(8, 10, 14, 0.95)';
+    ctx.stroke();
 
-    drawQualityFramedRing(cx, cy, unit.quality);
+    drawQualityRing(cx, cy, u.quality);
 
-    if (unit.type === 'run') {
+    const def = UNIT_BY_ID.get(u.type);
+    const canIcon = (u.type !== 'gen') && unitIconReady && unitIconReady(u.type);
+    if (u.type === 'run') {
       drawRunnerFootGlyph(cx, cy, R * 0.82);
-    } else {
-      const img = UNIT_ICONS && UNIT_ICONS[unit.type];
-      const canIcon = (unit.type !== 'gen') && unitIconReady && unitIconReady(unit.type);
-      if (canIcon) {
-        const tune = (UNIT_ICON_TUNE && UNIT_ICON_TUNE[unit.type]) ? UNIT_ICON_TUNE[unit.type] : { scale: 0.95, y: 0 };
-        const s = Math.floor((R * 0.95) * (tune.scale || 0.95));
+    } else if (canIcon) {
+      const img = UNIT_ICONS && UNIT_ICONS[u.type];
+      if (img) {
+        const base = R * 0.95;
+        const tune = (UNIT_ICON_TUNE && UNIT_ICON_TUNE[u.type]) ? UNIT_ICON_TUNE[u.type] : { scale: 0.95, y: 0 };
+        const s = Math.floor(base * (tune.scale || 0.95));
         const yOff = Math.floor(R * (tune.y || 0));
         const rot = (typeof tune.rot === 'number') ? tune.rot : 0;
         if (rot) {
@@ -4311,168 +4129,25 @@ function unitColors(side) {
         } else {
           ctx.drawImage(img, Math.floor(cx - s / 2), Math.floor(cy - s / 2 + yOff), s, s);
         }
-      } else {
-        const textScale = (unit.type === 'inf' || unit.type === 'cav' || unit.type === 'skr') ? 0.83 : 1.0;
-        const fontPx = Math.floor(R * 0.55 * textScale);
-        ctx.font = `700 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = c.text;
-        ctx.fillText(def.symbol, cx, cy + 1);
       }
+    } else {
+      const textScale = (u.type === 'inf' || u.type === 'cav' || u.type === 'skr') ? 0.83 : 1.0;
+      const fontPx = Math.floor(R * 0.55 * textScale);
+      ctx.font = `700 ${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = c.text;
+      ctx.fillText(def ? def.symbol : '?', cx, cy + 1);
     }
 
-    const maxHp = unitMaxHp(unit.type, unit.quality);
+    const maxHp = unitMaxHp(u.type, u.quality);
     const pipR = Math.max(2, Math.floor(R * 0.07));
     const startX = cx - (pipR * 2) * (maxHp - 1) * 0.5;
     const y = cy + R * 0.78;
     for (let i = 0; i < maxHp; i++) {
       ctx.beginPath();
       ctx.arc(startX + i * (pipR * 2), y, pipR, 0, Math.PI * 2);
-      ctx.fillStyle = (i < unit.hp) ? '#fff' : '#ffffff33';
-      ctx.fill();
-    }
-
-    ctx.restore();
-  }
-
-  function drawActionPulseOverlay(pulse) {
-    if (!pulse) return;
-
-    const fromHex = pulse.fromKey ? board.byKey.get(pulse.fromKey) : null;
-    const toHex = pulse.toKey ? board.byKey.get(pulse.toKey) : null;
-    if (!fromHex && !toHex) return;
-
-    const now = performance.now();
-    const duration = Math.max(1, Number(pulse.durationMs) || 500);
-    const t = Math.max(0, Math.min(1, (now - pulse.startedAt) / duration));
-    const fade = 1 - t;
-
-    const isAttack = pulse.type === 'attack';
-    const isMove = pulse.type === 'move';
-
-    function glowHex(hex, intensity = 1, role = 'target') {
-      if (!hex) return;
-      const glow = (0.16 + (0.20 * fade)) * intensity;
-      const ring = (0.36 + (0.38 * fade)) * intensity;
-      let fill = `rgba(255, 76, 76, ${Math.max(0.08, glow)})`;
-      let stroke = `rgba(255, 134, 134, ${Math.max(0.15, ring)})`;
-      let shadow = `rgba(255, 70, 70, ${Math.max(0.18, 0.42 * fade)})`;
-
-      if (isMove) {
-        fill = `rgba(84, 188, 255, ${Math.max(0.08, glow)})`;
-        stroke = `rgba(146, 218, 255, ${Math.max(0.15, ring)})`;
-        shadow = `rgba(84, 188, 255, ${Math.max(0.18, 0.42 * fade)})`;
-      } else if (isAttack && role === 'source') {
-        fill = `rgba(255, 168, 108, ${Math.max(0.06, glow * 0.72)})`;
-        stroke = `rgba(255, 206, 148, ${Math.max(0.10, ring * 0.65)})`;
-        shadow = `rgba(255, 168, 108, ${Math.max(0.14, 0.30 * fade)})`;
-      }
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(hex.cx, hex.cy, R * 0.64, 0, Math.PI * 2);
-      ctx.fillStyle = fill;
-      ctx.fill();
-      ctx.lineWidth = Math.max(2, R * 0.11);
-      ctx.strokeStyle = stroke;
-      ctx.shadowBlur = Math.max(8, Math.floor(R * 0.75));
-      ctx.shadowColor = shadow;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    if (isAttack) {
-      if (fromHex) glowHex(fromHex, 0.55, 'source');
-      if (toHex) glowHex(toHex, 1.25, 'target');
-    } else {
-      glowHex(fromHex, 1.0, 'source');
-      if (!fromHex || !toHex || fromHex.k !== toHex.k) glowHex(toHex, 0.95, 'target');
-    }
-
-    if (fromHex && toHex && fromHex.k !== toHex.k) {
-      const dx = toHex.cx - fromHex.cx;
-      const dy = toHex.cy - fromHex.cy;
-      const len = Math.hypot(dx, dy);
-      if (len > 1) {
-        const ux = dx / len;
-        const uy = dy / len;
-        const pad = R * 0.64;
-        const sx = fromHex.cx + (ux * pad);
-        const sy = fromHex.cy + (uy * pad);
-        const ex = toHex.cx - (ux * pad);
-        const ey = toHex.cy - (uy * pad);
-
-        ctx.save();
-        ctx.lineCap = 'round';
-        ctx.lineWidth = Math.max(3, R * 0.17);
-        ctx.strokeStyle = `rgba(255, 98, 98, ${0.30 + (0.50 * fade)})`;
-        ctx.shadowBlur = Math.max(8, Math.floor(R * 0.65));
-        ctx.shadowColor = `rgba(255, 70, 70, ${0.30 + (0.35 * fade)})`;
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-
-        const ah = Math.max(8, R * 0.34);
-        const aw = Math.max(5, R * 0.20);
-        const px = -uy;
-        const py = ux;
-        ctx.fillStyle = `rgba(255, 124, 124, ${0.32 + (0.48 * fade)})`;
-        ctx.beginPath();
-        ctx.moveTo(ex, ey);
-        ctx.lineTo(ex - (ux * ah) + (px * aw), ey - (uy * ah) + (py * aw));
-        ctx.lineTo(ex - (ux * ah) - (px * aw), ey - (uy * ah) - (py * aw));
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-  }
-
-  function drawLineAdvancePreviewArrows(preview) {
-    if (!preview || !Array.isArray(preview.moves) || preview.moves.length === 0) return;
-
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.setLineDash([4, 5]);
-    ctx.strokeStyle = 'rgba(122, 228, 162, 0.92)';
-    ctx.fillStyle = 'rgba(122, 228, 162, 0.95)';
-    ctx.lineWidth = Math.max(2, R * 0.13);
-
-    for (const m of preview.moves) {
-      const fromHex = board.byKey.get(m.fromKey);
-      const toHex = board.byKey.get(m.toKey);
-      if (!fromHex || !toHex) continue;
-
-      const dx = toHex.cx - fromHex.cx;
-      const dy = toHex.cy - fromHex.cy;
-      const len = Math.hypot(dx, dy);
-      if (len < 1) continue;
-
-      const ux = dx / len;
-      const uy = dy / len;
-      const pad = R * 0.58;
-      const sx = fromHex.cx + (ux * pad);
-      const sy = fromHex.cy + (uy * pad);
-      const ex = toHex.cx - (ux * pad);
-      const ey = toHex.cy - (uy * pad);
-
-      ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(ex, ey);
-      ctx.stroke();
-
-      const ah = Math.max(6, R * 0.28);
-      const aw = Math.max(4, R * 0.16);
-      const px = -uy;
-      const py = ux;
-      ctx.beginPath();
-      ctx.moveTo(ex, ey);
-      ctx.lineTo(ex - (ux * ah) + (px * aw), ey - (uy * ah) + (py * aw));
-      ctx.lineTo(ex - (ux * ah) - (px * aw), ey - (uy * ah) - (py * aw));
-      ctx.closePath();
+      ctx.fillStyle = (i < u.hp) ? '#fff' : '#ffffff33';
       ctx.fill();
     }
 
@@ -4480,35 +4155,40 @@ function unitColors(side) {
   }
 
   function draw() {
-    const activeMoveAnim = state.moveAnim;
-    const reinforceAnchorKey = (() => {
-      if (state.mode !== 'play') return null;
-      if (state.selectedKey && unitsByHex.get(state.selectedKey)?.type === 'inf') return state.selectedKey;
-      if (!state.selectedKey && state._hoverKey && unitsByHex.get(state._hoverKey)?.type === 'inf') return state._hoverKey;
-      return null;
-    })();
-    const reinforcePreview = (
-      state.mode === 'play' &&
-      reinforceAnchorKey
-    ) ? reinforcementPreviewForAnchor(reinforceAnchorKey) : null;
-    const reinforcedFrontKeys = (reinforcePreview && reinforcePreview.active) ? reinforcePreview.frontSet : null;
-    const reinforcingBackKeys = (reinforcePreview && reinforcePreview.active) ? reinforcePreview.supportSet : null;
-    const lineAdvancePreview = (() => {
-      if (state.mode !== 'play') return null;
-      if (!state.selectedKey) return null;
-      const u = unitsByHex.get(state.selectedKey);
-      if (!u || u.side !== state.side || u.type !== 'inf') return null;
-      if (!state.lineAdvancePreviewHover && !canIssueLineAdvance()) {
-        const row = collectContiguousInfantryRow(state.selectedKey);
-        if (row.length <= 1) return null;
-      }
-      return lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
-    })();
+    const nowMs = Date.now();
+    if (state.moveAnim && nowMs >= state.moveAnim.endAt) {
+      state.moveAnim = null;
+      state.moveAnimUntil = 0;
+    }
+    if (state.attackFlash && nowMs >= state.attackFlash.endAt) {
+      state.attackFlash = null;
+    }
+
     ctx.clearRect(0, 0, elCanvas.width, elCanvas.height);
 
     // Background
     ctx.fillStyle = '#0b0b0d';
     ctx.fillRect(0, 0, elCanvas.width, elCanvas.height);
+
+    const braceOverlay = (state.mode === 'play') ? computeInfantryBraceOverlay() : null;
+    const objectiveOverlay = (() => {
+      if (!Array.isArray(state.scenarioObjectives) || state.scenarioObjectives.length === 0) return null;
+      const out = new Map();
+      const objState = evaluateObjectiveControl();
+      const byId = new Map((objState.details || []).map((d) => [d.id, d]));
+      for (const zone of state.scenarioObjectives) {
+        const detail = byId.get(zone.id) || {};
+        for (const hk of zone.hexes || []) {
+          const cur = out.get(hk) || { blue: 0, red: 0, contested: 0, value: 0 };
+          if (detail.owner === 'blue') cur.blue += 1;
+          else if (detail.owner === 'red') cur.red += 1;
+          else cur.contested += 1;
+          cur.value += Number(zone.value || 1);
+          out.set(hk, cur);
+        }
+      }
+      return out;
+    })();
 
     // Hexes
     for (const h of board.active) {
@@ -4522,6 +4202,47 @@ function unitColors(side) {
         ctx.fill(p);
       }
 
+      const braceMark = braceOverlay ? braceOverlay.get(h.k) : null;
+      if (braceMark) {
+        if (braceMark.supporter > 0) {
+          const a = 0.10 + (braceMark.supporter * 0.18);
+          ctx.save();
+          ctx.fillStyle = `rgba(19, 146, 176, ${a.toFixed(3)})`;
+          ctx.fill(p);
+          ctx.restore();
+        }
+        if (braceMark.defender > 0) {
+          const a = 0.12 + (braceMark.defender * 0.18);
+          ctx.save();
+          ctx.fillStyle = `rgba(130, 234, 255, ${a.toFixed(3)})`;
+          ctx.fill(p);
+          ctx.restore();
+        }
+      }
+
+      const objMark = objectiveOverlay ? objectiveOverlay.get(h.k) : null;
+      if (objMark) {
+        ctx.save();
+        if (objMark.blue > 0 && objMark.red === 0 && objMark.contested === 0) {
+          ctx.fillStyle = 'rgba(66, 123, 255, 0.16)';
+          ctx.fill(p);
+          ctx.strokeStyle = 'rgba(109, 166, 255, 0.72)';
+        } else if (objMark.red > 0 && objMark.blue === 0 && objMark.contested === 0) {
+          ctx.fillStyle = 'rgba(224, 72, 72, 0.15)';
+          ctx.fill(p);
+          ctx.strokeStyle = 'rgba(255, 130, 130, 0.72)';
+        } else {
+          ctx.fillStyle = 'rgba(232, 178, 68, 0.16)';
+          ctx.fill(p);
+          ctx.strokeStyle = 'rgba(255, 205, 109, 0.78)';
+        }
+        ctx.lineWidth = Math.max(2.4, Math.round(R * 0.12));
+        ctx.setLineDash([5, 6]);
+        ctx.stroke(p);
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
       // Outline
       ctx.strokeStyle = gridStroke();
       ctx.lineWidth = 2;
@@ -4531,11 +4252,15 @@ function unitColors(side) {
       const k = h.k;
       if (state.mode === 'play' && state.selectedKey) {
         if (state._moveTargets?.has(k)) {
-          ctx.strokeStyle = '#4aa3ff';
-          ctx.lineWidth = 3;
+          ctx.save();
+          ctx.strokeStyle = '#5db8ff';
+          ctx.lineWidth = Math.max(4, Math.round(R * 0.18));
+          ctx.shadowColor = 'rgba(93, 184, 255, 0.42)';
+          ctx.shadowBlur = Math.max(4, Math.round(R * 0.35));
           ctx.setLineDash([6, 6]);
           ctx.stroke(p);
           ctx.setLineDash([]);
+          ctx.restore();
         }
         if (state._attackTargets?.has(k)) {
           ctx.strokeStyle = '#ff5050';
@@ -4553,39 +4278,19 @@ function unitColors(side) {
         }
       }
 
-      if (lineAdvancePreview) {
-        if (lineAdvancePreview.rowSet.has(k)) {
-          ctx.fillStyle = 'rgba(255, 198, 96, 0.11)';
-          ctx.fill(p);
-        }
-        if (lineAdvancePreview.formationSet.has(k)) {
-          ctx.fillStyle = 'rgba(93, 205, 255, 0.18)';
-          ctx.fill(p);
-        }
-        if (lineAdvancePreview.blockedSet.has(k)) {
-          ctx.fillStyle = 'rgba(255, 113, 113, 0.18)';
-          ctx.fill(p);
-        }
-        if (lineAdvancePreview.destinationSet.has(k)) {
-          ctx.fillStyle = 'rgba(110, 220, 152, 0.22)';
-          ctx.fill(p);
-          ctx.strokeStyle = 'rgba(116, 236, 165, 0.95)';
-          ctx.lineWidth = 2.5;
-          ctx.setLineDash([5, 4]);
-          ctx.stroke(p);
-          ctx.setLineDash([]);
-        }
-      }
-
-      // Reinforcement visibility:
-      // - light cyan = reinforced front
-      // - darker cyan = reinforcing rear
-      if (reinforcingBackKeys && reinforcingBackKeys.has(k)) {
-        ctx.fillStyle = 'rgba(0, 170, 170, 0.36)';
+      if (state.attackFlash && state.attackFlash.hexKey === k) {
+        const span = Math.max(1, state.attackFlash.endAt - state.attackFlash.startAt);
+        const phase = Math.max(0, Math.min(1, (nowMs - state.attackFlash.startAt) / span));
+        const pulse = 0.55 + (Math.sin((phase * Math.PI * 4)) * 0.25);
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 60, 60, ${0.15 + (pulse * 0.15)})`;
         ctx.fill(p);
-      } else if (reinforcedFrontKeys && reinforcedFrontKeys.has(k)) {
-        ctx.fillStyle = 'rgba(0, 226, 214, 0.20)';
-        ctx.fill(p);
+        ctx.strokeStyle = `rgba(255, 88, 88, ${0.70 + (pulse * 0.25)})`;
+        ctx.lineWidth = Math.max(4, Math.round(R * 0.22));
+        ctx.shadowColor = 'rgba(255, 70, 70, 0.7)';
+        ctx.shadowBlur = Math.max(8, Math.round(R * 0.55));
+        ctx.stroke(p);
+        ctx.restore();
       }
 
       // Hover
@@ -4594,10 +4299,6 @@ function unitColors(side) {
         ctx.lineWidth = 3;
         ctx.stroke(p);
       }
-    }
-
-    if (lineAdvancePreview) {
-      drawLineAdvancePreviewArrows(lineAdvancePreview);
     }
 
     // Command radius outlines (truthy, but calm): dotted perimeter.
@@ -4629,21 +4330,20 @@ function unitColors(side) {
     // Units
     for (const [hk, u] of unitsByHex) {
       if (!isUnitVisibleForCurrentView(u)) continue;
-      if (activeMoveAnim && u.id === activeMoveAnim.unitId && hk === activeMoveAnim.toKey) continue;
+      if (state.moveAnim && state.moveAnim.unitId === u.id && state.moveAnim.toKey === hk) continue;
       const h = board.byKey.get(hk);
       if (!h) continue;
 
       const isPlay = (state.mode === 'play') && !state.gameOver;
       const isTurnSide = isPlay && (u.side === state.side);
       const isSpent = isTurnSide && state.actedUnitIds.has(u.id);
-      const isMovePaused = isTurnSide && !isSpent && unitMoveIsPausedThisTurn(u);
       const isCmdLocked = isTurnSide && !isSpent && (state.actsUsed < ACT_LIMIT) &&
         (!unitIgnoresCommand(u)) && (u.quality === 'green') && (!inCommandAt(hk, u.side));
 
       // Visual friction: spent units and unorderable greens read as "not available".
       // - spent: dim
       // - green out-of-command: dim + dashed orange ring
-      const alpha = isSpent ? 0.38 : (isMovePaused ? 0.58 : (isCmdLocked ? 0.48 : 1.0));
+      const alpha = isSpent ? 0.38 : (isCmdLocked ? 0.48 : 1.0);
 
       const c = unitColors(u.side);
 
@@ -4655,9 +4355,30 @@ function unitColors(side) {
       ctx.arc(h.cx, h.cy, R * 0.55, 0, Math.PI * 2);
       ctx.fillStyle = c.fill;
       ctx.fill();
+      ctx.lineWidth = Math.max(1.5, Math.round(R * 0.08));
+      ctx.strokeStyle = 'rgba(8, 10, 14, 0.95)';
+      ctx.stroke();
 
-      // Token ring (quality + black framing for readability at distance)
-      drawQualityFramedRing(h.cx, h.cy, u.quality);
+      const braceMark = braceOverlay ? braceOverlay.get(hk) : null;
+      if (braceMark) {
+        if (braceMark.supporter > 0) {
+          const a = 0.10 + (braceMark.supporter * 0.22);
+          ctx.beginPath();
+          ctx.arc(h.cx, h.cy, R * 0.56, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(27, 153, 186, ${a.toFixed(3)})`;
+          ctx.fill();
+        }
+        if (braceMark.defender > 0) {
+          const a = 0.12 + (braceMark.defender * 0.22);
+          ctx.beginPath();
+          ctx.arc(h.cx, h.cy, R * 0.56, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(161, 242, 255, ${a.toFixed(3)})`;
+          ctx.fill();
+        }
+      }
+
+      // Token ring (quality)
+      drawQualityRing(h.cx, h.cy, u.quality);
 
       // Selection ring
       if (state.selectedKey === hk) {
@@ -4666,6 +4387,15 @@ function unitColors(side) {
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#fff';
         ctx.stroke();
+      }
+      if (unitIsDisarrayed(u)) {
+        ctx.beginPath();
+        ctx.arc(h.cx, h.cy, R * 0.43, 0, Math.PI * 2);
+        ctx.lineWidth = Math.max(2, Math.round(R * 0.10));
+        ctx.strokeStyle = 'rgba(255, 164, 34, 0.95)';
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
       // Unit mark (ICON preferred, text fallback)
       const def = UNIT_BY_ID.get(u.type);
@@ -4727,27 +4457,11 @@ function unitColors(side) {
         ctx.stroke();
         ctx.setLineDash([]);
       }
-      if (isMovePaused) {
-        ctx.beginPath();
-        ctx.arc(h.cx, h.cy, R * 0.64, 0, Math.PI * 2);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(205, 221, 255, 0.92)';
-        ctx.setLineDash([2, 3]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
     }
 
-    if (activeMoveAnim && activeMoveAnim.unit) {
-      const p = moveAnimationPosition(activeMoveAnim);
-      if (p) drawTokenAt(activeMoveAnim.unit, p.cx, p.cy);
+    if (state.moveAnim) {
+      drawAnimatedUnitToken(state.moveAnim, nowMs);
     }
-
-    if (state.actionPulse) {
-      drawActionPulseOverlay(state.actionPulse);
-    }
-
-    renderModifierPreview();
   }
 
   // --- UI helpers
@@ -4778,48 +4492,322 @@ function unitColors(side) {
     return String(q).charAt(0).toUpperCase() + String(q).slice(1);
   }
 
-  function resetCombatRailScrollPositions() {
-    for (const col of elCombatCols) {
-      if (!col) continue;
-      col.scrollTop = 0;
-      col.scrollLeft = 0;
-    }
-  }
-
-  function scheduleCombatRailScrollReset() {
-    resetCombatRailScrollPositions();
-    requestAnimationFrame(() => resetCombatRailScrollPositions());
-    setTimeout(() => resetCombatRailScrollPositions(), 80);
-    setTimeout(() => resetCombatRailScrollPositions(), 260);
-  }
-
   function setInspectorValue(el, value) {
     if (!el) return;
     el.textContent = String(value);
   }
 
-  function unitAttackSummary(unit, def) {
-    if (!unit || !def) return '-';
-    if (unit.type === 'run') return 'No attack';
-    if (unit.type === 'iat') return 'Heal +1 adjacent';
-    const melee = def.meleeDice ? `Melee ${def.meleeDice}` : '';
-    if (!def.ranged) return melee || 'No attack';
-    const rangedBits = Object.entries(def.ranged)
-      .map(([dist, dice]) => `R${dist}:${dice}`)
-      .join(', ');
-    return `${melee}; ${rangedBits}`;
+  function hideLegacyControl(el) {
+    if (!el) return;
+    const row = el.closest('.row');
+    if (row) {
+      row.style.display = 'none';
+      return;
+    }
+    const details = el.closest('.details');
+    if (details) {
+      details.style.display = 'none';
+      return;
+    }
+    el.style.display = 'none';
+  }
+
+  function hideLegacyInspectorField(valueEl) {
+    if (!valueEl) return;
+    const keyEl = valueEl.previousElementSibling;
+    if (keyEl && keyEl.classList && keyEl.classList.contains('inspectorKey')) {
+      keyEl.style.display = 'none';
+    }
+    valueEl.style.display = 'none';
+  }
+
+  function ensureDefensePanelPlacement() {
+    const panel = document.getElementById('defensePanel');
+    if (panel) {
+      panel.style.display = 'none';
+    }
+
+    const legacyBottomDefense = document.querySelector('#combatRail .combatColDefense');
+    if (legacyBottomDefense) {
+      legacyBottomDefense.style.display = 'none';
+    }
+  }
+
+  function normalizeBottomRailOrder() {
+    const rail = document.getElementById('combatRail');
+    if (!rail) return;
+
+    const breakdown = rail.querySelector('.combatColBreakdown');
+    const selected = document.getElementById('selectedUnitPanel');
+    const modifiers = rail.querySelector('.combatColModifiers');
+    const dice = rail.querySelector('.combatColDice');
+    const outcome = rail.querySelector('.combatColOutcome');
+    const online = rail.querySelector('.combatColOnline');
+
+    // Canonical order: breakdown -> selected -> modifiers -> dice -> outcome -> online.
+    if (breakdown && selected && breakdown.nextElementSibling !== selected) {
+      rail.insertBefore(selected, breakdown.nextElementSibling);
+    }
+    if (selected && modifiers && selected.nextElementSibling !== modifiers) {
+      rail.insertBefore(modifiers, selected.nextElementSibling);
+    }
+    if (modifiers && dice && modifiers.nextElementSibling !== dice) {
+      rail.insertBefore(dice, modifiers.nextElementSibling);
+    }
+    if (dice && outcome && dice.nextElementSibling !== outcome) {
+      rail.insertBefore(outcome, dice.nextElementSibling);
+    }
+    if (online) rail.appendChild(online);
+  }
+
+  function removeLegacyHelperText() {
+    const patterns = [
+      'switch game mode to online',
+      'create or join a room',
+      'online: idle',
+      'select a friendly unit in play mode',
+    ];
+    const scope = document.querySelectorAll('#side .note, #side .statusMeta, #side .statusLast, #side p, #combatRail p, #selectedUnitPanel .inspectorMeta');
+    for (const el of scope) {
+      const text = String(el.textContent || '').trim().toLowerCase();
+      if (!text) continue;
+      if (patterns.some(p => text.includes(p))) {
+        el.textContent = '';
+        el.style.display = 'none';
+      }
+    }
+  }
+
+  function pruneLegacyUiSurface() {
+    // Requested removals kept hidden even if cached/older markup is loaded.
+    for (const filterEl of [elScenarioGroupSel, elScenarioLessonSel, elScenarioSizeSel, elScenarioTerrainSel]) {
+      hideLegacyControl(filterEl);
+    }
+    for (const saveEl of [elExportStateBtn, elImportStateBtn]) {
+      hideLegacyControl(saveEl);
+    }
+
+    if (elOnlineStatus) {
+      elOnlineStatus.textContent = '';
+      elOnlineStatus.style.display = 'none';
+    }
+    if (elDraftStatus) {
+      elDraftStatus.textContent = '';
+      elDraftStatus.style.display = 'none';
+    }
+
+    if (elInspectorMeta) {
+      elInspectorMeta.textContent = '';
+      elInspectorMeta.style.display = 'none';
+    }
+    hideLegacyInspectorField(elInspectorHex);
+    hideLegacyInspectorField(elInspectorCommand);
+    hideLegacyInspectorField(elInspectorRadius);
+
+    ensureDefensePanelPlacement();
+    normalizeBottomRailOrder();
+    removeLegacyHelperText();
+  }
+
+  function loadPanelCollapsePrefs() {
+    try {
+      const raw = localStorage.getItem(PANEL_COLLAPSE_PREF_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return {};
+      return parsed;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function savePanelCollapsePrefs(prefs) {
+    try {
+      localStorage.setItem(PANEL_COLLAPSE_PREF_KEY, JSON.stringify(prefs || {}));
+    } catch (_) {}
+  }
+
+  function applyPanelCollapsedState(panel, collapsed) {
+    if (!panel) return;
+    const isCollapsed = !!collapsed;
+    panel.classList.toggle('panel-collapsed', isCollapsed);
+    const btn = panel.querySelector(':scope > .panelTitle > .panelToggleBtn');
+    if (btn) {
+      btn.textContent = isCollapsed ? 'Show' : 'Hide';
+      btn.setAttribute('aria-expanded', String(!isCollapsed));
+      btn.setAttribute('aria-label', `${isCollapsed ? 'Show' : 'Hide'} ${panel.id || 'panel'}`);
+    }
+  }
+
+  function defaultPanelCollapsedOnTouch(panelId) {
+    return !!PANEL_COLLAPSE_DEFAULTS_TOUCH[panelId];
+  }
+
+  function initPanelCollapseControls() {
+    const panels = [...document.querySelectorAll('#side > .panel')];
+    if (!panels.length) return;
+
+    const prefs = loadPanelCollapsePrefs();
+    const coarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    let prefsChanged = false;
+
+    for (let i = 0; i < panels.length; i++) {
+      const panel = panels[i];
+      const title = panel.querySelector(':scope > .panelTitle');
+      if (!title) continue;
+
+      if (!panel.id) panel.id = `panel${i + 1}`;
+      const panelId = panel.id;
+
+      let toggleBtn = title.querySelector('.panelToggleBtn');
+      if (!toggleBtn) {
+        toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'panelToggleBtn';
+        title.appendChild(toggleBtn);
+      }
+
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextCollapsed = !panel.classList.contains('panel-collapsed');
+        applyPanelCollapsedState(panel, nextCollapsed);
+        prefs[panelId] = nextCollapsed;
+        savePanelCollapsePrefs(prefs);
+        requestAnimationFrame(() => resize());
+      });
+
+      let collapsed = false;
+      if (Object.prototype.hasOwnProperty.call(prefs, panelId)) {
+        collapsed = !!prefs[panelId];
+      } else if (coarsePointer) {
+        collapsed = defaultPanelCollapsedOnTouch(panelId);
+        prefs[panelId] = collapsed;
+        prefsChanged = true;
+      }
+
+      applyPanelCollapsedState(panel, collapsed);
+    }
+
+    if (prefsChanged) savePanelCollapsePrefs(prefs);
+  }
+
+  function rulesOverlayOpen() {
+    return !!(elRulesSideOverlay && elRulesSideOverlay.classList.contains('open'));
+  }
+
+  function renderRulesCommandsGuide(mode = rulesCommandsViewMode, side = rulesCommandsViewSide) {
+    if (!elRulesCommandsList) return;
+    const chosenMode = (mode === 'all') ? 'all' : 'selected';
+    const chosenSide = (side === 'red') ? 'red' : 'blue';
+    rulesCommandsViewMode = chosenMode;
+    rulesCommandsViewSide = chosenSide;
+
+    if (elRulesCommandsSelectedBtn) elRulesCommandsSelectedBtn.classList.toggle('active', chosenMode === 'selected');
+    if (elRulesCommandsAllBtn) elRulesCommandsAllBtn.classList.toggle('active', chosenMode === 'all');
+
+    const selectedIds = (chosenMode === 'selected')
+      ? cloneArray(doctrineStateForSide(chosenSide)?.loadout || [])
+      : [];
+
+    if (elRulesCommandsContext) {
+      if (chosenMode === 'selected') {
+        if (selectedIds.length) {
+          elRulesCommandsContext.textContent =
+            `Showing ${chosenSide.toUpperCase()} selected War Council orders (3 per cost tier).`;
+        } else {
+          elRulesCommandsContext.textContent =
+            `No War Council selected for ${chosenSide.toUpperCase()} yet. Open War Council to pick 3/3/3.`;
+        }
+      } else {
+        elRulesCommandsContext.textContent = 'Showing the full order library.';
+      }
+    }
+
+    const grouped = COMMAND_COSTS.map((cost) => {
+      let rows;
+      if (chosenMode === 'selected') {
+        rows = selectedIds
+          .map((id) => COMMAND_BY_ID.get(id))
+          .filter(Boolean)
+          .filter((cmd) => cmd.cost === cost);
+      } else {
+        rows = COMMAND_POOL
+          .filter(cmd => cmd.cost === cost)
+          .sort((a, b) => {
+            if (a.persistence !== b.persistence) return (a.persistence === 'spent') ? 1 : -1;
+            return a.name.localeCompare(b.name);
+          });
+      }
+      const reusable = rows.filter(r => r.persistence !== 'spent');
+      const single = rows.filter(r => r.persistence === 'spent');
+      return { cost, reusable, single };
+    });
+    const renderList = (rows) => {
+      if (!rows.length) return '<div class="rulesCommandEmpty">None</div>';
+      return `<ul class="rulesCommandList">${rows.map((cmd) => {
+        const use = commandUsageLabel(cmd.persistence);
+        const target = cmd.targeting ? ` Target: ${cmd.targeting}.` : '';
+        return `<li><b>${cmd.name}</b> <span class="rulesCommandTag">${use}</span><br>${commandLaymanText(cmd)}<br><span class="rulesCommandEffect">Rules effect: ${commandExplainText(cmd)}${target}</span></li>`;
+      }).join('')}</ul>`;
+    };
+    const html = grouped.map((g) => {
+      return `<section class="rulesCommandTier">
+        <h3>Cost ${g.cost} Orders</h3>
+        <div class="rulesCommandColumns">
+          <div>
+            <h4>Reusable Orders</h4>
+            ${renderList(g.reusable)}
+          </div>
+          <div>
+            <h4>Single-Use Orders</h4>
+            ${renderList(g.single)}
+          </div>
+        </div>
+      </section>`;
+    }).join('');
+    elRulesCommandsList.innerHTML = html;
+  }
+
+  function setRulesTab(which) {
+    const tab = (which === 'full') ? 'full' : (which === 'commands' ? 'commands' : 'quick');
+    if (elRulesTabQuickBtn) elRulesTabQuickBtn.classList.toggle('active', tab === 'quick');
+    if (elRulesTabFullBtn) elRulesTabFullBtn.classList.toggle('active', tab === 'full');
+    if (elRulesTabCommandsBtn) elRulesTabCommandsBtn.classList.toggle('active', tab === 'commands');
+    if (elRulesQuickDoc) elRulesQuickDoc.classList.toggle('active', tab === 'quick');
+    if (elRulesFullDoc) elRulesFullDoc.classList.toggle('active', tab === 'full');
+    if (elRulesCommandsDoc) elRulesCommandsDoc.classList.toggle('active', tab === 'commands');
+  }
+
+  function openRulesOverlay(which = 'quick', options = null) {
+    if (!elRulesSideOverlay) return;
+    if (which === 'commands') {
+      const mode = options?.mode || rulesCommandsViewMode;
+      const side = options?.side || ((state.side === 'red') ? 'red' : 'blue');
+      renderRulesCommandsGuide(mode, side);
+    }
+    setRulesTab(which);
+    elRulesSideOverlay.classList.add('open');
+    elRulesSideOverlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeRulesOverlay() {
+    if (!elRulesSideOverlay) return;
+    elRulesSideOverlay.classList.remove('open');
+    elRulesSideOverlay.setAttribute('aria-hidden', 'true');
   }
 
   function resetInspector(message = '') {
     setInspectorValue(elInspectorTitle, 'No unit selected.');
-    setInspectorValue(elInspectorMeta, message || 'Click a unit to view details.');
+    setInspectorValue(elInspectorMeta, message);
     setInspectorValue(elInspectorSide, '-');
     setInspectorValue(elInspectorType, '-');
     setInspectorValue(elInspectorQuality, '-');
+    setInspectorValue(elInspectorHex, '');
     setInspectorValue(elInspectorHp, '-');
     setInspectorValue(elInspectorUp, '-');
-    setInspectorValue(elInspectorMove, '-');
-    setInspectorValue(elInspectorAttack, '-');
+    setInspectorValue(elInspectorCommand, '');
+    setInspectorValue(elInspectorRadius, '');
   }
 
   function updateInspector() {
@@ -4829,29 +4817,32 @@ function unitColors(side) {
     const u = selectedKey ? unitsByHex.get(selectedKey) : null;
     if (!u) {
       resetInspector();
+      renderLiveModifierPreview();
       return;
     }
 
     const def = UNIT_BY_ID.get(u.type);
     if (!def) {
       resetInspector('Selected unit data is unavailable.');
+      renderLiveModifierPreview();
       return;
     }
 
     const qualityText = humanizeQuality(u.quality);
+    const disarraySuffix = unitIsDisarrayed(u) ? ', Disarrayed' : '';
     const maxHp = unitMaxHp(u.type, u.quality);
     const up = unitUpValue(u.type, u.quality);
-    const mp = unitMovePoints(u);
-    const moveText = unitMoveIsPausedThisTurn(u) ? `${mp} (paused)` : `${mp}`;
-    setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.label}`);
-    setInspectorValue(elInspectorMeta, 'Selected formation details');
+    setInspectorValue(elInspectorTitle, `${u.side.toUpperCase()} ${def.abbrev} (${qualityText}${disarraySuffix})`);
+    setInspectorValue(elInspectorMeta, '');
     setInspectorValue(elInspectorSide, u.side.toUpperCase());
-    setInspectorValue(elInspectorType, def.abbrev);
+    setInspectorValue(elInspectorType, def.label);
     setInspectorValue(elInspectorQuality, qualityText);
+    setInspectorValue(elInspectorHex, '');
     setInspectorValue(elInspectorHp, `${u.hp}/${maxHp}`);
     setInspectorValue(elInspectorUp, up);
-    setInspectorValue(elInspectorMove, moveText);
-    setInspectorValue(elInspectorAttack, unitAttackSummary(u, def));
+    setInspectorValue(elInspectorCommand, '');
+    setInspectorValue(elInspectorRadius, '');
+    renderLiveModifierPreview();
   }
 
   function diePipIndexes(value) {
@@ -4922,24 +4913,38 @@ function unitColors(side) {
     for (const v of sample) {
       const { shell } = makePhysicalDieShell(v, 'miss', `Sample d6 ${v}`);
       shell.style.setProperty('--dice-rot', `${(v - 2) * 2}deg`);
-      const wrap = document.createElement('div');
-      wrap.className = 'physicalDieWrap';
-      const label = document.createElement('div');
-      label.className = 'physicalDieLabel';
-      label.textContent = (v >= 5) ? 'hit' : 'miss';
-      wrap.appendChild(shell);
-      wrap.appendChild(label);
-      elPhysicalDiceRow.appendChild(wrap);
+      elPhysicalDiceRow.appendChild(shell);
     }
+  }
+
+  function renderIdleCornerDice() {
+    if (!elCornerDiceRow) return;
+    elCornerDiceRow.innerHTML = '';
+    const sample = [1, 3, 5];
+    for (const v of sample) {
+      const { shell } = makePhysicalDieShell(v, 'miss', `Sample d6 ${v}`);
+      shell.className = 'physicalDie miss cornerDie';
+      shell.style.setProperty('--dice-rot', `${(v - 2) * 2}deg`);
+      elCornerDiceRow.appendChild(shell);
+    }
+    if (elCornerDiceHud) elCornerDiceHud.classList.add('has-roll');
+  }
+
+  function diceAnimationDurationMs(rollCount) {
+    const count = Math.max(1, Math.trunc(Number(rollCount) || 1));
+    return DICE_SUMMARY_BASE_MS + ((count - 1) * DICE_SUMMARY_STEP_MS) + DICE_POST_HOLD_MS;
   }
 
   function clearDiceDisplay() {
     diceRenderNonce += 1;
     if (elDiceSummary) elDiceSummary.textContent = 'No rolls yet.';
-    if (elDicePerDie) elDicePerDie.textContent = '';
-    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'Outcome: -';
     if (elDiceTray) elDiceTray.innerHTML = '';
+    if (elBoardDiceResult) elBoardDiceResult.textContent = '';
     renderIdlePhysicalDice();
+    renderIdleCornerDice();
+    state.combatBusy = false;
+    state.combatBusyUntil = 0;
+    if (elCornerDiceHud) elCornerDiceHud.classList.remove('combat-active');
     clearCombatBreakdown();
   }
 
@@ -4947,112 +4952,17 @@ function unitColors(side) {
     return TERRAIN_LABEL_BY_ID.get(terrainId) || 'Unknown';
   }
 
-  function renderModifierPreview() {
-    if (!elModifierPreview) return;
-    if (state.mode !== 'play') {
-      elModifierPreview.textContent = 'Modifier preview: start battle and hover/select a unit.';
-      return;
-    }
-
-    const previewKey = (() => {
-      if (state.selectedKey && unitsByHex.has(state.selectedKey)) return state.selectedKey;
-      if (state._hoverKey && unitsByHex.has(state._hoverKey)) return state._hoverKey;
-      return null;
-    })();
-
-    if (!previewKey) {
-      elModifierPreview.textContent = 'Modifier preview: hover or select a unit.';
-      return;
-    }
-
-    const u = unitsByHex.get(previewKey);
-    const h = board.byKey.get(previewKey);
-    if (!u || !h) {
-      elModifierPreview.textContent = 'Modifier preview: -';
-      return;
-    }
-
-    let terrainMod = 0;
-    if (h.terrain === 'woods') terrainMod -= 1;
-    if (h.terrain === 'hills' && (u.type === 'arc' || u.type === 'skr')) terrainMod -= 1;
-    const terrainText = terrainMod ? `defense terrain ${terrainMod}` : 'defense terrain 0';
-    const attackOutMod = (() => {
-      let n = 0;
-      if (h.terrain === 'rough') n -= 1;
-      return n;
-    })();
-    const attackOutText = attackOutMod ? `attack-out ${attackOutMod}` : 'attack-out 0';
-
-    if (u.type !== 'inf') {
-      elModifierPreview.textContent =
-        `Modifier preview (${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type)?.abbrev || u.type}): ${terrainText}, ${attackOutText}, reinforcement n/a, minimum 1 die.`;
-      return;
-    }
-
-    const profile = reinforcementPreviewForAnchor(previewKey);
-    const reinfMod = (profile && profile.active) ? -1 : 0;
-    if (profile && profile.active) {
-      const dirText = profile.braceDirs.map(d => d.toUpperCase()).join('/');
-      elModifierPreview.textContent =
-        `Modifier preview (front attack): ${terrainText}, ${attackOutText}, reinforcement ${reinfMod} ` +
-        `(adjacent brace pair), active vs attacks from ${dirText}, minimum 1 die.`;
-      return;
-    }
-
-    elModifierPreview.textContent =
-      `Modifier preview (front attack): ${terrainText}, ${attackOutText}, reinforcement 0 ` +
-      `(needs two adjacent friendly infantry touching each other), minimum 1 die.`;
-  }
-
-  function setCombatSupportStatus(text, cls = 'na') {
-    if (!elCombatSupport) return;
-    elCombatSupport.textContent = text;
-    elCombatSupport.classList.remove('active', 'inactive', 'na');
-    elCombatSupport.classList.add(cls);
-  }
-
-  function supportStatusForCombat(info) {
-    const ranks = Math.max(0, Number(info?.supportRanks || 0));
-    const dicePenalty = Math.abs(Number(info?.supportDiceMod || 0));
-    const pairCount = Math.max(0, Number(info?.supportPairCount || 0));
-    const matchingCount = Math.max(0, Number(info?.supportMatchingCount || 0));
-    const attackDir = String(info?.supportAttackDir || '').toUpperCase();
-
-    if (!info || info.kind !== 'melee' || info.defenderType !== 'inf') {
-      return {
-        text: 'Infantry support: not applicable (only melee attacks into Infantry).',
-        cls: 'na',
-      };
-    }
-
-    if (ranks > 0 && dicePenalty > 0) {
-      return {
-        text:
-          `Infantry support ACTIVE: adjacent brace pair matched attack direction ${attackDir}. ` +
-          `Attacker -${dicePenalty} die${dicePenalty === 1 ? '' : 's'}.`,
-        cls: 'active',
-      };
-    }
-
-    const reason = pairCount === 0
-      ? 'no adjacent friendly INF pair on defender'
-      : `attack direction ${attackDir || '?'} did not match braced sides (${matchingCount} matches)`;
-    return {
-      text: `Infantry support not active: ${reason}.`,
-      cls: 'inactive',
-    };
-  }
-
   function clearCombatBreakdown() {
     state.lastCombat = null;
     if (elCombatSummary) elCombatSummary.textContent = 'No combat yet. Select a unit and attack to see exact dice math.';
     if (elCombatMath) elCombatMath.textContent = 'Dice math: -';
-    if (elCombatTerrain) elCombatTerrain.textContent = 'Defense modifiers: -';
-    setCombatSupportStatus('Infantry support: -', 'na');
+    if (elCombatTerrain) elCombatTerrain.textContent = 'Position modifiers: -';
+    if (elCombatOutcome) elCombatOutcome.textContent = 'Outcome: -';
     if (elCombatHint) elCombatHint.textContent = COMBAT_RULE_HINT;
   }
 
   function renderCombatBreakdown(rolls, info) {
+    if (!elCombatSummary || !elCombatMath || !elCombatTerrain || !elCombatOutcome) return;
     if (!info) {
       clearCombatBreakdown();
       return;
@@ -5064,132 +4974,366 @@ function unitColors(side) {
     const pivotText = info.pivoted ? ` (defender pivoted from ${info.pivotFrom})` : '';
     const terrainName = terrainLabel(info.defenderTerrain || 'clear');
     const terrainDelta = Number(info.terrainDiceMod || 0);
-    const attackTerrainDelta = Number(info.attackTerrainDiceMod || 0);
-    const supportDelta = Number(info.supportDiceMod || 0);
-    const supportRanks = Math.max(0, Number(info.supportRanks || 0));
-    const supportPairCount = Math.max(0, Number(info.supportPairCount || 0));
-    const supportMatchingCount = Math.max(0, Number(info.supportMatchingCount || 0));
-    const supportAttackDir = String(info.supportAttackDir || '').toUpperCase();
+    const braceDelta = Number(info.braceDiceMod || 0);
     const terrainMath = terrainDelta
       ? `${terrainName} ${terrainDelta > 0 ? `+${terrainDelta}` : `${terrainDelta}`} die`
       : `${terrainName}: no dice change`;
-    const attackTerrainMath = attackTerrainDelta
-      ? `attacker terrain ${attackTerrainDelta > 0 ? `+${attackTerrainDelta}` : `${attackTerrainDelta}`} die`
-      : 'attacker terrain 0';
-    const supportMath = supportDelta
-      ? `${supportRanks} line ${supportDelta > 0 ? `+${supportDelta}` : `${supportDelta}`} die (matched pairs ${supportMatchingCount}, attack ${supportAttackDir})`
-      : `none (available pairs ${supportPairCount}, attack ${supportAttackDir || '?'})`;
     const flankText = info.flankBonus ? ` + flank ${info.flankBonus}` : '';
     const rearText = info.rearBonus ? ` + rear ${info.rearBonus}` : '';
-    const hillDiceText = Number(info.hillBonusDice || 0) ? ` + hill-shot ${Math.abs(Number(info.hillBonusDice || 0))}` : '';
-    const attackTerrainText = attackTerrainDelta
-      ? ` ${attackTerrainDelta > 0 ? '+' : '-'} atk-terrain ${Math.abs(attackTerrainDelta)}`
-      : '';
+    const braceText = braceDelta ? ` - brace ${Math.abs(braceDelta)}` : '';
     const terrainText = terrainDelta ? ` ${terrainDelta > 0 ? '+' : '-'} terrain ${Math.abs(terrainDelta)}` : '';
-    const supportText = supportDelta ? ` - support ${Math.abs(supportDelta)}` : '';
+    const braceRuleText = braceDelta
+      ? `Braced INF: attacker -${Math.abs(braceDelta)} die (melee, min 1).`
+      : 'Braced INF: not active.';
 
-    if (elCombatSummary) {
-      elCombatSummary.textContent =
-        `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
-    }
-    if (elCombatMath) {
-      elCombatMath.textContent =
-        `Dice math: base ${info.baseDice}${flankText}${rearText}${hillDiceText}${attackTerrainText}${terrainText}${supportText} = ${info.dice}.`;
-    }
-    if (elCombatTerrain) {
-      elCombatTerrain.textContent =
-        `Defense modifiers: ${attackTerrainMath}; terrain ${terrainMath}; infantry support ${supportMath}.`;
-    }
-    const supportStatus = supportStatusForCombat(info);
-    setCombatSupportStatus(supportStatus.text, supportStatus.cls);
+    elCombatSummary.textContent =
+      `${info.attacker} ${info.kind.toUpperCase()} r${info.dist}${posText} vs ${info.defender}${pivotText}.`;
+    elCombatMath.textContent =
+      `Dice math: base ${info.baseDice}${flankText}${rearText}${braceText}${terrainText} = ${info.dice}.`;
+    elCombatTerrain.textContent =
+      `Position modifiers: ${terrainMath}. ${braceRuleText}`;
 
-    const conciseOutcome = `Outcome: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
-    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = conciseOutcome;
+    const retreatResolved =
+      (typeof info.retreatMoved === 'number' || typeof info.retreatBlocked === 'number')
+        ? ` · Retreat resolve: moved ${info.retreatMoved || 0}, blocked ${info.retreatBlocked || 0}`
+        : '';
+    const destroyedText = info.destroyed ? ' · Defender destroyed.' : '';
+    const hpText = Number.isFinite(info.defenderHpAfter) ? ` · Defender HP now ${Math.max(0, info.defenderHpAfter)}.` : '';
+    elCombatOutcome.textContent =
+      `Outcome: hits ${info.hits}, retreats ${info.retreats}, disarray ${info.disarrays || 0}, misses ${info.misses}${retreatResolved}${destroyedText}${hpText}`;
 
     if (elCombatHint) elCombatHint.textContent = COMBAT_RULE_HINT;
   }
 
+  function formatSigned(n) {
+    const v = Number(n || 0);
+    if (!Number.isFinite(v) || v === 0) return '0';
+    return v > 0 ? `+${v}` : `${v}`;
+  }
+
+  function buildAttackModifierPreview(attackerKey, defenderKey) {
+    const atk = unitsByHex.get(attackerKey);
+    const defU = unitsByHex.get(defenderKey);
+    if (!atk || !defU) return '';
+
+    const prof = attackDiceFor(attackerKey, defenderKey, atk);
+    if (!prof) return '';
+
+    let impactPosition = 'none';
+    let pivoted = false;
+    if (prof.kind === 'melee') {
+      const rawPos = attackApproachPosition(attackerKey, defenderKey, defU.side);
+      impactPosition = rawPos;
+      if (rawPos !== 'front' && infantryCanPivotOnDefense(defenderKey, defU)) {
+        pivoted = true;
+        impactPosition = 'front';
+      }
+    }
+
+    const defHex = board.byKey.get(defenderKey);
+    const defenderTerrain = defHex?.terrain || 'clear';
+    let terrainDiceMod = (defenderTerrain === 'woods') ? -1 : 0;
+    const impact = cavalryAngleBonuses(atk, defU, prof.kind, impactPosition);
+    const braceInfo = (prof.kind === 'melee')
+      ? infantryBraceInfoForAttack(attackerKey, defenderKey, atk, defU)
+      : { active: false };
+    const braceDiceMod = braceInfo.active ? -1 : 0;
+    const braceSupportCount = Array.isArray(braceInfo.supportKeys) ? braceInfo.supportKeys.length : 0;
+    const baseDice = prof.baseDice ?? prof.dice;
+    const commandAttackBonus = doctrineValueForUnit('bonusAttackDice', atk.id, atk.side);
+    const commandRangedBonus = (prof.kind === 'ranged')
+      ? doctrineValueForUnit('rangedBonusDice', atk.id, atk.side)
+      : 0;
+    const commandDefenseBonus = (prof.kind === 'melee')
+      ? doctrineValueForUnit('meleeDefenseBonus', defU.id, defU.side)
+      : 0;
+    let coverFireText = '';
+    if (prof.kind === 'ranged' && terrainDiceMod < 0 && doctrineFlagForSide('coverFireIgnoreTerrain', atk.side)) {
+      terrainDiceMod = 0;
+      coverFireText = ', covering-fire ignore terrain';
+    }
+
+    const preTerrainDice =
+      baseDice +
+      impact.totalBonus +
+      braceDiceMod +
+      commandAttackBonus +
+      commandRangedBonus -
+      commandDefenseBonus;
+    const dice = Math.max(1, preTerrainDice + terrainDiceMod);
+    const retreatLaneOpen = prof.kind === 'melee' ? !!retreatPick(attackerKey, defenderKey) : true;
+
+    const posText = (impactPosition && impactPosition !== 'none') ? `, ${impactPosition}` : '';
+    const pivotText = pivoted ? ', defender pivoted' : '';
+    return (
+      `Position modifiers (preview): ${atk.side.toUpperCase()} ${UNIT_BY_ID.get(atk.type)?.abbrev || atk.type} ` +
+      `${prof.kind} vs ${defU.side.toUpperCase()} ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type}` +
+      `${posText}${pivotText} · ` +
+      `terrain ${terrainLabel(defenderTerrain)} ${formatSigned(terrainDiceMod)}, ` +
+      `reinforcement ${formatSigned(braceDiceMod)}${braceInfo.active ? ` (${braceSupportCount} linked INF)` : ''}, ` +
+      `attack order ${formatSigned(commandAttackBonus + commandRangedBonus)}, ` +
+      `defense order ${formatSigned(-commandDefenseBonus)}, ` +
+      `angle ${formatSigned(impact.totalBonus)}${coverFireText}, ` +
+      `retreat lane ${retreatLaneOpen ? 'open' : 'blocked'} => final ${dice} die${dice === 1 ? '' : 's'}.`
+    );
+  }
+
+  function retreatRiskSummaryForUnit(unitKey, side) {
+    const h = board.byKey.get(unitKey);
+    if (!h) return { threats: 0, blocked: 0 };
+    let threats = 0;
+    let blocked = 0;
+    for (const nk of h.neigh) {
+      const enemy = unitsByHex.get(nk);
+      if (!enemy || enemy.side === side) continue;
+      threats += 1;
+      if (!retreatPick(nk, unitKey)) blocked += 1;
+    }
+    return { threats, blocked };
+  }
+
+  function buildUnitPositionModifierSummary(unitKey, u) {
+    const h = board.byKey.get(unitKey);
+    const terrainId = h?.terrain || 'clear';
+    const terrainTxt = (terrainId === 'woods')
+      ? 'Woods (attacker -1 die)'
+      : `${terrainLabel(terrainId)} (no direct defense dice change)`;
+
+    const parts = [`Position modifiers: terrain ${terrainTxt}.`];
+
+    if (u.type === 'inf') {
+      const brace = infantryBraceInfoForHover(unitKey);
+      if (brace.active) {
+        const supporters = Array.isArray(brace.supportKeys) ? brace.supportKeys.length : 0;
+        parts.push(`Reinforced: YES (${supporters} linked INF support; covered melee arcs impose attacker -1 die).`);
+      } else {
+        parts.push('Reinforced: no linked INF brace.');
+      }
+    } else {
+      parts.push('Reinforced: n/a (INF-only brace).');
+    }
+
+    if (unitIsDisarrayed(u)) parts.push('Disarrayed (cannot move/attack this activation; auto-clears after one full turn).');
+    if (isEngaged(unitKey, u.side)) parts.push('Engaged: movement restricted unless withdrawal rule applies.');
+    const retreatRisk = retreatRiskSummaryForUnit(unitKey, u.side);
+    if (retreatRisk.threats > 0) {
+      if (retreatRisk.blocked >= retreatRisk.threats) {
+        parts.push('Retreat risk: CRITICAL (all adjacent attack vectors currently block legal retreat).');
+      } else {
+        parts.push(
+          `Retreat risk: ${retreatRisk.blocked}/${retreatRisk.threats} adjacent attack vectors currently block legal retreat.`
+        );
+      }
+    }
+
+    if (unitIgnoresCommand(u)) {
+      parts.push('Command: independent.');
+    } else {
+      const cmd = inCommandAt(unitKey, u.side);
+      if (cmd) {
+        parts.push('Command: in range.');
+      } else if (u.quality === 'green') {
+        parts.push('Command: OUT (Green cannot activate).');
+      } else {
+        parts.push('Command: OUT (Regular can attack, cannot move).');
+      }
+    }
+
+    const meleeDefense = doctrineValueForUnit('meleeDefenseBonus', u.id, u.side);
+    if (meleeDefense) parts.push(`Order effect: melee defense ${formatSigned(-meleeDefense)} attacker dice.`);
+    const ignoreRetreat = doctrineValueForUnit('ignoreRetreatCount', u.id, u.side);
+    if (ignoreRetreat) parts.push(`Order effect: ignores next ${ignoreRetreat} retreat${ignoreRetreat === 1 ? '' : 's'}.`);
+    if (doctrineFlagForUnit('ignoreAllRetreat', u.id, u.side)) parts.push('Order effect: ignores all retreat results.');
+    if (doctrineFlagForUnit('cannotMove', u.id, u.side)) parts.push('Order effect: cannot move this turn.');
+    if (doctrineFlagForUnit('cannotAttack', u.id, u.side)) parts.push('Order effect: cannot attack this turn.');
+
+    return parts.join(' ');
+  }
+
+  function terrainHoverCombatText(terrainId = 'clear') {
+    if (terrainId === 'woods') return 'Defender here imposes attacker -1 die.';
+    if (terrainId === 'water') return 'Impassable: units cannot enter or retreat through this hex.';
+    if (terrainId === 'mountains') return 'Impassable: units cannot enter or retreat through this hex.';
+    return `No direct combat dice modifier in ${terrainLabel(terrainId)}.`;
+  }
+
+  function buildTerrainHoverModifierSummary(hexKey, selectedKey = null, selectedUnit = null) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return 'Position modifiers: -';
+    const terrainId = h.terrain || 'clear';
+    const parts = [
+      `Position modifiers: hovering ${terrainLabel(terrainId)} at ${hexKey}.`,
+      `Terrain effect: ${terrainHoverCombatText(terrainId)}`
+    ];
+
+    if (selectedUnit && selectedKey) {
+      const moveCost = terrainMoveCost(selectedUnit.type, terrainId);
+      const mp = unitMovePoints(selectedUnit);
+      const canEnter = Number.isFinite(moveCost);
+      const typeLabel = (UNIT_BY_ID.get(selectedUnit.type)?.abbrev || selectedUnit.type).toUpperCase();
+      if (!canEnter) {
+        parts.push(`${typeLabel} movement: impassable.`);
+      } else {
+        parts.push(`${typeLabel} movement: cost ${moveCost}/${mp} MP.`);
+      }
+
+      if (state._moveTargets && state._moveTargets.has(hexKey)) {
+        parts.push('Current activation: legal move target.');
+      } else if (selectedKey === hexKey) {
+        parts.push('Current activation: selected unit position.');
+      } else if (state.mode === 'play' && selectedUnit.side === state.side) {
+        parts.push('Current activation: not currently reachable.');
+      }
+    } else {
+      parts.push('Tip: select a unit, then hover hexes to preview unit-specific movement cost/legality.');
+    }
+
+    return parts.join(' ');
+  }
+
+  function renderLiveModifierPreview() {
+    if (!elCombatTerrain) return;
+    const hoverKey = state._hoverKey;
+    const hoverUnit = hoverKey ? unitsByHex.get(hoverKey) : null;
+
+    if (state.mode !== 'play') {
+      if (hoverKey) {
+        elCombatTerrain.textContent = hoverUnit
+          ? buildUnitPositionModifierSummary(hoverKey, hoverUnit)
+          : buildTerrainHoverModifierSummary(hoverKey, null, null);
+        return;
+      }
+      if (!state.lastCombat) elCombatTerrain.textContent = 'Position modifiers: -';
+      return;
+    }
+
+    const selectedKey = state.selectedKey;
+    const selectedUnit = selectedKey ? unitsByHex.get(selectedKey) : null;
+
+    if (
+      selectedUnit &&
+      hoverUnit &&
+      selectedKey !== hoverKey &&
+      hoverUnit.side !== selectedUnit.side &&
+      state._attackTargets &&
+      state._attackTargets.has(hoverKey)
+    ) {
+      const preview = buildAttackModifierPreview(selectedKey, hoverKey);
+      if (preview) {
+        elCombatTerrain.textContent = preview;
+        return;
+      }
+    }
+
+    const focusKey = selectedUnit ? selectedKey : (hoverUnit ? hoverKey : null);
+    const focusUnit = focusKey ? unitsByHex.get(focusKey) : null;
+    if (focusKey && focusUnit) {
+      elCombatTerrain.textContent = buildUnitPositionModifierSummary(focusKey, focusUnit);
+      return;
+    }
+
+    if (hoverKey) {
+      elCombatTerrain.textContent = buildTerrainHoverModifierSummary(hoverKey, selectedKey, selectedUnit);
+      return;
+    }
+
+    // If there is a previous combat breakdown on screen, keep it visible.
+    if (state.lastCombat?.info) return;
+    elCombatTerrain.textContent = 'Position modifiers: -';
+  }
+
   function renderDiceDisplay(rolls, info) {
-    if (!elPhysicalDiceRow && !elDicePerDie && !elDiceOutcomeBrief && !elDiceSummary) return;
+    if (!elDiceSummary || !elDiceTray) return;
 
     diceRenderNonce += 1;
     const renderNonce = diceRenderNonce;
+    state.combatBusy = true;
+    state.combatBusyUntil = Date.now() + diceAnimationDurationMs(Array.isArray(rolls) ? rolls.length : 0);
+    if (elCornerDiceHud) elCornerDiceHud.classList.add('combat-active');
+    updateHud();
 
+    const posText = (info.impactPosition && info.impactPosition !== 'none') ? `, ${info.impactPosition}` : '';
+    const pivotText = info.pivoted ? ', pivot' : '';
+    const flankText = info.flankBonus ? `, flank +${info.flankBonus}` : '';
+    const rearText = info.rearBonus ? `, rear +${info.rearBonus}` : '';
+    const braceText = info.braceDiceMod ? `, brace ${info.braceDiceMod}` : '';
+    const terrainName = terrainLabel(info.defenderTerrain || 'clear');
+    const terrainText = info.terrainDiceMod ? `, ${terrainName.toLowerCase()} ${info.terrainDiceMod > 0 ? '+' : ''}${info.terrainDiceMod}` : `, ${terrainName.toLowerCase()} 0`;
     const finalSummary =
-      `${info.attacker} ${info.kind.toUpperCase()} vs ${info.defender} · ${info.dice} dice`;
-    const briefOutcome =
-      `Outcome: ${info.hits} hit${info.hits === 1 ? '' : 's'}, ` +
-      `${info.retreats} retreat${info.retreats === 1 ? '' : 's'}, ` +
-      `${info.misses} miss${info.misses === 1 ? '' : 'es'}.`;
-    if (elDiceSummary) elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
-    if (elDicePerDie) elDicePerDie.textContent = '';
-    if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = 'Outcome: resolving...';
+      `${info.attacker} ${info.kind.toUpperCase()} r${info.dist} vs ${info.defender} · ` +
+      `rolled ${info.dice} dice (base ${info.baseDice}${posText}${pivotText}${flankText}${rearText}${braceText}${terrainText}) · ` +
+      `H ${info.hits} / R ${info.retreats} / D ${info.disarrays || 0} / M ${info.misses}`;
+    elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
+    if (elBoardDiceResult) elBoardDiceResult.textContent = 'Rolling…';
 
-    if (elDiceTray) elDiceTray.innerHTML = '';
+    elDiceTray.innerHTML = '';
     if (elPhysicalDiceRow) elPhysicalDiceRow.innerHTML = '';
-    const perDieText = Array.from({ length: rolls.length }, () => '...');
+    if (elCornerDiceRow) {
+      elCornerDiceRow.innerHTML = '';
+      if (elCornerDiceHud) elCornerDiceHud.classList.add('has-roll');
+    }
     for (let i = 0; i < rolls.length; i++) {
       const roll = rolls[i];
-      let die = null;
-      let face = null;
-      let mark = null;
-      if (elDiceTray) {
-        die = document.createElement('div');
-        die.className = 'die rolling';
-        face = makeDieFace(1 + Math.floor(Math.random() * 6));
-        die.appendChild(face);
-        mark = document.createElement('span');
-        mark.className = 'dieBadge';
-        mark.textContent = '?';
-        die.appendChild(mark);
-        die.title = 'Rolling…';
-        elDiceTray.appendChild(die);
-      }
+      const die = document.createElement('div');
+      die.className = 'die rolling';
+
+      const face = makeDieFace(1 + Math.floor(Math.random() * 6));
+      die.appendChild(face);
+
+      const mark = document.createElement('span');
+      mark.className = 'dieBadge';
+      mark.textContent = '?';
+      die.appendChild(mark);
+
+      die.title = 'Rolling…';
+      elDiceTray.appendChild(die);
 
       let physicalDie = null;
       let physicalFace = null;
-      let physicalLabel = null;
       if (elPhysicalDiceRow) {
         const shell = makePhysicalDieShell(1 + Math.floor(Math.random() * 6), 'rolling', 'Rolling…');
-        const wrap = document.createElement('div');
-        wrap.className = 'physicalDieWrap';
         physicalDie = shell.shell;
         physicalFace = shell.face;
         physicalDie.className = 'physicalDie rolling';
         physicalDie.style.setProperty('--dice-rot', `${Math.floor(Math.random() * 19) - 9}deg`);
-        physicalLabel = document.createElement('div');
-        physicalLabel.className = 'physicalDieLabel';
-        physicalLabel.textContent = '...';
-        wrap.appendChild(physicalDie);
-        wrap.appendChild(physicalLabel);
-        elPhysicalDiceRow.appendChild(wrap);
+        elPhysicalDiceRow.appendChild(physicalDie);
       }
 
-      const settleDelay = 180 + (i * 80);
+      let cornerDie = null;
+      let cornerFace = null;
+      if (elCornerDiceRow) {
+        const shell = makePhysicalDieShell(1 + Math.floor(Math.random() * 6), 'rolling', 'Rolling…');
+        cornerDie = shell.shell;
+        cornerFace = shell.face;
+        cornerDie.className = 'physicalDie rolling cornerDie';
+        cornerDie.style.setProperty('--dice-rot', `${Math.floor(Math.random() * 13) - 6}deg`);
+        elCornerDiceRow.appendChild(cornerDie);
+      }
+
+      const settleDelay = DICE_SETTLE_BASE_MS + (i * DICE_SETTLE_STEP_MS);
       setTimeout(() => {
         if (renderNonce !== diceRenderNonce) return;
 
         let outcome = 'miss';
         let badge = 'M';
-        let word = 'miss';
-        if (DIE_HIT.has(roll)) {
+        if (roll === 6) {
+          outcome = 'disarray';
+          badge = 'HRD';
+        } else if (roll === 5) {
           outcome = 'hit';
           badge = 'H';
-          word = 'hit';
         } else if (roll === DIE_RETREAT) {
           outcome = 'retreat';
           badge = 'R';
-          word = 'retreat';
+        } else if (roll === DIE_DISARRAY) {
+          outcome = 'disarray';
+          badge = 'D';
         }
 
-        if (die && face && mark) {
-          applyDieFace(face, roll);
-          die.className = `die ${outcome}`;
-          mark.textContent = badge;
-          die.title = `Roll ${roll} (${badge})`;
-        }
-        perDieText[i] = word;
-        if (elDicePerDie) elDicePerDie.textContent = perDieText.join(' · ');
+        applyDieFace(face, roll);
+        die.className = `die ${outcome}`;
+        mark.textContent = badge;
+        die.title = `Roll ${roll} (${badge})`;
 
         if (physicalDie && physicalFace) {
           applyPhysicalDieFace(physicalFace, roll);
@@ -5197,25 +5341,62 @@ function unitColors(side) {
           physicalDie.style.setProperty('--dice-rot', `${Math.floor(Math.random() * 11) - 5}deg`);
           physicalDie.title = `Roll ${roll} (${badge})`;
         }
-        if (physicalLabel) physicalLabel.textContent = word;
+
+        if (cornerDie && cornerFace) {
+          applyPhysicalDieFace(cornerFace, roll);
+          cornerDie.className = `physicalDie ${outcome} cornerDie`;
+          cornerDie.style.setProperty('--dice-rot', `${Math.floor(Math.random() * 9) - 4}deg`);
+          cornerDie.title = `Roll ${roll} (${badge})`;
+        }
       }, settleDelay);
     }
 
-    const summaryDelay = 220 + (Math.max(0, rolls.length - 1) * 80);
+    const summaryDelay = DICE_SUMMARY_BASE_MS + (Math.max(0, rolls.length - 1) * DICE_SUMMARY_STEP_MS);
     setTimeout(() => {
       if (renderNonce !== diceRenderNonce) return;
-      if (elDiceSummary) elDiceSummary.textContent = finalSummary;
-      if (elDicePerDie) elDicePerDie.textContent = perDieText.join(' · ');
-      if (elDiceOutcomeBrief) elDiceOutcomeBrief.textContent = briefOutcome;
+      elDiceSummary.textContent = finalSummary;
+      if (elBoardDiceResult) {
+        const labels = rolls.map((v) => {
+          if (v === 6) return 'Hit + Retreat + Disarray';
+          if (v === 5) return 'Hit';
+          if (v === DIE_RETREAT) return 'Retreat';
+          if (v === DIE_DISARRAY) return 'Disarray';
+          return 'Miss';
+        });
+        elBoardDiceResult.textContent = labels.join(' • ');
+      }
+      setTimeout(() => {
+        if (renderNonce !== diceRenderNonce) return;
+        state.combatBusy = false;
+        state.combatBusyUntil = 0;
+        if (elCornerDiceHud) elCornerDiceHud.classList.remove('combat-active');
+        updateHud();
+      }, DICE_POST_HOLD_MS);
     }, summaryDelay);
   }
 
   function log(msg) {
     state.last = msg;
     elHudLast.textContent = msg;
+    if (elStatusLast) elStatusLast.textContent = msg;
 
     state.events.push({ t: Date.now(), msg });
     if (state.events.length > 50) state.events.shift();
+  }
+
+  function pushEventTrace(kind, payload = {}) {
+    const evt = {
+      t: Date.now(),
+      turn: state.turn,
+      serial: state.turnSerial,
+      side: state.side,
+      kind: String(kind || 'event'),
+      payload: cloneJson(payload, {}),
+    };
+    state.eventTrace.push(evt);
+    if (state.eventTrace.length > EVENT_TRACE_MAX) {
+      state.eventTrace.splice(0, state.eventTrace.length - EVENT_TRACE_MAX);
+    }
   }
 
   function totals(side) {
@@ -5235,109 +5416,366 @@ function unitColors(side) {
     return { up, hp, gens, units };
   }
 
+  function cloneJson(value, fallback) {
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function scenarioRecord(name) {
+    const sc = SCENARIOS[name];
+    if (!sc || typeof sc !== 'object') return null;
+    return sc;
+  }
+
+  function scenarioStaticMetaFromName(name) {
+    const n = String(name || '').toLowerCase();
+    const out = {
+      group: 'other',
+      description: '',
+      historical: '',
+      sideLabels: null,
+      objectives: [],
+      checkpointTurn: 8,
+      pointTarget: null,
+      notes: '',
+    };
+
+    if (n.startsWith('demo ')) out.group = 'tutorial';
+    else if (n.startsWith('grand ')) out.group = 'grand';
+    else if (n.startsWith('terrain ')) out.group = 'terrain';
+    else if (n.startsWith('berserker ')) out.group = 'berserker';
+
+    if (n.includes('marathon')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Greek', red: 'Persian', named: true };
+      out.description = 'Fast closing battle over open ground with strong flanks.';
+      out.historical = '490 BCE';
+      out.checkpointTurn = 7;
+      out.objectives = [
+        { id: 'center-plain', name: 'Center Plain', value: 2, contestAdjacent: true, hexes: [{ q: 6, r: 5 }, { q: 7, r: 5 }, { q: 8, r: 5 }] },
+        { id: 'left-wing', name: 'West Wing Ground', value: 1, contestAdjacent: false, hexes: [{ q: 3, r: 5 }, { q: 3, r: 6 }] },
+        { id: 'right-wing', name: 'East Wing Ground', value: 1, contestAdjacent: false, hexes: [{ q: 11, r: 5 }, { q: 11, r: 6 }] },
+      ];
+      out.pointTarget = 22;
+    } else if (n.includes('granicus')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Macedonian', red: 'Persian', named: true };
+      out.description = 'River crossing pressure and a decisive cavalry breach.';
+      out.historical = '334 BCE';
+      out.checkpointTurn = 8;
+      out.objectives = [
+        { id: 'ford', name: 'River Ford', value: 2, contestAdjacent: true, hexes: [{ q: 7, r: 4 }, { q: 7, r: 5 }, { q: 8, r: 5 }] },
+        { id: 'north-bank', name: 'North Bank', value: 1, contestAdjacent: false, hexes: [{ q: 7, r: 2 }, { q: 8, r: 2 }] },
+      ];
+    } else if (n.includes('cannae')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Roman', red: 'Carthaginian', named: true };
+      out.description = 'Deep center push under risk of double envelopment.';
+      out.historical = '216 BCE';
+      out.checkpointTurn = 7;
+      out.objectives = [
+        { id: 'kill-zone', name: 'Center Kill Zone', value: 2, contestAdjacent: true, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }, { q: 7, r: 6 }, { q: 8, r: 6 }] },
+        { id: 'left-horn', name: 'Western Horn', value: 1, contestAdjacent: false, hexes: [{ q: 3, r: 5 }, { q: 2, r: 5 }] },
+        { id: 'right-horn', name: 'Eastern Horn', value: 1, contestAdjacent: false, hexes: [{ q: 12, r: 5 }, { q: 13, r: 5 }] },
+      ];
+      out.pointTarget = 24;
+    } else if (n.includes('pharsalus')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Caesarian', red: 'Pompeian', named: true };
+      out.description = 'Reserve timing and cavalry wing stability decide the line.';
+      out.historical = '48 BCE';
+      out.checkpointTurn = 8;
+      out.objectives = [
+        { id: 'center-line', name: 'Center Line', value: 2, contestAdjacent: true, hexes: [{ q: 6, r: 5 }, { q: 7, r: 5 }, { q: 8, r: 5 }, { q: 9, r: 5 }] },
+        { id: 'reserve-wing', name: 'Reserve Wing', value: 1, contestAdjacent: false, hexes: [{ q: 11, r: 4 }, { q: 11, r: 5 }] },
+      ];
+    } else if (n.includes('zama')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Roman', red: 'Carthaginian', named: true };
+      out.historical = '202 BCE';
+      out.description = 'Open lanes for maneuver and late cavalry decision.';
+      out.objectives = [
+        { id: 'main-lanes', name: 'Battle Lanes', value: 2, contestAdjacent: true, hexes: [{ q: 6, r: 5 }, { q: 7, r: 5 }, { q: 8, r: 5 }] },
+      ];
+    } else if (n.includes('ilipa')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Roman', red: 'Carthaginian', named: true };
+      out.historical = '206 BCE';
+      out.description = 'Reverse deployment and wing timing over broken approach terrain.';
+      out.objectives = [
+        { id: 'center-open', name: 'Open Center', value: 2, contestAdjacent: true, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }] },
+      ];
+    } else if (n.includes('carhae') || n.includes('carrhae')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Roman', red: 'Parthian', named: true };
+      out.historical = '53 BCE';
+      out.description = 'Missile pressure and mobility over exposed terrain.';
+      out.objectives = [
+        { id: 'exposed-center', name: 'Exposed Center', value: 2, contestAdjacent: true, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }] },
+      ];
+    } else if (n.includes('thapsus')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Caesarian', red: 'Optimates', named: true };
+      out.historical = '46 BCE';
+      out.description = 'Coastal pressure and rough-ground friction on the center push.';
+      out.objectives = [
+        { id: 'coast-road', name: 'Coastal Road', value: 1, contestAdjacent: true, hexes: [{ q: 12, r: 5 }, { q: 13, r: 5 }] },
+        { id: 'center-rough', name: 'Rough Center', value: 2, contestAdjacent: false, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }] },
+      ];
+    } else if (n.includes('philippi')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Triumvir', red: 'Liberator', named: true };
+      out.historical = '42 BCE';
+      out.description = 'Twin camps and contested approaches split the battle line.';
+      out.objectives = [
+        { id: 'west-camp', name: 'West Camp', value: 1, contestAdjacent: false, hexes: [{ q: 3, r: 8 }, { q: 3, r: 9 }] },
+        { id: 'east-camp', name: 'East Camp', value: 1, contestAdjacent: false, hexes: [{ q: 12, r: 3 }, { q: 12, r: 2 }] },
+        { id: 'marsh-line', name: 'Marsh Crossing', value: 2, contestAdjacent: true, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }] },
+      ];
+    } else if (n.includes('tuderberg') || n.includes('teutoburg')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Roman', red: 'Germanic', named: true };
+      out.historical = '9 CE';
+      out.description = 'Column under ambush pressure in restricted movement terrain.';
+      out.objectives = [
+        { id: 'ambush-corridor', name: 'Ambush Corridor', value: 2, contestAdjacent: true, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }] },
+      ];
+    } else if (n.includes('thermopylae') || n.includes('hot gates')) {
+      out.group = 'history';
+      out.sideLabels = { blue: 'Greek', red: 'Persian', named: true };
+      out.historical = '480 BCE';
+      out.description = 'Narrow pass defense between sea edge and impassable heights.';
+      out.checkpointTurn = 6;
+      out.objectives = [
+        { id: 'hot-gate-pass', name: 'Hot Gates Pass', value: 3, contestAdjacent: true, hexes: [{ q: 7, r: 5 }, { q: 8, r: 5 }] },
+      ];
+    }
+
+    return out;
+  }
+
+  function scenarioMetadata(name) {
+    const sc = scenarioRecord(name) || {};
+    const inferred = scenarioStaticMetaFromName(name);
+    const explicit = (sc.meta && typeof sc.meta === 'object') ? sc.meta : {};
+    const sideLabels = (explicit.sideLabels && typeof explicit.sideLabels === 'object')
+      ? { ...inferred.sideLabels, ...explicit.sideLabels }
+      : inferred.sideLabels;
+
+    return {
+      group: explicit.group || inferred.group || 'other',
+      description: explicit.description || inferred.description || '',
+      historical: explicit.historical || inferred.historical || '',
+      sideLabels: sideLabels || null,
+      objectives: Array.isArray(explicit.objectives) ? explicit.objectives : (Array.isArray(inferred.objectives) ? inferred.objectives : []),
+      checkpointTurn: clampInt(explicit.checkpointTurn, 1, 99, inferred.checkpointTurn || 8),
+      pointTarget: Number.isFinite(Number(explicit.pointTarget)) ? Math.max(1, Math.trunc(Number(explicit.pointTarget))) : inferred.pointTarget,
+      notes: explicit.notes || inferred.notes || '',
+    };
+  }
+
   function victoryModeLabel(id) {
     if (id === 'annihilation') return 'Annihilation';
     if (id === 'decapitation') return 'Decapitation';
+    if (id === 'points') return 'Point Victory';
+    if (id === 'keyground') return 'Key Ground';
+    if (id === 'strategic') return 'Strategic Mix';
     return 'Clear Victory';
   }
 
-  function clampPct(v) {
-    return Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
+  function aiControlledSide() {
+    if (state.gameMode !== 'hvai') return null;
+    return state.humanSide === 'red' ? 'blue' : 'red';
   }
 
-  function renderVictoryTrack(blueTotals, redTotals, hideOpponent = false) {
-    if (!elVictoryTrackBody) return;
-
-    if (hideOpponent) {
-      elVictoryTrackBody.innerHTML = '<div class="victoryNote">Victory track hidden during fog draft setup.</div>';
-      return;
-    }
-
-    if (state.victoryMode === 'clear') {
-      const needBlue = Math.max(1, Math.ceil(state.initialUP.red / 2));
-      const needRed = Math.max(1, Math.ceil(state.initialUP.blue / 2));
-      const blueCap = Math.max(0, state.capturedUP.blue);
-      const redCap = Math.max(0, state.capturedUP.red);
-      const bluePct = clampPct((blueCap / needBlue) * 100);
-      const redPct = clampPct((redCap / needRed) * 100);
-      elVictoryTrackBody.innerHTML = `
-        <div class="victoryRow">
-          <div class="victoryLabel blue">Blue</div>
-          <div class="victoryBar"><div class="victoryFill blue" style="width:${bluePct.toFixed(1)}%"></div></div>
-          <div class="victoryValue">
-            <span class="victoryMain">${blueCap}/${needBlue} Captured UP</span>
-            <span class="victorySub">${blueTotals.up} UP · ${blueTotals.hp} HP</span>
-          </div>
-        </div>
-        <div class="victoryRow">
-          <div class="victoryLabel red">Red</div>
-          <div class="victoryBar"><div class="victoryFill red" style="width:${redPct.toFixed(1)}%"></div></div>
-          <div class="victoryValue">
-            <span class="victoryMain">${redCap}/${needRed} Captured UP</span>
-            <span class="victorySub">${redTotals.up} UP · ${redTotals.hp} HP</span>
-          </div>
-        </div>
-        <div class="victoryNote">Fill the bar to win Clear Victory.</div>
-      `;
-      return;
-    }
-
-    if (state.victoryMode === 'decapitation') {
-      elVictoryTrackBody.innerHTML = `
-        <div class="victoryRow">
-          <div class="victoryLabel blue">Blue</div>
-          <div class="victoryNote">Generals left</div>
-          <div class="victoryValue">
-            <span class="victoryMain">GEN ${blueTotals.gens}</span>
-            <span class="victorySub">${blueTotals.up} UP · ${blueTotals.hp} HP</span>
-          </div>
-        </div>
-        <div class="victoryRow">
-          <div class="victoryLabel red">Red</div>
-          <div class="victoryNote">Generals left</div>
-          <div class="victoryValue">
-            <span class="victoryMain">GEN ${redTotals.gens}</span>
-            <span class="victorySub">${redTotals.up} UP · ${redTotals.hp} HP</span>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    elVictoryTrackBody.innerHTML = `
-      <div class="victoryRow">
-        <div class="victoryLabel blue">Blue</div>
-        <div class="victoryNote">Units left</div>
-        <div class="victoryValue">
-          <span class="victoryMain">UNITS ${blueTotals.units}</span>
-          <span class="victorySub">${blueTotals.up} UP · ${blueTotals.hp} HP</span>
-        </div>
-      </div>
-      <div class="victoryRow">
-        <div class="victoryLabel red">Red</div>
-        <div class="victoryNote">Units left</div>
-        <div class="victoryValue">
-          <span class="victoryMain">UNITS ${redTotals.units}</span>
-          <span class="victorySub">${redTotals.up} UP · ${redTotals.hp} HP</span>
-        </div>
-      </div>
-    `;
+  function localPlayerSide() {
+    if (state.gameMode === 'hvai') return state.humanSide === 'red' ? 'red' : 'blue';
+    if (state.gameMode === 'online' && net.connected) return onlineExpectedLocalSide();
+    return null;
   }
 
-  function openRulesModal() {
-    if (!elRulesModal || !elRulesModalBody) return;
-    if (elRulesModalTitle) {
-      elRulesModalTitle.textContent = 'Rules Guide';
-    }
-    elRulesModalBody.innerHTML = RULES_FULL_HTML;
-    elRulesModal.classList.add('open');
-    elRulesModal.setAttribute('aria-hidden', 'false');
+  function notifyEnemyDirectiveUsed(side, cmd, actionSpend = null) {
+    if (!cmd || !side) return;
+    const localSide = localPlayerSide();
+    if (!localSide || localSide === side) return;
+    const spend = Number.isFinite(actionSpend) ? Math.max(1, Math.trunc(actionSpend)) : commandActionSpend(cmd);
+    const message =
+      `Enemy directive: ${side.toUpperCase()} used ${cmd.name} ` +
+      `(${commandUsageLabel(cmd.persistence)}, spent ${spend} action${spend === 1 ? '' : 's'}).`;
+    state.enemyDirectiveNotice = { text: message, atSerial: state.turnSerial };
+    log(`⚠️ ${message}`);
   }
 
-  function closeRulesModal() {
-    if (!elRulesModal) return;
-    elRulesModal.classList.remove('open');
-    elRulesModal.setAttribute('aria-hidden', 'true');
+  function scenarioSideLabels(name) {
+    const fromMeta = scenarioMetadata(name).sideLabels;
+    if (fromMeta && fromMeta.blue && fromMeta.red) {
+      return {
+        blue: fromMeta.blue,
+        red: fromMeta.red,
+        named: !!fromMeta.named,
+      };
+    }
+    return { blue: 'Blue Army', red: 'Red Army', named: false };
+  }
+
+  function updateScenarioSidesLegend(name) {
+    if (!elScenarioSides) return;
+    const sides = scenarioSideLabels(name);
+    elScenarioSides.textContent = `Blue: ${sides.blue} • Red: ${sides.red}`;
+  }
+
+  function objectiveHexKeyFromPoint(pt) {
+    if (!pt || typeof pt !== 'object') return null;
+    const q = Math.trunc(Number(pt.q));
+    const r = Math.trunc(Number(pt.r));
+    if (!Number.isFinite(q) || !Number.isFinite(r)) return null;
+    const hk = key(q, r);
+    if (!board.activeSet.has(hk)) return null;
+    return hk;
+  }
+
+  function normalizeScenarioObjectives(rawObjectives) {
+    const out = [];
+    if (!Array.isArray(rawObjectives)) return out;
+
+    for (let i = 0; i < rawObjectives.length; i++) {
+      const raw = rawObjectives[i];
+      if (!raw || typeof raw !== 'object') continue;
+      const hexesRaw = Array.isArray(raw.hexes) ? raw.hexes : [];
+      const hexSet = new Set();
+      for (const pt of hexesRaw) {
+        const hk = objectiveHexKeyFromPoint(pt);
+        if (hk) hexSet.add(hk);
+      }
+      if (hexSet.size === 0) continue;
+      const valueNum = Number(raw.value);
+      const value = Number.isFinite(valueNum) ? Math.max(1, Math.trunc(valueNum)) : 1;
+      out.push({
+        id: String(raw.id || `obj-${i + 1}`),
+        name: String(raw.name || `Objective ${i + 1}`),
+        value,
+        contestAdjacent: !!raw.contestAdjacent,
+        hexes: [...hexSet],
+      });
+    }
+    return out;
+  }
+
+  function loadScenarioObjectives(name) {
+    const meta = scenarioMetadata(name);
+    const sc = scenarioRecord(name) || {};
+    const fromScenario = Array.isArray(sc.objectives) ? sc.objectives : [];
+    const fromMeta = Array.isArray(meta.objectives) ? meta.objectives : [];
+    const mergedRaw = fromScenario.length ? fromScenario : fromMeta;
+    state.scenarioObjectives = normalizeScenarioObjectives(mergedRaw);
+    state.objectiveCheckpointTurn = clampInt(meta.checkpointTurn, 1, 99, 8);
+    state.objectiveLastSummary = null;
+    state.loadedScenarioMeta = {
+      description: meta.description || '',
+      historical: meta.historical || '',
+      notes: meta.notes || '',
+      pointTarget: meta.pointTarget,
+    };
+  }
+
+  function objectiveOccupants(zone) {
+    let blueOnHex = 0;
+    let redOnHex = 0;
+    for (const hk of zone.hexes) {
+      const u = unitsByHex.get(hk);
+      if (!u) continue;
+      if (u.side === 'blue') blueOnHex += 1;
+      else if (u.side === 'red') redOnHex += 1;
+    }
+    return { blueOnHex, redOnHex };
+  }
+
+  function objectiveAdjacentPressure(zone) {
+    let blueAdj = 0;
+    let redAdj = 0;
+    const zoneSet = new Set(zone.hexes);
+    for (const hk of zone.hexes) {
+      const h = board.byKey.get(hk);
+      if (!h) continue;
+      for (const nk of h.neigh) {
+        if (zoneSet.has(nk)) continue;
+        const u = unitsByHex.get(nk);
+        if (!u) continue;
+        if (u.side === 'blue') blueAdj += 1;
+        else if (u.side === 'red') redAdj += 1;
+      }
+    }
+    return { blueAdj, redAdj };
+  }
+
+  function evaluateObjectiveControl() {
+    const zones = Array.isArray(state.scenarioObjectives) ? state.scenarioObjectives : [];
+    const details = [];
+    let blueValue = 0;
+    let redValue = 0;
+    let contested = 0;
+    let neutral = 0;
+
+    for (const zone of zones) {
+      const occ = objectiveOccupants(zone);
+      const adj = objectiveAdjacentPressure(zone);
+      let owner = null;
+
+      if (occ.blueOnHex > 0 && occ.redOnHex === 0) owner = 'blue';
+      else if (occ.redOnHex > 0 && occ.blueOnHex === 0) owner = 'red';
+
+      if (zone.contestAdjacent) {
+        if (owner === 'blue' && adj.redAdj > 0) owner = null;
+        if (owner === 'red' && adj.blueAdj > 0) owner = null;
+      }
+
+      if (owner === 'blue') blueValue += zone.value;
+      else if (owner === 'red') redValue += zone.value;
+      else if (occ.blueOnHex > 0 || occ.redOnHex > 0 || adj.blueAdj > 0 || adj.redAdj > 0) contested += 1;
+      else neutral += 1;
+
+      details.push({
+        id: zone.id,
+        name: zone.name,
+        value: zone.value,
+        owner,
+        contested: owner === null && (occ.blueOnHex > 0 || occ.redOnHex > 0 || adj.blueAdj > 0 || adj.redAdj > 0),
+      });
+    }
+
+    return {
+      zones: zones.length,
+      blueValue,
+      redValue,
+      contested,
+      neutral,
+      details,
+    };
+  }
+
+  function objectiveSummaryText(objState) {
+    if (!objState || !objState.zones) return 'No key-ground objectives in this scenario.';
+    return `Objectives: Blue ${objState.blueValue} · Red ${objState.redValue} · contested ${objState.contested}/${objState.zones}.`;
+  }
+
+  function logObjectiveStateIfChanged(force = false) {
+    const objState = evaluateObjectiveControl();
+    const summary = objectiveSummaryText(objState);
+    if (force || summary !== state.objectiveLastSummary) {
+      state.objectiveLastSummary = summary;
+      log(summary);
+      pushEventTrace('objective.state', {
+        summary,
+        blueValue: objState.blueValue,
+        redValue: objState.redValue,
+        contested: objState.contested,
+        neutral: objState.neutral,
+        zones: objState.details,
+      });
+    }
   }
 
   function normalizeDraftMode(mode) {
@@ -5440,7 +5878,7 @@ function unitColors(side) {
     state.draft.done.red = false;
     state.draft.side = 'blue';
     state.draft.reveal = (mode !== 'fog');
-    state.gameMode = 'hvh';
+    if (state.gameMode !== 'online') state.gameMode = 'hvai';
 
     state.tool = 'units';
     state.editErase = false;
@@ -5558,8 +5996,7 @@ function unitColors(side) {
       existing.type = type;
       existing.quality = quality;
       existing.hp = unitMaxHp(type, quality);
-      delete existing.movePauseUntilTurn;
-      delete existing.actionPauseUntilTurn;
+      existing.disarray = false;
       log(`Draft replace at ${hexKey} -> ${side.toUpperCase()} ${def.abbrev} (${newCost} UP).`);
     } else {
       unitsByHex.set(hexKey, {
@@ -5568,8 +6005,7 @@ function unitColors(side) {
         type,
         quality,
         hp: unitMaxHp(type, quality),
-        movePauseUntilTurn: 0,
-        actionPauseUntilTurn: 0,
+        disarray: false,
       });
       log(`Draft placed ${side.toUpperCase()} ${def.abbrev} at ${hexKey} (${newCost} UP).`);
     }
@@ -5603,32 +6039,9 @@ function unitColors(side) {
 
   function updateDraftStatusUi() {
     if (!elDraftStatus) return;
-
-    if (!state.draft.active) {
-      const modePreview = normalizeDraftMode(elDraftModeSel?.value);
-      if (modePreview === 'off') {
-        elDraftStatus.textContent = 'Draft inactive.';
-      } else {
-        const budget = parseDraftBudget(elDraftBudgetInput?.value);
-        elDraftStatus.textContent = `${draftModeLabel(modePreview)} ready. Budget preview: ${budget} UP per side.`;
-      }
-      return;
-    }
-
-    const side = state.draft.side.toUpperCase();
-    const fogNote = (state.draft.mode === 'fog' && !state.draft.reveal)
-      ? 'Hidden setup is active.'
-      : 'Placement is visible to both players.';
-    if (state.draft.mode === 'fog' && !state.draft.reveal) {
-      elDraftStatus.textContent =
-        `${draftModeLabel(state.draft.mode)} · ${side} placing · ` +
-        `${side} UP left: ${state.draft.remaining[state.draft.side]}. ${fogNote}`;
-    } else {
-      elDraftStatus.textContent =
-        `${draftModeLabel(state.draft.mode)} · ${side} placing · ` +
-        `UP left: Blue ${state.draft.remaining.blue}, Red ${state.draft.remaining.red}. ` +
-        `${fogNote}`;
-    }
+    // Hidden by design in current UX pass.
+    elDraftStatus.textContent = '';
+    elDraftStatus.style.display = 'none';
   }
 
   function onlineModeActive() {
@@ -5671,30 +6084,11 @@ function unitColors(side) {
   }
 
   function setOnlineStatus(msg) {
-    net.status = String(msg || 'Online: idle.');
+    net.status = String(msg || 'Not connected.');
     if (elOnlineStatus) {
       elOnlineStatus.textContent = '';
       elOnlineStatus.style.display = 'none';
     }
-  }
-
-  function onlineRoleHintText() {
-    if (!onlineModeActive()) {
-      return 'Switch Game mode to Online, then create or join a room.';
-    }
-    if (net.connected && net.isHost) {
-      return 'You are Host (Blue). You control setup/rules and start the battle.';
-    }
-    if (net.connected && !net.isHost) {
-      return 'You are Guest (Red). Host controls setup/rules/start.';
-    }
-    if (net.peer && net.isHost) {
-      return 'Room created. Share the 4-character room code.';
-    }
-    if (net.peer && !net.isHost) {
-      return `Connecting to room ${net.remoteCode || '----'}...`;
-    }
-    return 'Host creates a room. Guest enters the 4-character code and connects.';
   }
 
   function ensureOnlineMode() {
@@ -5765,7 +6159,10 @@ function unitColors(side) {
         passSelected();
         return true;
       case 'line_advance':
-        lineAdvanceFromSelection(action.advanceDir);
+        if (typeof action.direction === 'string') {
+          state.lineAdvanceDirection = normalizeLineAdvanceDirection(action.direction);
+        }
+        lineAdvanceFromSelection();
         return true;
       case 'end_turn':
         endTurn();
@@ -5843,9 +6240,6 @@ function unitColors(side) {
         setOnlineStatus(`Connected. Room ${net.myCode || '----'} is live.`);
       } else {
         setOnlineStatus(`Connected to room ${net.remoteCode || '----'}.`);
-      }
-      if (net.isHost) {
-        maybeRollOnlineOpeningInitiative();
       }
       if (net.isHost) onlineBroadcastSnapshot('peer-open');
       else onlineSendPacket({ kind: 'hello' });
@@ -5978,69 +6372,734 @@ function unitColors(side) {
     updateHud();
   }
 
+  function doctrineKnownForViewer(viewerSide, ownerSide) {
+    const ds = doctrineStateForSide(ownerSide);
+    if (!ds) return [];
+    return ds.loadout
+      .map((id) => {
+        const cmd = COMMAND_BY_ID.get(id);
+        const st = ds.byId[id];
+        if (!cmd || !st) return null;
+        const visible = (viewerSide === ownerSide) || st.revealed;
+        if (!visible) return { id, hidden: true, spent: false, cmd, st };
+        return { id, hidden: false, spent: !!st.spent, cmd, st };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a.cmd.cost - b.cmd.cost) || a.cmd.name.localeCompare(b.cmd.name));
+  }
+
+  function renderDoctrineList(el, rows, mode = 'generic') {
+    if (!el) return;
+    if (!rows.length) {
+      el.innerHTML = '<div class="doctrineChip hidden">No doctrine loaded.</div>';
+      return;
+    }
+    const html = rows.map((r) => {
+      if (r.hidden) {
+        return `<div class="doctrineChip hidden"><span class="monoVal">[?]</span>Hidden command</div>`;
+      }
+      const tag = commandUsageBadge(r.cmd.persistence);
+      const cls = r.spent ? 'doctrineChip spent' : 'doctrineChip';
+      if (mode === 'own') {
+        const eligible = isCommandAvailableForUse(state.side, r.id) && legalDoctrineTargets(state.side, r.id).length > 0;
+        const revealTxt = r.st?.revealed ? 'revealed' : 'hidden';
+        const eligibleTxt = eligible ? 'ready' : 'locked';
+        return `<div class="${cls}"><span class="monoVal">[${r.cmd.cost}${tag}]</span>${r.cmd.name} <span class="monoVal">${commandUsageLabel(r.cmd.persistence)} · ${revealTxt}, ${eligibleTxt}</span></div>`;
+      }
+      if (mode === 'known') {
+        return `<div class="${cls}"><span class="monoVal">[${r.cmd.cost}${tag}]</span>${r.cmd.name} <span class="monoVal">revealed · ${commandUsageLabel(r.cmd.persistence)}</span></div>`;
+      }
+      if (mode === 'spent') {
+        return `<div class="${cls}"><span class="monoVal">[${r.cmd.cost}${tag}]</span>${r.cmd.name} <span class="monoVal">single-use consumed</span></div>`;
+      }
+      return `<div class="${cls}"><span class="monoVal">[${r.cmd.cost}${tag}]</span>${r.cmd.name}</div>`;
+    }).join('');
+    el.innerHTML = html;
+  }
+
+  function renderOrdersExplainList() {
+    if (!elOrdersExplainList) return;
+    const side = state.ordersPreviewSide === 'red' ? 'red' : 'blue';
+    if (elOrdersViewBlueBtn) setActive(elOrdersViewBlueBtn, side === 'blue');
+    if (elOrdersViewRedBtn) setActive(elOrdersViewRedBtn, side === 'red');
+
+    const ds = doctrineStateForSide(side);
+    const loadout = Array.isArray(ds?.loadout) ? ds.loadout : [];
+    if (!loadout.length) {
+      elOrdersExplainList.innerHTML = '<div class="ordersExplainEmpty">No orders loaded for this side yet.</div>';
+      return;
+    }
+
+    const byCost = new Map([[1, []], [2, []], [3, []]]);
+    for (const id of loadout) {
+      const cmd = COMMAND_BY_ID.get(id);
+      if (!cmd) continue;
+      const group = byCost.get(cmd.cost);
+      if (group) group.push(cmd);
+    }
+    for (const rows of byCost.values()) {
+      rows.sort((a, b) => {
+        if (a.persistence !== b.persistence) return (a.persistence === 'spent') ? 1 : -1;
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    const tierHtml = COMMAND_COSTS.map((cost) => {
+      const rows = byCost.get(cost) || [];
+      const items = rows.map((cmd) => {
+        const use = commandUsageLabel(cmd.persistence);
+        const target = cmd.targeting ? ` Target: ${cmd.targeting}.` : '';
+        return `<article class="ordersExplainItem">
+          <div class="ordersExplainHead">
+            <div class="ordersExplainName">${cmd.name}</div>
+            <div class="ordersExplainMeta">${use}</div>
+          </div>
+          <div class="ordersExplainLayman">${commandLaymanText(cmd)}</div>
+          <div class="ordersExplainBody">Rules effect: ${commandExplainText(cmd)}${target}</div>
+        </article>`;
+      }).join('');
+      return `<section class="ordersExplainTier">
+        <h4 class="ordersExplainTierTitle">Cost ${cost}</h4>
+        ${items || '<div class="ordersExplainEmpty">No selected orders in this cost tier.</div>'}
+      </section>`;
+    }).join('');
+
+    elOrdersExplainList.innerHTML = tierHtml;
+  }
+
+  function renderDoctrineIntel() {
+    const own = doctrineKnownForViewer(state.side, state.side);
+    const enemySide = state.side === 'blue' ? 'red' : 'blue';
+    const knownEnemy = doctrineKnownForViewer(state.side, enemySide).filter(r => !r.hidden && !r.spent);
+    const spentEnemy = doctrineKnownForViewer(state.side, enemySide).filter(r => !r.hidden && r.spent);
+    renderDoctrineList(elDoctrineOwnList, own, 'own');
+    renderDoctrineList(elDoctrineKnownList, knownEnemy, 'known');
+    renderDoctrineList(elDoctrineSpentList, spentEnemy, 'spent');
+    if (elDoctrineHistoryList) {
+      const items = Array.isArray(state.doctrine.history) ? state.doctrine.history.slice(-6) : [];
+      if (!items.length) {
+        elDoctrineHistoryList.innerHTML = '<div class="doctrineChip hidden">No commands used yet.</div>';
+      } else {
+        const html = items.map((it) => {
+          const p = commandUsageBadge(it.persistence);
+          const s = it.side === 'red' ? 'RED' : 'BLUE';
+          return `<div class="doctrineChip ${it.spent ? 'spent' : ''}"><span class="monoVal">${s} T${it.turn}</span>${it.name} [${it.cost}${p}]</div>`;
+        }).join('');
+        elDoctrineHistoryList.innerHTML = html;
+      }
+    }
+  }
+
+  function legalDoctrineTargets(side, commandId) {
+    const cmd = COMMAND_BY_ID.get(commandId);
+    if (!cmd || (side !== 'blue' && side !== 'red')) return [];
+    const allFriendly = friendlyEntries(side);
+    const byId = (entries) => entries.map((e) => ({ key: e.key, unitId: e.unit.id, type: e.unit.type }));
+
+    switch (commandId) {
+      case 'quick_dress': {
+        const inf = friendlyEntries(side, (u, hk) => u.type === 'inf' && unitCanActivate(u, hk));
+        const picks = chooseAdjacentRowEntries(inf, 3, 1);
+        if (!picks.length) return [];
+        const lateral = axisLateralDirections(state.forwardAxis);
+        const hasMove = picks.some((e) =>
+          lateral.some((dir) => {
+            const toKey = stepKeyInDirection(e.key, dir);
+            return canCommandRelocateUnit(e.key, toKey, { unit: e.unit });
+          })
+        );
+        return byId(hasMove ? picks : []);
+      }
+      case 'runner_burst':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'run'), side).slice(0, 1));
+      case 'javelin_volley':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'skr'), side).slice(0, 2));
+      case 'quick_withdraw':
+        return byId(byFrontlinePriority(
+          quickWithdrawCandidates(side),
+          side
+        ).slice(0, 1));
+      case 'close_ranks':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf'), side).slice(0, 1));
+      case 'spur_horses':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u, hk) => u.type === 'cav' && inCommandAt(hk, side)), side).slice(0, 1));
+      case 'signal_call': {
+        const gens = friendlyEntries(side, (u) => u.type === 'gen');
+        const targets = [];
+        for (const e of friendlyEntries(side, (u) => u.type !== 'gen')) {
+          const h = e.hex;
+          if (!h) continue;
+          let exactlyOutside = false;
+          for (const g of gens) {
+            const radius = commandRadiusForUnit(g.unit);
+            const d = axialDistance(h.q, h.r, g.hex.q, g.hex.r);
+            if (d === radius + 1) { exactlyOutside = true; break; }
+          }
+          if (exactlyOutside) targets.push(e);
+        }
+        return byId(byFrontlinePriority(targets, side).slice(0, 1));
+      }
+      case 'loose_screen':
+        return byId(byFrontlinePriority(
+          friendlyEntries(side, (u, hk) => (u.type === 'skr' || u.type === 'arc') && hasAdjacentFriendlyInf(hk, side)),
+          side
+        ).slice(0, 2));
+      case 'covering_fire':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'arc' || u.type === 'skr'), side).slice(0, 1));
+      case 'hold_fast':
+        return byId(byFrontlinePriority(allFriendly, side).slice(0, 1));
+      case 'shield_wall': {
+        const inf = friendlyEntries(side, (u) => u.type === 'inf');
+        const picks = findLargestContiguousGroup(inf, 6);
+        return byId(picks.length >= 3 ? picks : []);
+      }
+      case 'cavalry_exploit':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'cav'), side).slice(0, 3));
+      case 'refuse_flank':
+      {
+        const picks = chooseWingEntries(friendlyEntries(side, (u) => u.type === 'inf'), side, 5).slice(0, 5);
+        if (picks.length < 2) return [];
+        const backDir = oppositeDirection(sideForwardDirection(side, state.forwardAxis));
+        const hasMove = picks.some((e) => {
+          const candidates = [];
+          if (backDir) candidates.push(stepKeyInDirection(e.key, backDir));
+          const inwardDir = inwardLateralDirectionForKey(e.key);
+          if (inwardDir) candidates.push(stepKeyInDirection(e.key, inwardDir));
+          return candidates.some((k) => canCommandRelocateUnit(e.key, k, { unit: e.unit }));
+        });
+        return byId(hasMove ? picks : []);
+      }
+      case 'forced_march':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf' || u.type === 'skr'), side).slice(0, 4));
+      case 'strengthen_center': {
+        const gen = pickNearestGeneral(side);
+        if (!gen) return [];
+        return byId(byFrontlinePriority(
+          friendlyEntries(side, (u, hk) => u.type === 'inf' && axialDistance(gen.hex.q, gen.hex.r, board.byKey.get(hk).q, board.byKey.get(hk).r) <= 2),
+          side
+        ).slice(0, 4));
+      }
+      case 'wing_screen':
+        return byId(chooseWingEntries(friendlyEntries(side, (u) => u.type === 'skr' || u.type === 'arc'), side, 3));
+      case 'countercharge':
+        return byId(byFrontlinePriority(
+          friendlyEntries(side, (u, hk) => u.type === 'cav' && !isSurrounded(hk, side)),
+          side
+        ).slice(0, 2));
+      case 'jaws_inward':
+      {
+        const picks = selectJawsInwardVeteranEntries(side, 4);
+        if (picks.length < 2) return [];
+        const hasMove = picks.some((e) => {
+          const inwardDir = inwardLateralDirectionForKey(e.key);
+          const toKey = inwardDir ? stepKeyInDirection(e.key, inwardDir) : null;
+          return canCommandRelocateUnit(e.key, toKey, { unit: e.unit });
+        });
+        return byId(hasMove ? picks : []);
+      }
+      case 'local_reserve': {
+        const geom = buildAxisGeometry(state.forwardAxis);
+        return byId(byFrontlinePriority(
+          friendlyEntries(side, (u, hk) => geom.frontDepthForSide(side, hk) >= 0.58),
+          side
+        ).slice(0, 2));
+      }
+      case 'drive_them_back':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf'), side).slice(0, 3));
+      case 'full_line_advance':
+      {
+        const picks = chooseRowEntries(friendlyEntries(side), 8);
+        if (picks.length < 3) return [];
+        const hasMove = picks.some((e) => {
+          const toKey = forwardStepKey(e.key, e.unit.side);
+          return canCommandRelocateUnit(e.key, toKey, { unit: e.unit });
+        });
+        return byId(hasMove ? picks : []);
+      }
+      case 'grand_shield_wall': {
+        const inf = friendlyEntries(side, (u) => u.type === 'inf');
+        const picks = findLargestContiguousGroup(inf, 8).slice(0, Math.min(8, inf.length));
+        return byId(picks.length >= 5 ? picks : []);
+      }
+      case 'all_out_cavalry_sweep': {
+        const cavWing = chooseWingEntries(friendlyEntries(side, (u) => u.type === 'cav'), side, 4);
+        if (cavWing.length) return byId(cavWing);
+        const fallbackWing = chooseWingEntries(
+          friendlyEntries(side, (u) => u.type === 'inf' || u.type === 'skr' || u.type === 'arc'),
+          side,
+          3
+        );
+        return byId(fallbackWing);
+      }
+      case 'commit_reserves': {
+        return byId(selectReserveEntries(side, 3));
+      }
+      case 'general_assault': {
+        const gen = pickNearestGeneral(side);
+        if (!gen) return [];
+        const picks = byFrontlinePriority(
+          friendlyEntries(side, (u, hk) => {
+            if (u.id === gen.unit.id) return false;
+            const h = board.byKey.get(hk);
+            return axialDistance(gen.hex.q, gen.hex.r, h.q, h.r) <= (commandRadiusForUnit(gen.unit) + 1);
+          }),
+          side
+        ).slice(0, 4);
+        return byId(picks);
+      }
+      case 'collapse_center':
+      {
+        const geom = buildAxisGeometry(state.forwardAxis);
+        const allInf = friendlyEntries(side, (u) => u.type === 'inf');
+        const centerInf = collapseCenterCandidates(side, 5);
+        if (centerInf.length < 3) return [];
+        const centerKeys = new Set(centerInf.map((e) => e.key));
+        const leftWing = [];
+        const rightWing = [];
+        for (const e of allInf) {
+          if (centerKeys.has(e.key)) continue;
+          const lateral = geom.lateralForSide(side, e.key);
+          if (lateral < -0.18) leftWing.push({ e, score: Math.abs(lateral) });
+          else if (lateral > 0.18) rightWing.push({ e, score: Math.abs(lateral) });
+        }
+        leftWing.sort((a, b) => b.score - a.score);
+        rightWing.sort((a, b) => b.score - a.score);
+        const wingPicks = [...leftWing.slice(0, 2).map((x) => x.e), ...rightWing.slice(0, 2).map((x) => x.e)];
+
+        const backDir = oppositeDirection(sideForwardDirection(side, state.forwardAxis));
+        const centerMovable = centerInf.some((e) => {
+          const toKey = backDir ? stepKeyInDirection(e.key, backDir) : null;
+          return canCommandRelocateUnit(e.key, toKey, { unit: e.unit });
+        });
+        const wingMovable = wingPicks.some((e) => {
+          const inwardDir = inwardLateralDirectionForKey(e.key);
+          const toKey = inwardDir ? stepKeyInDirection(e.key, inwardDir) : null;
+          return canCommandRelocateUnit(e.key, toKey, { unit: e.unit });
+        });
+        if (!centerMovable && !wingMovable) return [];
+
+        const merged = [...centerInf];
+        for (const w of wingPicks) {
+          if (!merged.some((m) => m.key === w.key)) merged.push(w);
+        }
+        return byId(merged);
+      }
+      case 'last_push':
+        return byId(byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf' || u.type === 'cav'), side).slice(0, 4));
+      case 'reforge_line': {
+        const inf = friendlyEntries(side, (u) => u.type === 'inf');
+        const picks = findLargestContiguousGroup(inf, 6);
+        if (picks.length < 3) return [];
+        const hasMove = picks.some((e) => {
+          const opts = [
+            sideForwardDirection(side, state.forwardAxis),
+            ...axisLateralDirections(state.forwardAxis),
+            oppositeDirection(sideForwardDirection(side, state.forwardAxis)),
+          ];
+          return opts.some((dir) => {
+            const toKey = stepKeyInDirection(e.key, dir);
+            return canCommandRelocateUnit(e.key, toKey, { unit: e.unit });
+          });
+        });
+        return byId(hasMove ? picks : []);
+      }
+      case 'command_surge':
+        return byId(friendlyEntries(side, (u) => u.type === 'gen').slice(0, 1));
+      case 'stand_or_die': {
+        const gen = pickNearestGeneral(side);
+        if (!gen) return [];
+        const picks = byFrontlinePriority(
+          friendlyEntries(side, (u, hk) => {
+            if (u.type !== 'inf') return false;
+            const h = board.byKey.get(hk);
+            return axialDistance(gen.hex.q, gen.hex.r, h.q, h.r) <= 2;
+          }),
+          side
+        ).slice(0, 5);
+        return byId(picks.length >= 3 ? picks : []);
+      }
+      default:
+        return [];
+    }
+  }
+
+  function legalCommandsForSide(side) {
+    const ds = doctrineStateForSide(side);
+    if (!ds) return [];
+    return ds.loadout
+      .map((id) => COMMAND_BY_ID.get(id))
+      .filter(Boolean)
+      .filter((cmd) => isCommandAvailableForUse(side, cmd.id))
+      .filter((cmd) => legalDoctrineTargets(side, cmd.id).length > 0);
+  }
+
+  function populateTurnCommandSelect() {
+    if (!elCommandSel) return;
+    elCommandSel.innerHTML = '';
+    const legal = legalCommandsForSide(state.side);
+    if (!legal.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No legal commands';
+      elCommandSel.appendChild(opt);
+      return;
+    }
+    for (const cmd of legal.sort((a, b) => (a.cost - b.cost) || a.name.localeCompare(b.name))) {
+      const targetCount = legalDoctrineTargets(state.side, cmd.id).length;
+      const opt = document.createElement('option');
+      opt.value = cmd.id;
+      opt.textContent = `[${cmd.cost}] ${cmd.name} (${commandUsageLabel(cmd.persistence)} · targets ${targetCount})`;
+      opt.title = `${commandLaymanText(cmd)} Rules effect: ${commandExplainText(cmd)} Targeting: ${cmd.targeting}. Legal target groups: ${targetCount}.`;
+      elCommandSel.appendChild(opt);
+    }
+    if (state.doctrine.selectedCommandId && legal.some(c => c.id === state.doctrine.selectedCommandId)) {
+      elCommandSel.value = state.doctrine.selectedCommandId;
+    } else {
+      elCommandSel.value = legal[0].id;
+      state.doctrine.selectedCommandId = elCommandSel.value;
+    }
+  }
+
+  function skipDoctrineCommandPhase() {
+    if (state.mode !== 'play' || state.gameOver) return;
+    if (state.doctrine.commandIssuedThisTurn) {
+      log('Command already committed this turn.');
+      updateHud();
+      return;
+    }
+    state.doctrine.commandIssuedThisTurn = true;
+    state.doctrine.activeCommandThisTurn = null;
+    closeCommandPhase();
+    log(`${state.side.toUpperCase()} chose not to issue a command this turn.`);
+    pushEventTrace('command.skip', { side: state.side });
+    updateHud();
+  }
+
+  function ensureDoctrineConfirmState() {
+    if (!state.doctrine.builder.confirmed || typeof state.doctrine.builder.confirmed !== 'object') {
+      state.doctrine.builder.confirmed = { blue: false, red: false };
+    }
+    if (typeof state.doctrine.builder.confirmed.blue !== 'boolean') state.doctrine.builder.confirmed.blue = false;
+    if (typeof state.doctrine.builder.confirmed.red !== 'boolean') state.doctrine.builder.confirmed.red = false;
+  }
+
+  function doctrineBothSidesConfirmed() {
+    ensureDoctrineConfirmState();
+    return !!state.doctrine.builder.confirmed.blue && !!state.doctrine.builder.confirmed.red;
+  }
+
+  function openDoctrineBuilder(side = null) {
+    ensureDoctrineStateInitialized(false);
+    ensureDoctrineConfirmState();
+    if (!elDoctrineOverlay) return;
+    const editSide = (side === 'red') ? 'red' : 'blue';
+    state.doctrine.builder.open = true;
+    state.doctrine.builder.side = editSide;
+    state.doctrine.builder.draft.blue = cloneArray(doctrineStateForSide('blue')?.loadout || makeRecommendedDoctrineLoadout());
+    state.doctrine.builder.draft.red = cloneArray(doctrineStateForSide('red')?.loadout || makeRecommendedDoctrineLoadout());
+    const seed = state.doctrine.builder.draft[editSide] || [];
+    state.doctrine.builder.focusCommandId = (Array.isArray(seed) && seed.length) ? seed[0] : '';
+    if (elDoctrineSideSel) elDoctrineSideSel.value = editSide;
+    renderDoctrineBuilder();
+    elDoctrineOverlay.classList.add('open');
+    elDoctrineOverlay.setAttribute('aria-hidden', 'false');
+    if (elCloseDoctrineBtn) elCloseDoctrineBtn.textContent = 'Minimize';
+  }
+
+  function closeDoctrineBuilder() {
+    if (!elDoctrineOverlay) return;
+    state.doctrine.builder.open = false;
+    elDoctrineOverlay.classList.remove('open');
+    elDoctrineOverlay.setAttribute('aria-hidden', 'true');
+    if (state.mode === 'edit') {
+      state.doctrine.builder.preBattleReady = doctrineBothSidesConfirmed();
+      if (!state.doctrine.builder.preBattleReady) {
+        log('War Council minimized. Confirm both sides at 3/3/3 before starting battle.');
+      }
+    }
+  }
+
+  function currentDoctrineBuilderDraft(side) {
+    if (side !== 'blue' && side !== 'red') return [];
+    return cloneArray(state.doctrine.builder.draft[side] || []);
+  }
+
+  function setDoctrineBuilderDraft(side, ids) {
+    if (side !== 'blue' && side !== 'red') return;
+    state.doctrine.builder.draft[side] = cloneArray(ids);
+    ensureDoctrineConfirmState();
+    state.doctrine.builder.confirmed[side] = false;
+  }
+
+  function renderDoctrineTierState(colEl, titleEl, cost, count) {
+    if (titleEl) titleEl.textContent = `Cost ${cost} (${count}/${COMMANDS_PER_COST})`;
+    if (!colEl) return;
+    const complete = count === COMMANDS_PER_COST;
+    colEl.classList.toggle('is-complete', complete);
+    colEl.classList.toggle('is-incomplete', !complete);
+  }
+
+  function renderDoctrineBuilderList(el, side, cost, readOnly = false) {
+    if (!el) return;
+    const draft = new Set(currentDoctrineBuilderDraft(side));
+    const cmds = COMMAND_POOL
+      .filter(c => c.cost === cost)
+      .sort((a, b) => {
+        if (a.persistence !== b.persistence) return (a.persistence === 'spent') ? 1 : -1;
+        return a.name.localeCompare(b.name);
+      });
+    const disabledAttr = readOnly ? 'disabled' : '';
+    const renderRows = (rows) => rows.map((cmd) => {
+      const checked = draft.has(cmd.id) ? 'checked' : '';
+      const activeCls = (state.doctrine.builder.focusCommandId === cmd.id) ? ' doctrinePickActive' : '';
+      return `<label class="doctrinePick${activeCls}" data-doctrine-item="1" data-doctrine-id="${cmd.id}">
+        <input type="checkbox" data-doctrine-id="${cmd.id}" data-cost="${cost}" ${checked} ${disabledAttr}>
+        <span>
+          <span class="doctrinePickName">${cmd.name}</span>
+          <span class="doctrinePickMeta">Cost ${cmd.cost} · ${commandUsageLabel(cmd.persistence)}</span>
+          <span class="doctrinePickExplain">${commandDictionaryText(cmd)}</span>
+        </span>
+      </label>`;
+    }).join('');
+    const reusable = cmds.filter(c => c.persistence !== 'spent');
+    const singleUse = cmds.filter(c => c.persistence === 'spent');
+    const html = `${reusable.length ? `<div class="doctrinePickGroup">Reusable Orders</div>${renderRows(reusable)}` : ''}${singleUse.length ? `<div class="doctrinePickGroup">Single-Use Orders</div>${renderRows(singleUse)}` : ''}`;
+    el.innerHTML = html || '<div class="note">No orders in this cost tier.</div>';
+  }
+
+  function renderDoctrineBuilderFocusOnly() {
+    const focusId = state.doctrine.builder.focusCommandId || '';
+    for (const el of [elDoctrineCost1List, elDoctrineCost2List, elDoctrineCost3List]) {
+      if (!el) continue;
+      for (const node of el.querySelectorAll('[data-doctrine-item][data-doctrine-id]')) {
+        const id = node.getAttribute('data-doctrine-id') || '';
+        node.classList.toggle('doctrinePickActive', id === focusId);
+      }
+    }
+    if (!elDoctrineExplain) return;
+    const cmd = COMMAND_BY_ID.get(focusId);
+    if (!cmd) {
+      elDoctrineExplain.textContent = 'Select an order to view its full effect and targeting.';
+      return;
+    }
+    const targetTxt = cmd.targeting ? `Targeting: ${cmd.targeting}.` : 'Targeting: See order conditions.';
+    elDoctrineExplain.innerHTML =
+      `<div class="doctrineExplainTitle">${cmd.name} · Cost ${cmd.cost} · ${commandUsageLabel(cmd.persistence)}</div>` +
+      `<div>${commandDictionaryText(cmd)}</div>` +
+      `<div>Rules effect: ${commandExplainText(cmd)}</div>` +
+      `<div class="doctrineExplainTarget">${targetTxt}</div>`;
+  }
+
+  function renderDoctrineBuilder() {
+    const side = (state.doctrine.builder.side === 'red') ? 'red' : 'blue';
+    const readOnly = (state.mode === 'play');
+    const all = COMMAND_POOL;
+    if (!state.doctrine.builder.focusCommandId || !COMMAND_BY_ID.get(state.doctrine.builder.focusCommandId)) {
+      state.doctrine.builder.focusCommandId = all.length ? all[0].id : '';
+    }
+    renderDoctrineBuilderList(elDoctrineCost1List, side, 1, readOnly);
+    renderDoctrineBuilderList(elDoctrineCost2List, side, 2, readOnly);
+    renderDoctrineBuilderList(elDoctrineCost3List, side, 3, readOnly);
+    const draft = currentDoctrineBuilderDraft(side);
+    const count1 = draft.filter(id => COMMAND_BY_ID.get(id)?.cost === 1).length;
+    const count2 = draft.filter(id => COMMAND_BY_ID.get(id)?.cost === 2).length;
+    const count3 = draft.filter(id => COMMAND_BY_ID.get(id)?.cost === 3).length;
+    const tierValid = (count1 === COMMANDS_PER_COST) && (count2 === COMMANDS_PER_COST) && (count3 === COMMANDS_PER_COST);
+    renderDoctrineTierState(elDoctrineCost1Col, elDoctrineCost1Title, 1, count1);
+    renderDoctrineTierState(elDoctrineCost2Col, elDoctrineCost2Title, 2, count2);
+    renderDoctrineTierState(elDoctrineCost3Col, elDoctrineCost3Title, 3, count3);
+    ensureDoctrineConfirmState();
+    const blueOk = !!state.doctrine.builder.confirmed.blue;
+    const redOk = !!state.doctrine.builder.confirmed.red;
+    if (elDoctrineBuilderCounts) {
+      if (readOnly) {
+        elDoctrineBuilderCounts.textContent = `${side.toUpperCase()} picks: cost1 ${count1}/3 · cost2 ${count2}/3 · cost3 ${count3}/3 · Locked during Play mode`;
+      } else {
+        elDoctrineBuilderCounts.textContent =
+          `${side.toUpperCase()} picks: cost1 ${count1}/3 · cost2 ${count2}/3 · cost3 ${count3}/3 · ` +
+          `Pick exactly 3 in each cost tier. Confirmed: Blue ${blueOk ? 'yes' : 'no'} · Red ${redOk ? 'yes' : 'no'}.`;
+      }
+    }
+    if (elDoctrineSideSel) elDoctrineSideSel.disabled = readOnly;
+    if (elDoctrineRandomizeBtn) elDoctrineRandomizeBtn.disabled = readOnly;
+    if (elDoctrineRecommendBtn) elDoctrineRecommendBtn.disabled = readOnly;
+    if (elDoctrineBlankizeBtn) elDoctrineBlankizeBtn.disabled = readOnly;
+    if (elDoctrineScenarioApplyBtn) elDoctrineScenarioApplyBtn.disabled = readOnly;
+    if (elDoctrineConfirmBtn) {
+      elDoctrineConfirmBtn.disabled = readOnly || !tierValid;
+      elDoctrineConfirmBtn.textContent = readOnly ? 'Doctrine Locked In Play' : (tierValid ? 'Confirm Doctrine' : 'Pick 3 Per Cost');
+    }
+    renderDoctrineBuilderFocusOnly();
+  }
+
+  function doctrineBuilderToggle(side, commandId, checked) {
+    const cmd = COMMAND_BY_ID.get(commandId);
+    if (!cmd) return;
+    state.doctrine.builder.focusCommandId = commandId;
+    const draft = currentDoctrineBuilderDraft(side);
+    const draftSet = new Set(draft);
+    const costCount = draft.filter(id => COMMAND_BY_ID.get(id)?.cost === cmd.cost).length;
+    if (checked) {
+      if (costCount >= COMMANDS_PER_COST) {
+        log(`Cost ${cmd.cost} is full. Uncheck one order in that column, then pick a different one.`);
+        return;
+      }
+      draftSet.add(commandId);
+    } else {
+      draftSet.delete(commandId);
+    }
+    setDoctrineBuilderDraft(side, [...draftSet]);
+    renderDoctrineBuilder();
+  }
+
+  function applyDoctrineFromBuilder(side) {
+    ensureDoctrineConfirmState();
+    const draft = currentDoctrineBuilderDraft(side);
+    if (!validateDoctrineLoadout(draft)) {
+      if (elDoctrineBuilderCounts) {
+        elDoctrineBuilderCounts.textContent = `${side.toUpperCase()} doctrine invalid: choose exactly 3 commands at each cost tier.`;
+      }
+      log(`${side.toUpperCase()} doctrine invalid: must pick exactly 3 commands at each cost.`);
+      updateHud();
+      return false;
+    }
+    setDoctrineLoadoutForSide(side, draft, 'manual', { strict: true });
+    state.doctrine.builder.confirmed[side] = true;
+    log(`${side.toUpperCase()} doctrine confirmed (${draft.length} commands: 3/3/3).`);
+    updateHud();
+    return true;
+  }
+
   function updateHud() {
     const blue = totals('blue');
     const red = totals('red');
     document.body.dataset.mode = state.mode;
+    document.body.dataset.combat = state.combatBusy ? 'on' : 'off';
 
     elHudTitle.textContent = GAME_NAME;
-    if (elHudLast) {
-      if (state.gameOver && state.winner) {
-        const winnerLabel = state.winner === 'red' ? 'Red' : 'Blue';
-        elHudLast.textContent = `Game Over: ${winnerLabel} wins.`;
-        elHudLast.classList.add('show');
-      } else {
-        elHudLast.textContent = '';
-        elHudLast.classList.remove('show');
-      }
-    }
+    ensureDoctrineStateInitialized(false);
 
     const hideOpponentDuringFog = state.draft.active && state.draft.mode === 'fog' && !state.draft.reveal;
     const modeLabel = (state.mode === 'play') ? 'Play Mode' : 'Setup Mode';
     const sideLabel = (state.side === 'blue') ? 'Blue' : 'Red';
+    const aiSide = aiControlledSide();
+    const humanSideLabel = state.humanSide === 'red' ? 'Red' : 'Blue';
+    const aiSideLabel = aiSide ? aiSide.toUpperCase() : '-';
+    const aiMeta = (state.gameMode === 'hvai')
+      ? ` • Human ${humanSideLabel} vs ${aiSideLabel} AI (${aiDifficultyLabel(state.aiDifficulty)})`
+      : '';
     const modeMeta =
       state.gameMode === 'online' ? ' • Online mode' :
-      (state.gameMode === 'hvai'
-        ? ` • You ${state.humanSide.toUpperCase()} vs ${aiSide().toUpperCase()} AI (${aiDifficultyLabel()} difficulty)`
-        : '');
-    const meta = [
-      `${modeLabel}${modeMeta}`,
-      `Battle Line: ${forwardAxisLabel(state.forwardAxis)}`,
-      `Turn ${state.turn}: ${sideLabel} • Actions ${state.actsUsed}/${ACT_LIMIT}`,
-      hideOpponentDuringFog
-        ? `Forces are hidden during fog setup`
-        : `Forces • Blue ${blue.up} UP / ${blue.hp} HP • Red ${red.up} UP / ${red.hp} HP`,
-      `Captured UP • Blue ${state.capturedUP.blue} • Red ${state.capturedUP.red}`,
-      `Victory Goal: ${victoryModeLabel(state.victoryMode)}`,
-    ];
-    if (state.lastImport && state.lastImport.source) {
-      meta.push(`Loaded save: ${compactLabel(state.lastImport.source)} at ${formatClock(state.lastImport.at)}`);
-    }
-    if (state.aiBusy) {
-      meta.push('AI is choosing actions...');
+      aiMeta;
+    const headerMeta = [];
+    if (state.gameOver && state.winner) {
+      headerMeta.push(`${state.winner.toUpperCase()} wins`);
     }
     if (state.draft.active) {
+      headerMeta.push('Draft Setup');
+      headerMeta.push(`${state.draft.side.toUpperCase()} placing`);
       if (hideOpponentDuringFog) {
-        meta.push(
+        headerMeta.push(`${state.draft.side.toUpperCase()} UP left ${state.draft.remaining[state.draft.side]}`);
+      } else {
+        headerMeta.push(`UP left B ${state.draft.remaining.blue} / R ${state.draft.remaining.red}`);
+      }
+    } else if (state.mode === 'play') {
+      headerMeta.push(`Turn ${state.turn}`);
+      headerMeta.push(`${sideLabel} to act`);
+      headerMeta.push(`Actions ${state.actsUsed}/${ACT_LIMIT}`);
+      if (state.doctrine.commandIssuedThisTurn && state.doctrine.activeCommandThisTurn) {
+        const cmd = COMMAND_BY_ID.get(state.doctrine.activeCommandThisTurn);
+        if (cmd) headerMeta.push(`Directive ${cmd.name} (-${commandActionSpend(cmd)})`);
+      }
+    } else {
+      headerMeta.push('Battle Setup');
+    }
+    if (state.aiBusy) headerMeta.push('AI thinking...');
+    if (state.combatBusy) headerMeta.push('Resolving combat...');
+    elHudMeta.textContent = headerMeta.join('  ·  ');
+
+    const statusLines = [
+      `Mode: ${modeLabel}${modeMeta}`,
+      `Turn ${state.turn}: ${sideLabel} • Actions ${state.actsUsed}/${ACT_LIMIT}`,
+      hideOpponentDuringFog
+        ? `Forces: hidden during fog setup`
+        : `Forces: Blue ${blue.up} UP / ${blue.hp} HP • Red ${red.up} UP / ${red.hp} HP`,
+      `Captured UP: Blue ${state.capturedUP.blue} • Red ${state.capturedUP.red}`,
+      `Victory goal: ${victoryModeLabel(state.victoryMode)}`,
+    ];
+    if (state.loadedScenarioMeta?.description) {
+      const hist = state.loadedScenarioMeta.historical ? ` (${state.loadedScenarioMeta.historical})` : '';
+      statusLines.push(`Scenario: ${compactLabel(state.loadedScenarioName || '')}${hist}`);
+      statusLines.push(`Brief: ${state.loadedScenarioMeta.description}`);
+    }
+    if (state.enemyDirectiveNotice?.text) {
+      const noticeAge = state.turnSerial - Number(state.enemyDirectiveNotice.atSerial || 0);
+      if (noticeAge <= 2) {
+        statusLines.push(`Alert: ${state.enemyDirectiveNotice.text}`);
+      } else {
+        state.enemyDirectiveNotice = null;
+      }
+    }
+    const objState = evaluateObjectiveControl();
+    if (objState.zones > 0) {
+      statusLines.push(objectiveSummaryText(objState));
+      if (state.victoryMode === 'keyground') {
+        statusLines.push(`Checkpoint: key ground can decide from turn ${state.objectiveCheckpointTurn}.`);
+      }
+    }
+    if (state.victoryMode === 'points') {
+      const ptDefault = Math.ceil(Math.max(state.initialUP.blue, state.initialUP.red) * POINT_VICTORY_CAPTURE_RATIO);
+      const pt = Math.max(1, Number(state.loadedScenarioMeta?.pointTarget || ptDefault));
+      statusLines.push(`Point target: first side to ${pt} captured UP.`);
+    }
+    if (state.lastImport && state.lastImport.source) {
+      statusLines.push(`Loaded save: ${compactLabel(state.lastImport.source)} at ${formatClock(state.lastImport.at)}`);
+    }
+    if (state.aiBusy) statusLines.push('AI is choosing actions...');
+    if (state.combatBusy) statusLines.push('Combat resolving: dice rolling...');
+    if (state.draft.active) {
+      if (hideOpponentDuringFog) {
+        statusLines.push(
           `Draft: ${draftModeLabel(state.draft.mode)} • ${state.draft.side.toUpperCase()} placing • ` +
           `${state.draft.side.toUpperCase()} UP left ${state.draft.remaining[state.draft.side]}`
         );
       } else {
-        meta.push(
+        statusLines.push(
           `Draft: ${draftModeLabel(state.draft.mode)} • ${state.draft.side.toUpperCase()} placing • ` +
           `UP B ${state.draft.remaining.blue} / R ${state.draft.remaining.red}`
         );
       }
     }
-    meta.push(`Build ${BUILD_ID}`);
-    elHudMeta.textContent = meta.join('  ·  ');
-    renderVictoryTrack(blue, red, hideOpponentDuringFog);
-    if (elForceTotals) {
-      if (hideOpponentDuringFog) {
-        elForceTotals.textContent = 'Force score hidden during fog draft setup.';
+    if (state.mode === 'play') {
+      if (state.doctrine.commandIssuedThisTurn) {
+        if (state.doctrine.activeCommandThisTurn) {
+          const cmd = COMMAND_BY_ID.get(state.doctrine.activeCommandThisTurn);
+          if (cmd) {
+            const spend = commandActionSpend(cmd);
+            statusLines.push(
+              `Directive used: ${cmd.name} (${commandUsageLabel(cmd.persistence)}) • ` +
+              `spent ${spend} action${spend === 1 ? '' : 's'} this turn.`
+            );
+          } else {
+            statusLines.push(`Directive used: ${state.doctrine.activeCommandThisTurn}.`);
+          }
+        } else {
+          statusLines.push('Directive: intentionally skipped this turn.');
+        }
       } else {
-        elForceTotals.textContent = `Force score: Blue ${blue.up} UP, ${blue.hp} HP · Red ${red.up} UP, ${red.hp} HP`;
+        statusLines.push('Directive: optional once per turn. You may issue one any time before actions run out.');
       }
+    }
+    statusLines.push(`Build ${BUILD_ID}`);
+    if (elStatusMeta) {
+      elStatusMeta.textContent = statusLines.join('\n');
+    }
+    if (elStatusLast) {
+      elStatusLast.textContent = state.last || '-';
+    }
+
+    if (elCombatForces) {
+      elCombatForces.textContent = `Forces: Blue ${blue.up} UP / ${blue.hp} HP • Red ${red.up} UP / ${red.hp} HP`;
     }
 
     elModeBtn.textContent = state.mode === 'edit' ? 'Start Battle' : 'Back to Setup';
@@ -6049,18 +7108,45 @@ function unitColors(side) {
       elGameModeSel.disabled = (state.mode === 'play' && state.aiBusy) || (onlineModeActive() && net.connected);
     }
     const onlineMode = onlineModeActive();
+    const combatRail = document.getElementById('combatRail');
+    if (combatRail) {
+      combatRail.classList.toggle('no-online', !onlineMode);
+    }
     const guestOnlineLock = onlineMode && net.connected && !net.isHost;
-    if (elPlayerSideSel) {
-      elPlayerSideSel.value = normalizeSide(state.humanSide);
-      elPlayerSideSel.disabled = state.gameMode !== 'hvai' || state.mode === 'play' || onlineMode;
+    const ordersUnlocked = (
+      state.mode === 'edit' &&
+      !state.draft.active &&
+      (state.gameMode !== 'online' || (net.connected && !!net.peer))
+    );
+    if (!ordersUnlocked && state.doctrine.builder.open) {
+      closeDoctrineBuilder();
+    }
+    if (elOrdersPanel) {
+      elOrdersPanel.style.display = ordersUnlocked ? '' : 'none';
+    }
+    if (elOrdersReadyNote) {
+      elOrdersReadyNote.textContent = ordersUnlocked
+        ? 'Players ready. Build your 3/3/3 orders before starting the battle.'
+        : (state.gameMode === 'online'
+          ? 'Waiting for both commanders to connect. Orders unlock once the room is connected.'
+          : 'Choose game mode and scenario. Orders unlock in setup mode.');
+    }
+    const aiMode = (state.gameMode === 'hvai');
+    if (elAiDifficultyRow) {
+      elAiDifficultyRow.style.display = aiMode ? '' : 'none';
+      elAiDifficultyRow.style.opacity = '1';
     }
     if (elAiDifficultySel) {
-      const aiLock = onlineMode && net.connected;
       elAiDifficultySel.value = normalizeAiDifficulty(state.aiDifficulty);
-      elAiDifficultySel.disabled = state.gameMode !== 'hvai' || aiLock || (state.mode === 'play' && state.aiBusy);
+      elAiDifficultySel.disabled = state.aiBusy || guestOnlineLock;
     }
-    if (elVictorySel) {
-      elVictorySel.disabled = state.mode === 'play' || guestOnlineLock;
+    if (elHumanSideRow) {
+      elHumanSideRow.style.display = aiMode ? '' : 'none';
+      elHumanSideRow.style.opacity = '1';
+    }
+    if (elHumanSideSel) {
+      elHumanSideSel.value = (state.humanSide === 'red') ? 'red' : 'blue';
+      elHumanSideSel.disabled = state.aiBusy || guestOnlineLock;
     }
     const shownCode = normalizeOnlineCode(net.isHost ? net.myCode : net.remoteCode);
     elModeBtn.disabled = guestOnlineLock;
@@ -6068,27 +7154,24 @@ function unitColors(side) {
       elOnlineMyCode.textContent = shownCode || '----';
       elOnlineMyCode.classList.toggle('empty', !shownCode);
     }
-    if (elOnlineRoleHint) {
-      elOnlineRoleHint.textContent = '';
-      elOnlineRoleHint.style.display = 'none';
-    }
-    if (elOnlineStatus) {
-      elOnlineStatus.textContent = '';
-      elOnlineStatus.style.display = 'none';
-    }
+    if (elOnlineStatus) elOnlineStatus.textContent = net.status;
     if (elOnlineHostBtn) setActive(elOnlineHostBtn, onlineMode && !!net.peer && net.isHost);
     if (elOnlineJoinBtn) setActive(elOnlineJoinBtn, onlineMode && !!net.peer && !net.isHost);
-    if (elOnlineHostBtn) {
-      elOnlineHostBtn.disabled = (net.connected && net.isHost) || (net.peer && !net.isHost);
-    }
-    if (elOnlineJoinBtn) {
-      elOnlineJoinBtn.disabled = (net.connected && !net.isHost) || (net.peer && net.isHost);
-    }
-    if (elOnlineLeaveBtn) {
-      elOnlineLeaveBtn.disabled = (!net.peer && !net.connected);
-    }
+    const hostDisabled = (net.connected && net.isHost) || (net.peer && !net.isHost);
+    const joinDisabled = (net.connected && !net.isHost) || (net.peer && net.isHost);
+    const leaveDisabled = (!net.peer && !net.connected);
+    const normalizedJoinCode = normalizeOnlineCode(elOnlineJoinCode?.value || '');
     if (elOnlineJoinCode) {
-      elOnlineJoinCode.disabled = (net.connected && !net.isHost) || (net.peer && net.isHost);
+      elOnlineJoinCode.disabled = joinDisabled;
+      if (elOnlineJoinCode.value !== normalizedJoinCode) elOnlineJoinCode.value = normalizedJoinCode;
+    }
+    if (elOnlineHostBtn) elOnlineHostBtn.disabled = hostDisabled;
+    if (elOnlineJoinBtn) elOnlineJoinBtn.disabled = joinDisabled;
+    if (elOnlineLeaveBtn) elOnlineLeaveBtn.disabled = leaveDisabled;
+    if (state.loadedScenarioName) {
+      updateScenarioSidesLegend(state.loadedScenarioName);
+    } else {
+      updateScenarioSidesLegend(elScenarioSel?.value || '');
     }
     if (elForwardAxisSel) {
       elForwardAxisSel.value = normalizeForwardAxis(state.forwardAxis);
@@ -6159,6 +7242,8 @@ function unitColors(side) {
       if (elScenarioLessonSel) elScenarioLessonSel.disabled = true;
       if (elScenarioSizeSel) elScenarioSizeSel.disabled = true;
       if (elScenarioTerrainSel) elScenarioTerrainSel.disabled = true;
+      if (elLoadScenarioBtn) elLoadScenarioBtn.disabled = true;
+      if (elClearUnitsBtn) elClearUnitsBtn.disabled = true;
       if (elExportStateBtn) elExportStateBtn.disabled = true;
       if (elImportStateBtn) elImportStateBtn.disabled = true;
     }
@@ -6168,49 +7253,70 @@ function unitColors(side) {
     }
     updateDraftStatusUi();
 
-    const selectedLineAdvancePreview = (() => {
-      if (state.mode !== 'play' || !state.selectedKey) return null;
-      const u = unitsByHex.get(state.selectedKey);
-      if (!u || u.side !== state.side || u.type !== 'inf') return null;
-      return lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
-    })();
-
     elEndTurnBtn.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
     if (elLineAdvanceBtn) {
-      elLineAdvanceBtn.disabled = !(selectedLineAdvancePreview && selectedLineAdvancePreview.anyMoves);
+      elLineAdvanceBtn.disabled = !canIssueLineAdvance();
     }
     if (elLineAdvanceDirSel) {
-      const options = selectedLineAdvancePreview?.directionOptions || [];
-      if (options.length > 0) {
-        if (state.lineAdvanceDir !== selectedLineAdvancePreview.advanceDir) {
-          state.lineAdvanceDir = selectedLineAdvancePreview.advanceDir;
-        }
-        elLineAdvanceDirSel.innerHTML = '';
-        for (const d of options) {
-          const opt = document.createElement('option');
-          opt.value = d;
-          const plan = selectedLineAdvancePreview.directionPlans?.[d];
-          const moved = Array.isArray(plan?.moves) ? plan.moves.length : 0;
-          const total = selectedLineAdvancePreview.formation.length;
-          opt.textContent = `${lineAdvanceDirectionLabel(d)} (${moved}/${total})`;
-          elLineAdvanceDirSel.appendChild(opt);
-        }
-        elLineAdvanceDirSel.value = selectedLineAdvancePreview.advanceDir || options[0];
-        elLineAdvanceDirSel.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
-      } else {
-        elLineAdvanceDirSel.innerHTML = '';
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = 'Select INF line';
-        elLineAdvanceDirSel.appendChild(opt);
-        elLineAdvanceDirSel.value = '';
-        elLineAdvanceDirSel.disabled = true;
-      }
+      elLineAdvanceDirSel.value = normalizeLineAdvanceDirection(state.lineAdvanceDirection);
+      elLineAdvanceDirSel.disabled = state.mode !== 'play' || state.gameOver || isAiTurnActive();
     }
 
-    // Keep combat rail columns anchored at their headers.
-    resetCombatRailScrollPositions();
+    const canIssueCommandNow =
+      (state.mode === 'play') &&
+      !state.gameOver &&
+      !isAiTurnActive() &&
+      !state.doctrine.commandIssuedThisTurn &&
+      state.actsUsed < ACT_LIMIT;
 
+    if (elCommandSel) {
+      if (state.mode === 'play') populateTurnCommandSelect();
+      elCommandSel.disabled = !canIssueCommandNow;
+    }
+    if (elCommandUseBtn) {
+      elCommandUseBtn.disabled = !canIssueCommandNow || !elCommandSel?.value;
+    }
+    if (elCommandSkipBtn) {
+      elCommandSkipBtn.disabled = !canIssueCommandNow;
+    }
+    if (elDoctrineOpenTurnBtn) {
+      elDoctrineOpenTurnBtn.disabled = false;
+      elDoctrineOpenTurnBtn.textContent = (state.mode === 'edit')
+        ? 'War Council'
+        : 'War Council (3/3/3)';
+    }
+    if (elOpenOrdersKeyBtn) {
+      const keySide = (state.side === 'red') ? 'red' : 'blue';
+      const hasDoctrine = (doctrineStateForSide(keySide)?.loadout?.length || 0) > 0;
+      elOpenOrdersKeyBtn.disabled = !hasDoctrine;
+    }
+    if (elCommandPhaseNote) {
+      elCommandPhaseNote.textContent = state.doctrine.commandIssuedThisTurn
+        ? (state.doctrine.activeCommandThisTurn
+          ? `Directive committed: ${commandLabel(state.doctrine.activeCommandThisTurn)}`
+          : 'Directive skipped for this turn.')
+        : (state.actsUsed >= ACT_LIMIT
+          ? 'No actions left this turn.'
+          : 'Optional: issue one directive any time this turn, or continue moving units.');
+    }
+
+    if (elDoctrineSummary) {
+      const blueCount = doctrineStateForSide('blue')?.loadout?.length || 0;
+      const redCount = doctrineStateForSide('red')?.loadout?.length || 0;
+      elDoctrineSummary.textContent = `Doctrine loaded · Blue ${blueCount}/9 · Red ${redCount}/9.`;
+    }
+    if (elDoctrineOpenBtn) elDoctrineOpenBtn.disabled = !ordersUnlocked || guestOnlineLock;
+    if (elDoctrineOpenHeroBtn) elDoctrineOpenHeroBtn.disabled = !ordersUnlocked || guestOnlineLock;
+    if (elDoctrineRecommendedBtn) elDoctrineRecommendedBtn.disabled = !ordersUnlocked || guestOnlineLock;
+    if (elDoctrineRandomBtn) elDoctrineRandomBtn.disabled = !ordersUnlocked || guestOnlineLock;
+    if (elDoctrineBlankBtn) elDoctrineBlankBtn.disabled = !ordersUnlocked || guestOnlineLock;
+    if (elDoctrineScenarioBtn) elDoctrineScenarioBtn.disabled = !ordersUnlocked || guestOnlineLock;
+    if (elOrdersViewBlueBtn) elOrdersViewBlueBtn.disabled = !ordersUnlocked;
+    if (elOrdersViewRedBtn) elOrdersViewRedBtn.disabled = !ordersUnlocked;
+    renderOrdersExplainList();
+    renderDoctrineIntel();
+
+    syncLayoutChromeHeights();
     updateInspector();
     draw();
 
@@ -6220,7 +7326,7 @@ function unitColors(side) {
   }
 
   function isAiControlledSide(side) {
-    return state.gameMode === 'hvai' && normalizeSide(side) === aiSide();
+    return state.gameMode === 'hvai' && side === aiControlledSide();
   }
 
   function isAiTurnActive() {
@@ -6232,15 +7338,40 @@ function unitColors(side) {
       clearTimeout(state.aiTimer);
       state.aiTimer = null;
     }
+    state.aiQueuedFollowup = null;
     state.aiBusy = false;
   }
 
-  function scheduleAiStep(delayMs = AI_STEP_DELAY_MS) {
+  function scheduleAiStep(delayMs = aiTimingForDifficulty(state.aiDifficulty).stepMs, handler = runAiTurnStep) {
     if (state.aiTimer) clearTimeout(state.aiTimer);
     state.aiTimer = setTimeout(() => {
       state.aiTimer = null;
-      runAiTurnStep();
+      handler();
     }, delayMs);
+  }
+
+  function aiPostActionDelayMs(plan) {
+    const timing = aiTimingForDifficulty(state.aiDifficulty);
+    let delay = Math.max(180, timing.stepMs || 0);
+
+    if (plan?.type === 'move') {
+      delay = Math.max(delay, (timing.stepMs || 0) + (timing.movePauseMs || 0));
+    }
+    if (plan?.type === 'attack') {
+      delay = Math.max(delay, timing.combatPauseMs || 0);
+    }
+
+    const moveRemaining = Math.max(0, (state.moveAnimUntil || 0) - Date.now());
+    if (moveRemaining > 0) {
+      delay = Math.max(delay, moveRemaining + 120);
+    }
+
+    const combatRemaining = Math.max(0, (state.combatBusyUntil || 0) - Date.now());
+    if (combatRemaining > 0) {
+      delay = Math.max(delay, combatRemaining + 140);
+    }
+
+    return delay;
   }
 
   function nearestEnemyDistance(fromKey, side) {
@@ -6258,140 +7389,40 @@ function unitColors(side) {
     return best;
   }
 
-  function enemyPotentialDiceAt(targetKey, friendlySide) {
-    let total = 0;
-    let melee = 0;
-    let ranged = 0;
-    const attackers = [];
-    for (const [attackerKey, u] of unitsByHex) {
-      if (u.side === friendlySide) continue;
-      const prof = attackDiceFor(attackerKey, targetKey, u);
-      if (!prof) continue;
-      const dice = Math.max(1, Number(prof.dice || prof.baseDice || 1));
-      total += dice;
-      if (prof.kind === 'melee') melee += dice;
-      else ranged += dice;
-      attackers.push(attackerKey);
-    }
-    return { total, melee, ranged, attackers };
-  }
-
-  function mostThreatenedGeneral(side) {
-    let worst = null;
-    for (const [hk, u] of unitsByHex) {
-      if (u.side !== side || u.type !== 'gen') continue;
-      const threat = enemyPotentialDiceAt(hk, side);
-      const maxHp = unitMaxHp('gen', u.quality);
-      const hpLoss = Math.max(0, maxHp - u.hp);
-      const pressure = (threat.total * 2.2) + (threat.melee * 2.8) + (hpLoss * 2.5);
-      if (!worst || pressure > worst.pressure) {
-        worst = { key: hk, pressure, threat };
-      }
-    }
-    return worst;
-  }
-
-  function sideCommandCoverageRatio(side, moveOverride = null) {
-    const sources = [];
-    const controlled = [];
-
-    for (const [hk, u] of unitsByHex) {
-      if (u.side !== side) continue;
-      let sourceKey = hk;
-      if (moveOverride && u.id === moveOverride.unitId && hk === moveOverride.fromKey) {
-        sourceKey = moveOverride.toKey;
-      }
-
-      if (isCommandSourceUnit(u)) {
-        const sh = board.byKey.get(sourceKey);
-        if (sh) sources.push({ q: sh.q, r: sh.r, radius: commandRadiusForUnit(u) });
-      }
-
-      if ((u.type === 'inf' || u.type === 'arc' || u.type === 'skr') && u.quality !== 'veteran') {
-        const th = board.byKey.get(hk);
-        if (th) controlled.push({ q: th.q, r: th.r });
-      }
-    }
-
-    if (controlled.length === 0) return 1;
-    if (sources.length === 0) return 0;
-
-    let covered = 0;
-    for (const t of controlled) {
-      const inRange = sources.some(s => axialDistance(t.q, t.r, s.q, s.r) <= s.radius);
-      if (inRange) covered += 1;
-    }
-    return covered / controlled.length;
-  }
-
-  function aiAttackThresholdForUnit(unit, difficultyLevel = state.aiDifficulty) {
-    const level = normalizeAiDifficulty(difficultyLevel);
-    if (level === 'levy' || !unit) return -Infinity;
-    if (unit.type === 'gen') return level === 'legion' ? 12 : 6;
-    return level === 'legion' ? -1 : -4;
-  }
-
-  function aiGeneralThreatContext(side) {
-    const threatened = mostThreatenedGeneral(side);
-    const threateningEnemies = new Set();
-    if (threatened && threatened.key) {
-      for (const [ek, eu] of unitsByHex) {
-        if (eu.side === side) continue;
-        if (attackDiceFor(ek, threatened.key, eu)) threateningEnemies.add(ek);
-      }
-    }
-    return {
-      threatenedGeneralKey: threatened ? threatened.key : null,
-      threatenedGeneralPressure: threatened ? threatened.pressure : 0,
-      threateningEnemies,
-      commandCoverage: sideCommandCoverageRatio(side),
-    };
-  }
-
-  function aiAttackScore(attackerKey, targetKey, attackerUnit, aiCtx = null) {
-    const attackProf = attackDiceFor(attackerKey, targetKey, attackerUnit);
-    if (!attackProf) return -Infinity;
+  function aiAttackScore(attackerKey, targetKey, attackerUnit, difficulty = 'standard') {
+    const prof = attackDiceFor(attackerKey, targetKey, attackerUnit);
+    if (!prof) return -Infinity;
 
     const target = unitsByHex.get(targetKey);
     if (!target) return -Infinity;
-    const ai = aiDifficultyProfile();
 
     let score = 0;
-    score += attackProf.dice * 6;
-    if (attackProf.kind === 'melee') score += 2;
-    if (target.type === 'gen') score += 20 + ai.genFocusBonus;
+    score += prof.dice * 6;
+    if (prof.kind === 'melee') score += 2;
+    if (target.type === 'gen') score += 20;
     score += unitUpValue(target.type, target.quality);
     score += Math.max(0, 3 - target.hp) * 2;
     if (!retreatPick(attackerKey, targetKey)) score += 2;
-    const expectedHits = attackProf.dice * 0.40;
-    if (expectedHits >= target.hp) score += 8;
 
-    // If the target is one of the enemies currently threatening our general, prioritize it.
-    if (aiCtx && aiCtx.threateningEnemies && aiCtx.threateningEnemies.has(targetKey)) {
-      score += 12;
+    const level = normalizeAiDifficulty(difficulty);
+    if (level === 'easy') {
+      // Easy AI often misses strategic command targets.
+      if (target.type === 'gen') score -= 10;
+      if (prof.kind === 'ranged') score += 1;
+    } else if (level === 'hard') {
+      if (target.type === 'gen') score += 8;
+      if (target.hp <= 2) score += 6;
+      if (prof.kind === 'melee' && !retreatPick(attackerKey, targetKey)) score += 3;
     }
-
-    // Generals should not trade themselves cheaply.
-    const selfThreat = enemyPotentialDiceAt(attackerKey, attackerUnit.side);
-    if (attackerUnit.type === 'gen') {
-      score -= selfThreat.total * 6;
-      score -= selfThreat.melee * 5;
-      if (target.type !== 'gen' && target.hp > 1) score -= 7;
-    } else {
-      score -= selfThreat.melee * 0.4;
-    }
-
-    score *= ai.attackScale;
-    score += (Math.random() * 2 - 1) * ai.attackNoise;
     return score;
   }
 
-  function bestAiAttackFrom(attackerKey, attackerUnit, aiCtx = null) {
+  function bestAiAttackFrom(attackerKey, attackerUnit, difficulty = 'standard') {
     let bestTargetKey = null;
     let bestScore = -Infinity;
     const targets = computeAttackTargets(attackerKey, attackerUnit);
     for (const targetKey of targets) {
-      const score = aiAttackScore(attackerKey, targetKey, attackerUnit, aiCtx);
+      const score = aiAttackScore(attackerKey, targetKey, attackerUnit, difficulty);
       if (score > bestScore) {
         bestScore = score;
         bestTargetKey = targetKey;
@@ -6401,9 +7432,9 @@ function unitColors(side) {
     return { targetKey: bestTargetKey, score: bestScore };
   }
 
-  function aiMoveScore(fromKey, destKey, unit, actCtx, aiCtx = null) {
-    const ai = aiDifficultyProfile();
+  function aiMoveScore(fromKey, destKey, unit, actCtx, difficulty = 'standard') {
     let score = 0;
+    const level = normalizeAiDifficulty(difficulty);
 
     const fromDist = nearestEnemyDistance(fromKey, unit.side);
     const toDist = nearestEnemyDistance(destKey, unit.side);
@@ -6412,8 +7443,12 @@ function unitColors(side) {
       score += Math.max(0, 8 - toDist) * 0.5;
     }
 
-    const follow = bestAiAttackFrom(destKey, unit, aiCtx);
-    if (follow) score += 4 + follow.score * 0.2;
+    const follow = bestAiAttackFrom(destKey, unit, difficulty);
+    if (follow) {
+      if (level === 'easy') score += 1.5 + follow.score * 0.1;
+      else if (level === 'hard') score += 6 + follow.score * 0.34;
+      else score += 4 + follow.score * 0.2;
+    }
 
     if (isEngaged(destKey, unit.side)) score += 2;
 
@@ -6421,7 +7456,7 @@ function unitColors(side) {
       const inCmd = inCommandAt(destKey, unit.side);
       if (!inCmd) {
         // Prefer not drifting command-dependent units away from command links.
-        score -= 3;
+        score -= (level === 'hard') ? 6 : 3;
       } else if (actCtx.inCommandStart) {
         score += 0.5;
       }
@@ -6434,43 +7469,13 @@ function unitColors(side) {
       if (h.terrain === 'rough' && unit.type === 'cav') score -= 0.75;
     }
 
-    const exposureBefore = enemyPotentialDiceAt(fromKey, unit.side);
-    const exposureAfter = enemyPotentialDiceAt(destKey, unit.side);
-    score += (exposureBefore.total - exposureAfter.total) * (unit.type === 'gen' ? 5.0 : 1.2);
-
-    if (unit.type === 'gen') {
-      const toDist = nearestEnemyDistance(destKey, unit.side);
-      score -= exposureAfter.total * 8;
-      score -= exposureAfter.melee * 8;
-      if (toDist <= 1) score -= 18;
-      else if (toDist <= 2) score -= 8;
+    if (level === 'easy') {
+      if (Number.isFinite(toDist) && toDist <= 2) score -= 1.5;
+    } else if (level === 'hard') {
+      if (Number.isFinite(toDist) && toDist <= 2) score += 1.25;
+      if (unit.type === 'gen' && isEngaged(destKey, unit.side)) score -= 6;
     }
 
-    if (isCommandSourceUnit(unit)) {
-      const covBefore = aiCtx ? aiCtx.commandCoverage : sideCommandCoverageRatio(unit.side);
-      const covAfter = sideCommandCoverageRatio(unit.side, {
-        unitId: unit.id,
-        fromKey,
-        toKey: destKey,
-      });
-      const covDelta = covAfter - covBefore;
-      score += covDelta * (unit.type === 'gen' ? 90 : 60);
-    }
-
-    if (aiCtx && aiCtx.threatenedGeneralKey && unit.type !== 'gen') {
-      const gHex = board.byKey.get(aiCtx.threatenedGeneralKey);
-      const fromHex = board.byKey.get(fromKey);
-      const destHex = board.byKey.get(destKey);
-      if (gHex && fromHex && destHex) {
-        const dFrom = axialDistance(fromHex.q, fromHex.r, gHex.q, gHex.r);
-        const dTo = axialDistance(destHex.q, destHex.r, gHex.q, gHex.r);
-        if (dTo < dFrom) score += 2.5;
-        if (dTo <= 1) score += 6;
-      }
-    }
-
-    score *= ai.moveScale;
-    score += (Math.random() * 2 - 1) * ai.moveNoise;
     return score;
   }
 
@@ -6482,15 +7487,9 @@ function unitColors(side) {
     return null;
   }
 
-  function chooseAiActionPlan() {
-    const ai = aiDifficultyProfile();
-    const aiCtx = aiGeneralThreatContext(state.side);
-    let bestAttack = null;
-    let bestAttackScore = -Infinity;
-
-    let bestMove = null;
-    let bestMoveScore = -Infinity;
-
+  function collectAiCandidatePlans(difficulty = 'standard') {
+    const attacks = [];
+    const moves = [];
     let passPlan = null;
 
     for (const [fromKey, u] of unitsByHex) {
@@ -6498,16 +7497,15 @@ function unitColors(side) {
 
       if (!passPlan) passPlan = { type: 'pass', fromKey };
 
-      const attack = bestAiAttackFrom(fromKey, u, aiCtx);
-      if (attack && attack.score > bestAttackScore) {
-        bestAttackScore = attack.score;
-        bestAttack = {
+      const attackTargets = computeAttackTargets(fromKey, u);
+      for (const targetKey of attackTargets) {
+        const score = aiAttackScore(fromKey, targetKey, u, difficulty);
+        attacks.push({
           type: 'attack',
           fromKey,
-          targetKey: attack.targetKey,
-          attackerType: u.type,
-          score: attack.score,
-        };
+          targetKey,
+          score,
+        });
       }
 
       const actCtx = {
@@ -6515,50 +7513,124 @@ function unitColors(side) {
       };
       const moveTargets = computeMoveTargets(fromKey, u, actCtx);
       for (const destKey of moveTargets) {
-        const score = aiMoveScore(fromKey, destKey, u, actCtx, aiCtx);
-        if (score > bestMoveScore) {
-          bestMoveScore = score;
-          bestMove = {
-            type: 'move',
-            fromKey,
-            destKey,
-            moverType: u.type,
-            score,
-          };
-        }
+        const score = aiMoveScore(fromKey, destKey, u, actCtx, difficulty);
+        moves.push({
+          type: 'move',
+          fromKey,
+          destKey,
+          score,
+        });
       }
     }
 
-    if (bestAttack) {
-      const atkUnit = unitsByHex.get(bestAttack.fromKey);
-      const threshold = aiAttackThresholdForUnit(atkUnit, state.aiDifficulty);
-      if (bestAttack.score < threshold) bestAttack = null;
-    }
-    if (bestMove && bestMove.moverType === 'gen' && bestMove.score < 0) {
-      // If every general move is a net blunder, prefer not to commit that move.
-      bestMove = null;
+    return { attacks, moves, passPlan };
+  }
+
+  function chooseAiActionPlanEasy() {
+    const { attacks, moves, passPlan } = collectAiCandidatePlans('easy');
+    const pool = [...attacks, ...moves];
+    if (!pool.length) return passPlan;
+
+    // Easy AI intentionally picks from weaker options more often.
+    pool.sort((a, b) => a.score - b.score);
+    const weakPoolSize = Math.max(1, Math.ceil(pool.length * 0.55));
+    const weakIndex = Math.floor(Math.random() * weakPoolSize);
+    if (passPlan && Math.random() < 0.18) return passPlan;
+    return pool[weakIndex];
+  }
+
+  function chooseAiActionPlanStandard() {
+    const { attacks, moves, passPlan } = collectAiCandidatePlans('standard');
+    let bestAttack = null;
+    let bestAttackScore = -Infinity;
+    for (const a of attacks) {
+      if (a.score > bestAttackScore) {
+        bestAttackScore = a.score;
+        bestAttack = a;
+      }
     }
 
-    if (passPlan && state.actsUsed > 0 && Math.random() < ai.passChance) {
-      return passPlan;
+    let bestMove = null;
+    let bestMoveScore = -Infinity;
+    for (const m of moves) {
+      if (m.score > bestMoveScore) {
+        bestMoveScore = m.score;
+        bestMove = m;
+      }
     }
 
-    if (bestAttack && bestMove) {
-      const attackAdj = bestAttack.score + ai.attackBias;
-      const moveAdj = bestMove.score + ai.moveBias;
-      return attackAdj >= moveAdj ? bestAttack : bestMove;
-    }
     if (bestAttack) return bestAttack;
     if (bestMove) return bestMove;
     return passPlan;
   }
 
-  function executeAiActionPlan(plan) {
+  function chooseAiActionPlanHard() {
+    const { attacks, moves, passPlan } = collectAiCandidatePlans('hard');
+    const all = [...attacks, ...moves];
+    if (!all.length) return passPlan;
+
+    all.sort((a, b) => b.score - a.score);
+    const topCount = Math.min(3, all.length);
+    return all[Math.floor(Math.random() * topCount)];
+  }
+
+  function chooseAiActionPlan() {
+    const level = normalizeAiDifficulty(state.aiDifficulty);
+    if (level === 'easy') return chooseAiActionPlanEasy();
+    if (level === 'hard') return chooseAiActionPlanHard();
+    return chooseAiActionPlanStandard();
+  }
+
+  function chooseAiDoctrineCommandId(opts = {}) {
+    const remainingActions = Math.max(0, ACT_LIMIT - state.actsUsed);
+    const maxCostRaw = Number.isFinite(opts.maxCost) ? Number(opts.maxCost) : remainingActions;
+    const maxCost = Math.max(1, Math.min(ACT_LIMIT, Math.trunc(maxCostRaw)));
+
+    let legal = legalCommandsForSide(state.side).filter((cmd) => cmd.cost <= maxCost);
+    if (!legal.length) return null;
+
+    const actionsUsed = Number.isFinite(opts.actionsUsed) ? Math.max(0, Math.trunc(opts.actionsUsed)) : state.actsUsed;
+    const level = normalizeAiDifficulty(state.aiDifficulty);
+
+    // Opening preference: keep command spend low so AI still has room for multiple unit activations.
+    if (actionsUsed <= 0) {
+      const costOne = legal.filter((cmd) => cmd.cost === 1);
+      if (costOne.length) legal = costOne;
+    }
+
+    const sorted = cloneArray(legal).sort((a, b) => {
+      if (level === 'hard') return (Math.abs(2 - a.cost) - Math.abs(2 - b.cost)) || a.name.localeCompare(b.name);
+      if (level === 'easy') return a.cost - b.cost || a.name.localeCompare(b.name);
+      return a.cost - b.cost || a.name.localeCompare(b.name);
+    });
+    return sorted[0]?.id || null;
+  }
+
+  function shouldAiIssueDirectiveNow(cmd, actionsUsed = state.actsUsed) {
+    if (!cmd) return false;
+    const level = normalizeAiDifficulty(state.aiDifficulty);
+    const used = Math.max(0, Math.trunc(actionsUsed));
+
+    // Keep AI turn readability high: only consider directives at turn start.
+    if (used > 0) return false;
+
+    // Opening command use is intentionally uncommon to avoid "AI only moved twice"
+    // confusion unless a directive clearly helps.
+    let chance = (level === 'hard') ? 0.22 : (level === 'easy' ? 0.08 : 0.15);
+    if (cmd.cost === 1) chance += 0.05;
+    chance = Math.max(0, Math.min(0.75, chance));
+    return Math.random() < chance;
+  }
+
+  function executeAiActionPlan(plan, options = {}) {
     if (!plan) return false;
     const actsBefore = state.actsUsed;
+    const alreadySelected = !!options.alreadySelected;
 
-    selectUnit(plan.fromKey);
-    if (state.selectedKey !== plan.fromKey) return false;
+    if (!alreadySelected || state.selectedKey !== plan.fromKey) {
+      selectUnit(plan.fromKey);
+      if (state.selectedKey !== plan.fromKey) return false;
+    }
 
     if (plan.type === 'attack') {
       if (!state._attackTargets || !state._attackTargets.has(plan.targetKey)) {
@@ -6584,18 +7656,25 @@ function unitColors(side) {
         let bestTargetKey = null;
         let bestScore = -Infinity;
         if (movedUnit) {
-          const aiCtx = aiGeneralThreatContext(movedUnit.side);
           for (const targetKey of state._attackTargets) {
-            const score = aiAttackScore(plan.destKey, targetKey, movedUnit, aiCtx);
+            const score = aiAttackScore(plan.destKey, targetKey, movedUnit, state.aiDifficulty);
             if (score > bestScore) {
               bestScore = score;
               bestTargetKey = targetKey;
             }
           }
         }
-        const attackThreshold = aiAttackThresholdForUnit(movedUnit, state.aiDifficulty);
-        if (bestTargetKey && state._attackTargets.has(bestTargetKey) && bestScore >= attackThreshold) {
-          attackFromSelection(bestTargetKey);
+        if (bestTargetKey && state._attackTargets.has(bestTargetKey)) {
+          if (isAiTurnActive()) {
+            const timing = aiTimingForDifficulty(state.aiDifficulty);
+            state.aiQueuedFollowup = {
+              fromKey: plan.destKey,
+              targetKey: bestTargetKey,
+              delayMs: Math.max(180, timing.movePauseMs || 0),
+            };
+          } else {
+            attackFromSelection(bestTargetKey);
+          }
         } else {
           clearSelection();
           updateHud();
@@ -6617,11 +7696,136 @@ function unitColors(side) {
     return false;
   }
 
+  function beginAiPlanExecution(plan) {
+    if (!plan) return false;
+    const timing = aiTimingForDifficulty(state.aiDifficulty);
+    const intentMs = Math.max(
+      120,
+      plan.type === 'pass'
+        ? Math.floor((timing.intentMs || 260) * 0.7)
+        : (timing.intentMs || 260)
+    );
+
+    clearSelection();
+    selectUnit(plan.fromKey);
+    if (state.selectedKey !== plan.fromKey) return false;
+
+    const u = unitsByHex.get(plan.fromKey);
+    const unitDef = u ? UNIT_BY_ID.get(u.type) : null;
+    const unitLabel = u ? `${u.side.toUpperCase()} ${unitDef ? unitDef.abbrev : u.type}` : 'unit';
+    if (plan.type === 'attack') {
+      log(`AI lining up attack with ${unitLabel}...`);
+    } else if (plan.type === 'move') {
+      log(`AI maneuvering ${unitLabel}...`);
+    } else {
+      log(`AI considering pass with ${unitLabel}...`);
+    }
+    updateHud();
+
+    scheduleAiStep(intentMs, () => {
+      if (!isAiTurnActive()) {
+        stopAiLoop();
+        updateHud();
+        return;
+      }
+
+      const acted = executeAiActionPlan(plan, { alreadySelected: true });
+      if (!isAiTurnActive()) {
+        stopAiLoop();
+        updateHud();
+        return;
+      }
+
+      if (!acted) {
+        // Fallback once: try pass with any legal unit, else end turn.
+        if (plan.type !== 'pass') {
+          const passPlan = chooseAiPassPlan();
+          if (passPlan && beginAiPlanExecution(passPlan)) return;
+        }
+        stopAiLoop();
+        endTurn();
+        return;
+      }
+
+      if (state.actsUsed >= ACT_LIMIT) {
+        stopAiLoop();
+        endTurn();
+        return;
+      }
+
+      if (state.aiQueuedFollowup) {
+        const queued = state.aiQueuedFollowup;
+        state.aiQueuedFollowup = null;
+        scheduleAiStep(queued.delayMs, () => {
+          if (!isAiTurnActive()) {
+            stopAiLoop();
+            updateHud();
+            return;
+          }
+
+          if (state.selectedKey === queued.fromKey && state._attackTargets && state._attackTargets.has(queued.targetKey)) {
+            setAttackFlash(queued.targetKey, ATTACK_FLASH_MS + 180);
+            attackFromSelection(queued.targetKey);
+          } else {
+            clearSelection();
+            updateHud();
+          }
+
+          if (!isAiTurnActive()) {
+            stopAiLoop();
+            updateHud();
+            return;
+          }
+          if (state.actsUsed >= ACT_LIMIT) {
+            stopAiLoop();
+            endTurn();
+            return;
+          }
+          scheduleAiStep(aiPostActionDelayMs({ type: 'attack' }));
+        });
+        return;
+      }
+
+      scheduleAiStep(aiPostActionDelayMs(plan));
+    });
+
+    return true;
+  }
+
   function runAiTurnStep() {
     if (!isAiTurnActive()) {
       stopAiLoop();
       updateHud();
       return;
+    }
+
+    const remainingActions = Math.max(0, ACT_LIMIT - state.actsUsed);
+    // Keep AI turns legible:
+    // - only consider directives at action 0
+    // - only allow low-cost directives automatically
+    // - always preserve room for at least two unit activations afterward
+    if (!state.doctrine.commandIssuedThisTurn && state.actsUsed === 0 && remainingActions > 2) {
+      const commandId = chooseAiDoctrineCommandId({
+        maxCost: 1,
+        actionsUsed: state.actsUsed,
+      });
+      const cmd = commandId ? COMMAND_BY_ID.get(commandId) : null;
+      if (cmd && shouldAiIssueDirectiveNow(cmd, state.actsUsed) && issueDoctrineCommand(commandId)) {
+        const spend = commandActionSpend(cmd);
+        log(`AI directive committed: ${cmd.name} (spent ${spend} action${spend === 1 ? '' : 's'}).`);
+        if (!isAiTurnActive()) {
+          stopAiLoop();
+          updateHud();
+          return;
+        }
+        if (state.actsUsed >= ACT_LIMIT) {
+          stopAiLoop();
+          endTurn();
+          return;
+        }
+        scheduleAiStep(Math.max(160, aiTimingForDifficulty(state.aiDifficulty).intentMs || 240));
+        return;
+      }
     }
 
     if (state.actsUsed >= ACT_LIMIT) {
@@ -6637,30 +7841,14 @@ function unitColors(side) {
       return;
     }
 
-    const acted = executeAiActionPlan(plan);
-    if (!isAiTurnActive()) {
-      stopAiLoop();
-      updateHud();
-      return;
-    }
-
-    if (!acted) {
-      // Fallback once: try a pass from any legal unit, then give up turn.
+    if (!beginAiPlanExecution(plan)) {
       const passPlan = chooseAiPassPlan();
-      if (!passPlan || !executeAiActionPlan(passPlan)) {
+      if (!passPlan || !beginAiPlanExecution(passPlan)) {
         stopAiLoop();
         endTurn();
         return;
       }
     }
-
-    if (state.actsUsed >= ACT_LIMIT) {
-      stopAiLoop();
-      endTurn();
-      return;
-    }
-
-    scheduleAiStep();
   }
 
   function maybeStartAiTurn() {
@@ -6672,9 +7860,9 @@ function unitColors(side) {
 
     state.aiBusy = true;
     clearSelection();
-    log(`AI turn: ${state.side.toUpperCase()} is acting...`);
+    log(`AI turn: ${state.side.toUpperCase()} is acting (${aiDifficultyLabel(state.aiDifficulty)}).`);
     updateHud();
-    scheduleAiStep(AI_START_DELAY_MS);
+    scheduleAiStep(aiTimingForDifficulty(state.aiDifficulty).startMs);
   }
 
   // --- Rules helpers
@@ -6682,115 +7870,36 @@ function unitColors(side) {
     return unitsByHex.has(hk);
   }
 
-  function isDifficultTerrain(terrainId) {
-    return terrainId === 'woods' || terrainId === 'hills' || terrainId === 'rough';
+  function doctrineTurnValue(mapName, unitId) {
+    const map = state.doctrine.effects[mapName] || {};
+    return Number(map[unitId] || 0);
   }
 
-  function isRunnerSlowTerrain(terrainId) {
-    return terrainId === 'woods' || terrainId === 'hills';
+  function doctrineTurnFlag(mapName, unitId) {
+    const map = state.doctrine.effects[mapName] || {};
+    return !!map[unitId];
   }
 
-  function isSkirmisherStepStopTerrain(terrainId) {
-    return terrainId === 'woods';
+  function doctrineValueForUnit(mapName, unitId, side = null) {
+    return doctrineTurnValue(mapName, unitId) + doctrineLongEffectValue(mapName, unitId, side);
   }
 
-  function isSkirmisherStartSlowTerrain(terrainId) {
-    return terrainId === 'woods';
+  function doctrineFlagForUnit(mapName, unitId, side = null) {
+    return doctrineTurnFlag(mapName, unitId) || doctrineLongEffectFlag(mapName, unitId, side);
   }
 
-  function isHillClimbStopUnit(unitType) {
-    return unitType === 'inf' || unitType === 'arc' || unitType === 'gen';
-  }
-
-  function canEnterTerrainFrom(unitType, fromTerrainId, toTerrainId) {
-    if (toTerrainId === 'water') return false;
-    // Cavalry can only be on hills if they already started the step on hills.
-    if (unitType === 'cav' && toTerrainId === 'hills' && fromTerrainId !== 'hills') return false;
-    return true;
-  }
-
-  function unitMoveIsPausedThisTurn(unit) {
-    if (!unit) return false;
-    const until = Number(unit.movePauseUntilTurn || 0);
-    return Number.isFinite(until) && until >= state.turn;
-  }
-
-  function unitActionIsPausedThisTurn(unit) {
-    if (!unit) return false;
-    const until = Number(unit.actionPauseUntilTurn || 0);
-    return Number.isFinite(until) && until >= state.turn;
-  }
-
-  function movementPauseAppliesForEntry(unitType, terrainId) {
-    if (terrainId === 'clear' || terrainId === 'water') return false;
-    if (terrainId === 'rough') return true; // global rough friction
-    if (unitType === 'inf' && (terrainId === 'woods' || terrainId === 'hills')) return true;
-    if (unitType === 'cav' && (terrainId === 'woods' || terrainId === 'hills')) return true;
-    if (unitType === 'arc' && terrainId === 'woods') return true;
-    if (unitType === 'iat' && terrainId === 'woods') return true;
-    return false;
-  }
-
-  function markMovementPauseIfNeeded(unit, destKey) {
-    if (!unit || !destKey) return false;
-    const destHex = board.byKey.get(destKey);
-    if (!destHex) return false;
-    if (!movementPauseAppliesForEntry(unit.type, destHex.terrain)) return false;
-    unit.movePauseUntilTurn = state.turn + 1;
-    if (destHex.terrain === 'rough') unit.actionPauseUntilTurn = state.turn + 1;
-    return true;
-  }
-
-  function movementPauseTerrainFromPath(unit, pathKeys) {
-    if (!unit || !Array.isArray(pathKeys) || pathKeys.length < 2) return null;
-    for (let i = 1; i < pathKeys.length; i++) {
-      const h = board.byKey.get(pathKeys[i]);
-      if (!h) continue;
-      if (movementPauseAppliesForEntry(unit.type, h.terrain)) return h.terrain;
-    }
-    return null;
-  }
-
-  function markMovementPauseFromPathIfNeeded(unit, pathKeys) {
-    const terrainId = movementPauseTerrainFromPath(unit, pathKeys);
-    if (!terrainId) return null;
-    unit.movePauseUntilTurn = state.turn + 1;
-    if (terrainId === 'rough') unit.actionPauseUntilTurn = state.turn + 1;
-    return terrainId;
+  function doctrineFlagForSide(mapName, side) {
+    const map = state.doctrine.effects[mapName] || {};
+    if (map[side]) return true;
+    return doctrineLongEffectFlag(mapName, null, side);
   }
 
   function terrainMoveCost(unitType, terrainId) {
-    if (terrainId === 'water') return Infinity;
+    if (terrainId === 'water' || terrainId === 'mountains') return Infinity;
     if (terrainId === 'clear') return 1;
-    if (terrainId === 'woods') {
-      if (unitType === 'cav') return 2;
-      if (unitType === 'skr' || unitType === 'gen') return 2;
-      if (unitType === 'iat') return 1;
-      return 1;
-    }
-    if (terrainId === 'hills') {
-      if (unitType === 'cav') return 2;
-      if (unitType === 'iat') return Infinity;
-      if (unitType === 'skr') return 1;
-      if (unitType === 'gen') return 2;
-      return 1;
-    }
-    if (terrainId === 'rough') {
-      if (unitType === 'iat') return Infinity;
-      if (unitType === 'cav' || unitType === 'gen') return 2;
-      return 1;
-    }
-    return 1;
-  }
 
-  function hasAdjacentTerrain(hexKey, terrainId) {
-    const h = board.byKey.get(hexKey);
-    if (!h) return false;
-    for (const nk of h.neigh) {
-      const nh = board.byKey.get(nk);
-      if (nh && nh.terrain === terrainId) return true;
-    }
-    return false;
+    // hills/woods/rough
+    return (unitType === 'cav') ? 3 : 2;
   }
 
   function isEngaged(hexKey, side) {
@@ -6813,25 +7922,103 @@ function unitColors(side) {
     return out;
   }
 
-  function inCommandAt(hexKey, side) {
-    const sources = friendlyCommandSourceKeys(side);
-    if (sources.length === 0) return false;
+  function linkedGeneralKeys(side) {
+    const out = [];
+    for (const [hk, u] of unitsByHex) {
+      if (u.side === side && u.type === 'gen') out.push(hk);
+    }
+    return out;
+  }
 
-    const h = board.byKey.get(hexKey);
-    if (!h) return false;
-
-    for (const sourceKey of sources) {
-      const sh = board.byKey.get(sourceKey);
-      const su = unitsByHex.get(sourceKey);
-      if (!sh || !su) continue;
-
-      const radius = commandRadiusForUnit(su);
-      if (radius <= 0) continue;
-
-      const d = axialDistance(h.q, h.r, sh.q, sh.r);
-      if (d <= radius) return true;
+  function runnerLinkedToGeneral(runnerKey, side) {
+    const rHex = board.byKey.get(runnerKey);
+    const rUnit = unitsByHex.get(runnerKey);
+    if (!rHex || !rUnit || rUnit.type !== 'run' || rUnit.side !== side) return false;
+    const generals = linkedGeneralKeys(side);
+    for (const gk of generals) {
+      const gHex = board.byKey.get(gk);
+      const gUnit = unitsByHex.get(gk);
+      if (!gHex || !gUnit) continue;
+      const gRadius = commandRadiusForUnit(gUnit);
+      if (gRadius <= 0) continue;
+      const d = axialDistance(rHex.q, rHex.r, gHex.q, gHex.r);
+      if (d <= gRadius) return true;
     }
     return false;
+  }
+
+  function inCommandAt(hexKey, side) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return false;
+    const hereUnit = unitsByHex.get(hexKey);
+    if (hereUnit && hereUnit.side === side && doctrineFlagForUnit('commandOverrideUnitIds', hereUnit.id, side)) {
+      return true;
+    }
+
+    const generals = linkedGeneralKeys(side);
+    if (generals.length === 0) return false;
+
+    // Direct command from a general.
+    for (const gk of generals) {
+      const gh = board.byKey.get(gk);
+      const gu = unitsByHex.get(gk);
+      if (!gh || !gu) continue;
+      const radius = commandRadiusForUnit(gu);
+      if (radius <= 0) continue;
+      const d = axialDistance(h.q, h.r, gh.q, gh.r);
+      if (d <= radius) return true;
+    }
+
+    // Runner relay: runners extend command only if runner itself is linked to a general.
+    for (const [rk, ru] of unitsByHex) {
+      if (!ru || ru.side !== side || ru.type !== 'run') continue;
+      if (!runnerLinkedToGeneral(rk, side)) continue;
+      const rh = board.byKey.get(rk);
+      if (!rh) continue;
+      const d = axialDistance(h.q, h.r, rh.q, rh.r);
+      if (d <= RUNNER_COMMAND_RADIUS) return true;
+    }
+    return false;
+  }
+
+  function unitIsDisarrayed(u) {
+    return !!(u && u.disarray);
+  }
+
+  function applyDisarrayToUnit(u, keyHint = '') {
+    if (!u) return false;
+    const was = !!u.disarray;
+    u.disarray = true;
+    u.disarrayAppliedSerial = state.turnSerial;
+    if (!was) {
+      const where = keyHint ? ` at ${keyHint}` : '';
+      log(`${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type)?.abbrev || 'UNIT'} fell into disarray${where}.`);
+    }
+    return !was;
+  }
+
+  function clearDisarrayOnUnit(u, reason = '') {
+    if (!u || !u.disarray) return false;
+    u.disarray = false;
+    delete u.disarrayAppliedSerial;
+    if (reason) {
+      log(`${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type)?.abbrev || 'UNIT'} recovered from disarray (${reason}).`);
+    }
+    return true;
+  }
+
+  function clearExpiredDisarrayForEndedSide(endedSide) {
+    if (endedSide !== 'blue' && endedSide !== 'red') return;
+    for (const u of unitsByHex.values()) {
+      if (!u || u.side !== endedSide || !u.disarray) continue;
+      const appliedSerial = Number.isFinite(u.disarrayAppliedSerial)
+        ? Number(u.disarrayAppliedSerial)
+        : state.turnSerial;
+      // Disarray lasts through the unit side's next full turn, then auto-clears.
+      if (state.turnSerial > (appliedSerial + 1)) {
+        clearDisarrayOnUnit(u, 'one-turn disarray elapsed');
+      }
+    }
   }
 
   function unitIgnoresCommand(u) {
@@ -6848,7 +8035,6 @@ function unitColors(side) {
     if (u.side !== state.side) return false;
     if (state.actsUsed >= ACT_LIMIT) return false;
     if (state.actedUnitIds.has(u.id)) return false;
-    if (unitActionIsPausedThisTurn(u)) return false;
 
     // Green command-dependent units out-of-command cannot be activated.
     if (!unitIgnoresCommand(u) && u.quality === 'green') {
@@ -6865,9 +8051,6 @@ function unitColors(side) {
     if (u.side !== state.side) return null; // stay calm; don’t narrate enemy clicks
     if (state.actsUsed >= ACT_LIMIT) return 'No activations left — End Turn.';
     if (state.actedUnitIds.has(u.id)) return 'Already acted this turn.';
-    if (unitActionIsPausedThisTurn(u)) {
-      return `Recovering from rough terrain: cannot activate until turn ${u.actionPauseUntilTurn + 1}.`;
-    }
 
     if (!unitIgnoresCommand(u) && u.quality === 'green') {
       const cmd = inCommandAt(hexKey, u.side);
@@ -6893,7 +8076,6 @@ function unitColors(side) {
       const nh = board.byKey.get(nk);
       if (!nh) continue;
 
-      if (!canEnterTerrainFrom(u.type, h.terrain, nh.terrain)) continue;
       const cost = terrainMoveCost(u.type, nh.terrain);
       if (!Number.isFinite(cost) || cost > mp) continue;
 
@@ -6906,45 +8088,9 @@ function unitColors(side) {
     return out;
   }
 
-  function computeSkirmisherInfantryJumpTargets(fromKey, u) {
-    const out = new Set();
-    if (!u || u.type !== 'skr') return out;
-
-    const fromHex = board.byKey.get(fromKey);
-    if (!fromHex) return out;
-    const dirs = ['e', 'ur', 'ul', 'w', 'dl', 'dr'];
-    const mp = unitMovePoints(u);
-    if (mp < 2) return out;
-
-    for (const d of dirs) {
-      const midKey = stepKeyInDirection(fromKey, d);
-      const landKey = midKey ? stepKeyInDirection(midKey, d) : null;
-      if (!midKey || !landKey || !board.activeSet.has(landKey)) continue;
-      if (isOccupied(landKey)) continue;
-
-      const midUnit = unitsByHex.get(midKey);
-      if (!midUnit || midUnit.side !== u.side || midUnit.type !== 'inf') continue;
-
-      const landHex = board.byKey.get(landKey);
-      if (!landHex) continue;
-      if (!canEnterTerrainFrom(u.type, fromHex.terrain, landHex.terrain)) continue;
-      const cost = terrainMoveCost(u.type, landHex.terrain);
-      if (!Number.isFinite(cost) || cost > mp) continue;
-
-      out.add(landKey);
-    }
-
-    return out;
-  }
-
-  function isSkirmisherInfantryJumpMove(fromKey, toKey, unit) {
-    if (!unit || unit.type !== 'skr') return false;
-    return computeSkirmisherInfantryJumpTargets(fromKey, unit).has(toKey);
-  }
-
   function unitCanMoveThisActivation(u, actCtx, startKey) {
-    if (unitMoveIsPausedThisTurn(u)) return false;
-
+    if (doctrineFlagForUnit('cannotMove', u.id, u.side)) return false;
+    if (unitIsDisarrayed(u)) return false;
     // Engagement makes the line sticky.
     const engaged = isEngaged(startKey, u.side);
 
@@ -6966,9 +8112,6 @@ function unitColors(side) {
   // --- Movement (MP + terrain costs)
   function computeMoveTargets(fromKey, u, actCtx) {
     const mp = unitMovePoints(u);
-    const startHex = board.byKey.get(fromKey);
-    const runnerStartingSlow = !!(u && u.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
-    const skrStartingSlow = !!(u && u.type === 'skr' && startHex && isSkirmisherStartSlowTerrain(startHex.terrain));
 
     // If movement isn't allowed, return empty set.
     if (!unitCanMoveThisActivation(u, actCtx, fromKey)) return new Set();
@@ -6996,15 +8139,11 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
-      if (u.type === 'run' && cur.k !== fromKey && isRunnerSlowTerrain(h.terrain)) continue;
-      if (u.type === 'run' && runnerStartingSlow && cur.k !== fromKey) continue;
-      if (u.type === 'skr' && skrStartingSlow && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk)) continue;
         const nh = board.byKey.get(nk);
         if (!nh) continue;
-        if (!canEnterTerrainFrom(u.type, h.terrain, nh.terrain)) continue;
 
         const stepCost = terrainMoveCost(u.type, nh.terrain);
         if (!Number.isFinite(stepCost)) continue; // water/impassable
@@ -7017,17 +8156,30 @@ function unitColors(side) {
 
         best.set(nk, nc);
         out.add(nk);
-        if (u.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
-        if (u.type === 'run' && runnerStartingSlow) continue;
-        if (u.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
-        if (isHillClimbStopUnit(u.type) && nh.terrain === 'hills') continue;
         pq.push({ k: nk, c: nc });
       }
     }
 
-    if (u.type === 'skr' && !skrStartingSlow) {
-      const jumpTargets = computeSkirmisherInfantryJumpTargets(fromKey, u);
-      for (const k of jumpTargets) out.add(k);
+    // Loose/Wing screen: SKR/ARC may pass through adjacent friendly INF by one hex.
+    if ((u.type === 'skr' || u.type === 'arc') && doctrineFlagForUnit('wingScreenUnitIds', u.id, u.side)) {
+      const fromHex = board.byKey.get(fromKey);
+      if (fromHex) {
+        for (const nk of fromHex.neigh) {
+          const blocker = unitsByHex.get(nk);
+          if (!blocker || blocker.side !== u.side || blocker.type !== 'inf') continue;
+          const bHex = board.byKey.get(nk);
+          if (!bHex) continue;
+          for (const landing of bHex.neigh) {
+            if (landing === fromKey || landing === nk) continue;
+            if (isOccupied(landing)) continue;
+            const lh = board.byKey.get(landing);
+            if (!lh) continue;
+            const cost = terrainMoveCost(u.type, lh.terrain);
+            if (!Number.isFinite(cost)) continue;
+            out.add(landing);
+          }
+        }
+      }
     }
 
     return out;
@@ -7036,12 +8188,8 @@ function unitColors(side) {
   function movementPathCost(fromKey, toKey, unit) {
     if (fromKey === toKey) return 0;
     if (!unit) return null;
-    if (isSkirmisherInfantryJumpMove(fromKey, toKey, unit)) return 2;
     const mp = unitMovePoints(unit);
     if (mp <= 0) return null;
-    const startHex = board.byKey.get(fromKey);
-    const runnerStartingSlow = !!(unit.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
-    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isSkirmisherStartSlowTerrain(startHex.terrain));
 
     const best = new Map();
     const pq = [{ k: fromKey, c: 0 }];
@@ -7055,15 +8203,11 @@ function unitColors(side) {
 
       const h = board.byKey.get(cur.k);
       if (!h) continue;
-      if (unit.type === 'run' && cur.k !== fromKey && isRunnerSlowTerrain(h.terrain)) continue;
-      if (unit.type === 'run' && runnerStartingSlow && cur.k !== fromKey) continue;
-      if (unit.type === 'skr' && skrStartingSlow && cur.k !== fromKey) continue;
 
       for (const nk of h.neigh) {
         if (isOccupied(nk) && nk !== toKey) continue;
         const nh = board.byKey.get(nk);
         if (!nh) continue;
-        if (!canEnterTerrainFrom(unit.type, h.terrain, nh.terrain)) continue;
 
         const stepCost = terrainMoveCost(unit.type, nh.terrain);
         if (!Number.isFinite(stepCost)) continue;
@@ -7075,10 +8219,6 @@ function unitColors(side) {
         if (prevBest !== undefined && nc >= prevBest) continue;
 
         best.set(nk, nc);
-        if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
-        if (unit.type === 'run' && runnerStartingSlow) continue;
-        if (unit.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
-        if (isHillClimbStopUnit(unit.type) && nh.terrain === 'hills') continue;
         pq.push({ k: nk, c: nc });
       }
     }
@@ -7086,223 +8226,46 @@ function unitColors(side) {
     return null;
   }
 
-  function movementPathKeys(fromKey, toKey, unit) {
-    if (fromKey === toKey) return [fromKey];
-    if (!unit) return [fromKey, toKey];
-    if (isSkirmisherInfantryJumpMove(fromKey, toKey, unit)) return [fromKey, toKey];
-    const mp = unitMovePoints(unit);
-    if (mp <= 0) return [fromKey, toKey];
-    const startHex = board.byKey.get(fromKey);
-    const runnerStartingSlow = !!(unit.type === 'run' && startHex && isRunnerSlowTerrain(startHex.terrain));
-    const skrStartingSlow = !!(unit.type === 'skr' && startHex && isSkirmisherStartSlowTerrain(startHex.terrain));
-
-    const best = new Map();
-    const prev = new Map();
-    const pq = [{ k: fromKey, c: 0 }];
-    best.set(fromKey, 0);
-
-    while (pq.length) {
-      pq.sort((a, b) => a.c - b.c);
-      const cur = pq.shift();
-      if (!cur) break;
-      if (cur.k === toKey) break;
-
-      const h = board.byKey.get(cur.k);
-      if (!h) continue;
-      if (unit.type === 'run' && cur.k !== fromKey && isRunnerSlowTerrain(h.terrain)) continue;
-      if (unit.type === 'run' && runnerStartingSlow && cur.k !== fromKey) continue;
-      if (unit.type === 'skr' && skrStartingSlow && cur.k !== fromKey) continue;
-
-      for (const nk of h.neigh) {
-        if (isOccupied(nk) && nk !== toKey) continue;
-        const nh = board.byKey.get(nk);
-        if (!nh) continue;
-        if (!canEnterTerrainFrom(unit.type, h.terrain, nh.terrain)) continue;
-
-        const stepCost = terrainMoveCost(unit.type, nh.terrain);
-        if (!Number.isFinite(stepCost)) continue;
-
-        const nc = cur.c + stepCost;
-        if (nc > mp) continue;
-
-        const prevBest = best.get(nk);
-        if (prevBest !== undefined && nc >= prevBest) continue;
-
-        best.set(nk, nc);
-        prev.set(nk, cur.k);
-        if (unit.type === 'run' && isRunnerSlowTerrain(nh.terrain)) continue;
-        if (unit.type === 'run' && runnerStartingSlow) continue;
-        if (unit.type === 'skr' && (skrStartingSlow || isSkirmisherStepStopTerrain(nh.terrain))) continue;
-        if (isHillClimbStopUnit(unit.type) && nh.terrain === 'hills') continue;
-        pq.push({ k: nk, c: nc });
-      }
-    }
-
-    if (!best.has(toKey)) return [fromKey, toKey];
-
-    const path = [toKey];
-    let cur = toKey;
-    let guard = 0;
-    while (cur !== fromKey && guard < 256) {
-      const p = prev.get(cur);
-      if (!p) break;
-      path.push(p);
-      cur = p;
-      guard += 1;
-    }
-    path.reverse();
-    if (path[0] !== fromKey) return [fromKey, toKey];
-    return path;
+  function normalizeLineAdvanceDirection(dir) {
+    return (dir === 'forward' || dir === 'backward' || dir === 'left' || dir === 'right')
+      ? dir
+      : 'forward';
   }
 
-  function startMoveAnimation(pathKeys, unit, isAiMove = false) {
-    if (!Array.isArray(pathKeys) || pathKeys.length < 2 || !unit) {
-      stopMoveAnimation();
-      return;
-    }
-
-    stopMoveAnimation();
-
-    const perStep = isAiMove ? MOVE_ANIM_STEP_MS_AI : MOVE_ANIM_STEP_MS_HUMAN;
-    const durationMs = Math.max(perStep, (pathKeys.length - 1) * perStep);
-    state.moveAnim = {
-      unitId: unit.id,
-      toKey: pathKeys[pathKeys.length - 1],
-      pathKeys: [...pathKeys],
-      unit: {
-        id: unit.id,
-        side: unit.side,
-        type: unit.type,
-        quality: unit.quality,
-        hp: unit.hp,
-      },
-      t: 0,
-      startedAt: performance.now(),
-      durationMs,
-    };
-
-    const tick = (ts) => {
-      if (!state.moveAnim) {
-        state.moveAnimRaf = null;
-        return;
-      }
-      const anim = state.moveAnim;
-      const elapsed = ts - anim.startedAt;
-      anim.t = Math.max(0, Math.min(1, elapsed / anim.durationMs));
-      draw();
-
-      if (anim.t >= 1) {
-        state.moveAnim = null;
-        state.moveAnimRaf = null;
-        draw();
-        return;
-      }
-      state.moveAnimRaf = requestAnimationFrame(tick);
-    };
-
-    state.moveAnimRaf = requestAnimationFrame(tick);
+  function lineAdvanceStepDirection(side, axis = state.forwardAxis, mode = state.lineAdvanceDirection) {
+    const forward = sideForwardDirection(side, axis);
+    const back = oppositeDirection(forward);
+    const [left, right] = axisLateralDirections(axis);
+    const m = normalizeLineAdvanceDirection(mode);
+    if (m === 'backward' && back) return back;
+    if (m === 'left') return left;
+    if (m === 'right') return right;
+    return forward;
   }
 
-  function forwardStepKey(fromKey, side) {
-    const dir = sideForwardDirection(side, state.forwardAxis);
+  function forwardStepKey(fromKey, side, mode = 'forward') {
+    const dir = lineAdvanceStepDirection(side, state.forwardAxis, mode);
     return stepKeyInDirection(fromKey, dir);
   }
 
-  function isFriendlyInfAt(hexKey, side) {
-    const u = unitsByHex.get(hexKey);
-    return !!u && u.side === side && u.type === 'inf';
-  }
-
-  function infantryBracePairs(defenderKey, side) {
-    if (!isFriendlyInfAt(defenderKey, side)) return [];
-    const ring = ['e', 'ur', 'ul', 'w', 'dl', 'dr'];
-    const pairs = [];
-
-    for (let i = 0; i < ring.length; i++) {
-      const d1 = ring[i];
-      const d2 = ring[(i + 1) % ring.length];
-      const k1 = stepKeyInDirection(defenderKey, d1);
-      const k2 = stepKeyInDirection(defenderKey, d2);
-      if (!k1 || !k2) continue;
-      if (!isFriendlyInfAt(k1, side) || !isFriendlyInfAt(k2, side)) continue;
-      const b1 = oppositeDirection(d1);
-      const b2 = oppositeDirection(d2);
-      if (!b1 || !b2) continue;
-      pairs.push({
-        dirs: [d1, d2],
-        keys: [k1, k2],
-        braceDirs: [b1, b2],
-      });
-    }
-    return pairs;
-  }
-
-  function reinforcementSupportForAttack(defenderKey, attackerKey, defenderUnit) {
-    if (!defenderUnit || defenderUnit.type !== 'inf') {
-      return { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
-    }
-    const attackDir = adjacentDirection(defenderKey, attackerKey);
-    if (!attackDir) {
-      return { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
-    }
-
-    const pairs = infantryBracePairs(defenderKey, defenderUnit.side);
-    const matching = pairs.filter(p => p.braceDirs.includes(attackDir));
-    const supportSet = new Set();
-    for (const p of matching) {
-      for (const k of p.keys) supportSet.add(k);
-    }
-
-    const active = matching.length > 0;
-    return {
-      supportRanks: active ? 1 : 0, // one-line deep only
-      active,
-      pairs,
-      matching,
-      supportSet,
-      attackDir,
-    };
-  }
-
-  function reinforcementPreviewForAnchor(anchorKey) {
-    const anchor = unitsByHex.get(anchorKey);
-    if (!anchor || anchor.type !== 'inf') return null;
-    const pairs = infantryBracePairs(anchorKey, anchor.side);
-    const supportSet = new Set();
-    const braceDirSet = new Set();
-    for (const p of pairs) {
-      for (const k of p.keys) supportSet.add(k);
-      for (const d of p.braceDirs) braceDirSet.add(d);
-    }
-    return {
-      active: pairs.length > 0,
-      frontSet: new Set([anchorKey]),
-      supportSet,
-      pairs,
-      braceDirs: Array.from(braceDirSet),
-    };
-  }
-
   function canLineAdvanceInfAt(hexKey, u) {
-    if (state.mode !== 'play' || state.gameOver) return false;
     if (!u || u.type !== 'inf') return false;
     if (u.side !== state.side) return false;
-    if (state.actsUsed >= ACT_LIMIT) return false;
-    if (state.actedUnitIds.has(u.id)) return false;
-    if (unitActionIsPausedThisTurn(u)) return false;
-    if (unitMoveIsPausedThisTurn(u)) return false;
+    if (!unitCanActivate(u, hexKey)) return false;
     if (isEngaged(hexKey, u.side)) return false;
-    return true;
+
+    const inCmd = unitIgnoresCommand(u) ? true : inCommandAt(hexKey, u.side);
+    return unitCanMoveThisActivation(u, { inCommandStart: inCmd }, hexKey);
   }
 
-  function collectContiguousInfantryRowByDirs(anchorKey, beforeDir, afterDir) {
+  function collectLineAdvanceFormation(anchorKey) {
     const anchorUnit = unitsByHex.get(anchorKey);
     if (!anchorUnit) return [];
-    if (anchorUnit.type !== 'inf') return [];
-    if (anchorUnit.side !== state.side) return [];
+    if (!canLineAdvanceInfAt(anchorKey, anchorUnit)) return [];
+
+    const [beforeDir, afterDir] = axisLateralDirections(state.forwardAxis);
     const before = [];
     const after = [];
-    const rowSide = anchorUnit.side;
 
     function walk(dir, out) {
       let cur = anchorKey;
@@ -7310,7 +8273,7 @@ function unitColors(side) {
         const next = stepKeyInDirection(cur, dir);
         if (!next) break;
         const u = unitsByHex.get(next);
-        if (!u || u.type !== 'inf' || u.side !== rowSide) break;
+        if (!canLineAdvanceInfAt(next, u)) break;
         out.push(next);
         cur = next;
       }
@@ -7323,59 +8286,7 @@ function unitColors(side) {
     return [...before, anchorKey, ...after];
   }
 
-  function detectLineAxisForAnchor(anchorKey) {
-    const anchorUnit = unitsByHex.get(anchorKey);
-    if (!anchorUnit || anchorUnit.type !== 'inf') return null;
-    const rowSide = anchorUnit.side;
-
-    const candidates = [];
-    for (const [beforeDir, afterDir] of LINE_AXIS_PAIRS) {
-      const row = collectContiguousInfantryRowByDirs(anchorKey, beforeDir, afterDir);
-      const eligibleCount = row.reduce((n, hk) => {
-        const u = unitsByHex.get(hk);
-        return n + (canLineAdvanceInfAt(hk, u) ? 1 : 0);
-      }, 0);
-      candidates.push({
-        dirs: [beforeDir, afterDir],
-        row,
-        rowLength: row.length,
-        eligibleCount,
-      });
-    }
-
-    candidates.sort((a, b) => {
-      if (b.rowLength !== a.rowLength) return b.rowLength - a.rowLength;
-      if (b.eligibleCount !== a.eligibleCount) return b.eligibleCount - a.eligibleCount;
-      const sideFwd = sideForwardDirection(rowSide, state.forwardAxis);
-      const aBias = a.dirs.includes(sideFwd) ? 1 : 0;
-      const bBias = b.dirs.includes(sideFwd) ? 1 : 0;
-      return bBias - aBias;
-    });
-
-    return candidates[0] || null;
-  }
-
-  function collectContiguousInfantryRow(anchorKey) {
-    const axis = detectLineAxisForAnchor(anchorKey);
-    return axis ? axis.row : [];
-  }
-
-  function lineAdvanceDirectionOptionsForRowDirs(rowDirs = []) {
-    const blocked = new Set(rowDirs);
-    const opts = [];
-    for (const d of LINE_ADVANCE_DIRECTION_ORDER) {
-      if (!blocked.has(d)) opts.push(d);
-    }
-    return opts;
-  }
-
-  function collectLineAdvanceFormation(anchorKey) {
-    const row = collectContiguousInfantryRow(anchorKey);
-    if (row.length === 0) return [];
-    return row.filter((hk) => canLineAdvanceInfAt(hk, unitsByHex.get(hk)));
-  }
-
-  function lineAdvanceMovePlan(formation, advanceDir = null) {
+  function lineAdvanceMovePlan(formation) {
     const formationSet = new Set(formation);
     const moves = [];
     const blocked = [];
@@ -7385,8 +8296,7 @@ function unitColors(side) {
       const u = unitsByHex.get(fromKey);
       if (!u) continue;
 
-      const dir = normalizeLineAdvanceDirection(advanceDir) || sideForwardDirection(u.side, state.forwardAxis);
-      const toKey = stepKeyInDirection(fromKey, dir);
+      const toKey = forwardStepKey(fromKey, u.side, state.lineAdvanceDirection);
       if (!toKey) {
         blocked.push({ fromKey, reason: 'off-board' });
         continue;
@@ -7416,59 +8326,7 @@ function unitColors(side) {
       moves.push({ fromKey, toKey, unit: u });
     }
 
-    return { moves, blocked, advanceDir: normalizeLineAdvanceDirection(advanceDir) };
-  }
-
-  function preferredLineAdvanceDirection(preferredDir, optionDirs, anchorSide) {
-    const preferred = normalizeLineAdvanceDirection(preferredDir);
-    if (preferred && optionDirs.includes(preferred)) return preferred;
-    const sideFwd = sideForwardDirection(anchorSide, state.forwardAxis);
-    if (optionDirs.includes(sideFwd)) return sideFwd;
-    return optionDirs[0] || null;
-  }
-
-  function lineAdvancePreviewForAnchor(anchorKey, preferredDir = state.lineAdvanceDir) {
-    const axis = detectLineAxisForAnchor(anchorKey);
-    const row = axis ? axis.row : [];
-    if (row.length === 0) return null;
-
-    const formation = row.filter((hk) => canLineAdvanceInfAt(hk, unitsByHex.get(hk)));
-    const rowDirs = axis ? axis.dirs : [];
-    const directionOptions = lineAdvanceDirectionOptionsForRowDirs(rowDirs);
-    const anchorUnit = unitsByHex.get(anchorKey);
-    const advanceDir = preferredLineAdvanceDirection(preferredDir, directionOptions, anchorUnit?.side || state.side);
-    const directionPlans = {};
-    let anyMoves = false;
-    for (const d of directionOptions) {
-      const p = lineAdvanceMovePlan(formation, d);
-      directionPlans[d] = p;
-      if (p.moves.length > 0) anyMoves = true;
-    }
-    const plan = advanceDir ? (directionPlans[advanceDir] || lineAdvanceMovePlan(formation, advanceDir)) : { moves: [], blocked: [], advanceDir: null };
-    const destinationSet = new Set(plan.moves.map(m => m.toKey));
-    const movableSet = new Set(plan.moves.map(m => m.fromKey));
-    const blockedSet = new Set(plan.blocked.map(b => b.fromKey));
-    const rowSet = new Set(row);
-    const formationSet = new Set(formation);
-
-    return {
-      anchorKey,
-      row,
-      rowSet,
-      formation,
-      formationSet,
-      moves: plan.moves,
-      blocked: plan.blocked,
-      destinationSet,
-      movableSet,
-      blockedSet,
-      rowDirs,
-      directionOptions,
-      directionPlans,
-      anyMoves,
-      advanceDir,
-      forwardDir: sideForwardDirection(anchorUnit?.side || state.side, state.forwardAxis),
-    };
+    return { moves, blocked };
   }
 
   function canIssueLineAdvance() {
@@ -7479,19 +8337,12 @@ function unitColors(side) {
 
     const u = unitsByHex.get(state.selectedKey);
     if (!u || u.side !== state.side || u.type !== 'inf') return false;
-    const preview = lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
-    if (!preview) return false;
-    return !!preview.anyMoves;
+    const formation = collectLineAdvanceFormation(state.selectedKey);
+    if (formation.length === 0) return false;
+    return lineAdvanceMovePlan(formation).moves.length > 0;
   }
 
-  function selectedLineAdvanceDirection() {
-    if (!state.selectedKey) return normalizeLineAdvanceDirection(state.lineAdvanceDir);
-    const preview = lineAdvancePreviewForAnchor(state.selectedKey, state.lineAdvanceDir);
-    if (!preview) return normalizeLineAdvanceDirection(state.lineAdvanceDir);
-    return normalizeLineAdvanceDirection(preview.advanceDir);
-  }
-
-  function lineAdvanceFromSelection(explicitAdvanceDir = null) {
+  function lineAdvanceFromSelection() {
     if (state.mode !== 'play') return;
     if (state.gameOver) return;
     if (isAiTurnActive()) return;
@@ -7514,23 +8365,19 @@ function unitColors(side) {
       return;
     }
 
-    const chosenAdvanceDir = normalizeLineAdvanceDirection(explicitAdvanceDir) || state.lineAdvanceDir;
-    const preview = lineAdvancePreviewForAnchor(anchorKey, chosenAdvanceDir);
-    const formation = preview ? preview.formation : [];
-    const fullRow = preview ? preview.row : [];
-    const advanceDir = preview ? preview.advanceDir : null;
+    const formation = collectLineAdvanceFormation(anchorKey);
     if (formation.length === 0) {
       log('Line Advance unavailable: selected INF cannot form an eligible line.');
       updateHud();
       return;
     }
 
-    const plan = preview || lineAdvanceMovePlan(formation, advanceDir);
+    const plan = lineAdvanceMovePlan(formation);
     const moves = plan.moves;
     const blocked = plan.blocked;
 
     if (moves.length === 0) {
-      log(`Line Advance blocked toward ${lineAdvanceDirectionLabel(advanceDir)}: no INF in the line can step there.`);
+      log('Line Advance blocked: no INF in the line can step forward.');
       updateHud();
       return;
     }
@@ -7544,10 +8391,6 @@ function unitColors(side) {
 
     for (const m of moves) unitsByHex.delete(m.fromKey);
     for (const m of moves) unitsByHex.set(m.toKey, m.unit);
-    let terrainPauseCount = 0;
-    for (const m of moves) {
-      if (markMovementPauseIfNeeded(m.unit, m.toKey)) terrainPauseCount += 1;
-    }
 
     clearSelection();
 
@@ -7564,32 +8407,898 @@ function unitColors(side) {
     if (byReason.terrain) blockParts.push(`terrain ${byReason.terrain}`);
     const blockText = blockParts.length ? ` blocked(${blockParts.join(', ')})` : '';
 
-    const eligibilityText = fullRow.length > formation.length ? ` (${formation.length}/${fullRow.length} eligible)` : '';
-    const pauseText = terrainPauseCount > 0
-      ? ` terrain-pause ${terrainPauseCount}`
-      : '';
-    log(`Line Advance ${lineAdvanceDirectionLabel(advanceDir)}: ${moves.length}/${formation.length} INF advanced${eligibilityText}.${blockText}${pauseText}.`);
-    if (!maybeAutoEndTurnAfterAction()) updateHud();
+    const dirLabel = normalizeLineAdvanceDirection(state.lineAdvanceDirection);
+    log(`Line Advance (${dirLabel}): ${moves.length}/${formation.length} INF advanced.${blockText}`);
+    updateHud();
+    maybeAutoEndTurnAtActionLimit();
   }
 
-  function cavalryPostAttackWithdrawTargets(fromKey, u, actCtx) {
+  // --- Doctrine command system (secondary tactical layer)
+  function friendlyEntries(side, filterFn = null) {
+    const out = [];
+    for (const [hk, u] of unitsByHex) {
+      if (!u || u.side !== side) continue;
+      if (typeof filterFn === 'function' && !filterFn(u, hk)) continue;
+      out.push({ key: hk, unit: u, hex: board.byKey.get(hk) });
+    }
+    return out;
+  }
+
+  function enemyEntries(side) {
+    return friendlyEntries(side === 'blue' ? 'red' : 'blue');
+  }
+
+  function nearestEnemyDistanceForSide(hexKey, side) {
+    const d = nearestEnemyDistance(hexKey, side);
+    return Number.isFinite(d) ? d : 999;
+  }
+
+  function byFrontlinePriority(entries, side) {
+    return cloneArray(entries).sort((a, b) =>
+      nearestEnemyDistanceForSide(a.key, side) - nearestEnemyDistanceForSide(b.key, side)
+    );
+  }
+
+  function addCommandEffectValue(mapName, unitId, delta = 0) {
+    const map = state.doctrine.effects[mapName];
+    if (!map || !unitId) return;
+    map[unitId] = Number(map[unitId] || 0) + Number(delta || 0);
+  }
+
+  function setCommandEffectFlag(mapName, unitId, value = true) {
+    const map = state.doctrine.effects[mapName];
+    if (!map || !unitId) return;
+    map[unitId] = !!value;
+  }
+
+  function setCommandSideFlag(mapName, side, value = true) {
+    const map = state.doctrine.effects[mapName];
+    if (!map || (side !== 'blue' && side !== 'red')) return;
+    map[side] = value;
+  }
+
+  function canCommandRelocateUnit(fromKey, toKey, options = {}) {
+    const u = options.unit || unitsByHex.get(fromKey);
+    if (!u || !toKey || !board.activeSet.has(toKey)) return false;
+    if (!options.allowOccupied && isOccupied(toKey)) return false;
+    const toHex = board.byKey.get(toKey);
+    if (!toHex) return false;
+    return Number.isFinite(terrainMoveCost(u.type, toHex.terrain));
+  }
+
+  function commandRelocateUnit(fromKey, toKey) {
+    const u = unitsByHex.get(fromKey);
+    if (!u) return false;
+    if (!canCommandRelocateUnit(fromKey, toKey, { unit: u })) return false;
+    unitsByHex.delete(fromKey);
+    unitsByHex.set(toKey, u);
+    return true;
+  }
+
+  function hasAdjacentFriendlyInf(hexKey, side) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return false;
+    for (const nk of h.neigh) {
+      const u = unitsByHex.get(nk);
+      if (u && u.side === side && u.type === 'inf') return true;
+    }
+    return false;
+  }
+
+  function isSurrounded(hexKey, side) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return false;
+    let hostile = 0;
+    for (const nk of h.neigh) {
+      const u = unitsByHex.get(nk);
+      if (u && u.side !== side) hostile += 1;
+    }
+    return hostile >= 4;
+  }
+
+  function findLargestContiguousGroup(entries, maxCount = 6) {
+    const byKey = new Map(entries.map(e => [e.key, e]));
+    const seen = new Set();
+    let best = [];
+    for (const e of entries) {
+      if (seen.has(e.key)) continue;
+      const stack = [e.key];
+      const group = [];
+      seen.add(e.key);
+      while (stack.length) {
+        const k = stack.pop();
+        const item = byKey.get(k);
+        if (!item) continue;
+        group.push(item);
+        const h = board.byKey.get(k);
+        if (!h) continue;
+        for (const nk of h.neigh) {
+          if (seen.has(nk) || !byKey.has(nk)) continue;
+          seen.add(nk);
+          stack.push(nk);
+        }
+      }
+      if (group.length > best.length) best = group;
+    }
+    return byFrontlinePriority(best, entries[0]?.unit?.side || state.side).slice(0, maxCount);
+  }
+
+  function chooseRowEntries(entries, count = 3) {
+    const byRow = new Map();
+    for (const e of entries) {
+      const h = e.hex || board.byKey.get(e.key);
+      if (!h) continue;
+      // Row is depth-relative to current forward axis (not always literal board r).
+      const rk = String(axisScalarsForHex(h, state.forwardAxis).approachRaw);
+      if (!byRow.has(rk)) byRow.set(rk, []);
+      byRow.get(rk).push(e);
+    }
+    let best = [];
+    for (const rowEntries of byRow.values()) {
+      if (rowEntries.length > best.length) best = rowEntries;
+    }
+    return byFrontlinePriority(best, entries[0]?.unit?.side || state.side).slice(0, count);
+  }
+
+  function entriesAdjacent(a, b) {
+    if (!a || !b) return false;
+    const ah = a.hex || board.byKey.get(a.key);
+    const bh = b.hex || board.byKey.get(b.key);
+    if (!ah || !bh) return false;
+    return ah.neigh.includes(bh.k);
+  }
+
+  function chooseAdjacentRowEntries(entries, count = 3, minCount = 1) {
+    const byRow = new Map();
+    for (const e of entries) {
+      const h = e.hex || board.byKey.get(e.key);
+      if (!h) continue;
+      const rk = String(axisScalarsForHex(h, state.forwardAxis).approachRaw);
+      if (!byRow.has(rk)) byRow.set(rk, []);
+      byRow.get(rk).push(e);
+    }
+
+    let bestComponent = [];
+    for (const rowEntries of byRow.values()) {
+      const byKey = new Map(rowEntries.map((e) => [e.key, e]));
+      const seen = new Set();
+      for (const e of rowEntries) {
+        if (seen.has(e.key)) continue;
+        const stack = [e];
+        const component = [];
+        seen.add(e.key);
+        while (stack.length) {
+          const cur = stack.pop();
+          component.push(cur);
+          for (const candidate of rowEntries) {
+            if (seen.has(candidate.key)) continue;
+            if (!entriesAdjacent(cur, candidate)) continue;
+            seen.add(candidate.key);
+            stack.push(candidate);
+          }
+        }
+        if (component.length > bestComponent.length) bestComponent = component;
+      }
+    }
+
+    if (bestComponent.length < minCount) return [];
+    return byFrontlinePriority(bestComponent, entries[0]?.unit?.side || state.side).slice(0, count);
+  }
+
+  function quickWithdrawCandidates(side) {
+    return friendlyEntries(side, (u, hk) => {
+      if (u.type !== 'skr' && u.type !== 'arc') return false;
+      if (!isEngaged(hk, side)) return false;
+      if (isSurrounded(hk, side)) return false;
+      return disengageTargets(hk, u).size > 0;
+    });
+  }
+
+  function inwardLateralDirectionForKey(hexKey, axis = state.forwardAxis) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return null;
+    const geom = buildAxisGeometry(axis);
+    const current = geom.byKey.get(hexKey);
+    if (!current) return null;
+    const currentAbs = Math.abs(current.lateralN - 0.5);
+    let best = null;
+    let bestAbs = currentAbs;
+    for (const dir of axisLateralDirections(axis)) {
+      const nk = stepKeyInDirection(hexKey, dir);
+      if (!nk) continue;
+      const nm = geom.byKey.get(nk);
+      if (!nm) continue;
+      const nAbs = Math.abs(nm.lateralN - 0.5);
+      if (nAbs < bestAbs) {
+        bestAbs = nAbs;
+        best = dir;
+      }
+    }
+    return best;
+  }
+
+  function selectJawsInwardVeteranEntries(side, maxCount = 4) {
+    const geom = buildAxisGeometry(state.forwardAxis);
+    const vets = friendlyEntries(side, (u) => u.type === 'inf' && u.quality === 'veteran');
+    const left = [];
+    const right = [];
+    for (const e of vets) {
+      const lateral = geom.lateralForSide(side, e.key);
+      if (lateral < 0) left.push({ e, score: Math.abs(lateral) });
+      else if (lateral > 0) right.push({ e, score: Math.abs(lateral) });
+    }
+    left.sort((a, b) => b.score - a.score);
+    right.sort((a, b) => b.score - a.score);
+    if (!left.length || !right.length) return [];
+
+    const out = [left.shift().e, right.shift().e];
+    while (out.length < maxCount && (left.length || right.length)) {
+      const nextLeft = left[0] || null;
+      const nextRight = right[0] || null;
+      if (nextLeft && (!nextRight || nextLeft.score >= nextRight.score)) out.push(left.shift().e);
+      else if (nextRight) out.push(right.shift().e);
+    }
+    return out.slice(0, maxCount);
+  }
+
+  function collapseCenterCandidates(side, maxCenter = 5) {
+    const geom = buildAxisGeometry(state.forwardAxis);
+    const allInf = friendlyEntries(side, (u) => u.type === 'inf');
+    return byFrontlinePriority(
+      allInf.filter((e) => Math.abs(geom.lateralForSide(side, e.key)) <= 0.22),
+      side
+    ).slice(0, maxCenter);
+  }
+
+  function chooseWingEntries(entries, side, count) {
+    const geom = buildAxisGeometry(state.forwardAxis);
+    const scored = cloneArray(entries).map((e) => {
+      const depth = geom.frontDepthForSide(side, e.key);
+      const lateral = geom.lateralForSide(side, e.key);
+      return { entry: e, score: Math.abs(lateral) + (depth * 0.2) };
+    });
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, count).map(x => x.entry);
+  }
+
+  function selectReserveEntries(side, maxCount = 3) {
+    const geom = buildAxisGeometry(state.forwardAxis);
+    const scoredPrimary = friendlyEntries(side, (u, hk) => {
+      if (u.type === 'gen') return false;
+      if (isEngaged(hk, side)) return false;
+      return geom.frontDepthForSide(side, hk) >= 0.56;
+    }).map((e) => ({ e, depth: geom.frontDepthForSide(side, e.key) }));
+    scoredPrimary.sort((a, b) => b.depth - a.depth);
+
+    if (scoredPrimary.length) return scoredPrimary.slice(0, maxCount).map((x) => x.e);
+
+    const scoredFallback = friendlyEntries(side, (u, hk) => {
+      if (u.type === 'gen') return false;
+      return geom.frontDepthForSide(side, hk) >= 0.42;
+    }).map((e) => ({ e, depth: geom.frontDepthForSide(side, e.key) }));
+    scoredFallback.sort((a, b) => b.depth - a.depth);
+    return scoredFallback.slice(0, maxCount).map((x) => x.e);
+  }
+
+  function addDoctrineBuffThroughNextOwnTurn(mapName, unitId, value, side) {
+    addDoctrineLongEffect({
+      map: mapName,
+      unitId,
+      value,
+      side,
+      expiresOnSide: side,
+      expiresAfterSerial: state.turnSerial + 2,
+    });
+  }
+
+  function pickNearestGeneral(side) {
+    const gens = friendlyEntries(side, (u) => u.type === 'gen');
+    if (!gens.length) return null;
+    return byFrontlinePriority(gens, side)[0];
+  }
+
+  function commandResult(ok, message, affectedUnitIds = [], spendTargets = false) {
+    return { ok, message, affectedUnitIds, spendTargets };
+  }
+
+  function resolveDoctrineQuickDress(side) {
+    const inf = friendlyEntries(side, (u, hk) => u.type === 'inf' && unitCanActivate(u, hk));
+    if (!inf.length) return commandResult(false, 'No eligible infantry for Quick Dress.');
+    const picks = chooseAdjacentRowEntries(inf, 3, 1);
+    if (!picks.length) return commandResult(false, 'No adjacent infantry line available for Quick Dress.');
+    const lateral = axisLateralDirections(state.forwardAxis);
+    const moved = [];
+    for (const e of picks) {
+      let movedOne = false;
+      for (const dir of lateral) {
+        const toKey = stepKeyInDirection(e.key, dir);
+        if (!toKey) continue;
+        if (commandRelocateUnit(e.key, toKey)) {
+          moved.push(unitsByHex.get(toKey)?.id || e.unit.id);
+          movedOne = true;
+          break;
+        }
+      }
+      if (!movedOne) moved.push(e.unit.id);
+    }
+    return commandResult(true, `Quick Dress shifted ${picks.length} infantry laterally.`, moved, true);
+  }
+
+  function resolveDoctrineRunnerBurst(side) {
+    const runners = byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'run'), side);
+    const pick = runners[0];
+    if (!pick) return commandResult(false, 'No runner available for Runner Burst.');
+    addCommandEffectValue('bonusMove', pick.unit.id, 3);
+    setCommandEffectFlag('cannotAttack', pick.unit.id, true);
+    const supported = [];
+    for (const e of friendlyEntries(side, (u, hk) => u.id !== pick.unit.id && axialDistance(pick.hex.q, pick.hex.r, board.byKey.get(hk).q, board.byKey.get(hk).r) <= 1)) {
+      setCommandEffectFlag('commandOverrideUnitIds', e.unit.id, true);
+      supported.push(e.unit.id);
+    }
+    return commandResult(
+      true,
+      `Runner Burst set on ${side.toUpperCase()} RUN at ${pick.key} (+3 move, relay support to ${supported.length} nearby unit(s)).`,
+      [pick.unit.id, ...supported],
+      false
+    );
+  }
+
+  function resolveDoctrineJavelinVolley(side) {
+    const picks = byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'skr' || u.type === 'arc'), side).slice(0, 2);
+    if (!picks.length) return commandResult(false, 'No skirmisher/archer units available for Javelin Volley.');
+    for (const e of picks) addCommandEffectValue('rangedBonusDice', e.unit.id, 2);
+    return commandResult(true, `Javelin Volley primed ${picks.length} light missile unit(s) with +2 ranged dice.`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineQuickWithdraw(side) {
+    const picks = byFrontlinePriority(quickWithdrawCandidates(side), side);
+    const pick = picks[0];
+    if (!pick) return commandResult(false, 'No engaged skirmisher/archer available for Quick Withdraw.');
+    const outTargets = [...disengageTargets(pick.key, pick.unit)];
+    const toKey = outTargets[0];
+    if (!toKey) return commandResult(false, 'Quick Withdraw failed: no safe hex available.');
+    const moved = commandRelocateUnit(pick.key, toKey);
+    if (!moved) return commandResult(false, 'Quick Withdraw blocked by terrain or occupancy.');
+    return commandResult(true, `Quick Withdraw moved ${UNIT_BY_ID.get(pick.unit.type)?.abbrev || pick.unit.type} to ${toKey}.`, [pick.unit.id], true);
+  }
+
+  function resolveDoctrineCloseRanks(side) {
+    const inf = byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf'), side);
+    const pick = inf[0];
+    if (!pick) return commandResult(false, 'No infantry available for Close Ranks.');
+    addCommandEffectValue('meleeDefenseBonus', pick.unit.id, 1);
+    setCommandEffectFlag('cannotMove', pick.unit.id, true);
+    return commandResult(true, `Close Ranks applied to INF at ${pick.key}.`, [pick.unit.id], false);
+  }
+
+  function resolveDoctrineSpurHorses(side) {
+    const cav = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => u.type === 'cav' && inCommandAt(hk, side)),
+      side
+    );
+    const pick = cav[0];
+    if (!pick) return commandResult(false, 'No cavalry in command for Spur the Horses.');
+    addCommandEffectValue('bonusMove', pick.unit.id, 1);
+    return commandResult(true, `Spur the Horses applied to CAV at ${pick.key}.`, [pick.unit.id], false);
+  }
+
+  function resolveDoctrineSignalCall(side) {
+    const gens = friendlyEntries(side, (u) => u.type === 'gen');
+    if (!gens.length) return commandResult(false, 'No general available for Signal Call.');
+    const targets = [];
+    for (const e of friendlyEntries(side, (u) => u.type !== 'gen')) {
+      const h = e.hex;
+      if (!h) continue;
+      let exactlyOutside = false;
+      for (const g of gens) {
+        const radius = commandRadiusForUnit(g.unit);
+        const d = axialDistance(h.q, h.r, g.hex.q, g.hex.r);
+        if (d > radius && d <= radius + 2) {
+          exactlyOutside = true;
+          break;
+        }
+      }
+      if (exactlyOutside) targets.push(e);
+    }
+    const picks = byFrontlinePriority(targets, side).slice(0, 2);
+    if (!picks.length) return commandResult(false, 'No nearby out-of-command units found for Signal Call.');
+    for (const p of picks) setCommandEffectFlag('commandOverrideUnitIds', p.unit.id, true);
+    return commandResult(true, `Signal Call temporarily extended command to ${picks.length} unit(s).`, picks.map(p => p.unit.id), false);
+  }
+
+  function resolveDoctrineLooseScreen(side) {
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => (u.type === 'skr' || u.type === 'arc') && hasAdjacentFriendlyInf(hk, side)),
+      side
+    ).slice(0, 2);
+    if (!picks.length) return commandResult(false, 'No adjacent screen units available for Loose Screen.');
+    for (const e of picks) setCommandEffectFlag('wingScreenUnitIds', e.unit.id, true);
+    return commandResult(true, `Loose Screen enabled for ${picks.length} unit(s).`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineCoveringFire(side) {
+    setCommandSideFlag('coverFireIgnoreTerrain', side, 2);
+    return commandResult(true, 'Covering Fire primed: next two ranged attacks ignore terrain ranged penalties.', [], false);
+  }
+
+  function resolveDoctrineHoldFast(side) {
+    const pick = byFrontlinePriority(friendlyEntries(side), side)[0];
+    if (!pick) return commandResult(false, 'No unit available for Hold Fast.');
+    addDoctrineLongEffect({
+      map: 'ignoreRetreatCount',
+      unitId: pick.unit.id,
+      value: 2,
+      side,
+      expiresOnSide: side,
+      expiresAfterSerial: state.turnSerial,
+    });
+    addDoctrineLongEffect({
+      map: 'meleeDefenseBonus',
+      unitId: pick.unit.id,
+      value: 1,
+      side,
+      expiresOnSide: side,
+      expiresAfterSerial: state.turnSerial,
+    });
+    return commandResult(true, `Hold Fast applied to unit at ${pick.key} (ignore 2 retreats, +1 melee defense).`, [pick.unit.id], false);
+  }
+
+  function resolveDoctrineShieldWall(side) {
+    const inf = friendlyEntries(side, (u) => u.type === 'inf');
+    if (inf.length < 3) return commandResult(false, 'Shield Wall requires at least 3 infantry.');
+    const picks = findLargestContiguousGroup(inf, 6).slice(0, Math.min(6, inf.length));
+    if (picks.length < 3) return commandResult(false, 'No contiguous infantry block for Shield Wall.');
+    for (const e of picks) {
+      addDoctrineLongEffect({ map: 'meleeDefenseBonus', unitId: e.unit.id, value: 1, side, expiresOnSide: side, expiresAfterSerial: state.turnSerial });
+      addDoctrineLongEffect({ map: 'cannotMove', unitId: e.unit.id, value: 1, side, expiresOnSide: side, expiresAfterSerial: state.turnSerial });
+    }
+    return commandResult(true, `Shield Wall formed with ${picks.length} infantry.`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineCavalryExploit(side) {
+    const picks = byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'cav'), side).slice(0, 3);
+    if (!picks.length) return commandResult(false, 'No cavalry available for Cavalry Exploit.');
+    for (const e of picks) addCommandEffectValue('bonusAttackDice', e.unit.id, 1);
+    return commandResult(true, `Cavalry Exploit primed ${picks.length} cavalry unit(s).`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineRefuseFlank(side) {
+    const picks = chooseWingEntries(friendlyEntries(side, (u) => u.type === 'inf'), side, 5).slice(0, 5);
+    if (picks.length < 2) return commandResult(false, 'Refuse the Flank requires 2 infantry on one wing.');
+    const affectedIds = picks.map((e) => e.unit.id);
+    let movedCount = 0;
+    const backDir = oppositeDirection(sideForwardDirection(side, state.forwardAxis));
+    for (const e of picks) {
+      const candidates = [];
+      if (backDir) candidates.push(stepKeyInDirection(e.key, backDir));
+      const inwardDir = inwardLateralDirectionForKey(e.key);
+      if (inwardDir) candidates.push(stepKeyInDirection(e.key, inwardDir));
+      const toKey = candidates.find((k) => k && !isOccupied(k));
+      if (toKey && commandRelocateUnit(e.key, toKey)) movedCount += 1;
+    }
+    if (movedCount <= 0) return commandResult(false, 'Refuse the Flank failed: no selected infantry could reposition.');
+    return commandResult(true, `Refuse the Flank repositioned ${movedCount}/${picks.length} infantry.`, affectedIds, true);
+  }
+
+  function resolveDoctrineForcedMarch(side) {
+    const picks = byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf' || u.type === 'skr'), side).slice(0, 4);
+    if (!picks.length) return commandResult(false, 'No INF/SKR available for Forced March.');
+    for (const e of picks) {
+      addCommandEffectValue('bonusMove', e.unit.id, 1);
+      setCommandEffectFlag('cannotAttack', e.unit.id, true);
+    }
+    return commandResult(true, `Forced March granted +1 move to ${picks.length} unit(s).`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineStrengthenCenter(side) {
+    const gen = pickNearestGeneral(side);
+    if (!gen) return commandResult(false, 'No general available for Strengthen the Center.');
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => u.type === 'inf' && axialDistance(gen.hex.q, gen.hex.r, board.byKey.get(hk).q, board.byKey.get(hk).r) <= 2),
+      side
+    ).slice(0, 4);
+    if (!picks.length) return commandResult(false, 'No infantry within 2 hexes of a general for Strengthen the Center.');
+    for (const e of picks) {
+      addDoctrineLongEffect({ map: 'ignoreRetreatCount', unitId: e.unit.id, value: 1, side, expiresOnSide: side, expiresAfterSerial: state.turnSerial });
+    }
+    return commandResult(true, `Strengthen the Center reinforced ${picks.length} infantry.`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineWingScreen(side) {
+    const picks = chooseWingEntries(friendlyEntries(side, (u) => u.type === 'skr' || u.type === 'arc'), side, 4);
+    if (!picks.length) return commandResult(false, 'No wing SKR/ARC available for Wing Screen.');
+    for (const e of picks) {
+      setCommandEffectFlag('wingScreenUnitIds', e.unit.id, true);
+      addCommandEffectValue('bonusMove', e.unit.id, 1);
+    }
+    return commandResult(true, `Wing Screen primed ${picks.length} unit(s) for attack-and-step tempo (+1 move).`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineCountercharge(side) {
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => u.type === 'cav' && !isSurrounded(hk, side)),
+      side
+    ).slice(0, 3);
+    if (!picks.length) return commandResult(false, 'No cavalry available for Countercharge.');
+    for (const e of picks) {
+      setCommandEffectFlag('counterchargeUnitIds', e.unit.id, true);
+      addCommandEffectValue('bonusAttackDice', e.unit.id, 1);
+    }
+    return commandResult(true, `Countercharge readied ${picks.length} cavalry reaction unit(s) (+1 attack die).`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineJawsInward(side) {
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u) => u.type === 'inf' && (u.quality === 'veteran' || u.quality === 'regular')),
+      side
+    ).slice(0, 5);
+    if (picks.length < 2) return commandResult(false, 'Jaws Inward requires at least 2 regular/veteran infantry.');
+    const affectedIds = picks.map((e) => e.unit.id);
+    let movedCount = 0;
+    for (const e of picks) {
+      const inwardDir = inwardLateralDirectionForKey(e.key);
+      const toKey = inwardDir ? stepKeyInDirection(e.key, inwardDir) : null;
+      if (toKey && commandRelocateUnit(e.key, toKey)) movedCount += 1;
+    }
+    if (movedCount <= 0) return commandResult(false, 'Jaws Inward failed: no selected infantry could move inward.');
+    return commandResult(true, `Jaws Inward shifted ${movedCount}/${picks.length} experienced infantry inward.`, affectedIds, true);
+  }
+
+  function resolveDoctrineLocalReserve(side) {
+    const geom = buildAxisGeometry(state.forwardAxis);
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => geom.frontDepthForSide(side, hk) >= 0.58),
+      side
+    ).slice(0, 3);
+    if (!picks.length) return commandResult(false, 'No reserve/rear units available for Local Reserve.');
+    for (const e of picks) {
+      setCommandEffectFlag('reserveReleaseUnitIds', e.unit.id, true);
+      setCommandEffectFlag('commandOverrideUnitIds', e.unit.id, true);
+    }
+    return commandResult(true, `Local Reserve activated ${picks.length} reserve unit(s) with temporary command override.`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineDriveThemBack(side) {
+    const picks = byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf'), side).slice(0, 4);
+    if (!picks.length) return commandResult(false, 'No infantry available for Drive Them Back.');
+    for (const e of picks) {
+      setCommandEffectFlag('driveThemBackUnitIds', e.unit.id, true);
+      addCommandEffectValue('bonusAttackDice', e.unit.id, 1);
+    }
+    return commandResult(true, `Drive Them Back primed ${picks.length} infantry melee attack(s) (+1 die, disarray pressure).`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineFullLineAdvance(side) {
+    const picks = chooseRowEntries(friendlyEntries(side), 8);
+    if (picks.length < 3) return commandResult(false, 'No large row available for Full Line Advance.');
+    const movedIds = [];
+    for (const e of picks) {
+      const toKey = forwardStepKey(e.key, side);
+      if (toKey && commandRelocateUnit(e.key, toKey)) movedIds.push(e.unit.id);
+      else movedIds.push(e.unit.id);
+    }
+    return commandResult(true, `Full Line Advance pushed ${picks.length} unit(s) forward.`, movedIds, true);
+  }
+
+  function resolveDoctrineGrandShieldWall(side) {
+    const inf = friendlyEntries(side, (u) => u.type === 'inf');
+    if (inf.length < 5) return commandResult(false, 'Grand Shield Wall requires at least 5 infantry.');
+    const picks = findLargestContiguousGroup(inf, 8).slice(0, Math.min(8, inf.length));
+    if (picks.length < 5) return commandResult(false, 'No major contiguous infantry block for Grand Shield Wall.');
+    for (const e of picks) {
+      if (e.unit.disarray) e.unit.disarray = false;
+      addDoctrineBuffThroughNextOwnTurn('meleeDefenseBonus', e.unit.id, 3, side);
+      addDoctrineBuffThroughNextOwnTurn('ignoreRetreatCount', e.unit.id, 3, side);
+      addDoctrineBuffThroughNextOwnTurn('cannotMove', e.unit.id, 1, side);
+    }
+    return commandResult(
+      true,
+      `Grand Shield Wall locked ${picks.length} infantry in a hardened wall (defense +3, ignore 3 retreats, holds through your next turn).`,
+      picks.map(e => e.unit.id),
+      true
+    );
+  }
+
+  function resolveDoctrineAllOutCavalrySweep(side) {
+    const picks = chooseWingEntries(friendlyEntries(side, (u) => u.type === 'cav'), side, 4);
+    const usedFallback = !picks.length;
+    const selected = usedFallback
+      ? chooseWingEntries(
+          friendlyEntries(side, (u) => u.type === 'inf' || u.type === 'skr' || u.type === 'arc'),
+          side,
+          3
+        )
+      : picks;
+    if (!selected.length) return commandResult(false, 'No eligible wing units available for All-Out Cavalry Sweep.');
+
+    let repositioned = 0;
+    for (const e of selected) {
+      const toKey = forwardStepKey(e.key, side);
+      if (toKey && commandRelocateUnit(e.key, toKey)) repositioned += 1;
+    }
+
+    const atkBonus = usedFallback ? 2 : 3;
+    const moveBonus = 2;
+    for (const e of selected) {
+      addDoctrineBuffThroughNextOwnTurn('bonusMove', e.unit.id, moveBonus, side);
+      addDoctrineBuffThroughNextOwnTurn('bonusAttackDice', e.unit.id, atkBonus, side);
+      addDoctrineBuffThroughNextOwnTurn('driveThemBackUnitIds', e.unit.id, 1, side);
+    }
+
+    if (usedFallback) {
+      return commandResult(
+        true,
+        `All-Out Cavalry Sweep converted to Wing Assault: ${selected.length} flank units primed (+2 move, +2 attack dice, disarray pressure) through your next turn; repositioned ${repositioned}.`,
+        selected.map(e => e.unit.id),
+        false
+      );
+    }
+
+    return commandResult(
+      true,
+      `All-Out Cavalry Sweep primed ${selected.length} cavalry (+2 move, +3 attack dice, disarray pressure) through your next turn; repositioned ${repositioned}.`,
+      selected.map(e => e.unit.id),
+      false
+    );
+  }
+
+  function resolveDoctrineCommitReserves(side) {
+    const picks = selectReserveEntries(side, 4);
+    if (!picks.length) return commandResult(false, 'No rear reserve units available to commit.');
+
+    let moved = 0;
+    for (const e of picks) {
+      const toKey = forwardStepKey(e.key, side);
+      if (toKey && commandRelocateUnit(e.key, toKey)) moved += 1;
+    }
+
+    for (const e of picks) {
+      addDoctrineBuffThroughNextOwnTurn('bonusMove', e.unit.id, 1, side);
+      addDoctrineBuffThroughNextOwnTurn('commandOverrideUnitIds', e.unit.id, 1, side);
+      addDoctrineBuffThroughNextOwnTurn('bonusAttackDice', e.unit.id, 1, side);
+    }
+
+    return commandResult(
+      true,
+      `Commit Reserves activated ${picks.length} rear-line units (furthest from enemy), stepped ${moved} forward, and granted command/mobility/attack support through your next turn.`,
+      picks.map(e => e.unit.id),
+      false
+    );
+  }
+
+  function resolveDoctrineGeneralAssault(side) {
+    const gen = pickNearestGeneral(side);
+    if (!gen) return commandResult(false, 'No general available for General Assault.');
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => {
+        if (u.id === gen.unit.id) return false;
+        const h = board.byKey.get(hk);
+        return axialDistance(gen.hex.q, gen.hex.r, h.q, h.r) <= (commandRadiusForUnit(gen.unit) + 1);
+      }),
+      side
+    ).slice(0, 4);
+    if (!picks.length) return commandResult(false, 'No sector units available for General Assault.');
+    for (const e of picks) setCommandEffectFlag('reserveReleaseUnitIds', e.unit.id, true);
+    return commandResult(true, `General Assault synchronized ${picks.length} sector units.`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineCollapseCenter(side) {
+    const geom = buildAxisGeometry(state.forwardAxis);
+    const allInf = friendlyEntries(side, (u) => u.type === 'inf');
+    const centerInf = collapseCenterCandidates(side, 5);
+    if (centerInf.length < 3) return commandResult(false, 'Collapse the Center needs 3 infantry.');
+    const selectedIds = new Set(centerInf.map((e) => e.unit.id));
+    const selectedKeys = new Set(centerInf.map((e) => e.key));
+    const leftWing = [];
+    const rightWing = [];
+    for (const e of allInf) {
+      if (selectedKeys.has(e.key)) continue;
+      const lateral = geom.lateralForSide(side, e.key);
+      if (lateral < -0.18) leftWing.push({ e, score: Math.abs(lateral) });
+      else if (lateral > 0.18) rightWing.push({ e, score: Math.abs(lateral) });
+    }
+    leftWing.sort((a, b) => b.score - a.score);
+    rightWing.sort((a, b) => b.score - a.score);
+    const wingPicks = [...leftWing.slice(0, 2).map((x) => x.e), ...rightWing.slice(0, 2).map((x) => x.e)];
+    for (const w of wingPicks) selectedIds.add(w.unit.id);
+
+    let centerMoved = 0;
+    let wingMoved = 0;
+    const backDir = oppositeDirection(sideForwardDirection(side, state.forwardAxis));
+    for (const e of centerInf) {
+      const toKey = backDir ? stepKeyInDirection(e.key, backDir) : null;
+      if (toKey && commandRelocateUnit(e.key, toKey)) centerMoved += 1;
+    }
+    for (const e of wingPicks) {
+      const inwardDir = inwardLateralDirectionForKey(e.key);
+      const toKey = inwardDir ? stepKeyInDirection(e.key, inwardDir) : null;
+      if (toKey && commandRelocateUnit(e.key, toKey)) wingMoved += 1;
+    }
+    if ((centerMoved + wingMoved) <= 0) {
+      return commandResult(false, 'Collapse the Center failed: no selected infantry could reposition.');
+    }
+    return commandResult(
+      true,
+      `Collapse the Center: center fallback ${centerMoved}/${centerInf.length}, wing compression ${wingMoved}/${wingPicks.length}.`,
+      [...selectedIds],
+      true
+    );
+  }
+
+  function resolveDoctrineLastPush(side) {
+    const picks = byFrontlinePriority(friendlyEntries(side, (u) => u.type === 'inf' || u.type === 'cav'), side).slice(0, 4);
+    if (!picks.length) return commandResult(false, 'No INF/CAV available for Last Push.');
+    for (const e of picks) addCommandEffectValue('bonusAttackDice', e.unit.id, 2);
+    return commandResult(true, `Last Push primed ${picks.length} unit(s) for high-commitment attacks (+2 dice).`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineReforgeLine(side) {
+    const inf = friendlyEntries(side, (u) => u.type === 'inf');
+    if (inf.length < 3) return commandResult(false, 'Reforge the Line requires connected infantry.');
+    const picks = findLargestContiguousGroup(inf, 6);
+    if (!picks.length) return commandResult(false, 'No connected infantry group to reforge.');
+    const movedIds = [];
+    for (const e of picks) {
+      const opts = [sideForwardDirection(side, state.forwardAxis), ...axisLateralDirections(state.forwardAxis), oppositeDirection(sideForwardDirection(side, state.forwardAxis))];
+      const toKey = opts.map(dir => stepKeyInDirection(e.key, dir)).find(k => k && !isOccupied(k));
+      if (toKey && commandRelocateUnit(e.key, toKey)) movedIds.push(e.unit.id);
+      else movedIds.push(e.unit.id);
+    }
+    return commandResult(true, `Reforge the Line repositioned ${picks.length} infantry by up to 1 hex.`, movedIds, true);
+  }
+
+  function resolveDoctrineCommandSurge(side) {
+    const gen = pickNearestGeneral(side);
+    if (!gen) return commandResult(false, 'No general available for Command Surge.');
+    addCommandEffectValue('commandRadiusBonusByGeneralId', gen.unit.id, 1);
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => !inCommandAt(hk, side)),
+      side
+    ).slice(0, 3);
+    for (const e of picks) setCommandEffectFlag('commandOverrideUnitIds', e.unit.id, true);
+    return commandResult(true, `Command Surge expanded ${side.toUpperCase()} command radius around GEN at ${gen.key}.`, picks.map(e => e.unit.id), false);
+  }
+
+  function resolveDoctrineStandOrDie(side) {
+    const gen = pickNearestGeneral(side);
+    if (!gen) return commandResult(false, 'No general available for Stand or Die.');
+    const picks = byFrontlinePriority(
+      friendlyEntries(side, (u, hk) => {
+        if (u.type !== 'inf') return false;
+        const h = board.byKey.get(hk);
+        return axialDistance(gen.hex.q, gen.hex.r, h.q, h.r) <= 2;
+      }),
+      side
+    ).slice(0, 5);
+    if (picks.length < 3) return commandResult(false, 'Stand or Die needs 3 infantry around a general.');
+    for (const e of picks) {
+      addDoctrineLongEffect({ map: 'ignoreAllRetreat', unitId: e.unit.id, value: 1, side, expiresOnSide: side, expiresAfterSerial: state.turnSerial });
+      addDoctrineLongEffect({ map: 'cannotMove', unitId: e.unit.id, value: 1, side, expiresOnSide: side, expiresAfterSerial: state.turnSerial });
+      addDoctrineLongEffect({ map: 'meleeDefenseBonus', unitId: e.unit.id, value: 1, side, expiresOnSide: side, expiresAfterSerial: state.turnSerial });
+    }
+    return commandResult(true, `Stand or Die anchored ${picks.length} infantry around the command node (+1 melee defense, no retreat).`, picks.map(e => e.unit.id), false);
+  }
+
+  const COMMAND_RESOLVERS = {
+    quick_dress: resolveDoctrineQuickDress,
+    runner_burst: resolveDoctrineRunnerBurst,
+    javelin_volley: resolveDoctrineJavelinVolley,
+    quick_withdraw: resolveDoctrineQuickWithdraw,
+    close_ranks: resolveDoctrineCloseRanks,
+    spur_horses: resolveDoctrineSpurHorses,
+    signal_call: resolveDoctrineSignalCall,
+    loose_screen: resolveDoctrineLooseScreen,
+    covering_fire: resolveDoctrineCoveringFire,
+    hold_fast: resolveDoctrineHoldFast,
+    shield_wall: resolveDoctrineShieldWall,
+    cavalry_exploit: resolveDoctrineCavalryExploit,
+    refuse_flank: resolveDoctrineRefuseFlank,
+    forced_march: resolveDoctrineForcedMarch,
+    strengthen_center: resolveDoctrineStrengthenCenter,
+    wing_screen: resolveDoctrineWingScreen,
+    countercharge: resolveDoctrineCountercharge,
+    jaws_inward: resolveDoctrineJawsInward,
+    local_reserve: resolveDoctrineLocalReserve,
+    drive_them_back: resolveDoctrineDriveThemBack,
+    full_line_advance: resolveDoctrineFullLineAdvance,
+    grand_shield_wall: resolveDoctrineGrandShieldWall,
+    all_out_cavalry_sweep: resolveDoctrineAllOutCavalrySweep,
+    commit_reserves: resolveDoctrineCommitReserves,
+    general_assault: resolveDoctrineGeneralAssault,
+    collapse_center: resolveDoctrineCollapseCenter,
+    last_push: resolveDoctrineLastPush,
+    reforge_line: resolveDoctrineReforgeLine,
+    command_surge: resolveDoctrineCommandSurge,
+    stand_or_die: resolveDoctrineStandOrDie,
+  };
+
+  function resolveDoctrineCommand(side, commandId) {
+    const cmd = COMMAND_BY_ID.get(commandId);
+    if (!cmd) return commandResult(false, 'Unknown command.');
+    const resolver = COMMAND_RESOLVERS[cmd.resolver];
+    if (typeof resolver !== 'function') return commandResult(false, `${cmd.name} has no resolver yet.`);
+    return resolver(side);
+  }
+
+  function commandLabel(commandId) {
+    const cmd = COMMAND_BY_ID.get(commandId);
+    if (!cmd) return commandId;
+    return `${cmd.name} [${cmd.cost}]`;
+  }
+
+  function issueDoctrineCommand(commandId) {
+    const side = state.side;
+    if (state.mode !== 'play' || state.gameOver) {
+      log('Commands can only be issued during live play.');
+      return false;
+    }
+    if (state.doctrine.commandIssuedThisTurn) {
+      log('Only one command can be issued each turn.');
+      return false;
+    }
+    if (state.actsUsed >= ACT_LIMIT) {
+      log('No actions left this turn.');
+      return false;
+    }
+    if (!isCommandAvailableForUse(side, commandId)) {
+      log('That command is not currently available.');
+      return false;
+    }
+
+    const cmd = COMMAND_BY_ID.get(commandId);
+    const result = resolveDoctrineCommand(side, commandId);
+    if (!result || !result.ok) {
+      log(result?.message || `${cmd?.name || 'Command'} could not be executed.`);
+      return false;
+    }
+
+    // Single-use orders get a built-in tempo edge:
+    // cost 2/3 spent orders effectively rebate 1 action after successful execution.
+    const singleUseRebate = (cmd.persistence === 'spent' && cmd.cost >= 2) ? 1 : 0;
+    const actionSpend = commandActionSpend(cmd);
+    state.actsUsed = Math.min(ACT_LIMIT, state.actsUsed + actionSpend);
+    state.doctrine.commandIssuedThisTurn = true;
+    state.doctrine.activeCommandThisTurn = commandId;
+    markCommandUsed(side, commandId);
+
+    const affectedUnitIds = Array.isArray(result.affectedUnitIds) ? result.affectedUnitIds : [];
+    if (result.spendTargets) {
+      for (const id of affectedUnitIds) state.actedUnitIds.add(id);
+    }
+
+    if (singleUseRebate > 0) {
+      log(`${side.toUpperCase()} used ${cmd.name} (${commandUsageLabel(cmd.persistence)}, ${cmd.cost} actions, rebate ${singleUseRebate}).`);
+    } else {
+      log(`${side.toUpperCase()} used ${cmd.name} (${commandUsageLabel(cmd.persistence)}, ${cmd.cost} actions).`);
+    }
+    if (result.message) log(result.message);
+    notifyEnemyDirectiveUsed(side, cmd, actionSpend);
+    pushEventTrace('command.resolve', {
+      commandId: cmd.id,
+      side,
+      cost: cmd.cost,
+      actionSpend,
+      persistence: cmd.persistence,
+      affectedUnitIds,
+      spendTargets: !!result.spendTargets,
+      note: result.message || '',
+    });
+    closeCommandPhase();
+    clearSelection();
+    updateHud();
+    maybeAutoEndTurnAtActionLimit();
+    return true;
+  }
+
+  function veteranCavPostAttackWithdrawTargets(fromKey, u, actCtx) {
     const out = new Set();
-    if (!u || u.type !== 'cav') return out;
+    if (!u || u.type !== 'cav' || u.quality !== 'veteran') return out;
+    if (!isEngaged(fromKey, u.side)) return out;
 
     const moveDef = UNIT_BY_ID.get(u.type);
     const maxMp = moveDef ? moveDef.move : 0;
     const remainingMp = Math.max(0, maxMp - (actCtx?.moveSpent || 0));
     if (remainingMp <= 0) return out;
-
-    const veteranWithdraw = (u.quality === 'veteran') && isEngaged(fromKey, u.side);
-    const lightningStrikeWithdraw =
-      !!actCtx &&
-      !!actCtx.moved &&
-      !actCtx.startedEngaged &&
-      (actCtx.moveSpent || 0) >= 1 &&
-      remainingMp >= 1;
-
-    if (!veteranWithdraw && !lightningStrikeWithdraw) return out;
 
     const h = board.byKey.get(fromKey);
     if (!h) return out;
@@ -7598,7 +9307,6 @@ function unitColors(side) {
       if (isOccupied(nk)) continue;
       const nh = board.byKey.get(nk);
       if (!nh) continue;
-      if (!canEnterTerrainFrom(u.type, h.terrain, nh.terrain)) continue;
 
       const cost = terrainMoveCost(u.type, nh.terrain);
       if (!Number.isFinite(cost) || cost > remainingMp) continue;
@@ -7607,6 +9315,29 @@ function unitColors(side) {
       out.add(nk);
     }
     return out;
+  }
+
+  function tryTriggerCounterchargeAgainst(movedKey, movedUnit) {
+    if (!movedKey || !movedUnit) return;
+    const movedHex = board.byKey.get(movedKey);
+    if (!movedHex) return;
+
+    for (const nk of movedHex.neigh) {
+      const enemy = unitsByHex.get(nk);
+      if (!enemy) continue;
+      if (enemy.side === movedUnit.side) continue;
+      if (enemy.type !== 'cav') continue;
+      if (!doctrineFlagForUnit('counterchargeUnitIds', enemy.id, enemy.side)) continue;
+
+      const prof = attackDiceFor(nk, movedKey, enemy);
+      if (!prof || prof.kind !== 'melee' || prof.dist !== 1) continue;
+
+      state.doctrine.effects.counterchargeUnitIds[enemy.id] = false;
+      state.actedUnitIds.add(enemy.id);
+      log(`${enemy.side.toUpperCase()} countercharge triggered by nearby movement.`);
+      resolveAttack(nk, movedKey);
+      break;
+    }
   }
 
   function attackApproachPosition(attackerKey, defenderKey, defenderSide) {
@@ -7618,6 +9349,174 @@ function unitColors(side) {
     if (attackerKey === frontKey) return 'front';
     if (attackerKey === rearKey) return 'rear';
     return 'flank';
+  }
+
+  function directionFromToNeighbor(fromKey, toNeighborKey) {
+    if (!fromKey || !toNeighborKey) return null;
+    for (const dir of BRACE_DIR_RING) {
+      if (stepKeyInDirection(fromKey, dir) === toNeighborKey) return dir;
+    }
+    return null;
+  }
+
+  function collectInfantryBracePairs(defenderKey, side) {
+    const pairs = [];
+    if (!defenderKey || (side !== 'blue' && side !== 'red')) return pairs;
+
+    for (let i = 0; i < BRACE_DIR_RING.length; i++) {
+      const dirA = BRACE_DIR_RING[i];
+      const dirB = BRACE_DIR_RING[(i + 1) % BRACE_DIR_RING.length];
+      const keyA = stepKeyInDirection(defenderKey, dirA);
+      const keyB = stepKeyInDirection(defenderKey, dirB);
+      if (!keyA || !keyB) continue;
+
+      const unitA = unitsByHex.get(keyA);
+      const unitB = unitsByHex.get(keyB);
+      if (!unitA || !unitB) continue;
+      if (unitA.side !== side || unitB.side !== side) continue;
+      if (unitA.type !== 'inf' || unitB.type !== 'inf') continue;
+
+      pairs.push({
+        supportDirs: [dirA, dirB],
+        supportKeys: [keyA, keyB],
+        coverDirs: [
+          BRACE_DIR_RING[(i + 3) % BRACE_DIR_RING.length],
+          BRACE_DIR_RING[(i + 4) % BRACE_DIR_RING.length],
+        ],
+      });
+    }
+
+    return pairs;
+  }
+
+  function infantryBraceInfoForAttack(attackerKey, defenderKey, attackerUnit = null, defenderUnit = null) {
+    const out = {
+      active: false,
+      attackDir: null,
+      supportKeys: [],
+      supportDirs: [],
+      coverDirs: [],
+      pairCount: 0,
+    };
+
+    const atk = attackerUnit || unitsByHex.get(attackerKey);
+    const def = defenderUnit || unitsByHex.get(defenderKey);
+    if (!atk || !def) return out;
+    if (def.type !== 'inf') return out;
+    if (atk.side === def.side) return out;
+
+    const attackDir = directionFromToNeighbor(defenderKey, attackerKey);
+    if (!attackDir) return out;
+    out.attackDir = attackDir;
+
+    const pairs = collectInfantryBracePairs(defenderKey, def.side);
+    out.pairCount = pairs.length;
+    if (pairs.length === 0) return out;
+
+    const matched = pairs.find((pair) => pair.coverDirs.includes(attackDir)) || null;
+    if (!matched) return out;
+
+    out.active = true;
+    out.supportKeys = matched.supportKeys.slice();
+    out.supportDirs = matched.supportDirs.slice();
+    out.coverDirs = matched.coverDirs.slice();
+    return out;
+  }
+
+  function infantryBraceInfoForHover(defenderKey) {
+    const out = {
+      active: false,
+      supportKeys: [],
+      pairCount: 0,
+    };
+    const defender = unitsByHex.get(defenderKey);
+    if (!defender || defender.type !== 'inf') return out;
+
+    const pairs = collectInfantryBracePairs(defenderKey, defender.side);
+    out.pairCount = pairs.length;
+    if (pairs.length === 0) return out;
+
+    // Prefer a pair currently facing an adjacent enemy; fall back to the first valid pair.
+    let chosen = null;
+    const defHex = board.byKey.get(defenderKey);
+    if (defHex) {
+      for (const nk of defHex.neigh) {
+        const enemy = unitsByHex.get(nk);
+        if (!enemy || enemy.side === defender.side) continue;
+        const info = infantryBraceInfoForAttack(nk, defenderKey, enemy, defender);
+        if (info.active) {
+          chosen = info;
+          break;
+        }
+      }
+    }
+    if (!chosen) {
+      chosen = {
+        active: true,
+        supportKeys: pairs[0].supportKeys.slice(),
+      };
+    }
+
+    out.active = true;
+    out.supportKeys = chosen.supportKeys.slice();
+    return out;
+  }
+
+  function computeInfantryBraceOverlay() {
+    const overlay = new Map();
+    const mark = (hexKey, role, strength) => {
+      if (!hexKey) return;
+      const s = Math.max(0, Math.min(1, Number(strength) || 0));
+      if (s <= 0) return;
+      const cur = overlay.get(hexKey) || { defender: 0, supporter: 0 };
+      if (role === 'supporter') cur.supporter = Math.max(cur.supporter, s);
+      else cur.defender = Math.max(cur.defender, s);
+      overlay.set(hexKey, cur);
+    };
+
+    // Active brace overlays: defender is adjacent-threatened from a covered direction.
+    for (const [defKey, defender] of unitsByHex) {
+      if (!defender || defender.type !== 'inf') continue;
+      const defHex = board.byKey.get(defKey);
+      if (!defHex) continue;
+
+      for (const nk of defHex.neigh) {
+        const enemy = unitsByHex.get(nk);
+        if (!enemy || enemy.side === defender.side) continue;
+        const info = infantryBraceInfoForAttack(nk, defKey, enemy, defender);
+        if (!info.active) continue;
+        mark(defKey, 'defender', 0.72);
+        for (const sk of info.supportKeys) mark(sk, 'supporter', 0.68);
+      }
+    }
+
+    // Hover/selected infantry: always show one valid brace pair if it exists.
+    const focusKeys = [];
+    if (state._hoverKey) focusKeys.push(state._hoverKey);
+    if (state.selectedKey && state.selectedKey !== state._hoverKey) focusKeys.push(state.selectedKey);
+    for (const fk of focusKeys) {
+      const info = infantryBraceInfoForHover(fk);
+      if (!info.active) continue;
+      mark(fk, 'defender', 0.98);
+      for (const sk of info.supportKeys) mark(sk, 'supporter', 0.90);
+    }
+
+    // Attack preview: selected attacker against highlighted attack targets.
+    if (state.mode === 'play' && state.selectedKey && state._attackTargets && state._attackTargets.size > 0) {
+      const attacker = unitsByHex.get(state.selectedKey);
+      if (attacker) {
+        for (const targetKey of state._attackTargets) {
+          const target = unitsByHex.get(targetKey);
+          if (!target) continue;
+          const info = infantryBraceInfoForAttack(state.selectedKey, targetKey, attacker, target);
+          if (!info.active) continue;
+          mark(targetKey, 'defender', 1.0);
+          for (const sk of info.supportKeys) mark(sk, 'supporter', 0.95);
+        }
+      }
+    }
+
+    return overlay;
   }
 
   function infantryCanPivotOnDefense(defenderKey, defenderUnit) {
@@ -7644,6 +9543,8 @@ function unitColors(side) {
 
   // --- Attacks (melee + ranged)
   function attackDiceFor(attackerKey, defenderKey, attackerUnit) {
+    if (attackerUnit && doctrineFlagForUnit('cannotAttack', attackerUnit.id, attackerUnit.side)) return null;
+    if (attackerUnit && unitIsDisarrayed(attackerUnit)) return null;
     const atkHex = board.byKey.get(attackerKey);
     const defHex = board.byKey.get(defenderKey);
     if (!atkHex || !defHex) return null;
@@ -7672,39 +9573,16 @@ function unitColors(side) {
     // Beyond range 1 requires ranged capability and NOT being engaged.
     if (engaged) return null;
     if (!atkDef.ranged) return null;
-    if (
-      (attackerUnit.type === 'arc' || attackerUnit.type === 'skr') &&
-      atkHex.terrain === 'woods' &&
-      !hasAdjacentTerrain(attackerKey, 'clear')
-    ) {
-      return null;
-    }
 
-    let baseRangedDice = atkDef.ranged[dist] || 0;
-    let hillBonusDice = 0;
+    const dice = atkDef.ranged[dist];
+    if (!dice) return null;
 
-    if ((attackerUnit.type === 'arc' || attackerUnit.type === 'skr') && atkHex.terrain === 'hills') {
-      // Hilltop advantage: +1 ranged die for ARC/SKR.
-      hillBonusDice = 1;
-    }
-
-    if (!baseRangedDice) return null;
-    const totalRangedDice = baseRangedDice + hillBonusDice;
-
-    return {
-      kind: 'ranged',
-      dist,
-      baseDice: baseRangedDice,
-      dice: totalRangedDice,
-      flankBonus: 0,
-      rearBonus: 0,
-      impactPosition: 'none',
-      hillBonusDice,
-    };
+    return { kind: 'ranged', dist, baseDice: dice, dice, flankBonus: 0, rearBonus: 0, impactPosition: 'none' };
   }
 
   function computeAttackTargets(attackerKey, u) {
     const targets = new Set();
+    if (unitIsDisarrayed(u)) return targets;
 
     for (const [hk, enemy] of unitsByHex) {
       if (enemy.side === u.side) continue;
@@ -7718,6 +9596,7 @@ function unitColors(side) {
   function computeHealTargets(sourceKey, u) {
     const targets = new Set();
     if (!u || u.type !== 'iat') return targets;
+    if (unitIsDisarrayed(u)) return targets;
 
     const sourceHex = board.byKey.get(sourceKey);
     if (!sourceHex) return targets;
@@ -7726,6 +9605,7 @@ function unitColors(side) {
       const ally = unitsByHex.get(nk);
       if (!ally) continue;
       if (ally.side !== u.side) continue;
+      if (unitIsDisarrayed(ally)) continue;
       const maxHp = unitMaxHp(ally.type, ally.quality);
       if (ally.hp >= maxHp) continue;
       targets.add(nk);
@@ -7740,49 +9620,57 @@ function unitColors(side) {
   }
 
   function retreatPick(attackerKey, defenderKey) {
-    // Choose retreat direction purely by geometry (maximizes distance), then
-    // if the chosen hex is invalid (off-board/water/occupied), retreat converts to a hit.
-
+    // Retreat prefers moving back toward the unit's own side/backline when possible.
+    // If no legal retreat hex increases distance from attacker, retreat converts to a hit.
     const aHex = board.byKey.get(attackerKey);
     const dHex = board.byKey.get(defenderKey);
-    const defU = unitsByHex.get(defenderKey);
     if (!aHex || !dHex) return null;
+    const defenderUnit = unitsByHex.get(defenderKey);
+    const defenderSide = defenderUnit?.side || 'blue';
 
     const curDist = axialDistance(aHex.q, aHex.r, dHex.q, dHex.r);
-
     const deltas = (dHex.r & 1) ? NEIGH_ODD : NEIGH_EVEN;
-
-    let bestKey = null;
-    let bestDist = curDist;
+    const axisGeom = buildAxisGeometry(state.forwardAxis);
+    const candidates = [];
 
     for (const [dq, dr] of deltas) {
       const nq = dHex.q + dq;
       const nr = dHex.r + dr;
+      const nk = key(nq, nr);
       const nd = axialDistance(aHex.q, aHex.r, nq, nr);
-      if (nd > bestDist) {
-        bestDist = nd;
-        bestKey = key(nq, nr);
-      }
+      if (nd <= curDist) continue;
+      if (!board.activeSet.has(nk)) continue;
+      const nh = board.byKey.get(nk);
+      if (!nh) continue;
+      if (nh.terrain === 'water' || nh.terrain === 'mountains') continue;
+      if (isOccupied(nk)) continue;
+
+      const nextScalars = axisScalarsForHex(nh, state.forwardAxis);
+      const retreatDepth = sideDepthNorm(nextScalars, defenderSide);
+      candidates.push({ k: nk, dist: nd, retreatDepth });
     }
 
-    if (!bestKey) return null;
+    if (!candidates.length) return null;
 
-    // Validate the chosen retreat hex.
-    if (!board.activeSet.has(bestKey)) return null;
-
-    const bh = board.byKey.get(bestKey);
-    if (!bh) return null;
-
-    if (bh.terrain === 'water') return null;
-    if (defU && !canEnterTerrainFrom(defU.type, dHex.terrain, bh.terrain)) return null;
-    if (isOccupied(bestKey)) return null;
-
-    return bestKey;
+    candidates.sort((a, b) =>
+      (a.retreatDepth - b.retreatDepth) ||
+      (b.dist - a.dist) ||
+      a.k.localeCompare(b.k)
+    );
+    return candidates[0].k;
   }
 
   function consumeActivation(unitId) {
     state.actsUsed = Math.min(ACT_LIMIT, state.actsUsed + 1);
     state.actedUnitIds.add(unitId);
+  }
+
+  function maybeAutoEndTurnAtActionLimit() {
+    if (state.mode !== 'play' || state.gameOver) return;
+    if (state.actsUsed < ACT_LIMIT) return;
+    // Do not auto-end while an activation is still in progress.
+    if (state.selectedKey || state.act) return;
+    endTurn();
   }
 
   function destroyUnit(defenderKey, defenderUnit, attackerSide) {
@@ -7799,13 +9687,14 @@ function unitColors(side) {
   function resolveAttack(attackerKey, defenderKey) {
     const atk = unitsByHex.get(attackerKey);
     const defU = unitsByHex.get(defenderKey);
-    if (!atk || !defU) return;
-    if (state.gameOver) return;
+    if (!atk || !defU) return { ok: false, pursuitTarget: null };
+    if (state.gameOver) return { ok: false, pursuitTarget: null };
+    const initialDefenderKey = defenderKey;
 
     const prof = attackDiceFor(attackerKey, defenderKey, atk);
     if (!prof) {
       log('Illegal attack.');
-      return;
+      return { ok: false, pursuitTarget: null };
     }
 
     let impactPosition = 'none';
@@ -7822,58 +9711,47 @@ function unitColors(side) {
       }
     }
 
-    // Terrain modifiers:
-    // - Defensive: woods / hills / tree-line cover can reduce attacker dice.
-    // - Offensive: rough attacks reduce outgoing dice.
-    // - Elevated missile fire (ARC/SKR) is handled in attackDiceFor().
-    const atkHex = board.byKey.get(attackerKey);
+    // Terrain defensive modifier: defender in woods => -1 die (min 1)
     const defHex = board.byKey.get(defenderKey);
     const defenderTerrain = defHex?.terrain || 'clear';
-    const attackerTerrain = atkHex?.terrain || 'clear';
-    const defenderTreeLine = defenderTerrain === 'woods' && hasAdjacentTerrain(defenderKey, 'clear');
-
-    let attackTerrainDiceMod = 0;
-    const attackTerrainParts = [];
-    if (attackerTerrain === 'rough') {
-      attackTerrainDiceMod -= 1;
-      attackTerrainParts.push('rough -1');
-    }
-
-    let terrainDiceMod = 0;
-    if (defenderTerrain === 'woods') {
-      terrainDiceMod -= 1;
-    }
-    if (defenderTerrain === 'hills' && (defU.type === 'arc' || defU.type === 'skr')) terrainDiceMod -= 1;
-    const supportEval = (prof.kind === 'melee')
-      ? reinforcementSupportForAttack(defenderKey, attackerKey, defU)
-      : { supportRanks: 0, active: false, pairs: [], matching: [], supportSet: new Set(), attackDir: null };
-    const supportRanks = supportEval.supportRanks || 0;
-    const supportDiceMod = supportRanks > 0
-      ? -(Math.min(INF_SUPPORT_MAX_RANKS, supportRanks) * INF_SUPPORT_DICE_PER_RANK)
-      : 0;
-    const defenseDiceMod = terrainDiceMod + supportDiceMod;
-    const terrainRuleText = (() => {
-      const parts = [];
-      if (attackTerrainParts.length > 0) parts.push(`attack stance ${attackTerrainParts.join(', ')}`);
-      if (defenderTerrain === 'woods' && (defU.type === 'arc' || defU.type === 'skr') && defenderTreeLine) {
-        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} on tree-line: attacker -1 die`);
-      } else if (defenderTerrain === 'woods') {
-        parts.push('defender in Woods: attacker -1 die');
-      }
-      if (defenderTerrain === 'hills' && (defU.type === 'arc' || defU.type === 'skr')) {
-        parts.push(`defender ${UNIT_BY_ID.get(defU.type)?.abbrev || defU.type} on Hills: attacker -1 die`);
-      }
-      return parts.length > 0
-        ? `${parts.join('; ')}.`
-        : `No terrain dice modifier in this exchange.`;
-    })();
+    let terrainDiceMod = (defenderTerrain === 'woods') ? -1 : 0;
+    const terrainRuleText = (defenderTerrain === 'woods')
+      ? 'Defender in Woods: attacker rolls -1 die (minimum 1).'
+      : `Defender in ${terrainLabel(defenderTerrain)}: no terrain dice modifier in this ruleset.`;
     const impact = cavalryAngleBonuses(atk, defU, prof.kind, impactPosition);
+    const braceInfo = (prof.kind === 'melee')
+      ? infantryBraceInfoForAttack(attackerKey, defenderKey, atk, defU)
+      : { active: false, supportKeys: [] };
+    const braceDiceMod = braceInfo.active ? -1 : 0;
+    const braceRuleText = braceInfo.active
+      ? 'Defender is braced by linked INF: attacker rolls -1 die (minimum 1).'
+      : 'Defender is not braced.';
     const baseDice = prof.baseDice ?? prof.dice;
-    const hillBonusDice = Number(prof.hillBonusDice || 0);
+    const commandAttackBonus = doctrineValueForUnit('bonusAttackDice', atk.id, atk.side);
+    const commandRangedBonus = (prof.kind === 'ranged')
+      ? doctrineValueForUnit('rangedBonusDice', atk.id, atk.side)
+      : 0;
+    const commandDefenseBonus = (prof.kind === 'melee')
+      ? doctrineValueForUnit('meleeDefenseBonus', defU.id, defU.side)
+      : 0;
+    let coveringFireIgnored = false;
+    if (prof.kind === 'ranged' && terrainDiceMod < 0 && doctrineFlagForSide('coverFireIgnoreTerrain', atk.side)) {
+      terrainDiceMod = 0;
+      coveringFireIgnored = true;
+      const curCover = Number(state.doctrine.effects.coverFireIgnoreTerrain[atk.side] || 0);
+      state.doctrine.effects.coverFireIgnoreTerrain[atk.side] = Math.max(0, curCover - 1);
+      log(`${atk.side.toUpperCase()} used Covering Fire: ignored terrain ranged penalty.`);
+    }
     const flankBonus = impact.flankBonus;
     const rearBonus = impact.rearBonus;
-    const preTerrainDice = baseDice + hillBonusDice + impact.totalBonus + attackTerrainDiceMod;
-    const dice = Math.max(1, preTerrainDice + defenseDiceMod);
+    const preTerrainDice =
+      baseDice +
+      impact.totalBonus +
+      braceDiceMod +
+      commandAttackBonus +
+      commandRangedBonus -
+      commandDefenseBonus;
+    const dice = Math.max(1, preTerrainDice + terrainDiceMod);
 
     const rolls = [];
     for (let i = 0; i < dice; i++) rolls.push(rollD6());
@@ -7881,57 +9759,82 @@ function unitColors(side) {
     const atkDef = UNIT_BY_ID.get(atk.type);
     const defDef = UNIT_BY_ID.get(defU.type);
 
-    const hits = rolls.filter(v => DIE_HIT.has(v)).length;
-    const retreats = rolls.filter(v => v === DIE_RETREAT).length;
-    const misses = Math.max(0, dice - hits - retreats);
+    let hits = 0;
+    let retreats = 0;
+    let disarrays = 0;
+    let misses = 0;
+    for (const v of rolls) {
+      if (v === 6) {
+        hits += 1;
+        retreats += 1;
+        disarrays += 1;
+      } else if (v === 5) {
+        hits += 1;
+      } else if (v === DIE_RETREAT) {
+        retreats += 1;
+      } else if (v === DIE_DISARRAY) {
+        disarrays += 1;
+      } else {
+        misses += 1;
+      }
+    }
+    if (prof.kind === 'melee' && doctrineFlagForUnit('driveThemBackUnitIds', atk.id, atk.side)) {
+      const driveIdx = rolls.findIndex(v => v === 2);
+      if (driveIdx >= 0) {
+        disarrays += 1;
+        misses = Math.max(0, misses - 1);
+        log(`${atk.side.toUpperCase()} command effect: Drive Them Back converted one 2 to disarray.`);
+      }
+    }
 
     const tag = `${atk.side.toUpperCase()} ${atkDef.abbrev}`;
     const vs = `${defU.side.toUpperCase()} ${defDef.abbrev}`;
     if (pivoted) {
       log(`${vs} pivots to face the ${pivotFrom} attack.`);
     }
+    if (braceInfo.active) {
+      log(`${vs} is braced by linked INF support (${braceInfo.supportKeys.join(', ')}): attacker -1 die.`);
+    }
     const rollTokens = rolls.map((v) => {
-      if (DIE_HIT.has(v)) return `${v}H`;
+      if (v === 6) return `${v}HRD`;
+      if (v === 5) return `${v}H`;
       if (v === DIE_RETREAT) return `${v}R`;
+      if (v === DIE_DISARRAY) return `${v}D`;
       return `${v}M`;
     });
     const modParts = [`base ${baseDice}`];
-    if (hillBonusDice) modParts.push(`hill-shot +${hillBonusDice}`);
     if (flankBonus) modParts.push(`flank +${flankBonus}`);
     if (rearBonus) modParts.push(`rear +${rearBonus}`);
-    if (attackTerrainDiceMod) modParts.push(`attack terrain ${attackTerrainDiceMod > 0 ? `+${attackTerrainDiceMod}` : `${attackTerrainDiceMod}`}`);
+    if (braceDiceMod) modParts.push(`braced ${braceDiceMod}`);
+    if (commandAttackBonus) modParts.push(`command +${commandAttackBonus}`);
+    if (commandRangedBonus) modParts.push(`volley +${commandRangedBonus}`);
+    if (commandDefenseBonus) modParts.push(`shield -${commandDefenseBonus}`);
     if (terrainDiceMod) modParts.push(`${terrainLabel(defenderTerrain).toLowerCase()} ${terrainDiceMod}`);
-    if (supportDiceMod) modParts.push(`inf support ${supportDiceMod}`);
+    if (coveringFireIgnored) modParts.push('covering-fire terrain ignore');
     const modText = ` (${modParts.join(', ')})`;
     const combatInfo = {
       attacker: tag,
       defender: vs,
-      attackerType: atk.type,
-      defenderType: defU.type,
       kind: prof.kind,
       dist: prof.dist,
       dice,
       baseDice,
       flankBonus,
       rearBonus,
-      attackTerrainDiceMod,
-      attackerTerrain,
-      hillBonusDice,
       impactPosition,
       pivoted,
       pivotFrom,
       woodsPenalty: terrainDiceMod < 0 ? Math.abs(terrainDiceMod) : 0,
+      braced: !!braceInfo.active,
+      braceDiceMod,
+      braceSupportKeys: Array.isArray(braceInfo.supportKeys) ? braceInfo.supportKeys.slice() : [],
       terrainDiceMod,
-      supportRanks,
-      supportDiceMod,
-      defenseDiceMod,
-      supportPairCount: Array.isArray(supportEval.pairs) ? supportEval.pairs.length : 0,
-      supportMatchingCount: Array.isArray(supportEval.matching) ? supportEval.matching.length : 0,
-      supportAttackDir: supportEval.attackDir || '',
       defenderTerrain,
       terrainRuleText,
+      braceRuleText,
       hits,
       retreats,
+      disarrays,
       misses,
       retreatMoved: 0,
       retreatBlocked: 0,
@@ -7943,24 +9846,7 @@ function unitColors(side) {
     });
     renderCombatBreakdown(rolls, combatInfo);
     log(`${tag} ${prof.kind.toUpperCase()}→${vs} r${prof.dist} · dice=${dice}${modText}`);
-    log(`Rolls: [${rollTokens.join(' ')}] => hits=${hits}, retreats=${retreats}, misses=${misses}.`);
-    if (prof.kind === 'melee' && defU.type === 'inf') {
-      if (supportRanks > 0 && supportDiceMod < 0) {
-        const ad = String(supportEval.attackDir || '').toUpperCase();
-        log(
-          `Infantry support ACTIVE: adjacent brace pair matched attack ${ad}, ` +
-          `attacker -${Math.abs(supportDiceMod)} die.`
-        );
-      } else {
-        const pairCount = Array.isArray(supportEval.pairs) ? supportEval.pairs.length : 0;
-        const ad = String(supportEval.attackDir || '').toUpperCase();
-        if (pairCount === 0) {
-          log('Infantry support inactive: defender has no adjacent friendly INF brace pair.');
-        } else {
-          log(`Infantry support inactive: attack ${ad} not on braced opposite sides.`);
-        }
-      }
-    }
+    log(`Rolls: [${rollTokens.join(' ')}] => hits=${hits}, retreats=${retreats}, disarray=${disarrays}, misses=${misses}.`);
 
     // Pass 1: apply hits
     if (hits > 0) {
@@ -7973,9 +9859,28 @@ function unitColors(side) {
       combatInfo.defenderHpAfter = 0;
       renderCombatBreakdown(rolls, combatInfo);
       destroyUnit(defenderKey, defU, atk.side);
+      pushEventTrace('combat.resolve', {
+        attacker: { key: attackerKey, id: atk.id, side: atk.side, type: atk.type, quality: atk.quality },
+        defender: { key: defenderKey, id: defU.id, side: defU.side, type: defU.type, quality: defU.quality },
+        distance: prof.dist,
+        kind: prof.kind,
+        rolls,
+        hits,
+        retreats,
+        disarrays,
+        misses,
+        retreatMoved: 0,
+        retreatBlocked: 0,
+        defenderDestroyed: true,
+        defenderHpAfter: 0,
+      });
       checkVictory();
       updateHud();
-      return;
+      return { ok: true, pursuitTarget: null };
+    }
+
+    if (disarrays > 0) {
+      applyDisarrayToUnit(defU, defenderKey);
     }
 
     // Pass 2: resolve retreats one at a time
@@ -7985,11 +9890,36 @@ function unitColors(side) {
       const curDef = unitsByHex.get(defenderKey);
       if (!curDef) break;
 
+      if (doctrineFlagForUnit('ignoreAllRetreat', curDef.id, curDef.side)) {
+        log(`Retreat ignored (${curDef.side.toUpperCase()} command effect: stand fast).`);
+        continue;
+      }
+      const ignoreCount = doctrineValueForUnit('ignoreRetreatCount', curDef.id, curDef.side);
+      if (ignoreCount > 0) {
+        const curTurnVal = Number(state.doctrine.effects.ignoreRetreatCount[curDef.id] || 0);
+        if (curTurnVal > 0) {
+          state.doctrine.effects.ignoreRetreatCount[curDef.id] = Math.max(0, curTurnVal - 1);
+        } else {
+          // Consume one long-duration stack.
+          const idx = state.doctrine.longEffects.findIndex((eff) =>
+            eff && eff.map === 'ignoreRetreatCount' && eff.unitId === curDef.id && Number(eff.value || 0) > 0
+          );
+          if (idx >= 0) {
+            const eff = state.doctrine.longEffects[idx];
+            eff.value = Math.max(0, Number(eff.value || 0) - 1);
+            if (eff.value <= 0) state.doctrine.longEffects.splice(idx, 1);
+          }
+        }
+        log(`Retreat ignored (${curDef.side.toUpperCase()} command effect).`);
+        continue;
+      }
+
       const step = retreatPick(attackerKey, defenderKey);
       if (!step) {
         retreatBlocked += 1;
-        curDef.hp -= 1;
-        log(`Retreat blocked → 1 hit. ${vs} HP=${Math.max(0, curDef.hp)}.`);
+        const blockedDamage = unitIsDisarrayed(curDef) ? 2 : 1;
+        curDef.hp -= blockedDamage;
+        log(`Retreat blocked → ${blockedDamage} hit${blockedDamage > 1 ? 's' : ''}. ${vs} HP=${Math.max(0, curDef.hp)}.`);
         if (curDef.hp <= 0) {
           combatInfo.destroyed = true;
           destroyUnit(defenderKey, curDef, atk.side);
@@ -8010,17 +9940,73 @@ function unitColors(side) {
     combatInfo.destroyed = !finalDef;
     combatInfo.defenderHpAfter = finalDef ? finalDef.hp : 0;
     renderCombatBreakdown(rolls, combatInfo);
+    pushEventTrace('combat.resolve', {
+      attacker: { key: attackerKey, id: atk.id, side: atk.side, type: atk.type, quality: atk.quality },
+      defender: {
+        key: defenderKey,
+        id: finalDef ? finalDef.id : defU.id,
+        side: finalDef ? finalDef.side : defU.side,
+        type: finalDef ? finalDef.type : defU.type,
+        quality: finalDef ? finalDef.quality : defU.quality,
+      },
+      distance: prof.dist,
+      kind: prof.kind,
+      rolls,
+      hits,
+      retreats,
+      disarrays,
+      misses,
+      retreatMoved,
+      retreatBlocked,
+      defenderDestroyed: !finalDef,
+      defenderHpAfter: finalDef ? finalDef.hp : 0,
+    });
+
+    let pursuitTarget = null;
+    if (
+      prof.kind === 'melee' &&
+      prof.dist === 1 &&
+      retreatMoved > 0 &&
+      !unitsByHex.has(initialDefenderKey) &&
+      !state.gameOver
+    ) {
+      const vacatedHex = board.byKey.get(initialDefenderKey);
+      const atkNow = unitsByHex.get(attackerKey);
+      if (vacatedHex && atkNow && Number.isFinite(terrainMoveCost(atkNow.type, vacatedHex.terrain))) {
+        pursuitTarget = initialDefenderKey;
+        if (isAiTurnActive()) {
+          const moved = commandRelocateUnit(attackerKey, pursuitTarget);
+          if (moved) {
+            log(`${atkNow.side.toUpperCase()} pursued into ${pursuitTarget}.`);
+            pushEventTrace('combat.pursuit', {
+              side: atkNow.side,
+              attackerId: atkNow.id,
+              fromKey: attackerKey,
+              toKey: pursuitTarget,
+              auto: true,
+            });
+            pursuitTarget = null;
+          }
+        }
+      }
+    }
 
     checkVictory();
     updateHud();
+    return { ok: true, pursuitTarget };
   }
 
   // --- Victory
-  function checkVictory() {
-    if (state.mode !== 'play') return;
+  function checkVictory(reason = 'combat') {
+    if (state.mode !== 'play' || state.gameOver) return;
 
     const b = totals('blue');
     const r = totals('red');
+    const obj = evaluateObjectiveControl();
+    const objectiveLeadBlue = obj.blueValue > obj.redValue;
+    const objectiveLeadRed = obj.redValue > obj.blueValue;
+    const pointTargetDefault = Math.ceil(Math.max(state.initialUP.blue, state.initialUP.red) * POINT_VICTORY_CAPTURE_RATIO);
+    const pointTarget = Math.max(1, Number(state.loadedScenarioMeta?.pointTarget || pointTargetDefault));
 
     let blueWins = false;
     let redWins = false;
@@ -8031,6 +10017,34 @@ function unitColors(side) {
     } else if (state.victoryMode === 'decapitation') {
       blueWins = r.gens === 0;
       redWins = b.gens === 0;
+    } else if (state.victoryMode === 'points') {
+      blueWins = state.capturedUP.blue >= pointTarget;
+      redWins = state.capturedUP.red >= pointTarget;
+    } else if (state.victoryMode === 'keyground') {
+      // Key ground resolves at checkpoint or end-turn moments.
+      if (b.units === 0 || b.gens === 0) redWins = true;
+      if (r.units === 0 || r.gens === 0) blueWins = true;
+      if (!blueWins && !redWins && reason === 'end-turn' && state.turn >= state.objectiveCheckpointTurn) {
+        if (objectiveLeadBlue) blueWins = true;
+        if (objectiveLeadRed) redWins = true;
+      }
+    } else if (state.victoryMode === 'strategic') {
+      if (b.units === 0 || b.gens === 0) redWins = true;
+      if (r.units === 0 || r.gens === 0) blueWins = true;
+      if (!blueWins && !redWins && reason === 'end-turn') {
+        const captureNeedBlue = Math.ceil(state.initialUP.red * STRATEGIC_CAPTURE_RATIO);
+        const captureNeedRed = Math.ceil(state.initialUP.blue * STRATEGIC_CAPTURE_RATIO);
+        const blueScore =
+          (state.capturedUP.blue >= captureNeedBlue ? 1 : 0) +
+          (objectiveLeadBlue ? 1 : 0) +
+          (b.gens > r.gens ? 1 : 0);
+        const redScore =
+          (state.capturedUP.red >= captureNeedRed ? 1 : 0) +
+          (objectiveLeadRed ? 1 : 0) +
+          (r.gens > b.gens ? 1 : 0);
+        if (blueScore >= 2 && blueScore > redScore) blueWins = true;
+        if (redScore >= 2 && redScore > blueScore) redWins = true;
+      }
     } else {
       // Clear victory: capture at least half of opponent starting UP, rounded up.
       const needBlue = Math.ceil(state.initialUP.red / 2);
@@ -8054,6 +10068,26 @@ function unitColors(side) {
       state.winner = 'red';
       log('Game over: RED wins.');
     }
+
+    if (state.gameOver && (state.victoryMode === 'points' || state.victoryMode === 'strategic' || state.victoryMode === 'keyground')) {
+      log(`Final objectives: Blue ${obj.blueValue} · Red ${obj.redValue}.`);
+    }
+    if (state.gameOver) {
+      pushEventTrace('battle.end', {
+        winner: state.winner,
+        reason,
+        victoryMode: state.victoryMode,
+        blue: b,
+        red: r,
+        capturedUP: { blue: state.capturedUP.blue, red: state.capturedUP.red },
+        objectives: {
+          blueValue: obj.blueValue,
+          redValue: obj.redValue,
+          contested: obj.contested,
+          neutral: obj.neutral,
+        },
+      });
+    }
   }
 
   // --- Mode transitions
@@ -8067,11 +10101,12 @@ function unitColors(side) {
 
   function enterEdit() {
     stopAiLoop();
-    stopMoveAnimation();
-    stopActionPulse();
-    closeRulesModal();
     state.mode = 'edit';
     state.tool = 'units';
+    state.doctrine.builder.preBattleReady = false;
+    state.doctrine.builder.confirmed = { blue: false, red: false };
+    const sideEl = document.getElementById('side');
+    if (sideEl) sideEl.scrollTop = 0;
 
     state.gameOver = false;
     state.winner = null;
@@ -8088,15 +10123,28 @@ function unitColors(side) {
       updateHud();
       return;
     }
+    if (!state.doctrine.builder.preBattleReady) {
+      log('Review the battlefield first, then open War Council and confirm Blue + Red orders (3 per cost tier).');
+      updateHud();
+      return;
+    }
+    ensureDoctrineStateInitialized(false);
+    const blueLoadout = doctrineStateForSide('blue')?.loadout || [];
+    const redLoadout = doctrineStateForSide('red')?.loadout || [];
+    if (!validateDoctrineLoadout(blueLoadout) || !validateDoctrineLoadout(redLoadout)) {
+      state.doctrine.builder.preBattleReady = false;
+      log('Doctrine incomplete: each side must pick exactly 3 Cost-1, 3 Cost-2, and 3 Cost-3 orders.');
+      updateHud();
+      return;
+    }
 
     stopAiLoop();
-    stopMoveAnimation();
-    stopActionPulse();
-    closeRulesModal();
     state.mode = 'play';
+    const sideEl = document.getElementById('side');
+    if (sideEl) sideEl.scrollTop = 0;
     state.turn = 1;
-    const onlineRandomStart = state.gameMode === 'online' && net.connected && net.isHost;
-    state.side = onlineRandomStart ? randomStartSide() : 'blue';
+    state.turnSerial = 1;
+    state.side = 'blue';
     state.actsUsed = 0;
     state.actedUnitIds = new Set();
 
@@ -8113,23 +10161,11 @@ function unitColors(side) {
 
     clearSelection();
     clearDiceDisplay();
+    openCommandPhaseForCurrentTurn();
 
-    if (onlineRandomStart) {
-      log(`Play: click a friendly unit. ${state.side.toUpperCase()} was randomly selected to go first.`);
-    } else {
-      log('Play: click a friendly unit. Blue goes first.');
-    }
+    log('Play: click a friendly unit. Blue goes first.');
     updateHud();
     maybeStartAiTurn();
-  }
-
-  function maybeRollOnlineOpeningInitiative() {
-    if (!net.isHost || !onlineModeActive()) return;
-    if (state.mode !== 'play' || state.gameOver) return;
-    if (state.turn !== 1) return;
-    if (state.actsUsed !== 0 || state.actedUnitIds.size > 0) return;
-    state.side = randomStartSide();
-    log(`Online initiative: ${state.side.toUpperCase()} was randomly selected to act first.`);
   }
 
   // --- Editing actions
@@ -8167,8 +10203,7 @@ function unitColors(side) {
       existing.type = type;
       existing.quality = quality;
       existing.hp = unitMaxHp(type, quality);
-      delete existing.movePauseUntilTurn;
-      delete existing.actionPauseUntilTurn;
+      existing.disarray = false;
       log(`Replaced at ${hexKey} → ${state.editSide} ${def.abbrev}`);
     } else {
       unitsByHex.set(hexKey, {
@@ -8177,8 +10212,7 @@ function unitColors(side) {
         type,
         quality,
         hp: unitMaxHp(type, quality),
-        movePauseUntilTurn: 0,
-        actionPauseUntilTurn: 0,
+        disarray: false,
       });
       log(`Placed ${state.editSide} ${def.abbrev} at ${hexKey}`);
     }
@@ -8202,6 +10236,8 @@ function unitColors(side) {
   function clearUnits() {
     unitsByHex.clear();
     nextUnitId = 1;
+    state.doctrine.builder.preBattleReady = false;
+    state.doctrine.builder.confirmed = { blue: false, red: false };
     if (state.draft.active) {
       state.draft.remaining.blue = state.draft.budget;
       state.draft.remaining.red = state.draft.budget;
@@ -8255,42 +10291,9 @@ function unitColors(side) {
     return pullRandomFromPool(pool);
   }
 
-  function randomQualityForType(type, doctrine = 'balanced') {
+  function randomQualityForType(type) {
     if (type === 'iat') return 'regular';
     const roll = Math.random();
-
-    if (doctrine === 'elite') {
-      if (type === 'run') {
-        if (roll < 0.38) return 'veteran';
-        if (roll < 0.90) return 'regular';
-        return 'green';
-      }
-      if (type === 'gen') {
-        if (roll < 0.36) return 'veteran';
-        if (roll < 0.90) return 'regular';
-        return 'green';
-      }
-      if (roll < 0.34) return 'veteran';
-      if (roll < 0.86) return 'regular';
-      return 'green';
-    }
-
-    if (doctrine === 'levy') {
-      if (type === 'run') {
-        if (roll < 0.05) return 'veteran';
-        if (roll < 0.30) return 'regular';
-        return 'green';
-      }
-      if (type === 'gen') {
-        if (roll < 0.10) return 'veteran';
-        if (roll < 0.45) return 'regular';
-        return 'green';
-      }
-      if (roll < 0.04) return 'veteran';
-      if (roll < 0.24) return 'regular';
-      return 'green';
-    }
-
     if (type === 'run') {
       if (roll < 0.20) return 'veteran';
       if (roll < 0.60) return 'regular';
@@ -8316,13 +10319,177 @@ function unitColors(side) {
     return 'green';
   }
 
+  function qualityTargetCounts(type, count) {
+    if (count <= 0) return { veteran: 0, regular: 0, green: 0 };
+    if (type === 'iat') return { veteran: 0, regular: count, green: 0 };
+
+    let veteranRatio = 0.20;
+    let regularRatio = 0.55;
+
+    if (type === 'cav') {
+      veteranRatio = 0.46;
+      regularRatio = 0.40;
+    } else if (type === 'inf') {
+      veteranRatio = 0.18;
+      regularRatio = 0.68;
+    } else if (type === 'arc') {
+      veteranRatio = 0.30;
+      regularRatio = 0.60;
+    } else if (type === 'skr') {
+      veteranRatio = 0.24;
+      regularRatio = 0.56;
+    } else if (type === 'gen' || type === 'run') {
+      veteranRatio = 0.30;
+      regularRatio = 0.60;
+    }
+
+    let veteran = Math.max(0, Math.round(count * veteranRatio));
+    let regular = Math.max(0, Math.round(count * regularRatio));
+    if (veteran + regular > count) regular = Math.max(0, count - veteran);
+    let green = Math.max(0, count - veteran - regular);
+
+    // Keep at least one green in larger groups so the line is not uniformly elite.
+    if (count >= 6 && green === 0) {
+      green = 1;
+      if (regular > veteran && regular > 0) regular -= 1;
+      else if (veteran > 0) veteran -= 1;
+    }
+
+    return { veteran, regular, green };
+  }
+
+  function pickQualityAnchor(entries, scoreFn) {
+    if (!entries.length) return null;
+    let best = entries[0];
+    let bestScore = -Infinity;
+    for (const e of entries) {
+      const score = scoreFn(e);
+      if (score > bestScore) {
+        bestScore = score;
+        best = e;
+      }
+    }
+    return best;
+  }
+
+  function groupedQualityScores(type, depthN, flankN, centerN) {
+    if (type === 'cav') {
+      return {
+        veteran: (depthN * 1.0) + (flankN * 1.35),
+        regular: (depthN * 0.75) + (flankN * 0.6),
+      };
+    }
+    if (type === 'inf') {
+      return {
+        veteran: (depthN * 0.95) + (centerN * 1.0),
+        regular: (depthN * 0.70) + (centerN * 1.2),
+      };
+    }
+    if (type === 'arc') {
+      return {
+        veteran: ((1 - depthN) * 1.1) + (centerN * 0.7),
+        regular: ((1 - depthN) * 1.0) + (centerN * 1.0),
+      };
+    }
+    if (type === 'skr') {
+      return {
+        veteran: (depthN * 0.8) + (flankN * 0.8),
+        regular: (depthN * 0.65) + (centerN * 0.6),
+      };
+    }
+    if (type === 'gen' || type === 'run') {
+      return {
+        veteran: ((1 - depthN) * 0.7) + (centerN * 1.05),
+        regular: ((1 - depthN) * 1.0) + (centerN * 1.1),
+      };
+    }
+    return {
+      veteran: (depthN * 0.8) + (centerN * 0.8),
+      regular: (depthN * 0.7) + (centerN * 0.9),
+    };
+  }
+
+  function assignGroupedQualitiesForType(entries, side, type, geometry) {
+    if (!entries || entries.length === 0) return;
+    if (type === 'iat') {
+      for (const e of entries) e.quality = 'regular';
+      return;
+    }
+
+    const targets = qualityTargetCounts(type, entries.length);
+    const withMeta = entries.map((e, idx) => {
+      const meta = geometry.byKey.get(key(e.q, e.r)) || null;
+      const depthN = sideDepthNorm(meta, side);
+      const flankN = meta ? Math.abs(meta.lateralN - 0.5) * 2 : 0;
+      const centerN = 1 - Math.min(1, flankN);
+      const scores = groupedQualityScores(type, depthN, flankN, centerN);
+      return {
+        idx,
+        e,
+        depthN,
+        flankN,
+        centerN,
+        veteranScore: scores.veteran,
+        regularScore: scores.regular,
+      };
+    });
+
+    const veteranAnchor = pickQualityAnchor(withMeta, (x) => x.veteranScore);
+    const regularAnchor = pickQualityAnchor(withMeta, (x) => {
+      const distFromVeteran = veteranAnchor
+        ? axialDistance(x.e.q, x.e.r, veteranAnchor.e.q, veteranAnchor.e.r)
+        : 0;
+      return x.regularScore + (distFromVeteran * 0.08);
+    });
+
+    const pool = withMeta.slice();
+    function takeNearest(anchor, count, tieKey) {
+      if (!anchor || count <= 0 || pool.length === 0) return [];
+      pool.sort((a, b) => {
+        const da = axialDistance(a.e.q, a.e.r, anchor.e.q, anchor.e.r);
+        const db = axialDistance(b.e.q, b.e.r, anchor.e.q, anchor.e.r);
+        if (da !== db) return da - db;
+        const ak = (typeof a[tieKey] === 'number') ? a[tieKey] : a.regularScore;
+        const bk = (typeof b[tieKey] === 'number') ? b[tieKey] : b.regularScore;
+        return bk - ak;
+      });
+      return pool.splice(0, Math.min(count, pool.length));
+    }
+
+    const veterans = takeNearest(veteranAnchor, targets.veteran, 'veteranScore');
+    const regulars = takeNearest(regularAnchor, targets.regular, 'regularScore');
+    const greens = pool;
+
+    for (const p of veterans) p.e.quality = 'veteran';
+    for (const p of regulars) p.e.quality = 'regular';
+    for (const p of greens) p.e.quality = 'green';
+  }
+
+  function assignGroupedForceQualities(force, side, geometry) {
+    const byType = new Map();
+    for (const e of force) {
+      if (!byType.has(e.type)) byType.set(e.type, []);
+      byType.get(e.type).push(e);
+    }
+    for (const [type, entries] of byType) {
+      assignGroupedQualitiesForType(entries, side, type, geometry);
+    }
+  }
+
   function chooseRandomForwardAxis() {
     const roll = Math.random();
-    // Startup weighting: 65% orthogonal (top-bottom or left-right), 35% diagonal.
-    if (roll < 0.325) return 'vertical';
-    if (roll < 0.65) return 'horizontal';
-    if (roll < 0.825) return 'diag_tl_br';
+    if (roll < 0.30) return 'vertical';
+    if (roll < 0.60) return 'horizontal';
+    if (roll < 0.80) return 'diag_tl_br';
     return 'diag_tr_bl';
+  }
+
+  function chooseRandomUnitsPerSide() {
+    // Keep generated openings varied while capping at 30 per side.
+    const roll = Math.random();
+    if (roll < 0.30) return randInt(RANDOM_START_UNITS_PER_SIDE_MIN, 24);
+    if (roll < 0.78) return randInt(25, 28);
+    return randInt(29, RANDOM_START_UNITS_PER_SIDE_MAX);
   }
 
   function axisScalarsForHex(h, axis) {
@@ -8364,7 +10531,35 @@ function unitColors(side) {
       entries.push({ h, ...meta });
     }
 
-    return { axis: normalizeForwardAxis(axis), byKey, entries };
+    function metaFor(keyOrMeta) {
+      if (!keyOrMeta) return null;
+      if (typeof keyOrMeta === 'string') return byKey.get(keyOrMeta) || null;
+      if (typeof keyOrMeta === 'object' && Number.isFinite(keyOrMeta.approachN) && Number.isFinite(keyOrMeta.lateralN)) {
+        return keyOrMeta;
+      }
+      return null;
+    }
+
+    function frontDepthForSide(side, keyOrMeta) {
+      const meta = metaFor(keyOrMeta);
+      if (!meta) return 0.5;
+      return (side === 'blue') ? meta.approachN : (1 - meta.approachN);
+    }
+
+    function lateralForSide(_side, keyOrMeta) {
+      const meta = metaFor(keyOrMeta);
+      if (!meta) return 0;
+      // Signed offset from board centerline: negative = left, positive = right.
+      return meta.lateralN - 0.5;
+    }
+
+    return {
+      axis: normalizeForwardAxis(axis),
+      byKey,
+      entries,
+      frontDepthForSide,
+      lateralForSide,
+    };
   }
 
   function sideDepthNorm(meta, side) {
@@ -8374,18 +10569,11 @@ function unitColors(side) {
 
   function createRandomTerrainLayout(axis, geometry) {
     const terrainByHex = new Map();
-    // Keep the central clash corridor mostly open; terrain should frame, not clog, the fight.
-    const centerLaneHalf = 0.24 + (Math.random() * 0.04);
-    const clashBandHalf = 0.27 + (Math.random() * 0.05);
+    const centerLaneHalf = 0.17 + (Math.random() * 0.05);
+    const clashBandHalf = 0.20 + (Math.random() * 0.06);
     const deploymentBand = 0.18;
     const advantageRoll = Math.random();
     const advantageSide = (advantageRoll < 0.35) ? 'blue' : ((advantageRoll < 0.70) ? 'red' : 'none');
-    const terrainStyle = weightedPick([
-      { value: 'open_plain', weight: 44 },
-      { value: 'flank_cover', weight: 26 },
-      { value: 'ridge_shoulders', weight: 18 },
-      { value: 'broken_wings', weight: 12 },
-    ], 'open_plain');
 
     function metaAtHex(hex) {
       return geometry.byKey.get(hex.k) || null;
@@ -8404,7 +10592,7 @@ function unitColors(side) {
     }
 
     function isFlank(meta) {
-      return Math.abs(meta.lateralN - 0.5) >= 0.24;
+      return Math.abs(meta.lateralN - 0.5) >= 0.28;
     }
 
     function isEdge(meta) {
@@ -8472,17 +10660,13 @@ function unitColors(side) {
     }
 
     const midFlank = () => filteredCandidates(e => {
-      return isFlank(e) && e.approachN >= 0.16 && e.approachN <= 0.84;
+      return isFlank(e) && e.approachN >= 0.20 && e.approachN <= 0.80;
     });
     const edgeFlank = () => filteredCandidates(e => {
       return isFlank(e) && isEdge(e) && !isDeployment(e);
     });
     const roughBand = () => filteredCandidates(e => {
-      return (
-        !isDeployment(e) &&
-        Math.abs(e.lateralN - 0.5) >= (centerLaneHalf + 0.08) &&
-        (!isCenterLane(e) || !isClashBand(e))
-      );
+      return !isDeployment(e) && (!isCenterLane(e) || !isClashBand(e));
     });
 
     const biasMatch = (meta) => {
@@ -8490,34 +10674,8 @@ function unitColors(side) {
       return sideDepthNorm(meta, advantageSide) <= 0.45;
     };
 
-    // Terrain profile controls how "open plain" the battlefield feels.
-    let woodsClusters = randInt(1, 2);
-    let hillsClusters = randInt(1, 2);
-    let roughClusters = randInt(1, 2);
-    let waterClusters = 0;
-    if (terrainStyle === 'flank_cover') {
-      woodsClusters = randInt(2, 3);
-      hillsClusters = randInt(1, 2);
-      roughClusters = randInt(1, 2);
-      waterClusters = (Math.random() < 0.20) ? 1 : 0;
-    } else if (terrainStyle === 'ridge_shoulders') {
-      woodsClusters = randInt(1, 2);
-      hillsClusters = randInt(2, 3);
-      roughClusters = randInt(1, 2);
-      waterClusters = 0;
-    } else if (terrainStyle === 'broken_wings') {
-      woodsClusters = randInt(2, 3);
-      hillsClusters = randInt(1, 2);
-      roughClusters = randInt(2, 3);
-      waterClusters = (Math.random() < 0.35) ? 1 : 0;
-    } else { // open_plain
-      woodsClusters = randInt(1, 2);
-      hillsClusters = randInt(1, 2);
-      roughClusters = randInt(1, 2);
-      waterClusters = (Math.random() < 0.10) ? 1 : 0;
-    }
-
     // Water is intentionally sparse and pushed to flank/edge pockets.
+    const waterClusters = (Math.random() < 0.45) ? 1 : 0;
     for (let i = 0; i < waterClusters; i++) {
       const seed = pickSeed(edgeFlank());
       paintCluster('water', seed, randInt(2, 4), (meta) => {
@@ -8526,6 +10684,7 @@ function unitColors(side) {
     }
 
     // Woods: ambush-friendly flank cover.
+    const woodsClusters = randInt(2, 3);
     for (let i = 0; i < woodsClusters; i++) {
       let seeds = midFlank();
       if (advantageSide !== 'none' && Math.random() < 0.55) {
@@ -8537,6 +10696,7 @@ function unitColors(side) {
     }
 
     // Hills: flank high ground and approach shoulders.
+    const hillsClusters = randInt(2, 3);
     for (let i = 0; i < hillsClusters; i++) {
       let seeds = midFlank();
       if (advantageSide !== 'none' && Math.random() < 0.60) {
@@ -8547,7 +10707,8 @@ function unitColors(side) {
       paintCluster('hills', seed, randInt(3, 5), (meta) => isFlank(meta) && meta.approachN >= 0.12 && meta.approachN <= 0.88);
     }
 
-    // Rough: friction near side corridors, avoiding the core clash lane.
+    // Rough: friction near the side corridors, avoiding the core clash lane.
+    const roughClusters = randInt(2, 4);
     for (let i = 0; i < roughClusters; i++) {
       const seed = pickSeed(roughBand());
       paintCluster('rough', seed, randInt(2, 5), (meta) => !isDeployment(meta) && (!isCenterLane(meta) || !isClashBand(meta)));
@@ -8561,19 +10722,9 @@ function unitColors(side) {
         terrainByHex.delete(hk);
       }
     }
-    // Keep deployment corridors clear too.
-    for (const [hk] of terrainByHex) {
-      const meta = geometry.byKey.get(hk);
-      if (!meta) continue;
-      if (isDeployment(meta) && Math.abs(meta.lateralN - 0.5) <= (centerLaneHalf + 0.06)) {
-        terrainByHex.delete(hk);
-      }
-    }
 
     // Cap density so movement stays fluid.
-    const maxTerrain = (terrainStyle === 'open_plain')
-      ? randInt(14, 22)
-      : randInt(18, 28);
+    const maxTerrain = randInt(24, 34);
     if (terrainByHex.size > maxTerrain) {
       const keys = shuffledCopy([...terrainByHex.keys()]);
       for (const hk of keys) {
@@ -8604,847 +10755,461 @@ function unitColors(side) {
     return out;
   }
 
-  function terrainAtForLayout(hexKey, terrainByHex) {
-    if (terrainByHex && terrainByHex.has(hexKey)) return terrainByHex.get(hexKey) || 'clear';
-    const h = board.byKey.get(hexKey);
-    return h?.terrain || 'clear';
+  function clamp01(v) {
+    if (!Number.isFinite(v)) return 0;
+    if (v <= 0) return 0;
+    if (v >= 1) return 1;
+    return v;
   }
 
-  function hasTerrainExitForType(hex, type, terrainByHex) {
-    if (!hex || !type) return false;
-    const moveUnit = { type, quality: 'green' };
-    const mp = unitMovePoints(moveUnit);
-    if (mp <= 0) return false;
+  function terrainAtHex(terrainByHex, hexKey) {
+    return terrainByHex.get(hexKey) || 'clear';
+  }
 
-    for (const nk of hex.neigh || []) {
-      const nh = board.byKey.get(nk);
-      if (!nh) continue;
-      const nTerrain = terrainAtForLayout(nk, terrainByHex);
-      const fromTerrain = terrainAtForLayout(hex.k, terrainByHex);
-      if (!canEnterTerrainFrom(type, fromTerrain, nTerrain)) continue;
-      const stepCost = terrainMoveCost(type, nTerrain);
-      if (Number.isFinite(stepCost) && stepCost <= mp) return true;
+  function hexTouchesClear(hex, terrainByHex) {
+    for (const nk of hex.neigh) {
+      if (!board.activeSet.has(nk)) continue;
+      if (terrainAtHex(terrainByHex, nk) === 'clear') return true;
     }
-
     return false;
   }
 
-  function pickPreferredSpawnHex(pool, predicates, type, terrainByHex) {
-    if (!Array.isArray(pool) || pool.length === 0) return null;
-    const safeCheck = (h) => hasTerrainExitForType(h, type, terrainByHex);
+  function terrainPlacementPenalty(type, hex, terrainByHex) {
+    const terrain = terrainAtHex(terrainByHex, hex.k);
+    if (terrain === 'clear') return 0;
+    if (terrain === 'water') return 99;
 
-    for (const pred of predicates || []) {
-      if (typeof pred !== 'function') continue;
-      const hits = [];
-      for (let i = 0; i < pool.length; i++) {
-        const h = pool[i];
-        if (pred(h) && safeCheck(h)) hits.push(i);
-      }
-      if (hits.length > 0) {
-        const chosenIdx = hits[randInt(0, hits.length - 1)];
-        return pool.splice(chosenIdx, 1)[0] || null;
-      }
+    if (type === 'cav') {
+      if (terrain === 'woods') return 2.8;
+      if (terrain === 'rough') return 2.5;
+      if (terrain === 'hills') return 2.2;
+      return 1.8;
     }
-
-    const safeFallback = [];
-    for (let i = 0; i < pool.length; i++) {
-      if (safeCheck(pool[i])) safeFallback.push(i);
+    if (type === 'inf') {
+      if (terrain === 'woods') return 2.3;
+      if (terrain === 'hills') return 1.2;
+      if (terrain === 'rough') return 1.0;
+      return 1.1;
     }
-    if (safeFallback.length > 0) {
-      const chosenIdx = safeFallback[randInt(0, safeFallback.length - 1)];
-      return pool.splice(chosenIdx, 1)[0] || null;
+    if (type === 'arc') {
+      if (terrain === 'woods') return hexTouchesClear(hex, terrainByHex) ? 0.6 : 2.2;
+      if (terrain === 'hills') return 0.6;
+      if (terrain === 'rough') return 1.1;
+      return 1.0;
     }
-
-    return null;
+    if (type === 'skr') {
+      if (terrain === 'woods') return 0.8;
+      if (terrain === 'hills') return 1.1;
+      if (terrain === 'rough') return 0.9;
+      return 0.9;
+    }
+    if (type === 'gen' || type === 'run' || type === 'iat') {
+      if (terrain === 'woods') return 1.2;
+      if (terrain === 'hills') return 1.2;
+      if (terrain === 'rough') return 1.1;
+      return 1.0;
+    }
+    return 1.0;
   }
 
-  function pullAnySafeHex(type, terrainByHex, occupiedSet) {
-    const candidates = [];
-    for (const h of board.active) {
+  function orderedLateralSlots(count, center = 0.5, span = 0.42) {
+    if (count <= 0) return [];
+    const c = clamp01(center);
+    if (count === 1) return [c];
+
+    const half = Math.max(0.04, Math.min(0.46, span / 2));
+    const start = Math.max(0.03, c - half);
+    const end = Math.min(0.97, c + half);
+    const linear = [];
+    for (let i = 0; i < count; i++) {
+      const t = (count === 1) ? 0 : (i / (count - 1));
+      linear.push(start + (t * (end - start)));
+    }
+    linear.sort((a, b) => {
+      const da = Math.abs(a - c);
+      const db = Math.abs(b - c);
+      if (da !== db) return da - db;
+      return a - b;
+    });
+    return linear;
+  }
+
+  function pickFormationHex(side, type, geometry, terrainByHex, occupiedSet, depthNorm, opts = {}, clusterKeys = []) {
+    const targetDepth = clamp01(opts.targetDepth ?? 0.2);
+    const targetLateral = clamp01(opts.targetLateral ?? 0.5);
+    const depthWeight = Number.isFinite(opts.depthWeight) ? opts.depthWeight : 6.8;
+    const lateralWeight = Number.isFinite(opts.lateralWeight) ? opts.lateralWeight : 8.6;
+    const depthWindow = Number.isFinite(opts.depthWindow) ? opts.depthWindow : null;
+    const lateralWindow = Number.isFinite(opts.lateralWindow) ? opts.lateralWindow : null;
+    const minDepth = Number.isFinite(opts.minDepth) ? opts.minDepth : 0;
+    const maxDepth = Number.isFinite(opts.maxDepth) ? opts.maxDepth : (depthNorm + 0.02);
+    const preferFlank = !!opts.preferFlank;
+    const preferCenter = !!opts.preferCenter;
+    const clusterSet = new Set(clusterKeys || []);
+
+    const scored = [];
+    for (const e of geometry.entries) {
+      const h = e.h;
       if (!h) continue;
       if (occupiedSet.has(h.k)) continue;
-      const t = terrainAtForLayout(h.k, terrainByHex);
-      if (t === 'water') continue;
-      if (!hasTerrainExitForType(h, type, terrainByHex)) continue;
-      candidates.push(h);
-    }
-    if (candidates.length === 0) return null;
-    return candidates[randInt(0, candidates.length - 1)] || null;
-  }
+      if (terrainAtHex(terrainByHex, h.k) === 'water') continue;
 
-  const FORMATION_LABELS = new Map([
-    ['phalanx', 'Phalanx Line'],
-    ['triplex', 'Triplex Acies'],
-    ['oblique', 'Oblique Order'],
-    ['crescent', 'Crescent Envelopment'],
-    ['refused_flank', 'Refused Flank'],
-  ]);
+      const depth = sideDepthNorm(e, side);
+      if (depth < minDepth || depth > maxDepth) continue;
+      const lateral = e.lateralN;
 
-  function formationLabel(id) {
-    return FORMATION_LABELS.get(id) || String(id || 'Phalanx Line');
-  }
+      const dd = Math.abs(depth - targetDepth);
+      const ld = Math.abs(lateral - targetLateral);
+      let score = (dd * depthWeight) + (ld * lateralWeight);
 
-  function weightedPick(options, fallback) {
-    if (!Array.isArray(options) || options.length === 0) return fallback;
-    let total = 0;
-    for (const o of options) total += Math.max(0, Number(o.weight) || 0);
-    if (total <= 0) return options[0]?.value ?? fallback;
-    let roll = Math.random() * total;
-    for (const o of options) {
-      roll -= Math.max(0, Number(o.weight) || 0);
-      if (roll <= 0) return o.value;
-    }
-    return options[options.length - 1]?.value ?? fallback;
-  }
+      if (depthWindow !== null && dd > depthWindow) score += (dd - depthWindow) * 7.2;
+      if (lateralWindow !== null && ld > lateralWindow) score += (ld - lateralWindow) * 7.2;
 
-  function chooseFormationForStartup(doctrine = 'balanced', role = 'even') {
-    if (doctrine === 'elite') {
-      if (role === 'outnumbered') {
-        return weightedPick([
-          { value: 'oblique', weight: 40 },
-          { value: 'refused_flank', weight: 31 },
-          { value: 'triplex', weight: 22 },
-          { value: 'phalanx', weight: 5 },
-          { value: 'crescent', weight: 2 },
-        ], 'oblique');
-      }
-      return weightedPick([
-        { value: 'triplex', weight: 36 },
-        { value: 'oblique', weight: 28 },
-        { value: 'refused_flank', weight: 20 },
-        { value: 'phalanx', weight: 12 },
-        { value: 'crescent', weight: 4 },
-      ], 'triplex');
-    }
+      const flankN = Math.abs(lateral - 0.5) * 2;
+      if (preferFlank) score += (1 - flankN) * 2.1;
+      if (preferCenter) score += flankN * 2.1;
 
-    if (doctrine === 'levy') {
-      if (role === 'advantaged') {
-        return weightedPick([
-          { value: 'phalanx', weight: 46 },
-          { value: 'triplex', weight: 28 },
-          { value: 'crescent', weight: 12 },
-          { value: 'refused_flank', weight: 9 },
-          { value: 'oblique', weight: 5 },
-        ], 'phalanx');
-      }
-      return weightedPick([
-        { value: 'phalanx', weight: 40 },
-        { value: 'triplex', weight: 30 },
-        { value: 'crescent', weight: 14 },
-        { value: 'refused_flank', weight: 10 },
-        { value: 'oblique', weight: 6 },
-      ], 'phalanx');
-    }
+      score += terrainPlacementPenalty(type, h, terrainByHex) * 2.4;
 
-    if (role === 'outnumbered') {
-      return weightedPick([
-        { value: 'triplex', weight: 34 },
-        { value: 'refused_flank', weight: 27 },
-        { value: 'oblique', weight: 22 },
-        { value: 'phalanx', weight: 14 },
-        { value: 'crescent', weight: 3 },
-      ], 'triplex');
-    }
-
-    return weightedPick([
-      { value: 'triplex', weight: 34 },
-      { value: 'phalanx', weight: 30 },
-      { value: 'oblique', weight: 16 },
-      { value: 'refused_flank', weight: 14 },
-      { value: 'crescent', weight: 6 },
-    ], 'triplex');
-  }
-
-  function sizeLabelForUnits(maxUnits) {
-    if (maxUnits <= 20) return 'small';
-    if (maxUnits >= 29) return 'large';
-    return 'medium';
-  }
-
-  function chooseRandomStartupProfile() {
-    const modeRoll = Math.random();
-
-    let matchup = 'even';
-    let blueUnits = 24;
-    let redUnits = 24;
-    let blueDoctrine = 'balanced';
-    let redDoctrine = 'balanced';
-    let blueRole = 'even';
-    let redRole = 'even';
-
-    if (modeRoll < 0.24) {
-      // Classic "quality vs quantity" setup.
-      const eliteIsBlue = Math.random() < 0.5;
-      const eliteUnits = randInt(15, 20);
-      const levyUnits = randInt(22, 30);
-      matchup = eliteIsBlue ? 'blue_elite_outnumbered' : 'red_elite_outnumbered';
-      blueUnits = eliteIsBlue ? eliteUnits : levyUnits;
-      redUnits = eliteIsBlue ? levyUnits : eliteUnits;
-      blueDoctrine = eliteIsBlue ? 'elite' : 'levy';
-      redDoctrine = eliteIsBlue ? 'levy' : 'elite';
-      blueRole = eliteIsBlue ? 'outnumbered' : 'advantaged';
-      redRole = eliteIsBlue ? 'advantaged' : 'outnumbered';
-    } else if (modeRoll < 0.78) {
-      // Even baseline battles.
-      const evenUnits = randInt(17, 26);
-      blueUnits = evenUnits;
-      redUnits = evenUnits;
-      matchup = 'even';
-      if (Math.random() < 0.18) {
-        blueDoctrine = 'elite';
-        redDoctrine = 'balanced';
-      } else if (Math.random() < 0.18) {
-        redDoctrine = 'elite';
-        blueDoctrine = 'balanced';
-      }
-    } else {
-      // Moderate asymmetry (still within requested 15-35 window).
-      const base = randInt(17, 25);
-      const delta = randInt(2, 6);
-      if (Math.random() < 0.5) {
-        matchup = 'blue_advantage';
-        blueUnits = clampInt(base + delta, 15, 31, base);
-        redUnits = clampInt(base, 15, 35, base);
-        blueRole = 'advantaged';
-        redRole = 'outnumbered';
-      } else {
-        matchup = 'red_advantage';
-        redUnits = clampInt(base + delta, 15, 31, base);
-        blueUnits = clampInt(base, 15, 35, base);
-        redRole = 'advantaged';
-        blueRole = 'outnumbered';
-      }
-
-      if (Math.random() < 0.25) {
-        if (blueRole === 'outnumbered') blueDoctrine = 'elite';
-        if (redRole === 'outnumbered') redDoctrine = 'elite';
-        if (blueRole === 'advantaged') blueDoctrine = 'levy';
-        if (redRole === 'advantaged') redDoctrine = 'levy';
-      }
-    }
-
-    const blueFormation = chooseFormationForStartup(blueDoctrine, blueRole);
-    const redFormation = chooseFormationForStartup(redDoctrine, redRole);
-    const size = sizeLabelForUnits(Math.max(blueUnits, redUnits));
-
-    return {
-      size,
-      matchup,
-      blueDoctrine,
-      redDoctrine,
-      blueRole,
-      redRole,
-      blueFormation,
-      redFormation,
-      blueUnits: clampInt(blueUnits, 15, 35, 24),
-      redUnits: clampInt(redUnits, 15, 35, 24),
-    };
-  }
-
-  function forceMixCounts(totalNeeded, doctrine = 'balanced', formation = 'phalanx', role = 'even') {
-    const counts = {
-      gen: totalNeeded >= 29 ? 2 : 1,
-      run: totalNeeded >= 22 ? 1 : 0,
-      iat: totalNeeded >= 26 ? 1 : 0,
-      inf: 0,
-      cav: 0,
-      arc: 0,
-      skr: 0,
-    };
-
-    const baseRatios = {
-      phalanx: { inf: 0.64, cav: 0.14, arc: 0.10, skr: 0.12 },
-      triplex: { inf: 0.58, cav: 0.16, arc: 0.12, skr: 0.14 },
-      oblique: { inf: 0.52, cav: 0.24, arc: 0.09, skr: 0.15 },
-      crescent: { inf: 0.55, cav: 0.22, arc: 0.08, skr: 0.15 },
-      refused_flank: { inf: 0.58, cav: 0.20, arc: 0.09, skr: 0.13 },
-    };
-    const ratios = { ...(baseRatios[formation] || baseRatios.triplex) };
-
-    if (doctrine === 'elite') {
-      ratios.cav += 0.02;
-      ratios.inf -= 0.01;
-      ratios.arc -= 0.005;
-      ratios.skr -= 0.005;
-    } else if (doctrine === 'levy') {
-      ratios.inf += 0.04;
-      ratios.skr += 0.01;
-      ratios.cav -= 0.03;
-      ratios.arc -= 0.02;
-    }
-
-    if (role === 'outnumbered') {
-      ratios.cav += 0.015;
-      ratios.inf -= 0.005;
-      ratios.arc -= 0.01;
-    } else if (role === 'advantaged') {
-      ratios.inf += 0.025;
-      ratios.skr += 0.01;
-      ratios.cav -= 0.02;
-      ratios.arc -= 0.015;
-    }
-
-    let remaining = Math.max(0, totalNeeded - counts.gen - counts.run - counts.iat);
-    const min = {
-      inf: Math.max(6, Math.floor(remaining * 0.45)),
-      cav: remaining >= 26 ? 2 : 1,
-      arc: remaining >= 22 ? 1 : 0,
-      skr: remaining >= 20 ? 1 : 0,
-    };
-    counts.inf = Math.max(min.inf, Math.floor(remaining * ratios.inf));
-    counts.cav = Math.max(min.cav, Math.floor(remaining * ratios.cav));
-    counts.arc = Math.max(min.arc, Math.floor(remaining * ratios.arc));
-    counts.skr = Math.max(min.skr, Math.floor(remaining * ratios.skr));
-
-    let used = counts.inf + counts.cav + counts.arc + counts.skr;
-    const upOrder = (formation === 'oblique' || formation === 'refused_flank')
-      ? ['inf', 'cav', 'inf', 'inf', 'skr', 'arc']
-      : ['inf', 'inf', 'inf', 'skr', 'arc', 'cav'];
-    let upIdx = 0;
-    while (used < remaining) {
-      const t = upOrder[upIdx % upOrder.length];
-      counts[t] += 1;
-      used += 1;
-      upIdx += 1;
-    }
-
-    const downOrder = ['inf', 'skr', 'arc', 'cav'];
-    while (used > remaining) {
-      let changed = false;
-      for (const t of downOrder) {
-        if (counts[t] > min[t]) {
-          counts[t] -= 1;
-          used -= 1;
-          changed = true;
-          break;
+      if (clusterSet.size > 0) {
+        let nearest = Infinity;
+        let adjacent = 0;
+        for (const hk of clusterSet) {
+          const ch = board.byKey.get(hk);
+          if (!ch) continue;
+          const d = axialDistance(h.q, h.r, ch.q, ch.r);
+          if (d < nearest) nearest = d;
+          if (d === 1) adjacent += 1;
         }
+        if (Number.isFinite(nearest)) score += nearest * 0.42;
+        if (adjacent > 0) score -= Math.min(1.0, adjacent * 0.34);
       }
-      if (!changed) break;
+
+      score += Math.random() * 0.02;
+      scored.push({ h, score });
     }
 
-    return counts;
+    if (scored.length === 0) return null;
+    scored.sort((a, b) => a.score - b.score);
+    return scored[0].h;
   }
 
-  function splitByWeights(total, weights) {
-    const safeWeights = Array.isArray(weights) && weights.length > 0 ? weights : [1];
-    let sum = 0;
-    for (const w of safeWeights) sum += Math.max(0, Number(w) || 0);
-    if (sum <= 0) sum = safeWeights.length;
-    const out = safeWeights.map(w => Math.floor(total * ((Math.max(0, Number(w) || 0) || 1) / sum)));
-    let used = out.reduce((a, b) => a + b, 0);
-    let idx = 0;
-    while (used < total) {
-      out[idx % out.length] += 1;
-      used += 1;
-      idx += 1;
+  function placeFormationUnits(force, side, type, count, geometry, terrainByHex, occupiedSet, depthNorm, opts = {}) {
+    if (count <= 0) return 0;
+    const slots = orderedLateralSlots(count, opts.center ?? 0.5, opts.span ?? 0.4);
+    const clusterKeys = [];
+    let placed = 0;
+
+    for (let i = 0; i < slots.length; i++) {
+      const targetDepth = clamp01((opts.depth ?? 0.2) + ((Math.random() - 0.5) * (opts.depthJitter ?? 0)));
+      const targetLateral = slots[i];
+      let h = pickFormationHex(
+        side, type, geometry, terrainByHex, occupiedSet, depthNorm,
+        {
+          targetDepth,
+          targetLateral,
+          depthWindow: opts.depthWindow,
+          lateralWindow: opts.lateralWindow,
+          minDepth: opts.minDepth,
+          maxDepth: opts.maxDepth,
+          preferFlank: opts.preferFlank,
+          preferCenter: opts.preferCenter,
+          depthWeight: opts.depthWeight,
+          lateralWeight: opts.lateralWeight,
+        },
+        clusterKeys
+      );
+      if (!h) {
+        h = pickFormationHex(
+          side, type, geometry, terrainByHex, occupiedSet, depthNorm,
+          {
+            targetDepth,
+            targetLateral,
+            minDepth: opts.minDepth,
+            maxDepth: opts.maxDepth,
+            preferFlank: opts.preferFlank,
+            preferCenter: opts.preferCenter,
+            depthWeight: opts.depthWeight,
+            lateralWeight: opts.lateralWeight,
+          },
+          clusterKeys
+        );
+      }
+      if (!h) continue;
+
+      occupiedSet.add(h.k);
+      clusterKeys.push(h.k);
+      force.push({
+        q: h.q,
+        r: h.r,
+        side,
+        type,
+        quality: 'green',
+      });
+      placed += 1;
+    }
+
+    return placed;
+  }
+
+  function splitByRatios(total, ratios) {
+    const out = ratios.map((r) => Math.max(0, Math.round(total * r)));
+    let sum = out.reduce((a, b) => a + b, 0);
+    while (sum > total) {
+      let bestIdx = 0;
+      for (let i = 1; i < out.length; i++) {
+        if (out[i] > out[bestIdx]) bestIdx = i;
+      }
+      if (out[bestIdx] <= 0) break;
+      out[bestIdx] -= 1;
+      sum -= 1;
+    }
+    while (sum < total) {
+      let bestIdx = 0;
+      for (let i = 1; i < out.length; i++) {
+        if (ratios[i] > ratios[bestIdx]) bestIdx = i;
+      }
+      out[bestIdx] += 1;
+      sum += 1;
     }
     return out;
   }
 
-  function buildRandomForce(
-    side,
-    terrainByHex,
-    occupiedSet,
-    geometry,
-    totalNeeded = RANDOM_START_UNITS_PER_SIDE,
-    qualityDoctrine = 'balanced',
-    formation = 'triplex',
-    forceRole = 'even',
-  ) {
-    const force = [];
-    let depthNorm = 0.26;
-    let pool = [];
+  function formationArchetypeForSide(side, totalNeeded, advantageSide) {
+    const roll = Math.random();
+    const push = Math.random() < 0.5 ? 'left' : 'right';
 
+    if (advantageSide === side) {
+      if (roll < 0.34) return { id: 'envelopment', label: 'envelopment', push };
+      if (roll < 0.66) return { id: 'oblique', label: 'oblique order', push };
+      return { id: 'triplex', label: 'triplex line', push };
+    }
+
+    if (roll < 0.42) return { id: 'line', label: 'line battle', push };
+    if (roll < 0.74) return { id: 'triplex', label: 'triplex line', push };
+    if (roll < 0.90 && totalNeeded >= 25) return { id: 'hollow', label: 'hollow center', push };
+    return { id: 'oblique', label: 'oblique order', push };
+  }
+
+  function forceTypeMix(totalNeeded, archetype) {
+    const mix = {
+      gen: totalNeeded >= 28 ? 3 : 2,
+      run: 1,
+      iat: 1,
+      cav: totalNeeded >= 29 ? 6 : (totalNeeded >= 25 ? 5 : 4),
+      arc: totalNeeded >= 28 ? 4 : 3,
+      skr: totalNeeded >= 27 ? 4 : 3,
+    };
+
+    if (archetype.id === 'envelopment' && totalNeeded >= 27) mix.cav += 1;
+    if (archetype.id === 'hollow' && totalNeeded >= 26) mix.skr += 1;
+
+    let support = mix.gen + mix.run + mix.iat + mix.cav + mix.arc + mix.skr;
+    mix.inf = totalNeeded - support;
+
+    while (mix.inf < 9 && mix.skr > 2) {
+      mix.skr -= 1;
+      mix.inf += 1;
+    }
+    while (mix.inf < 9 && mix.arc > 2) {
+      mix.arc -= 1;
+      mix.inf += 1;
+    }
+    while (mix.inf < 9 && mix.cav > 4) {
+      mix.cav -= 1;
+      mix.inf += 1;
+    }
+    while (mix.inf < 8 && mix.gen > 2) {
+      mix.gen -= 1;
+      mix.inf += 1;
+    }
+
+    return mix;
+  }
+
+  function fallbackProfileForType(type, depthNorm, dFront, dSecond, dReserve, dRear, archetype) {
+    if (type === 'inf') return { depth: dSecond, center: 0.5, span: 0.56, preferCenter: true };
+    if (type === 'cav') {
+      const cavCenter = (archetype.push === 'left') ? 0.28 : 0.72;
+      return { depth: dFront, center: cavCenter, span: 0.44, preferFlank: true };
+    }
+    if (type === 'skr') return { depth: Math.min(depthNorm - 0.004, dFront + 0.03), center: 0.5, span: 0.72 };
+    if (type === 'arc') return { depth: Math.max(0.03, dSecond - 0.04), center: 0.5, span: 0.46, preferCenter: true };
+    if (type === 'gen') return { depth: dRear, center: 0.5, span: 0.24, preferCenter: true };
+    if (type === 'run') return { depth: Math.max(dRear, dReserve - 0.03), center: 0.5, span: 0.20, preferCenter: true };
+    if (type === 'iat') return { depth: Math.max(dRear, dReserve - 0.02), center: 0.5, span: 0.20, preferCenter: true };
+    return { depth: dSecond, center: 0.5, span: 0.52 };
+  }
+
+  function buildRandomForce(side, terrainByHex, occupiedSet, geometry, totalNeeded, options = {}) {
+    const archetype = formationArchetypeForSide(side, totalNeeded, options.advantageSide || 'none');
+    const mix = forceTypeMix(totalNeeded, archetype);
+    const force = [];
+    const placedByType = new Map();
+
+    let depthNorm = 0.24;
+    let pool = [];
     while (depthNorm <= 0.82) {
       pool = deploymentPool(side, depthNorm, terrainByHex, occupiedSet, geometry);
-      if (pool.length >= totalNeeded) break;
-      depthNorm += 0.05;
+      if (pool.length >= Math.ceil(totalNeeded * 1.35)) break;
+      depthNorm += 0.03;
     }
-
     if (pool.length < totalNeeded) {
-      pool = board.active.filter(h => terrainByHex.get(h.k) !== 'water' && !occupiedSet.has(h.k));
+      depthNorm = 1.0;
     }
 
-    pool = shuffledCopy(pool);
+    const dRear = clamp01(depthNorm * 0.20);
+    const dReserve = clamp01(depthNorm * 0.44);
+    const dSecond = clamp01(depthNorm * 0.66);
+    const dFront = clamp01(Math.min(depthNorm - 0.01, depthNorm * 0.86));
+    const dScreen = clamp01(Math.min(depthNorm - 0.004, dFront + 0.03));
 
-    const depthAt = (h) => sideDepthNorm(geometry.byKey.get(h.k), side);
-    const lateralSigned = (h) => {
-      const m = geometry.byKey.get(h.k);
-      return m ? (m.lateralN - 0.5) : 0;
-    };
-    const lateralOffset = (h) => {
-      const m = geometry.byKey.get(h.k);
-      return m ? Math.abs(m.lateralN - 0.5) : 0;
-    };
-
-    function shiftQuality(baseQuality, steps) {
-      const idx = QUALITY_ORDER.indexOf(baseQuality);
-      if (idx < 0) return baseQuality;
-      const next = Math.max(0, Math.min(QUALITY_ORDER.length - 1, idx + steps));
-      return QUALITY_ORDER[next] || baseQuality;
+    function placeType(type, count, cfg) {
+      const placed = placeFormationUnits(
+        force, side, type, count, geometry, terrainByHex, occupiedSet, depthNorm, cfg
+      );
+      if (placed > 0) {
+        placedByType.set(type, (placedByType.get(type) || 0) + placed);
+      }
+      return placed;
     }
 
-    function qualityPlanForForce() {
-      const plan = {
-        gen: 'regular',
-        run: 'green',
-        iat: 'regular',
-        infFront: 'regular',
-        infSupport: 'regular',
-        infReserve: 'regular',
-        cavWing: 'regular',
-        arcLine: 'regular',
-        skrScreen: 'regular',
-      };
-      if (qualityDoctrine === 'elite') {
-        plan.gen = 'veteran';
-        plan.run = 'regular';
-        plan.infFront = 'veteran';
-        plan.infSupport = 'regular';
-        plan.infReserve = 'regular';
-        plan.cavWing = 'veteran';
-        plan.arcLine = 'regular';
-        plan.skrScreen = 'regular';
-      } else if (qualityDoctrine === 'levy') {
-        plan.gen = 'regular';
-        plan.run = 'green';
-        plan.infFront = 'green';
-        plan.infSupport = 'green';
-        plan.infReserve = 'green';
-        plan.cavWing = 'regular';
-        plan.arcLine = 'green';
-        plan.skrScreen = 'green';
-      }
-
-      if (forceRole === 'outnumbered') {
-        plan.gen = shiftQuality(plan.gen, +1);
-        plan.cavWing = shiftQuality(plan.cavWing, +1);
-        plan.infFront = shiftQuality(plan.infFront, +1);
-      } else if (forceRole === 'advantaged' && qualityDoctrine === 'levy') {
-        plan.infSupport = shiftQuality(plan.infSupport, -1);
-        plan.infReserve = shiftQuality(plan.infReserve, -1);
-      }
-
-      if (formation === 'oblique' || formation === 'refused_flank') {
-        plan.cavWing = shiftQuality(plan.cavWing, +1);
-      } else if (formation === 'phalanx') {
-        plan.infFront = shiftQuality(plan.infFront, +1);
-      }
-
-      plan.iat = 'regular';
-      return plan;
+    if (archetype.id === 'hollow') {
+      const [leftWing, rightWing, thinCenter, secondRank, reserve] = splitByRatios(
+        mix.inf,
+        [0.24, 0.24, 0.08, 0.28, 0.16]
+      );
+      placeType('inf', leftWing, { depth: dFront + 0.008, center: 0.32, span: 0.22, depthWindow: 0.06, lateralWindow: 0.18 });
+      placeType('inf', rightWing, { depth: dFront + 0.008, center: 0.68, span: 0.22, depthWindow: 0.06, lateralWindow: 0.18 });
+      placeType('inf', thinCenter, { depth: dFront - 0.014, center: 0.5, span: 0.10, depthWindow: 0.06, lateralWindow: 0.10, preferCenter: true });
+      placeType('inf', secondRank, { depth: dSecond, center: 0.5, span: 0.50, depthWindow: 0.08, lateralWindow: 0.30, preferCenter: true });
+      placeType('inf', reserve, { depth: dReserve, center: 0.5, span: 0.34, depthWindow: 0.08, lateralWindow: 0.24, preferCenter: true });
+    } else if (archetype.id === 'oblique') {
+      const pushCenter = (archetype.push === 'left') ? 0.40 : 0.60;
+      const refusedCenter = (archetype.push === 'left') ? 0.68 : 0.32;
+      const [frontRank, secondRank, reserve] = splitByRatios(mix.inf, [0.54, 0.30, 0.16]);
+      placeType('inf', frontRank, { depth: dFront + 0.014, center: pushCenter, span: 0.56, depthWindow: 0.08, lateralWindow: 0.32, preferCenter: true });
+      placeType('inf', secondRank, { depth: dSecond, center: 0.5, span: 0.46, depthWindow: 0.08, lateralWindow: 0.30, preferCenter: true });
+      placeType('inf', reserve, { depth: dReserve, center: refusedCenter, span: 0.28, depthWindow: 0.08, lateralWindow: 0.22 });
+    } else if (archetype.id === 'envelopment') {
+      const [wingLeft, wingRight, centerHold, reserve] = splitByRatios(mix.inf, [0.28, 0.28, 0.24, 0.20]);
+      placeType('inf', wingLeft, { depth: dFront + 0.015, center: 0.32, span: 0.26, depthWindow: 0.08, lateralWindow: 0.24 });
+      placeType('inf', wingRight, { depth: dFront + 0.015, center: 0.68, span: 0.26, depthWindow: 0.08, lateralWindow: 0.24 });
+      placeType('inf', centerHold, { depth: dFront - 0.018, center: 0.5, span: 0.24, depthWindow: 0.08, lateralWindow: 0.18, preferCenter: true });
+      placeType('inf', reserve, { depth: dReserve, center: 0.5, span: 0.38, depthWindow: 0.08, lateralWindow: 0.24, preferCenter: true });
+    } else {
+      const ratios = (archetype.id === 'triplex') ? [0.49, 0.33, 0.18] : [0.58, 0.30, 0.12];
+      const [frontRank, secondRank, reserve] = splitByRatios(mix.inf, ratios);
+      placeType('inf', frontRank, { depth: dFront, center: 0.5, span: 0.62, depthWindow: 0.08, lateralWindow: 0.34, preferCenter: true });
+      placeType('inf', secondRank, { depth: dSecond, center: 0.5, span: 0.52, depthWindow: 0.08, lateralWindow: 0.30, preferCenter: true });
+      placeType('inf', reserve, { depth: dReserve, center: 0.5, span: 0.36, depthWindow: 0.08, lateralWindow: 0.24, preferCenter: true });
     }
 
-    const qPlan = qualityPlanForForce();
-    const strongWing = (Math.random() < 0.5) ? 'left' : 'right';
-    const frontDepthMin = Math.max(0.13, depthNorm - 0.09);
-    const supportDepthMin = Math.max(0.09, frontDepthMin - 0.08);
-    const rearDepthMax = Math.max(0.07, supportDepthMin - 0.02);
-    const vanguardDepthMin = Math.max(frontDepthMin + 0.01, depthNorm - 0.03);
-
-    const isCenterTight = (h) => lateralOffset(h) <= 0.14;
-    const isCenter = (h) => lateralOffset(h) <= 0.23;
-    const isInnerFlank = (h) => lateralOffset(h) >= 0.18 && lateralOffset(h) <= 0.34;
-    const isFlank = (h) => lateralOffset(h) >= 0.30;
-    const isLeftWing = (h) => lateralSigned(h) <= -0.22;
-    const isRightWing = (h) => lateralSigned(h) >= 0.22;
-    const isStrongWing = (h) => strongWing === 'left' ? isLeftWing(h) : isRightWing(h);
-    const isWeakWing = (h) => strongWing === 'left' ? isRightWing(h) : isLeftWing(h);
-
-    const isRear = (h) => depthAt(h) <= rearDepthMax;
-    const isSupport = (h) => depthAt(h) >= supportDepthMin && depthAt(h) < frontDepthMin;
-    const isFront = (h) => depthAt(h) >= frontDepthMin && depthAt(h) <= Math.max(frontDepthMin + 0.12, depthNorm + 0.03);
-    const isVanguard = (h) => depthAt(h) >= vanguardDepthMin;
-
-    const mix = forceMixCounts(totalNeeded, qualityDoctrine, formation, forceRole);
-
-    function removeFromPool(hexKey) {
-      const idx = pool.findIndex(h => h && h.k === hexKey);
-      if (idx >= 0) pool.splice(idx, 1);
+    let cavLeft = Math.floor(mix.cav / 2);
+    let cavRight = mix.cav - cavLeft;
+    if ((archetype.id === 'oblique' || archetype.id === 'envelopment') && mix.cav >= 5) {
+      if (archetype.push === 'left') {
+        cavLeft += 1;
+        cavRight = Math.max(0, cavRight - 1);
+      } else {
+        cavRight += 1;
+        cavLeft = Math.max(0, cavLeft - 1);
+      }
     }
+    placeType('cav', cavLeft, { depth: dFront + 0.01, center: 0.17, span: 0.16, depthWindow: 0.09, lateralWindow: 0.16, preferFlank: true });
+    placeType('cav', cavRight, { depth: dFront + 0.01, center: 0.83, span: 0.16, depthWindow: 0.09, lateralWindow: 0.16, preferFlank: true });
 
-    function pickSpotForGroup(type, groupSpots, predicates) {
-      const basePreds = (Array.isArray(predicates) && predicates.length > 0) ? predicates : [() => true];
-      const ordered = [];
-      const nearGroup = (h) => groupSpots.some(g => g.neigh.includes(h.k));
+    placeType('skr', mix.skr, { depth: dScreen, center: 0.5, span: 0.72, depthWindow: 0.08, lateralWindow: 0.42 });
+    placeType('arc', mix.arc, { depth: Math.max(0.03, dSecond - 0.04), center: 0.5, span: 0.46, depthWindow: 0.08, lateralWindow: 0.28, preferCenter: true });
 
-      for (const pred of basePreds) {
-        if (groupSpots.length > 0) ordered.push((h) => pred(h) && nearGroup(h));
-        ordered.push(pred);
-      }
-
-      let spot = pickPreferredSpawnHex(pool, ordered, type, terrainByHex);
-      if (!spot && groupSpots.length > 0) {
-        spot = pickPreferredSpawnHex(pool, [(h) => nearGroup(h)], type, terrainByHex);
-      }
-      if (!spot) {
-        spot = pickPreferredSpawnHex(pool, [() => true], type, terrainByHex);
-      }
-      if (!spot) {
-        spot = pullAnySafeHex(type, terrainByHex, occupiedSet);
-      }
-      return spot;
+    const generalCenters = (mix.gen >= 3) ? [0.32, 0.50, 0.68] : [0.44, 0.56];
+    for (let i = 0; i < mix.gen; i++) {
+      const gc = generalCenters[Math.min(i, generalCenters.length - 1)];
+      placeType('gen', 1, { depth: dRear, center: gc, span: 0.04, depthWindow: 0.06, lateralWindow: 0.10, preferCenter: true });
     }
+    const supportCenter = (archetype.push === 'left') ? 0.46 : 0.54;
+    placeType('run', mix.run, { depth: Math.max(dRear, dReserve - 0.03), center: supportCenter, span: 0.08, depthWindow: 0.06, lateralWindow: 0.12, preferCenter: true });
+    placeType('iat', mix.iat, { depth: Math.max(dRear, dReserve - 0.02), center: 0.5, span: 0.08, depthWindow: 0.06, lateralWindow: 0.12, preferCenter: true });
 
-    function groupedQuality(roleName, chunkIdx, type) {
-      if (type === 'iat') return 'regular';
-      let q = qPlan[roleName] || randomQualityForType(type, qualityDoctrine);
-      if (chunkIdx > 0 && Math.random() < 0.22) {
-        if (qualityDoctrine === 'elite') q = shiftQuality(q, -1);
-        else if (qualityDoctrine === 'levy') q = shiftQuality(q, +1);
-      }
-      return q;
-    }
+    const fillOrder = ['inf', 'cav', 'skr', 'arc', 'gen', 'run', 'iat'];
+    for (const type of fillOrder) {
+      const placed = placedByType.get(type) || 0;
+      const missing = Math.max(0, (mix[type] || 0) - placed);
+      if (missing <= 0) continue;
 
-    function placeUnit(spot, type, quality) {
-      if (!spot || !type) return false;
-      if (occupiedSet.has(spot.k)) return false;
-      occupiedSet.add(spot.k);
-      removeFromPool(spot.k);
-      force.push({
-        q: spot.q,
-        r: spot.r,
-        side,
-        type,
-        quality,
+      const profile = fallbackProfileForType(type, depthNorm, dFront, dSecond, dReserve, dRear, archetype);
+      const added = placeType(type, missing, {
+        depth: profile.depth,
+        center: profile.center,
+        span: profile.span,
+        depthWindow: 0.18,
+        lateralWindow: 0.48,
+        preferFlank: profile.preferFlank,
+        preferCenter: profile.preferCenter,
       });
-      return true;
-    }
-
-    function addGrouped(type, count, roleName, predicates, chunkMin = 1, chunkMax = 1) {
-      let remaining = Math.max(0, count);
-      let chunkIdx = 0;
-
-      while (remaining > 0) {
-        const targetChunk = Math.min(remaining, Math.max(1, randInt(chunkMin, chunkMax)));
-        const groupSpots = [];
-        const q = groupedQuality(roleName, chunkIdx, type);
-        let placed = 0;
-
-        for (let i = 0; i < targetChunk; i++) {
-          const spot = pickSpotForGroup(type, groupSpots, predicates);
-          if (!spot) break;
-          if (!placeUnit(spot, type, q)) break;
-          groupSpots.push(spot);
-          placed += 1;
-        }
-
-        if (placed <= 0) {
-          const fallback = pullAnySafeHex(type, terrainByHex, occupiedSet);
-          if (!fallback) break;
-          if (!placeUnit(fallback, type, q)) break;
-          placed = 1;
-        }
-
-        remaining -= placed;
-        chunkIdx += 1;
+      if (added < missing) {
+        placeType(type, missing - added, {
+          depth: profile.depth,
+          center: profile.center,
+          span: 0.94,
+          depthWindow: null,
+          lateralWindow: null,
+          preferFlank: profile.preferFlank,
+          preferCenter: profile.preferCenter,
+        });
       }
     }
 
-    addGrouped('gen', mix.gen, 'gen', [h => isRear(h) && isCenterTight(h), h => isRear(h) && isCenter(h)], 1, 1);
-    addGrouped('run', mix.run, 'run', [h => isRear(h) && isCenter(h)], 1, 1);
-    addGrouped('iat', mix.iat, 'iat', [h => isSupport(h) && isCenter(h), h => isRear(h) && isCenter(h)], 1, 1);
-
-    const addWingCav = (count, wingPred) => {
-      if (count <= 0) return;
-      addGrouped('cav', count, 'cavWing', [
-        h => isFront(h) && wingPred(h),
-        h => isSupport(h) && wingPred(h),
-        h => isFront(h) && isInnerFlank(h),
-      ], 2, 3);
-    };
-
-    const [cavStrong, cavWeak] = splitByWeights(mix.cav, (formation === 'oblique' || formation === 'refused_flank') ? [0.70, 0.30] : [0.50, 0.50]);
-    addWingCav(cavStrong, isStrongWing);
-    addWingCav(cavWeak, isWeakWing);
-
-    if (formation === 'phalanx') {
-      const [infFront, infReserve] = splitByWeights(mix.inf, [0.68, 0.32]);
-      addGrouped('inf', infFront, 'infFront', [
-        h => isFront(h) && isCenter(h),
-        h => isFront(h) && isInnerFlank(h),
-      ], 3, 6);
-      addGrouped('inf', infReserve, 'infReserve', [
-        h => isSupport(h) && isCenter(h),
-        h => isRear(h) && isCenter(h),
-      ], 2, 4);
-      addGrouped('arc', mix.arc, 'arcLine', [
-        h => isRear(h) && isCenter(h),
-        h => isSupport(h) && isCenter(h),
-      ], 2, 4);
-      addGrouped('skr', mix.skr, 'skrScreen', [
-        h => isFront(h) && isInnerFlank(h),
-        h => isVanguard(h) && isFlank(h),
-      ], 2, 3);
-    } else if (formation === 'triplex') {
-      const [line1, line2, line3] = splitByWeights(mix.inf, [0.38, 0.34, 0.28]);
-      addGrouped('inf', line1, 'infFront', [
-        h => isFront(h) && isCenter(h),
-        h => isFront(h) && isInnerFlank(h),
-      ], 2, 5);
-      addGrouped('inf', line2, 'infSupport', [
-        h => isSupport(h) && isCenter(h),
-        h => isSupport(h) && isInnerFlank(h),
-      ], 2, 4);
-      addGrouped('inf', line3, 'infReserve', [
-        h => isRear(h) && isCenter(h),
-        h => isRear(h) && isInnerFlank(h),
-      ], 2, 4);
-      addGrouped('skr', mix.skr, 'skrScreen', [
-        h => isVanguard(h) && isCenter(h),
-        h => isFront(h) && isCenter(h),
-      ], 2, 3);
-      addGrouped('arc', mix.arc, 'arcLine', [
-        h => isRear(h) && isCenter(h),
-        h => isSupport(h) && isCenter(h),
-      ], 2, 4);
-    } else if (formation === 'oblique') {
-      const [infSpear, infCenter, infRefused] = splitByWeights(mix.inf, [0.48, 0.28, 0.24]);
-      addGrouped('inf', infSpear, 'infFront', [
-        h => isFront(h) && isStrongWing(h),
-        h => isFront(h) && isInnerFlank(h),
-      ], 2, 5);
-      addGrouped('inf', infCenter, 'infSupport', [
-        h => isFront(h) && isCenter(h),
-        h => isSupport(h) && isCenter(h),
-      ], 2, 4);
-      addGrouped('inf', infRefused, 'infReserve', [
-        h => isSupport(h) && isWeakWing(h),
-        h => isRear(h) && isWeakWing(h),
-      ], 2, 4);
-      addGrouped('skr', mix.skr, 'skrScreen', [
-        h => isFront(h) && isStrongWing(h),
-        h => isVanguard(h) && isCenter(h),
-      ], 2, 3);
-      addGrouped('arc', mix.arc, 'arcLine', [
-        h => isRear(h) && isCenter(h),
-        h => isSupport(h) && isWeakWing(h),
-      ], 2, 3);
-    } else if (formation === 'crescent') {
-      const [infLeft, infCenter, infRight] = splitByWeights(mix.inf, [0.36, 0.28, 0.36]);
-      addGrouped('inf', infLeft, 'infFront', [
-        h => isFront(h) && isLeftWing(h),
-        h => isSupport(h) && isLeftWing(h),
-      ], 2, 5);
-      addGrouped('inf', infCenter, 'infSupport', [
-        h => isSupport(h) && isCenter(h),
-        h => isRear(h) && isCenter(h),
-      ], 2, 4);
-      addGrouped('inf', infRight, 'infFront', [
-        h => isFront(h) && isRightWing(h),
-        h => isSupport(h) && isRightWing(h),
-      ], 2, 5);
-      addGrouped('skr', mix.skr, 'skrScreen', [
-        h => isVanguard(h) && isCenter(h),
-        h => isFront(h) && isInnerFlank(h),
-      ], 2, 3);
-      addGrouped('arc', mix.arc, 'arcLine', [
-        h => isRear(h) && isCenter(h),
-        h => isSupport(h) && isCenter(h),
-      ], 2, 4);
-    } else { // refused_flank
-      const [infMain, infReserve] = splitByWeights(mix.inf, [0.62, 0.38]);
-      addGrouped('inf', infMain, 'infFront', [
-        h => isFront(h) && isStrongWing(h),
-        h => isFront(h) && isCenter(h),
-      ], 2, 5);
-      addGrouped('inf', infReserve, 'infReserve', [
-        h => isSupport(h) && isWeakWing(h),
-        h => isRear(h) && isWeakWing(h),
-      ], 2, 4);
-      addGrouped('skr', mix.skr, 'skrScreen', [
-        h => isFront(h) && isCenter(h),
-        h => isSupport(h) && isWeakWing(h),
-      ], 2, 3);
-      addGrouped('arc', mix.arc, 'arcLine', [
-        h => isRear(h) && isCenter(h),
-        h => isRear(h) && isWeakWing(h),
-      ], 2, 3);
-    }
-
-    const refillTypes = ['inf', 'inf', 'skr', 'arc', 'cav', 'inf', 'skr'];
+    const refillTypes = ['inf', 'inf', 'inf', 'skr', 'arc', 'cav', 'inf', 'skr'];
     while (force.length < totalNeeded) {
       const type = refillTypes[randInt(0, refillTypes.length - 1)];
-      const role = (type === 'inf')
-        ? (forceRole === 'outnumbered' ? 'infFront' : 'infSupport')
-        : (type === 'cav' ? 'cavWing' : (type === 'arc' ? 'arcLine' : 'skrScreen'));
-      const q = groupedQuality(role, 99, type);
-      const spot = pullAnySafeHex(type, terrainByHex, occupiedSet);
-      if (!spot) break;
-      placeUnit(spot, type, q);
-    }
-
-    function commandRadiusForForceUnit(u) {
-      if (!u) return 0;
-      if (u.type === 'run') return RUNNER_COMMAND_RADIUS;
-      if (u.type === 'gen') return commandRadiusForUnit(u);
-      return 0;
-    }
-
-    function forceMeta(u) {
-      return geometry.byKey.get(key(u.q, u.r)) || null;
-    }
-
-    function forceDepth(u) {
-      return sideDepthNorm(forceMeta(u), side);
-    }
-
-    function forceLateral(u) {
-      const meta = forceMeta(u);
-      return meta ? meta.lateralN : 0.5;
-    }
-
-    function forceCoverageRatio() {
-      const commanders = force.filter(u => u.side === side && isCommandSourceUnit(u));
-      const controlled = force.filter(u => {
-        if (u.side !== side) return false;
-        if (u.type !== 'inf' && u.type !== 'arc' && u.type !== 'skr') return false;
-        return u.quality !== 'veteran';
+      const profile = fallbackProfileForType(type, depthNorm, dFront, dSecond, dReserve, dRear, archetype);
+      const added = placeType(type, 1, {
+        depth: profile.depth,
+        center: profile.center,
+        span: profile.span,
+        depthWindow: 0.24,
+        lateralWindow: 0.60,
+        preferFlank: profile.preferFlank,
+        preferCenter: profile.preferCenter,
       });
-      if (controlled.length === 0) return 1;
-      if (commanders.length === 0) return 0;
-
-      let inRange = 0;
-      for (const target of controlled) {
-        const covered = commanders.some((src) => {
-          const radius = commandRadiusForForceUnit(src);
-          if (radius <= 0) return false;
-          return axialDistance(target.q, target.r, src.q, src.r) <= radius;
-        });
-        if (covered) inRange += 1;
-      }
-      return inRange / controlled.length;
+      if (added <= 0) break;
     }
 
-    function swapForcePositions(a, b) {
-      if (!a || !b || a === b) return;
-      const q = a.q;
-      const r = a.r;
-      a.q = b.q;
-      a.r = b.r;
-      b.q = q;
-      b.r = r;
-    }
-
-    function rebalanceForceCommandNodes() {
-      const commanders = force
-        .filter(u => u.side === side && isCommandSourceUnit(u))
-        .sort((a, b) => commandRadiusForForceUnit(b) - commandRadiusForForceUnit(a));
-      if (commanders.length === 0) return;
-
-      const originalPositions = force.map(u => ({ q: u.q, r: u.r }));
-      const baseline = forceCoverageRatio();
-      const strongLateralTarget = strongWing === 'left' ? 0.40 : 0.60;
-      const weakLateralTarget = strongWing === 'left' ? 0.60 : 0.40;
-      const rearCoreDepth = Math.max(0.06, Math.min(0.19, supportDepthMin - 0.01));
-      const rearSupportDepth = Math.max(0.08, Math.min(0.23, frontDepthMin - 0.015));
-      const desiredAnchors = [
-        { depth: rearCoreDepth, lateral: 0.50 },
-        { depth: rearSupportDepth, lateral: strongLateralTarget },
-        { depth: rearSupportDepth, lateral: weakLateralTarget },
-        { depth: rearCoreDepth, lateral: strongLateralTarget },
-      ];
-
-      const used = new Set();
-      const claimedAnchors = [];
-      const nonWater = force.filter(u => {
-        const h = board.byKey.get(key(u.q, u.r));
-        return h && h.terrain !== 'water';
-      });
-
-      function farEnoughFromClaimed(hexUnit) {
-        for (const c of claimedAnchors) {
-          if (axialDistance(hexUnit.q, hexUnit.r, c.q, c.r) < 3) return false;
-        }
-        return true;
-      }
-
-      function pickAnchor(targetDepth, targetLateral) {
-        let candidates = nonWater.filter(u => !used.has(key(u.q, u.r)) && farEnoughFromClaimed(u));
-        if (candidates.length === 0) {
-          candidates = nonWater.filter(u => !used.has(key(u.q, u.r)));
-        }
-        if (candidates.length === 0) return null;
-        candidates.sort((a, b) => {
-          const da = Math.abs(forceDepth(a) - targetDepth) * 1.9 + Math.abs(forceLateral(a) - targetLateral);
-          const db = Math.abs(forceDepth(b) - targetDepth) * 1.9 + Math.abs(forceLateral(b) - targetLateral);
-          return da - db;
-        });
-        const winner = candidates[0] || null;
-        if (winner) {
-          used.add(key(winner.q, winner.r));
-          claimedAnchors.push({ q: winner.q, r: winner.r });
-        }
-        return winner;
-      }
-
-      for (let i = 0; i < commanders.length; i++) {
-        const cmd = commanders[i];
-        const anchorSpec = desiredAnchors[Math.min(i, desiredAnchors.length - 1)];
-        const anchor = pickAnchor(anchorSpec.depth, anchorSpec.lateral);
-        if (!anchor) continue;
-        swapForcePositions(cmd, anchor);
-      }
-
-      const after = forceCoverageRatio();
-      if (after < 0.52 && after + 0.10 < baseline) {
-        // If rebalancing somehow hurts command coverage badly, fall back to the original placement.
-        // This keeps random starts stable.
-        for (let i = 0; i < force.length; i++) {
-          const saved = originalPositions[i];
-          if (!saved) continue;
-          force[i].q = saved.q;
-          force[i].r = saved.r;
-        }
-      }
-    }
-
-    rebalanceForceCommandNodes();
-
-    return force;
+    assignGroupedForceQualities(force, side, geometry);
+    return { units: force, archetype: archetype.label };
   }
 
   function buildRandomStartupScenario(axis) {
-    const profile = chooseRandomStartupProfile();
     const geometry = buildAxisGeometry(axis);
     const terrainData = createRandomTerrainLayout(axis, geometry);
     const occupiedSet = new Set();
-    const blue = buildRandomForce(
+    const unitsPerSide = chooseRandomUnitsPerSide();
+    const blueForce = buildRandomForce(
       'blue',
       terrainData.terrainByHex,
       occupiedSet,
       geometry,
-      profile.blueUnits,
-      profile.blueDoctrine || 'balanced',
-      profile.blueFormation || 'triplex',
-      profile.blueRole || 'even',
+      unitsPerSide,
+      { advantageSide: terrainData.advantageSide }
     );
-    const red = buildRandomForce(
+    const redForce = buildRandomForce(
       'red',
       terrainData.terrainByHex,
       occupiedSet,
       geometry,
-      profile.redUnits,
-      profile.redDoctrine || 'balanced',
-      profile.redFormation || 'triplex',
-      profile.redRole || 'even',
+      unitsPerSide,
+      { advantageSide: terrainData.advantageSide }
     );
 
     return {
       axis: normalizeForwardAxis(axis),
       terrain: terrainData.terrain,
-      units: [...blue, ...red],
+      units: [...blueForce.units, ...redForce.units],
+      unitsPerSide,
       advantageSide: terrainData.advantageSide,
-      size: profile.size,
-      matchup: profile.matchup,
-      blueDoctrine: profile.blueDoctrine || 'balanced',
-      redDoctrine: profile.redDoctrine || 'balanced',
-      blueRole: profile.blueRole || 'even',
-      redRole: profile.redRole || 'even',
-      blueFormation: profile.blueFormation || 'triplex',
-      redFormation: profile.redFormation || 'triplex',
-      blueUnits: profile.blueUnits,
-      redUnits: profile.redUnits,
+      blueArchetype: blueForce.archetype,
+      redArchetype: redForce.archetype,
     };
   }
 
@@ -9452,11 +11217,52 @@ function unitColors(side) {
     const axis = chooseRandomForwardAxis();
     state.forwardAxis = normalizeForwardAxis(axis);
     const generated = buildRandomStartupScenario(state.forwardAxis);
+    const centerObj = [
+      { q: 7, r: 5 },
+      { q: 8, r: 5 },
+      { q: 7, r: 6 },
+      { q: 8, r: 6 },
+    ];
     SCENARIOS[RANDOM_START_SCENARIO_NAME] = {
       terrain: generated.terrain,
       units: generated.units,
+      meta: {
+        group: 'terrain',
+        description: 'Procedural deployment based on classical formation archetypes.',
+        historical: '',
+        checkpointTurn: 8,
+        objectives: [
+          { id: 'center-field', name: 'Center Field', value: 2, contestAdjacent: true, hexes: centerObj },
+        ],
+      },
     };
     return generated;
+  }
+
+  function scenarioUnitPassableAt(type, hexKey) {
+    const h = board.byKey.get(hexKey);
+    if (!h) return false;
+    return Number.isFinite(terrainMoveCost(type, h.terrain));
+  }
+
+  function findScenarioRelocationKey(fromKey, type, occupiedHexes) {
+    const from = board.byKey.get(fromKey);
+    if (!from) return null;
+    let best = null;
+    let bestScore = Infinity;
+    for (const h of board.active) {
+      if (occupiedHexes.has(h.k)) continue;
+      if (!scenarioUnitPassableAt(type, h.k)) continue;
+      const d = axialDistance(from.q, from.r, h.q, h.r);
+      // Slight center bias keeps relocated units from being pushed to map corners.
+      const centerBias = Math.abs(h.q - 7) + Math.abs(h.r - 5);
+      const score = (d * 100) + centerBias;
+      if (score < bestScore) {
+        best = h.k;
+        bestScore = score;
+      }
+    }
+    return best;
   }
 
   function loadScenario(name) {
@@ -9472,7 +11278,10 @@ function unitColors(side) {
       unitsSkippedOffBoard: 0,
       unitsSkippedBadType: 0,
       unitsSkippedBadSide: 0,
+      unitsSkippedCap: 0,
+      unitsSkippedImpassable: 0,
       unitsDuplicates: 0,
+      unitsRelocatedFromImpassable: 0,
     };
 
     resetDraftState({ keepBudget: true });
@@ -9480,6 +11289,8 @@ function unitColors(side) {
     clearUnits();
     resetTerrain();
     clearDiceDisplay();
+    state.eventTrace = [];
+    state.events = [];
 
     // Terrain paint
     const seenTerrainHexes = new Set();
@@ -9507,14 +11318,13 @@ function unitColors(side) {
 
     // Units
     const seenUnitHexes = new Set();
+    const sideCounts = { blue: 0, red: 0 };
     for (const u of (sc.units || [])) {
-      const k = key(u.q, u.r);
-      if (!board.activeSet.has(k)) {
+      const srcKey = key(u.q, u.r);
+      if (!board.activeSet.has(srcKey)) {
         stats.unitsSkippedOffBoard += 1;
         continue;
       }
-      if (seenUnitHexes.has(k)) stats.unitsDuplicates += 1;
-      seenUnitHexes.add(k);
 
       const def = UNIT_BY_ID.get(u.type);
       if (!def) {
@@ -9525,6 +11335,40 @@ function unitColors(side) {
         stats.unitsSkippedBadSide += 1;
         continue;
       }
+      if (sideCounts[u.side] >= SCENARIO_UNIT_CAP_PER_SIDE) {
+        stats.unitsSkippedCap += 1;
+        continue;
+      }
+
+      let k = srcKey;
+      if (!scenarioUnitPassableAt(u.type, k) || seenUnitHexes.has(k)) {
+        if (!scenarioUnitPassableAt(u.type, k)) {
+          const relocated = findScenarioRelocationKey(srcKey, u.type, seenUnitHexes);
+          if (relocated) {
+            k = relocated;
+            stats.unitsRelocatedFromImpassable += 1;
+          } else {
+            stats.unitsSkippedImpassable += 1;
+            continue;
+          }
+        } else if (seenUnitHexes.has(k)) {
+          const relocated = findScenarioRelocationKey(srcKey, u.type, seenUnitHexes);
+          if (relocated) {
+            k = relocated;
+            stats.unitsDuplicates += 1;
+          } else {
+            stats.unitsDuplicates += 1;
+            stats.unitsSkippedOffBoard += 1;
+            continue;
+          }
+        }
+      }
+
+      if (seenUnitHexes.has(k)) {
+        stats.unitsDuplicates += 1;
+        continue;
+      }
+      seenUnitHexes.add(k);
 
       const quality = normalizeQuality(u.type, u.quality || 'green');
       unitsByHex.set(k, {
@@ -9533,24 +11377,53 @@ function unitColors(side) {
         type: u.type,
         quality,
         hp: unitMaxHp(u.type, quality),
-        movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
-          ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
-          : 0,
-        actionPauseUntilTurn: Number.isFinite(Number(u.actionPauseUntilTurn))
-          ? Math.max(0, Math.trunc(Number(u.actionPauseUntilTurn)))
-          : 0,
+        disarray: false,
       });
+      sideCounts[u.side] += 1;
       stats.unitsPlaced += 1;
     }
 
-    log(`Loaded scenario: ${name} (units=${stats.unitsPlaced}, terrain=${stats.terrainPlaced}).`);
+    const capNote = stats.unitsSkippedCap > 0
+      ? `, capped at ${SCENARIO_UNIT_CAP_PER_SIDE}/side`
+      : '';
+    log(`Loaded scenario: ${name} (units=${stats.unitsPlaced}, terrain=${stats.terrainPlaced}${capNote}).`);
+    pushEventTrace('scenario.load', {
+      name,
+      unitsPlaced: stats.unitsPlaced,
+      terrainPlaced: stats.terrainPlaced,
+      warnings: {
+        terrainSkippedOffBoard: stats.terrainSkippedOffBoard,
+        terrainSkippedInvalidType: stats.terrainSkippedInvalidType,
+        unitsSkippedOffBoard: stats.unitsSkippedOffBoard,
+        unitsSkippedBadType: stats.unitsSkippedBadType,
+        unitsSkippedBadSide: stats.unitsSkippedBadSide,
+        unitsSkippedCap: stats.unitsSkippedCap,
+        unitsSkippedImpassable: stats.unitsSkippedImpassable,
+        unitsRelocatedFromImpassable: stats.unitsRelocatedFromImpassable,
+      },
+    });
+    state.loadedScenarioName = name;
+    state.loadedScenarioSides = scenarioSideLabels(name);
+    loadScenarioObjectives(name);
+    updateScenarioSidesLegend(name);
+
+    if (state.loadedScenarioMeta?.description) {
+      const era = state.loadedScenarioMeta.historical ? ` (${state.loadedScenarioMeta.historical})` : '';
+      log(`Scenario brief${era}: ${state.loadedScenarioMeta.description}`);
+    }
+    if ((state.scenarioObjectives || []).length > 0) {
+      log(`Objective checkpoint: turn ${state.objectiveCheckpointTurn}.`);
+      logObjectiveStateIfChanged(true);
+    }
 
     const skippedTotal =
       stats.terrainSkippedOffBoard +
       stats.terrainSkippedInvalidType +
       stats.unitsSkippedOffBoard +
       stats.unitsSkippedBadType +
-      stats.unitsSkippedBadSide;
+      stats.unitsSkippedBadSide +
+      stats.unitsSkippedCap +
+      stats.unitsSkippedImpassable;
     const duplicateTotal = stats.terrainDuplicates + stats.unitsDuplicates;
 
     if (skippedTotal > 0 || duplicateTotal > 0) {
@@ -9558,9 +11431,12 @@ function unitColors(side) {
         `Scenario warnings: skipped=${skippedTotal} ` +
         `(terrain offboard ${stats.terrainSkippedOffBoard}, terrain invalid ${stats.terrainSkippedInvalidType}, ` +
         `units offboard ${stats.unitsSkippedOffBoard}, units bad type ${stats.unitsSkippedBadType}, ` +
-        `units bad side ${stats.unitsSkippedBadSide}) · duplicates=${duplicateTotal} ` +
+        `units bad side ${stats.unitsSkippedBadSide}, units capped ${stats.unitsSkippedCap}, units impassable ${stats.unitsSkippedImpassable}) · duplicates=${duplicateTotal} ` +
         `(terrain ${stats.terrainDuplicates}, units ${stats.unitsDuplicates}).`
       );
+    }
+    if (stats.unitsRelocatedFromImpassable > 0) {
+      log(`Scenario cleanup: relocated ${stats.unitsRelocatedFromImpassable} unit(s) off impassable hexes.`);
     }
 
     updateHud();
@@ -9598,12 +11474,8 @@ function unitColors(side) {
         type: u.type,
         quality: u.quality,
         hp: u.hp,
-        movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
-          ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
-          : 0,
-        actionPauseUntilTurn: Number.isFinite(Number(u.actionPauseUntilTurn))
-          ? Math.max(0, Math.trunc(Number(u.actionPauseUntilTurn)))
-          : 0,
+        disarray: !!u.disarray,
+        disarrayAppliedSerial: Number.isFinite(u.disarrayAppliedSerial) ? Number(u.disarrayAppliedSerial) : null,
       });
     }
     units.sort((a, b) => (a.r - b.r) || (a.q - b.q) || (a.id - b.id));
@@ -9616,10 +11488,11 @@ function unitColors(side) {
       state: {
         mode: state.mode,
         gameMode: state.gameMode,
-        humanSide: state.humanSide,
         aiDifficulty: state.aiDifficulty,
+        humanSide: state.humanSide,
+        turnSerial: state.turnSerial,
         forwardAxis: state.forwardAxis,
-        lineAdvanceDir: state.lineAdvanceDir,
+        lineAdvanceDirection: normalizeLineAdvanceDirection(state.lineAdvanceDirection),
         tool: state.tool,
         turn: state.turn,
         side: state.side,
@@ -9632,6 +11505,24 @@ function unitColors(side) {
         winner: state.winner,
         showCommand: state.showCommand,
         terrainTheme: state.terrainTheme,
+        events: cloneJson(state.events, []),
+        eventTrace: cloneJson(state.eventTrace, []),
+        loadedScenarioName: state.loadedScenarioName,
+        loadedScenarioSides: cloneJson(state.loadedScenarioSides, { blue: 'Blue Army', red: 'Red Army', named: false }),
+        loadedScenarioMeta: cloneJson(state.loadedScenarioMeta, { description: '', historical: '', notes: '', pointTarget: null }),
+        scenarioObjectives: cloneJson(state.scenarioObjectives, []),
+        objectiveCheckpointTurn: state.objectiveCheckpointTurn,
+        objectiveLastSummary: state.objectiveLastSummary,
+        doctrine: {
+          commandPhaseOpen: !!state.doctrine.commandPhaseOpen,
+          commandIssuedThisTurn: !!state.doctrine.commandIssuedThisTurn,
+          selectedCommandId: state.doctrine.selectedCommandId || '',
+          activeCommandThisTurn: state.doctrine.activeCommandThisTurn || null,
+          bySide: cloneJson(state.doctrine.bySide, { blue: null, red: null }),
+          history: cloneJson(state.doctrine.history, []),
+          longEffects: cloneJson(state.doctrine.longEffects, []),
+          effects: cloneJson(state.doctrine.effects, {}),
+        },
         terrain,
         units,
       },
@@ -9694,7 +11585,7 @@ function unitColors(side) {
       Object.prototype.hasOwnProperty.call(raw, 'victoryMode');
 
     if (!looksLikeState) {
-      return { ok: false, error: 'Import failed: this JSON does not look like an Ad Arma state file.' };
+      return { ok: false, error: 'Import failed: this JSON does not look like a Bannerfall state file.' };
     }
 
     return { ok: true, payload: raw };
@@ -9704,9 +11595,6 @@ function unitColors(side) {
     const silent = !!options.silent;
     const skipAiKick = !!options.skipAiKick;
     stopAiLoop();
-    stopMoveAnimation();
-    stopActionPulse();
-    closeRulesModal();
     resetDraftState({ keepBudget: true });
 
     const resolved = resolveImportPayload(raw);
@@ -9828,12 +11716,8 @@ function unitColors(side) {
         type: u.type,
         quality,
         hp,
-        movePauseUntilTurn: Number.isFinite(Number(u.movePauseUntilTurn))
-          ? Math.max(0, Math.trunc(Number(u.movePauseUntilTurn)))
-          : 0,
-        actionPauseUntilTurn: Number.isFinite(Number(u.actionPauseUntilTurn))
-          ? Math.max(0, Math.trunc(Number(u.actionPauseUntilTurn)))
-          : 0,
+        disarray: !!u.disarray,
+        disarrayAppliedSerial: Number.isFinite(Number(u.disarrayAppliedSerial)) ? Number(u.disarrayAppliedSerial) : null,
       });
       report.unitsPlaced += 1;
     }
@@ -9841,17 +11725,20 @@ function unitColors(side) {
 
     // Restore state fields
     const restoreMode = (payload.mode === 'play') ? 'play' : 'edit';
-    state.gameMode = (payload.gameMode === 'hvh' || payload.gameMode === 'hvai' || payload.gameMode === 'online')
-      ? payload.gameMode
-      : 'hvai';
-    state.humanSide = normalizeSide(payload.humanSide);
+    const restoredGameMode =
+      (payload.gameMode === 'online')
+        ? 'online'
+        : 'hvai';
+    state.gameMode = restoredGameMode;
     state.aiDifficulty = normalizeAiDifficulty(payload.aiDifficulty);
+    state.humanSide = (payload.humanSide === 'red') ? 'red' : 'blue';
     state.forwardAxis = normalizeForwardAxis(payload.forwardAxis);
-    state.lineAdvanceDir = normalizeLineAdvanceDirection(payload.lineAdvanceDir);
+    state.lineAdvanceDirection = normalizeLineAdvanceDirection(payload.lineAdvanceDirection);
     state.mode = restoreMode;
     state.tool = (payload.tool === 'terrain') ? 'terrain' : 'units';
 
     state.turn = Math.max(1, clampInt(payload.turn, 1, 999999, 1));
+    state.turnSerial = Math.max(state.turn, clampInt(payload.turnSerial, 1, 9999999, state.turn));
     state.side = (payload.side === 'red') ? 'red' : 'blue';
     state.actsUsed = clampInt(payload.actsUsed, 0, ACT_LIMIT, 0);
 
@@ -9862,8 +11749,7 @@ function unitColors(side) {
       if (Number.isInteger(n) && usedIds.has(n)) state.actedUnitIds.add(n);
     }
 
-    const victoryModes = new Set(['clear', 'decapitation', 'annihilation']);
-    state.victoryMode = victoryModes.has(payload.victoryMode) ? payload.victoryMode : 'clear';
+    state.victoryMode = VICTORY_MODE_IDS.has(payload.victoryMode) ? payload.victoryMode : 'decapitation';
     elVictorySel.value = state.victoryMode;
 
     const nowBlue = totals('blue').up;
@@ -9885,6 +11771,113 @@ function unitColors(side) {
     if (typeof payload.terrainTheme === 'string' && TERRAIN_THEMES[payload.terrainTheme]) {
       state.terrainTheme = payload.terrainTheme;
     }
+    state.events = Array.isArray(payload.events) ? cloneJson(payload.events, []) : [];
+    if (state.events.length > 200) state.events = state.events.slice(-200);
+    state.eventTrace = Array.isArray(payload.eventTrace) ? cloneJson(payload.eventTrace, []) : [];
+    if (state.eventTrace.length > EVENT_TRACE_MAX) {
+      state.eventTrace = state.eventTrace.slice(-EVENT_TRACE_MAX);
+    }
+
+    state.loadedScenarioName = (typeof payload.loadedScenarioName === 'string' && payload.loadedScenarioName.trim())
+      ? payload.loadedScenarioName.trim()
+      : state.loadedScenarioName;
+    const importedSides = payload.loadedScenarioSides;
+    if (importedSides && typeof importedSides === 'object' && importedSides.blue && importedSides.red) {
+      state.loadedScenarioSides = {
+        blue: String(importedSides.blue),
+        red: String(importedSides.red),
+        named: !!importedSides.named,
+      };
+    } else {
+      state.loadedScenarioSides = scenarioSideLabels(state.loadedScenarioName);
+    }
+    const importedMeta = payload.loadedScenarioMeta;
+    if (importedMeta && typeof importedMeta === 'object') {
+      state.loadedScenarioMeta = {
+        description: String(importedMeta.description || ''),
+        historical: String(importedMeta.historical || ''),
+        notes: String(importedMeta.notes || ''),
+        pointTarget: Number.isFinite(Number(importedMeta.pointTarget)) ? Math.max(1, Math.trunc(Number(importedMeta.pointTarget))) : null,
+      };
+    }
+    state.scenarioObjectives = normalizeScenarioObjectives(payload.scenarioObjectives);
+    if (state.scenarioObjectives.length === 0 && state.loadedScenarioName) {
+      loadScenarioObjectives(state.loadedScenarioName);
+    }
+    state.objectiveCheckpointTurn = clampInt(payload.objectiveCheckpointTurn, 1, 99, state.objectiveCheckpointTurn || 8);
+    state.objectiveLastSummary = (typeof payload.objectiveLastSummary === 'string')
+      ? payload.objectiveLastSummary
+      : null;
+
+    const importedDoctrine = payload.doctrine;
+    ensureDoctrineStateInitialized(false);
+    if (importedDoctrine && typeof importedDoctrine === 'object') {
+      const bySide = importedDoctrine.bySide;
+      if (bySide && typeof bySide === 'object') {
+        const blueLoadout = Array.isArray(bySide.blue?.loadout) ? bySide.blue.loadout : null;
+        const redLoadout = Array.isArray(bySide.red?.loadout) ? bySide.red.loadout : null;
+        if (blueLoadout && validateDoctrineLoadout(blueLoadout)) {
+          state.doctrine.bySide.blue = buildDoctrineByIds(blueLoadout, bySide.blue?.source || 'import');
+          if (bySide.blue?.byId && typeof bySide.blue.byId === 'object') {
+            for (const [id, status] of Object.entries(bySide.blue.byId)) {
+              if (!state.doctrine.bySide.blue.byId[id]) continue;
+              state.doctrine.bySide.blue.byId[id].revealed = !!status?.revealed;
+              state.doctrine.bySide.blue.byId[id].spent = !!status?.spent;
+              state.doctrine.bySide.blue.byId[id].usedCount = Math.max(0, Math.trunc(Number(status?.usedCount || 0)));
+            }
+          } else {
+            // Backward compatibility with legacy import format.
+            const revealed = new Set(Array.isArray(bySide.blue?.revealed) ? bySide.blue.revealed : []);
+            const spent = new Set(Array.isArray(bySide.blue?.spent) ? bySide.blue.spent : []);
+            for (const id of state.doctrine.bySide.blue.loadout) {
+              const st = state.doctrine.bySide.blue.byId[id];
+              if (!st) continue;
+              st.revealed = revealed.has(id);
+              st.spent = spent.has(id);
+              st.usedCount = st.spent ? 1 : (st.revealed ? 1 : 0);
+            }
+          }
+        }
+        if (redLoadout && validateDoctrineLoadout(redLoadout)) {
+          state.doctrine.bySide.red = buildDoctrineByIds(redLoadout, bySide.red?.source || 'import');
+          if (bySide.red?.byId && typeof bySide.red.byId === 'object') {
+            for (const [id, status] of Object.entries(bySide.red.byId)) {
+              if (!state.doctrine.bySide.red.byId[id]) continue;
+              state.doctrine.bySide.red.byId[id].revealed = !!status?.revealed;
+              state.doctrine.bySide.red.byId[id].spent = !!status?.spent;
+              state.doctrine.bySide.red.byId[id].usedCount = Math.max(0, Math.trunc(Number(status?.usedCount || 0)));
+            }
+          } else {
+            const revealed = new Set(Array.isArray(bySide.red?.revealed) ? bySide.red.revealed : []);
+            const spent = new Set(Array.isArray(bySide.red?.spent) ? bySide.red.spent : []);
+            for (const id of state.doctrine.bySide.red.loadout) {
+              const st = state.doctrine.bySide.red.byId[id];
+              if (!st) continue;
+              st.revealed = revealed.has(id);
+              st.spent = spent.has(id);
+              st.usedCount = st.spent ? 1 : (st.revealed ? 1 : 0);
+            }
+          }
+        }
+      }
+      state.doctrine.history = Array.isArray(importedDoctrine.history) ? cloneJson(importedDoctrine.history, []) : [];
+      state.doctrine.longEffects = Array.isArray(importedDoctrine.longEffects) ? cloneJson(importedDoctrine.longEffects, []) : [];
+      state.doctrine.effects = (importedDoctrine.effects && typeof importedDoctrine.effects === 'object')
+        ? cloneJson(importedDoctrine.effects, {})
+        : state.doctrine.effects;
+      state.doctrine.commandPhaseOpen = !!importedDoctrine.commandPhaseOpen;
+      state.doctrine.commandIssuedThisTurn = !!importedDoctrine.commandIssuedThisTurn;
+      state.doctrine.selectedCommandId = String(importedDoctrine.selectedCommandId || '');
+      state.doctrine.activeCommandThisTurn = importedDoctrine.activeCommandThisTurn || null;
+    } else {
+      ensureDoctrineStateInitialized(true);
+      clearDoctrineTurnEffects();
+      state.doctrine.commandPhaseOpen = false;
+      state.doctrine.commandIssuedThisTurn = false;
+      state.doctrine.selectedCommandId = '';
+      state.doctrine.activeCommandThisTurn = null;
+    }
+    ensureDoctrineEffectMaps();
 
     if (state.mode === 'edit') {
       // Keep Edit mode deterministic and uncluttered after import.
@@ -9963,29 +11956,34 @@ function unitColors(side) {
 
     stopAiLoop();
 
+    // End-of-turn objective checkpoint and strategic victory checks.
+    logObjectiveStateIfChanged(false);
+    checkVictory('end-turn');
+    if (state.gameOver) {
+      updateHud();
+      return;
+    }
+
+    const endedSide = state.side;
     state.side = (state.side === 'blue') ? 'red' : 'blue';
     if (state.side === 'blue') state.turn += 1;
+    state.turnSerial += 1;
+    clearExpiredDisarrayForEndedSide(endedSide);
 
     state.actsUsed = 0;
     state.actedUnitIds = new Set();
 
     clearSelection();
+    openCommandPhaseForCurrentTurn();
 
+    pushEventTrace('turn.end', {
+      nextSide: state.side,
+      turn: state.turn,
+      serial: state.turnSerial,
+    });
     log(`Turn ${state.turn}: ${state.side.toUpperCase()}.`);
     updateHud();
     maybeStartAiTurn();
-  }
-
-  function maybeAutoEndTurnAfterAction() {
-    if (state.mode !== 'play') return false;
-    if (state.gameOver) return false;
-    if (isAiTurnActive()) return false;
-    if (state.selectedKey) return false;
-    if (state.actsUsed < ACT_LIMIT) return false;
-
-    log(`Actions ${ACT_LIMIT}/${ACT_LIMIT} spent. Auto-ending turn.`);
-    endTurn();
-    return true;
   }
 
   // --- Play interaction
@@ -9996,7 +11994,6 @@ function unitColors(side) {
     if (!unitCanActivate(u, hexKey)) return;
 
     const inCmd = unitIgnoresCommand(u) ? true : inCommandAt(hexKey, u.side);
-    const startedEngaged = isEngaged(hexKey, u.side);
 
     state.selectedKey = hexKey;
     state.act = {
@@ -10006,9 +12003,9 @@ function unitColors(side) {
       attacked: false,
       healed: false,
       inCommandStart: inCmd,
-      startedEngaged,
       moveSpent: 0,
       postAttackWithdrawOnly: false,
+      postAttackPursuitOnly: false,
     };
 
     // Precompute targets
@@ -10019,37 +12016,24 @@ function unitColors(side) {
     const def = UNIT_BY_ID.get(u.type);
     const engaged = isEngaged(hexKey, u.side);
     const notes = [];
-    const actionPaused = unitActionIsPausedThisTurn(u);
-    const movePaused = unitMoveIsPausedThisTurn(u);
+    const disarray = unitIsDisarrayed(u);
 
-    if (actionPaused) {
-      notes.push(`Terrain shock: cannot activate this turn (ready again on turn ${u.actionPauseUntilTurn + 1}).`);
-    } else if (movePaused) {
-      notes.push(`Terrain fatigue: cannot move this turn (ready again on turn ${u.movePauseUntilTurn + 1}).`);
-    } else if (engaged) {
+    if (disarray) {
+      notes.push('Disarrayed: this activation can only recover/pass (disarray auto-clears after one full turn).');
+    }
+
+    if (!disarray && engaged) {
       if (u.type === 'skr') notes.push('Engaged: SKR may disengage 1 hex.');
       else if (u.type === 'run') notes.push('Engaged: RUN may disengage 1 hex.');
       else if (u.quality === 'veteran') notes.push('Engaged: Veteran may withdraw 1 hex.');
       else notes.push('Engaged: cannot move.');
-    } else if (!unitIgnoresCommand(u) && u.quality === 'regular' && !inCmd) {
+    } else if (!disarray && !unitIgnoresCommand(u) && u.quality === 'regular' && !inCmd) {
       notes.push('Out of command: cannot move (can attack).');
     }
     if (u.type === 'iat') {
       const healCount = state._healTargets ? state._healTargets.size : 0;
       if (healCount > 0) notes.push(`Medic can heal ${healCount} adjacent unit(s).`);
       else notes.push('Medic has no adjacent wounded ally to heal.');
-    }
-    if (u.type === 'arc' || u.type === 'skr') {
-      const curHex = board.byKey.get(hexKey);
-      if (curHex && curHex.terrain === 'woods') {
-        if (hasAdjacentTerrain(hexKey, 'clear')) {
-          notes.push('Tree-line: ranged attacks are enabled from this woods hex.');
-        } else {
-          notes.push('Deep woods: ranged attacks are disabled until on a woods hex adjacent to clear.');
-        }
-      } else if (curHex && curHex.terrain === 'hills') {
-        notes.push('Hilltop: ranged attacks gain +1 die (range unchanged).');
-      }
     }
 
     log(`Selected ${u.side.toUpperCase()} ${def.abbrev}.${notes.length ? ' ' + notes.join(' ') : ''}`);
@@ -10064,8 +12048,10 @@ function unitColors(side) {
     if (!u) return;
 
     const isPostAttackWithdraw = !!state.act.postAttackWithdrawOnly;
+    const isPostAttackPursuit = !!state.act.postAttackPursuitOnly;
+    const isPostAttackFollowup = isPostAttackWithdraw || isPostAttackPursuit;
 
-    if (!isPostAttackWithdraw && (state.act.moved || state.act.attacked)) {
+    if (!isPostAttackFollowup && (state.act.moved || state.act.attacked)) {
       log('Illegal move (already acted).');
       return;
     }
@@ -10085,53 +12071,63 @@ function unitColors(side) {
     if (Number.isFinite(stepCost) && stepCost > 0) {
       state.act.moveSpent = (state.act.moveSpent || 0) + stepCost;
     }
-    const pathKeys = movementPathKeys(fromKey, destKey, u);
 
     unitsByHex.delete(fromKey);
     unitsByHex.set(destKey, u);
     state.selectedKey = destKey;
     state.act.moved = true;
-    const pauseTerrainId = markMovementPauseFromPathIfNeeded(u, pathKeys);
-    startMoveAnimation(pathKeys, u, isAiControlledSide(u.side));
-    startActionPulse({
-      type: 'move',
+    startMoveAnimation(fromKey, destKey, u);
+    pushEventTrace('unit.move', {
+      side: u.side,
+      unitId: u.id,
+      unitType: u.type,
       fromKey,
       toKey: destKey,
-      durationMs: ACTION_PULSE_MOVE_MS,
+      followup: isPostAttackFollowup,
     });
+    tryTriggerCounterchargeAgainst(destKey, u);
 
-    if (isPostAttackWithdraw) {
-      log(`CAV disengaged to ${destKey}.`);
+    if (isPostAttackFollowup) {
+      if (isPostAttackPursuit) {
+        log(`Pursuit: advanced into ${destKey}.`);
+        pushEventTrace('combat.pursuit', {
+          side: u.side,
+          attackerId: u.id,
+          toKey: destKey,
+          auto: false,
+        });
+      } else {
+        log(`Veteran CAV disengaged to ${destKey}.`);
+      }
+      state.act.postAttackWithdrawOnly = false;
+      state.act.postAttackPursuitOnly = false;
       clearSelection();
-      if (!maybeAutoEndTurnAfterAction()) updateHud();
+      updateHud();
+      maybeAutoEndTurnAtActionLimit();
       return;
     }
 
     if (u.type === 'iat') {
       log(`Medic moved to ${destKey}.`);
       clearSelection();
-      if (!maybeAutoEndTurnAfterAction()) updateHud();
+      updateHud();
+      maybeAutoEndTurnAtActionLimit();
       return;
     }
 
-    if (pauseTerrainId) {
-      const terrainName = terrainLabel(pauseTerrainId);
-      if (pauseTerrainId === 'rough') {
-        log(`Moved to ${destKey}. Rough terrain shock: ${UNIT_BY_ID.get(u.type)?.abbrev || u.type} is inactive on turn ${u.actionPauseUntilTurn} after entering ${terrainName}.`);
-      } else {
-        log(`Moved to ${destKey}. Terrain friction: ${UNIT_BY_ID.get(u.type)?.abbrev || u.type} must pause movement on turn ${u.movePauseUntilTurn} after entering ${terrainName}.`);
-      }
-    } else {
-      log(`Moved to ${destKey}.`);
-    }
+    log(`Moved to ${destKey}.`);
 
     // After moving, you may make at most ONE attack (same activation).
     state._moveTargets = null;
     state._attackTargets = computeAttackTargets(destKey, u);
     state._healTargets = computeHealTargets(destKey, u);
-    if (!state._attackTargets || state._attackTargets.size === 0) {
+
+    const hasFollowUpAttack = !!(state._attackTargets && state._attackTargets.size > 0);
+    const hasFollowUpHeal = !!(state._healTargets && state._healTargets.size > 0);
+    if (!hasFollowUpAttack && !hasFollowUpHeal) {
       clearSelection();
-      if (!maybeAutoEndTurnAfterAction()) updateHud();
+      updateHud();
+      maybeAutoEndTurnAtActionLimit();
       return;
     }
 
@@ -10169,13 +12165,21 @@ function unitColors(side) {
     state.act.committed = true;
     state.act.healed = true;
     target.hp = Math.min(maxHp, target.hp + 1);
-    // Healing stabilizes a unit but also keeps it out of further action this turn.
-    state.actedUnitIds.add(target.id);
     const tdef = UNIT_BY_ID.get(target.type);
 
-    log(`Medic restored 1 HP to ${target.side.toUpperCase()} ${tdef ? tdef.abbrev : target.type} (${target.hp}/${maxHp}). Healed unit is spent for the rest of this turn.`);
+    log(`Medic restored 1 HP to ${target.side.toUpperCase()} ${tdef ? tdef.abbrev : target.type} (${target.hp}/${maxHp}).`);
+    pushEventTrace('unit.heal', {
+      side: src.side,
+      medicId: src.id,
+      targetId: target.id,
+      targetType: target.type,
+      targetKey,
+      hpAfter: target.hp,
+      hpMax: maxHp,
+    });
     clearSelection();
-    if (!maybeAutoEndTurnAfterAction()) updateHud();
+    updateHud();
+    maybeAutoEndTurnAtActionLimit();
   }
 
   function attackFromSelection(targetKey) {
@@ -10208,25 +12212,41 @@ function unitColors(side) {
       state.act.committed = true;
     }
 
-    startActionPulse({
-      type: 'attack',
-      fromKey: attackerKey,
-      toKey: targetKey,
-      durationMs: ACTION_PULSE_ATTACK_MS,
+    pushEventTrace('combat.attack', {
+      side: atk.side,
+      attackerId: atk.id,
+      attackerType: atk.type,
+      attackerKey,
+      defenderId: enemy.id,
+      defenderType: enemy.type,
+      defenderKey: targetKey,
     });
-    resolveAttack(attackerKey, targetKey);
+    setAttackFlash(targetKey);
+    const attackResult = resolveAttack(attackerKey, targetKey) || { ok: false, pursuitTarget: null };
 
     state.act.attacked = true;
 
+    if (attackResult.ok && attackResult.pursuitTarget) {
+      state.act.postAttackWithdrawOnly = false;
+      state.act.postAttackPursuitOnly = true;
+      state._moveTargets = new Set([attackResult.pursuitTarget]);
+      state._attackTargets = new Set();
+      state._healTargets = new Set();
+      log(`Pursuit available: move into ${attackResult.pursuitTarget} or click selected unit to hold position.`);
+      updateHud();
+      return;
+    }
+
     const afterAtk = unitsByHex.get(attackerKey);
     if (afterAtk) {
-      const withdrawTargets = cavalryPostAttackWithdrawTargets(attackerKey, afterAtk, state.act);
+      const withdrawTargets = veteranCavPostAttackWithdrawTargets(attackerKey, afterAtk, state.act);
       if (withdrawTargets.size > 0) {
         state.act.postAttackWithdrawOnly = true;
+        state.act.postAttackPursuitOnly = false;
         state._moveTargets = withdrawTargets;
         state._attackTargets = new Set();
         state._healTargets = new Set();
-        log('Cavalry may disengage: choose a withdrawal hex or click selected unit to end activation.');
+        log('Veteran CAV may disengage: choose a withdrawal hex or click selected unit to end activation.');
         updateHud();
         return;
       }
@@ -10234,7 +12254,8 @@ function unitColors(side) {
 
     // End activation after attack.
     clearSelection();
-    if (!maybeAutoEndTurnAfterAction()) updateHud();
+    updateHud();
+    maybeAutoEndTurnAtActionLimit();
   }
 
   function passSelected() {
@@ -10251,10 +12272,28 @@ function unitColors(side) {
 
     consumeActivation(u.id);
     state.act.committed = true;
-    log(`Pass: ${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type).abbrev}.`);
+    if (unitIsDisarrayed(u)) {
+      clearDisarrayOnUnit(u, 'recovered on activation');
+      log(`Recover: ${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type).abbrev} steadied the formation.`);
+      pushEventTrace('unit.recover', {
+        side: u.side,
+        unitId: u.id,
+        unitType: u.type,
+        key: state.selectedKey,
+      });
+    } else {
+      log(`Pass: ${u.side.toUpperCase()} ${UNIT_BY_ID.get(u.type).abbrev}.`);
+      pushEventTrace('unit.pass', {
+        side: u.side,
+        unitId: u.id,
+        unitType: u.type,
+        key: state.selectedKey,
+      });
+    }
 
     clearSelection();
-    if (!maybeAutoEndTurnAfterAction()) updateHud();
+    updateHud();
+    maybeAutoEndTurnAtActionLimit();
   }
 
   function clickPlay(hexKey) {
@@ -10262,12 +12301,12 @@ function unitColors(side) {
 
     // If nothing selected: try to select.
     if (!state.selectedKey) {
-      if (state.actsUsed >= ACT_LIMIT && maybeAutoEndTurnAfterAction()) return;
       if (clickedUnit) {
         const reason = activationBlockReason(clickedUnit, hexKey);
         if (reason) {
           log(reason);
           updateHud();
+          maybeAutoEndTurnAtActionLimit();
           return;
         }
         if (unitCanActivate(clickedUnit, hexKey)) selectUnit(hexKey);
@@ -10280,6 +12319,7 @@ function unitColors(side) {
     if (!selUnit) {
       clearSelection();
       updateHud();
+      maybeAutoEndTurnAtActionLimit();
       return;
     }
 
@@ -10287,7 +12327,8 @@ function unitColors(side) {
     if (hexKey === selKey) {
       clearSelection();
       log('Deselected.');
-      if (!maybeAutoEndTurnAfterAction()) updateHud();
+      updateHud();
+      maybeAutoEndTurnAtActionLimit();
       return;
     }
 
@@ -10312,65 +12353,92 @@ function unitColors(side) {
     // Switch selection to another friendly (forfeits any optional post-move attack)
     if (clickedUnit && clickedUnit.side === state.side) {
       clearSelection();
-      if (maybeAutoEndTurnAfterAction()) return;
       const reason = activationBlockReason(clickedUnit, hexKey);
       if (reason) {
         log(reason);
         updateHud();
+        maybeAutoEndTurnAtActionLimit();
         return;
       }
       if (unitCanActivate(clickedUnit, hexKey)) selectUnit(hexKey);
+      maybeAutoEndTurnAtActionLimit();
       return;
     }
   }
 
   // --- Events
-  elCanvas.addEventListener('mousemove', (e) => {
+  const TOUCH_CLICK_SUPPRESS_MS = 700;
+  let suppressCanvasClickUntil = 0;
+
+  function canvasHexFromClient(clientX, clientY) {
     const rect = elCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const h = pickHex(x, y);
-    state._hoverKey = h ? h.k : null;
-    draw();
-  });
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    return pickHex(x, y);
+  }
 
-  elCanvas.addEventListener('mouseleave', () => {
-    state._hoverKey = null;
-    draw();
-  });
-
-  elCanvas.addEventListener('click', (e) => {
-    const rect = elCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const h = pickHex(x, y);
-    if (!h) return;
-
+  function handleCanvasHexAction(hexKey) {
+    if (!hexKey) return;
     if (state.mode === 'edit') {
       if (onlineModeActive() && net.connected && !net.isHost) {
         log('Online: host controls setup and mode.');
         updateHud();
         return;
       }
-      if (state.tool === 'terrain') paintTerrain(h.k);
-      else placeOrReplaceUnit(h.k);
+      if (state.tool === 'terrain') paintTerrain(hexKey);
+      else placeOrReplaceUnit(hexKey);
     } else {
       if (onlineModeActive()) {
-        if (forwardOnlineAction({ type: 'click', hexKey: h.k })) return;
+        if (forwardOnlineAction({ type: 'click', hexKey })) return;
       }
       if (isAiTurnActive()) return;
-      clickPlay(h.k);
+      clickPlay(hexKey);
     }
+  }
+
+  function handleCanvasPointerAction(clientX, clientY) {
+    const h = canvasHexFromClient(clientX, clientY);
+    if (!h) return;
+    handleCanvasHexAction(h.k);
+  }
+
+  elCanvas.addEventListener('mousemove', (e) => {
+    const h = canvasHexFromClient(e.clientX, e.clientY);
+    state._hoverKey = h ? h.k : null;
+    renderLiveModifierPreview();
+    draw();
+  });
+
+  elCanvas.addEventListener('mouseleave', () => {
+    state._hoverKey = null;
+    renderLiveModifierPreview();
+    draw();
+  });
+
+  elCanvas.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return;
+    if (typeof e.button === 'number' && e.button > 0) return;
+    e.preventDefault();
+    suppressCanvasClickUntil = Date.now() + TOUCH_CLICK_SUPPRESS_MS;
+    handleCanvasPointerAction(e.clientX, e.clientY);
+  });
+
+  elCanvas.addEventListener('click', (e) => {
+    if (Date.now() < suppressCanvasClickUntil) return;
+    handleCanvasPointerAction(e.clientX, e.clientY);
   });
 
   // Keyboard: P = pass, L = line advance (with selected INF)
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      if (elRulesModal && elRulesModal.classList.contains('open')) {
-        e.preventDefault();
-        closeRulesModal();
-        return;
-      }
+    if (e.key === 'Escape' && state.doctrine.builder.open) {
+      e.preventDefault();
+      closeDoctrineBuilder();
+      return;
+    }
+    if (e.key === 'Escape' && rulesOverlayOpen()) {
+      e.preventDefault();
+      closeRulesOverlay();
+      return;
     }
 
     if (e.key === 'p' || e.key === 'P') {
@@ -10384,9 +12452,8 @@ function unitColors(side) {
     if (e.key === 'l' || e.key === 'L') {
       if (state.mode === 'play' && !isAiTurnActive()) {
         e.preventDefault();
-        const advanceDir = selectedLineAdvanceDirection();
-        if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance', advanceDir })) return;
-        lineAdvanceFromSelection(advanceDir);
+        if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance', direction: state.lineAdvanceDirection })) return;
+        lineAdvanceFromSelection();
       }
     }
 
@@ -10408,14 +12475,98 @@ function unitColors(side) {
     }
   });
 
-  window.addEventListener('resize', () => {
-    resize();
-    scheduleCombatRailScrollReset();
-  });
-  window.addEventListener('load', scheduleCombatRailScrollReset);
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) scheduleCombatRailScrollReset();
-  });
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', resize);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+  }
+
+  if (elOpenQuickRulesBtn) {
+    elOpenQuickRulesBtn.addEventListener('click', () => {
+      openRulesOverlay('quick');
+    });
+  }
+  if (elOpenFullRulesBtn) {
+    elOpenFullRulesBtn.addEventListener('click', () => {
+      openRulesOverlay('full');
+    });
+  }
+  if (elDoctrineOpenHeroBtn) {
+    elDoctrineOpenHeroBtn.addEventListener('click', () => {
+      if (state.mode === 'play') {
+        log('War Council setup is available in Battle Setup mode.');
+        updateHud();
+        return;
+      }
+      if (state.gameMode === 'online' && !(net.connected && net.peer)) {
+        log('War Council unlocks after both online players are connected.');
+        updateHud();
+        return;
+      }
+      openDoctrineBuilder('blue');
+    });
+  }
+  if (elOpenCommandRulesBtn) {
+    elOpenCommandRulesBtn.addEventListener('click', () => {
+      openRulesOverlay('commands', { mode: 'all', side: (state.side === 'red') ? 'red' : 'blue' });
+    });
+  }
+  if (elOpenOrdersKeyBtn) {
+    elOpenOrdersKeyBtn.addEventListener('click', () => {
+      const side = (state.side === 'red') ? 'red' : 'blue';
+      openRulesOverlay('commands', { mode: 'selected', side });
+    });
+  }
+  if (elOrdersViewBlueBtn) {
+    elOrdersViewBlueBtn.addEventListener('click', () => {
+      state.ordersPreviewSide = 'blue';
+      updateHud();
+    });
+  }
+  if (elOrdersViewRedBtn) {
+    elOrdersViewRedBtn.addEventListener('click', () => {
+      state.ordersPreviewSide = 'red';
+      updateHud();
+    });
+  }
+  if (elRulesTabQuickBtn) {
+    elRulesTabQuickBtn.addEventListener('click', () => {
+      setRulesTab('quick');
+    });
+  }
+  if (elRulesTabFullBtn) {
+    elRulesTabFullBtn.addEventListener('click', () => {
+      setRulesTab('full');
+    });
+  }
+  if (elRulesTabCommandsBtn) {
+    elRulesTabCommandsBtn.addEventListener('click', () => {
+      renderRulesCommandsGuide(rulesCommandsViewMode, rulesCommandsViewSide);
+      setRulesTab('commands');
+    });
+  }
+  if (elRulesCommandsSelectedBtn) {
+    elRulesCommandsSelectedBtn.addEventListener('click', () => {
+      renderRulesCommandsGuide('selected', rulesCommandsViewSide);
+      setRulesTab('commands');
+    });
+  }
+  if (elRulesCommandsAllBtn) {
+    elRulesCommandsAllBtn.addEventListener('click', () => {
+      renderRulesCommandsGuide('all', rulesCommandsViewSide);
+      setRulesTab('commands');
+    });
+  }
+  if (elCloseRulesSideBtn) {
+    elCloseRulesSideBtn.addEventListener('click', () => {
+      closeRulesOverlay();
+    });
+  }
+  if (elRulesSideOverlay) {
+    elRulesSideOverlay.addEventListener('click', (e) => {
+      if (e.target === elRulesSideOverlay) closeRulesOverlay();
+    });
+  }
 
   elModeBtn.addEventListener('click', () => {
     if (onlineModeActive() && net.connected && !net.isHost) {
@@ -10453,23 +12604,10 @@ function unitColors(side) {
       }
     });
   }
-
-  if (elRulesOpenBtn) {
-    elRulesOpenBtn.addEventListener('click', () => openRulesModal());
-  }
-  if (elRulesCloseBtn) {
-    elRulesCloseBtn.addEventListener('click', closeRulesModal);
-  }
-  if (elRulesModal) {
-    elRulesModal.addEventListener('click', (e) => {
-      if (e.target === elRulesModal) closeRulesModal();
-    });
-  }
-
   if (elGameModeSel) {
     elGameModeSel.addEventListener('change', () => {
       const rawMode = elGameModeSel.value;
-      const nextMode = (rawMode === 'hvai' || rawMode === 'online') ? rawMode : 'hvh';
+      const nextMode = (rawMode === 'online') ? 'online' : 'hvai';
       if (nextMode === state.gameMode) return;
 
       if (state.gameMode === 'online' && nextMode !== 'online') {
@@ -10478,25 +12616,16 @@ function unitColors(side) {
 
       state.gameMode = nextMode;
       if (nextMode === 'hvai') {
-        log(`Game mode: Human vs AI. You are ${state.humanSide.toUpperCase()}, ${aiSide().toUpperCase()} is AI (${aiDifficultyLabel()} difficulty). Blue goes first.`);
+        const aiSide = aiControlledSide();
+        log(
+          `Game mode: Human vs AI (` +
+          `Human ${state.humanSide.toUpperCase()} vs ${aiSide ? aiSide.toUpperCase() : '-'} AI, ` +
+          `${aiDifficultyLabel(state.aiDifficulty)}).`
+        );
       } else if (nextMode === 'online') {
         stopAiLoop();
-        log('Game mode: Online (Host = Blue, Guest = Red). First side is randomized when battle starts.');
-      } else {
-        stopAiLoop();
-        log('Game mode: Human vs Human.');
+        log('Game mode: Online (Host = Blue, Guest = Red). Use Online panel to connect.');
       }
-      updateHud();
-      maybeStartAiTurn();
-    });
-  }
-
-  if (elPlayerSideSel) {
-    elPlayerSideSel.addEventListener('change', () => {
-      const nextSide = normalizeSide(elPlayerSideSel.value);
-      if (nextSide === state.humanSide) return;
-      state.humanSide = nextSide;
-      log(`Player side set to ${state.humanSide.toUpperCase()}. ${aiSide().toUpperCase()} is AI. Blue still acts first.`);
       updateHud();
       maybeStartAiTurn();
     });
@@ -10504,11 +12633,25 @@ function unitColors(side) {
 
   if (elAiDifficultySel) {
     elAiDifficultySel.addEventListener('change', () => {
-      const next = normalizeAiDifficulty(elAiDifficultySel.value);
-      if (next === state.aiDifficulty) return;
-      state.aiDifficulty = next;
-      log(`AI difficulty set to ${aiDifficultyLabel()}${state.gameMode === 'hvai' ? '.' : ' (will apply in Human vs AI mode).'}`);
+      const nextDifficulty = normalizeAiDifficulty(elAiDifficultySel.value);
+      if (nextDifficulty === state.aiDifficulty) return;
+      state.aiDifficulty = nextDifficulty;
+      log(`AI difficulty: ${aiDifficultyLabel(nextDifficulty)}.`);
       updateHud();
+    });
+  }
+
+  if (elHumanSideSel) {
+    elHumanSideSel.addEventListener('change', () => {
+      const nextSide = (elHumanSideSel.value === 'red') ? 'red' : 'blue';
+      if (nextSide === state.humanSide) return;
+      stopAiLoop();
+      state.humanSide = nextSide;
+      const aiSide = aiControlledSide();
+      clearSelection();
+      log(`Human side set to ${state.humanSide.toUpperCase()} (${aiSide ? aiSide.toUpperCase() : '-'} AI).`);
+      updateHud();
+      maybeStartAiTurn();
     });
   }
 
@@ -10523,27 +12666,8 @@ function unitColors(side) {
     });
   }
 
-  elToolUnits.addEventListener('click', () => {
-    if (onlineModeActive() && net.connected && !net.isHost) {
-      log('Online: host controls setup and mode.');
-      updateHud();
-      return;
-    }
-    if (state.mode !== 'edit') {
-      enterEdit();
-    }
-    state.tool = 'units';
-    updateHud();
-  });
+  elToolUnits.addEventListener('click', () => { state.tool = 'units'; updateHud(); });
   elToolTerrain.addEventListener('click', () => {
-    if (onlineModeActive() && net.connected && !net.isHost) {
-      log('Online: host controls setup and mode.');
-      updateHud();
-      return;
-    }
-    if (state.mode !== 'edit') {
-      enterEdit();
-    }
     if (state.draft.active) {
       log('Custom draft locks terrain editing.');
       updateHud();
@@ -10604,54 +12728,203 @@ function unitColors(side) {
   });
 
   elVictorySel.addEventListener('change', () => {
-    if (state.mode === 'play') {
-      elVictorySel.value = state.victoryMode;
-      log('Victory condition is locked once battle starts. Use Back to Setup to change it.');
-      updateHud();
-      return;
-    }
     state.victoryMode = elVictorySel.value;
     updateHud();
   });
+
+  if (elCommandSel) {
+    elCommandSel.addEventListener('change', () => {
+      state.doctrine.selectedCommandId = elCommandSel.value || '';
+      updateHud();
+    });
+  }
+  if (elCommandUseBtn) {
+    elCommandUseBtn.addEventListener('click', () => {
+      if (onlineModeActive() && forwardOnlineAction({ type: 'command_use', commandId: elCommandSel?.value || '' })) return;
+      if (!elCommandSel?.value) return;
+      issueDoctrineCommand(elCommandSel.value);
+    });
+  }
+  if (elCommandSkipBtn) {
+    elCommandSkipBtn.addEventListener('click', () => {
+      if (onlineModeActive() && forwardOnlineAction({ type: 'command_skip' })) return;
+      skipDoctrineCommandPhase();
+    });
+  }
 
   elEndTurnBtn.addEventListener('click', () => {
     if (onlineModeActive() && forwardOnlineAction({ type: 'end_turn' })) return;
     endTurn();
   });
+  if (elLineAdvanceBtn) {
+    elLineAdvanceBtn.addEventListener('click', () => {
+      if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance', direction: state.lineAdvanceDirection })) return;
+      lineAdvanceFromSelection();
+    });
+  }
   if (elLineAdvanceDirSel) {
     elLineAdvanceDirSel.addEventListener('change', () => {
-      const next = normalizeLineAdvanceDirection(elLineAdvanceDirSel.value);
-      if (!next) return;
-      state.lineAdvanceDir = next;
+      state.lineAdvanceDirection = normalizeLineAdvanceDirection(elLineAdvanceDirSel.value);
       updateHud();
     });
   }
-  if (elLineAdvanceBtn) {
-    const setLineAdvancePreviewHover = (isHovering) => {
-      const next = !!isHovering;
-      if (state.lineAdvancePreviewHover === next) return;
-      state.lineAdvancePreviewHover = next;
-      draw();
-    };
-    elLineAdvanceBtn.addEventListener('mouseenter', () => setLineAdvancePreviewHover(true));
-    elLineAdvanceBtn.addEventListener('mouseleave', () => setLineAdvancePreviewHover(false));
-    elLineAdvanceBtn.addEventListener('focus', () => setLineAdvancePreviewHover(true));
-    elLineAdvanceBtn.addEventListener('blur', () => setLineAdvancePreviewHover(false));
-    elLineAdvanceBtn.addEventListener('click', () => {
-      const advanceDir = selectedLineAdvanceDirection();
-      if (onlineModeActive() && forwardOnlineAction({ type: 'line_advance', advanceDir })) return;
-      lineAdvanceFromSelection(advanceDir);
+
+  if (elDoctrineOpenBtn) {
+    elDoctrineOpenBtn.addEventListener('click', () => {
+      if (state.mode === 'play') {
+        log('Doctrine builder is available in Setup mode.');
+        updateHud();
+        return;
+      }
+      if (state.gameMode === 'online' && !(net.connected && net.peer)) {
+        log('War Council unlocks after both online players are connected.');
+        updateHud();
+        return;
+      }
+      openDoctrineBuilder('blue');
     });
+  }
+  if (elDoctrineOpenTurnBtn) {
+    elDoctrineOpenTurnBtn.addEventListener('click', () => {
+      const side = (state.side === 'red') ? 'red' : 'blue';
+      openDoctrineBuilder(side);
+    });
+  }
+  if (elDoctrineRecommendedBtn) {
+    elDoctrineRecommendedBtn.addEventListener('click', () => {
+      setDoctrineLoadoutForSide('blue', makeRecommendedDoctrineLoadout(), 'recommended');
+      setDoctrineLoadoutForSide('red', makeRecommendedDoctrineLoadout(), 'recommended');
+      state.doctrine.builder.preBattleReady = false;
+      state.doctrine.builder.confirmed = { blue: false, red: false };
+      log('Applied recommended doctrine package to both sides.');
+      updateHud();
+    });
+  }
+  if (elDoctrineRandomBtn) {
+    elDoctrineRandomBtn.addEventListener('click', () => {
+      setDoctrineLoadoutForSide('blue', makeRandomDoctrineLoadout(), 'random');
+      setDoctrineLoadoutForSide('red', makeRandomDoctrineLoadout(), 'random');
+      state.doctrine.builder.preBattleReady = false;
+      state.doctrine.builder.confirmed = { blue: false, red: false };
+      log('Applied random doctrine packages to both sides.');
+      updateHud();
+    });
+  }
+  if (elDoctrineBlankBtn) {
+    elDoctrineBlankBtn.addEventListener('click', () => {
+      clearDoctrineLoadoutForSide('blue', 'blank');
+      clearDoctrineLoadoutForSide('red', 'blank');
+      state.doctrine.builder.preBattleReady = false;
+      state.doctrine.builder.confirmed = { blue: false, red: false };
+      log('Cleared doctrine selections for both sides. Pick 3 commands in each cost tier.');
+      updateHud();
+    });
+  }
+  if (elDoctrineScenarioBtn) {
+    elDoctrineScenarioBtn.addEventListener('click', () => {
+      const scenarioName = elScenarioSel?.value || state.loadedScenarioName || '';
+      setDoctrineLoadoutForSide('blue', scenarioDoctrinePreset(scenarioName, 'blue'), 'scenario');
+      setDoctrineLoadoutForSide('red', scenarioDoctrinePreset(scenarioName, 'red'), 'scenario');
+      state.doctrine.builder.preBattleReady = false;
+      state.doctrine.builder.confirmed = { blue: false, red: false };
+      log(`Applied scenario doctrine preset for "${scenarioName}".`);
+      updateHud();
+    });
+  }
+  if (elCloseDoctrineBtn) {
+    elCloseDoctrineBtn.addEventListener('click', closeDoctrineBuilder);
+  }
+  if (elDoctrineSideSel) {
+    elDoctrineSideSel.addEventListener('change', () => {
+      state.doctrine.builder.side = (elDoctrineSideSel.value === 'red') ? 'red' : 'blue';
+      renderDoctrineBuilder();
+    });
+  }
+  if (elDoctrineRandomizeBtn) {
+    elDoctrineRandomizeBtn.addEventListener('click', () => {
+      const side = state.doctrine.builder.side === 'red' ? 'red' : 'blue';
+      setDoctrineBuilderDraft(side, makeRandomDoctrineLoadout());
+      renderDoctrineBuilder();
+    });
+  }
+    if (elDoctrineRecommendBtn) {
+    elDoctrineRecommendBtn.addEventListener('click', () => {
+      const side = state.doctrine.builder.side === 'red' ? 'red' : 'blue';
+      setDoctrineBuilderDraft(side, buildCompleteDoctrineLoadout(makeRecommendedDoctrineLoadout()));
+      renderDoctrineBuilder();
+    });
+  }
+  if (elDoctrineBlankizeBtn) {
+    elDoctrineBlankizeBtn.addEventListener('click', () => {
+      const side = state.doctrine.builder.side === 'red' ? 'red' : 'blue';
+      setDoctrineBuilderDraft(side, []);
+      renderDoctrineBuilder();
+    });
+  }
+  if (elDoctrineScenarioApplyBtn) {
+    elDoctrineScenarioApplyBtn.addEventListener('click', () => {
+      const side = state.doctrine.builder.side === 'red' ? 'red' : 'blue';
+      const scenarioName = elScenarioSel?.value || state.loadedScenarioName || '';
+      setDoctrineBuilderDraft(side, buildCompleteDoctrineLoadout(scenarioDoctrinePreset(scenarioName, side)));
+      renderDoctrineBuilder();
+    });
+  }
+  for (const el of [elDoctrineCost1List, elDoctrineCost2List, elDoctrineCost3List]) {
+    if (!el) continue;
+    el.addEventListener('click', (evt) => {
+      if (evt.target instanceof HTMLInputElement) return;
+      const node = evt.target instanceof Element ? evt.target.closest('[data-doctrine-item][data-doctrine-id]') : null;
+      if (!node) return;
+      const cid = node.getAttribute('data-doctrine-id') || '';
+      if (!cid || !COMMAND_BY_ID.get(cid)) return;
+      state.doctrine.builder.focusCommandId = cid;
+      // Do not re-render the full lists here; that can swallow pending label->checkbox toggles.
+      renderDoctrineBuilderFocusOnly();
+    });
+    el.addEventListener('change', (evt) => {
+      const input = evt.target;
+      if (!(input instanceof HTMLInputElement)) return;
+      const commandId = input.dataset.doctrineId;
+      if (!commandId) return;
+      const side = state.doctrine.builder.side === 'red' ? 'red' : 'blue';
+      doctrineBuilderToggle(side, commandId, !!input.checked);
+    });
+  }
+  if (elDoctrineConfirmBtn) {
+    elDoctrineConfirmBtn.addEventListener('click', () => {
+      const side = state.doctrine.builder.side === 'red' ? 'red' : 'blue';
+      if (!applyDoctrineFromBuilder(side)) return;
+      if (!doctrineBothSidesConfirmed()) {
+        const next = state.doctrine.builder.confirmed.blue ? 'red' : 'blue';
+        state.doctrine.builder.side = next;
+        if (elDoctrineSideSel) elDoctrineSideSel.value = next;
+        log(`War Council: ${side.toUpperCase()} confirmed. Confirm ${next.toUpperCase()} to finalize orders.`);
+        renderDoctrineBuilder();
+        return;
+      }
+      state.doctrine.builder.preBattleReady = true;
+      log('War Council finalized for both sides.');
+      closeDoctrineBuilder();
+      if (state.mode === 'edit') enterPlay();
+    });
+  }
+
+  if (elClearUnitsBtn) {
+    elClearUnitsBtn.addEventListener('click', () => { enterEdit(); clearUnits(); });
   }
 
   if (elScenarioSel) {
     elScenarioSel.addEventListener('change', () => {
-      const scenarioName = elScenarioSel.value;
-      if (!scenarioName || !SCENARIOS[scenarioName]) return;
-      const wasPlay = state.mode === 'play';
-      loadScenario(scenarioName);
-      if (wasPlay) enterPlay();
+      const next = elScenarioSel.value;
+      updateScenarioSidesLegend(next);
+      if (state.mode === 'edit' && next) {
+        loadScenario(next);
+      }
     });
+  }
+
+  if (elLoadScenarioBtn) {
+    elLoadScenarioBtn.addEventListener('click', () => { loadScenario(elScenarioSel.value); });
   }
 
   if (elDraftModeSel) {
@@ -10742,6 +13015,8 @@ function unitColors(side) {
   }
 
   function scenarioGroupTag(name) {
+    const meta = scenarioMetadata(name);
+    if (meta.group && SCENARIO_FILTER_IDS.group.has(meta.group)) return meta.group;
     if (name.startsWith('Demo ')) return 'demo';
     if (name.startsWith('Grand ')) return 'grand';
     if (name.startsWith('Terrain ')) return 'terrain';
@@ -10767,6 +13042,7 @@ function unitColors(side) {
 
   function scenarioLessonTag(name, group, terrainTag) {
     const n = name.toLowerCase();
+    if (group === 'tutorial' || group === 'demo') return 'general';
     if (group === 'terrain' || terrainTag === 'mixed' || (terrainTag !== 'open' && /terrain|marsh|woods|ridge|broken ground/.test(n))) {
       return 'terrain';
     }
@@ -10780,13 +13056,24 @@ function unitColors(side) {
   }
 
   function scenarioMeta(name) {
-    const sc = SCENARIOS[name] || { terrain: [], units: [] };
+    const sc = scenarioRecord(name) || { terrain: [], units: [] };
+    const meta = scenarioMetadata(name);
     const totalUnits = Array.isArray(sc.units) ? sc.units.length : 0;
     const group = scenarioGroupTag(name);
     const terrain = scenarioTerrainTag(sc);
     const size = scenarioSizeTag(totalUnits);
     const lesson = scenarioLessonTag(name, group, terrain);
-    return { group, lesson, size, terrain, totalUnits };
+    return {
+      group,
+      lesson,
+      size,
+      terrain,
+      totalUnits,
+      description: meta.description || '',
+      historical: meta.historical || '',
+      notes: meta.notes || '',
+      objectives: Array.isArray(meta.objectives) ? meta.objectives.length : 0,
+    };
   }
 
   function scenarioMatchesFilters(meta, filters) {
@@ -10797,55 +13084,33 @@ function unitColors(side) {
     return true;
   }
 
-  function scenarioSectionTag(name) {
-    if (name === RANDOM_START_SCENARIO_NAME || name === 'Empty (Island)') return 'quick';
-    if (name.startsWith('Grand ')) return 'mirrored';
-    if (HISTORICAL_SCENARIO_INDEX.has(name)) return 'historical';
-    if (name.startsWith('Berserker ') || name.startsWith('Terrain ')) return 'nonMirrored';
-    if (name.startsWith('Demo ')) return 'demo';
-    return 'other';
+  function scenarioHistoricalSortValue(historicalText) {
+    const txt = String(historicalText || '').trim().toUpperCase();
+    if (!txt) return Number.POSITIVE_INFINITY;
+    const m = txt.match(/(\d{1,4})\s*(BCE|BC|CE|AD)?/);
+    if (!m) return Number.POSITIVE_INFINITY;
+    const year = Number(m[1]);
+    const era = m[2] || 'CE';
+    if (!Number.isFinite(year)) return Number.POSITIVE_INFINITY;
+    if (era === 'BCE' || era === 'BC') return -year;
+    return year;
   }
 
-  function scenarioNaturalCompare(a, b) {
-    return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
-  }
-
-  function sortScenarioNamesForSection(section, names) {
-    const list = Array.isArray(names) ? names.slice() : [];
-    if (section === 'quick') {
-      const quickPriority = new Map([
-        [RANDOM_START_SCENARIO_NAME, 0],
-        ['Empty (Island)', 1],
-      ]);
-      return list.sort((a, b) => {
-        const pa = quickPriority.has(a) ? quickPriority.get(a) : 99;
-        const pb = quickPriority.has(b) ? quickPriority.get(b) : 99;
-        if (pa !== pb) return pa - pb;
-        return scenarioNaturalCompare(a, b);
-      });
-    }
-    if (section === 'historical') {
-      return list.sort((a, b) => {
-        const pa = HISTORICAL_SCENARIO_INDEX.has(a) ? HISTORICAL_SCENARIO_INDEX.get(a) : 999;
-        const pb = HISTORICAL_SCENARIO_INDEX.has(b) ? HISTORICAL_SCENARIO_INDEX.get(b) : 999;
-        if (pa !== pb) return pa - pb;
-        return scenarioNaturalCompare(a, b);
-      });
-    }
-    if (section === 'nonMirrored') {
-      const rank = (name) => {
-        if (name.startsWith('Berserker ')) return 0;
-        if (name.startsWith('Terrain ')) return 1;
-        return 2;
-      };
-      return list.sort((a, b) => {
-        const ra = rank(a);
-        const rb = rank(b);
-        if (ra !== rb) return ra - rb;
-        return scenarioNaturalCompare(a, b);
-      });
-    }
-    return list.sort((a, b) => scenarioNaturalCompare(a, b));
+  function scenarioSortRank(name, meta) {
+    const groupRank = {
+      tutorial: 0,
+      demo: 1,
+      grand: 2,
+      terrain: 3,
+      berserker: 4,
+      other: 5,
+      history: 6,
+    };
+    return {
+      group: groupRank[meta.group] ?? 9,
+      historyYear: scenarioHistoricalSortValue(meta.historical),
+      name: String(name || ''),
+    };
   }
 
   function populateScenarioSelect() {
@@ -10853,39 +13118,28 @@ function unitColors(side) {
     const filters = readScenarioFilters();
     elScenarioSel.innerHTML = '';
 
-    const namesBySection = new Map(SCENARIO_SECTION_ORDER.map((section) => [section, []]));
-    for (const name of Object.keys(SCENARIOS)) {
+    let shown = 0;
+    const names = Object.keys(SCENARIOS).sort((a, b) => {
+      const ma = scenarioMeta(a);
+      const mb = scenarioMeta(b);
+      const ra = scenarioSortRank(a, ma);
+      const rb = scenarioSortRank(b, mb);
+      if (ra.group !== rb.group) return ra.group - rb.group;
+      if (ma.group === 'history' && ra.historyYear !== rb.historyYear) return ra.historyYear - rb.historyYear;
+      return ra.name.localeCompare(rb.name);
+    });
+    for (const name of names) {
       const meta = scenarioMeta(name);
       if (!scenarioMatchesFilters(meta, filters)) continue;
-      const section = scenarioSectionTag(name);
-      if (!namesBySection.has(section)) namesBySection.set(section, []);
-      namesBySection.get(section).push({ name, meta });
-    }
 
-    let shown = 0;
-    for (const section of SCENARIO_SECTION_ORDER) {
-      const items = namesBySection.get(section) || [];
-      if (items.length === 0) continue;
-
-      const orderedNames = sortScenarioNamesForSection(
-        section,
-        items.map(item => item.name),
-      );
-      const metaByName = new Map(items.map(item => [item.name, item.meta]));
-      const groupEl = document.createElement('optgroup');
-      groupEl.label = SCENARIO_SECTION_LABEL[section] || section;
-
-      for (const name of orderedNames) {
-        const meta = metaByName.get(name) || scenarioMeta(name);
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        opt.title = `Group=${meta.group} · Lesson=${meta.lesson} · Size=${meta.size} · Map=${meta.terrain}`;
-        groupEl.appendChild(opt);
-        shown += 1;
-      }
-
-      elScenarioSel.appendChild(groupEl);
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      const historyTag = meta.historical ? ` · Era=${meta.historical}` : '';
+      const objectiveTag = (meta.objectives > 0) ? ` · Objectives=${meta.objectives}` : '';
+      opt.title = `Group=${meta.group} · Lesson=${meta.lesson} · Size=${meta.size} · Map=${meta.terrain}${historyTag}${objectiveTag}`;
+      elScenarioSel.appendChild(opt);
+      shown += 1;
     }
 
     if (shown === 0) {
@@ -10896,10 +13150,12 @@ function unitColors(side) {
       opt.selected = true;
       elScenarioSel.appendChild(opt);
       elScenarioSel.disabled = true;
+      if (elLoadScenarioBtn) elLoadScenarioBtn.disabled = true;
       return;
     }
 
     elScenarioSel.disabled = false;
+    if (elLoadScenarioBtn) elLoadScenarioBtn.disabled = false;
 
     if (prev && [...elScenarioSel.options].some(o => o.value === prev)) {
       elScenarioSel.value = prev;
@@ -10917,6 +13173,9 @@ function unitColors(side) {
     elVictorySel.innerHTML = '';
     const modes = [
       { id: 'clear', label: 'Clear Victory (halve UP)' },
+      { id: 'points', label: 'Point Victory (captured UP target)' },
+      { id: 'keyground', label: 'Key Ground (objective control)' },
+      { id: 'strategic', label: 'Strategic Mix (command + force + ground)' },
       { id: 'decapitation', label: 'Decapitation (kill all generals)' },
       { id: 'annihilation', label: 'Annihilation (kill all units)' },
     ];
@@ -10926,14 +13185,17 @@ function unitColors(side) {
       opt.textContent = m.label;
       elVictorySel.appendChild(opt);
     }
-    elVictorySel.value = 'clear';
-    state.victoryMode = 'clear';
+    elVictorySel.value = 'decapitation';
+    state.victoryMode = 'decapitation';
   }
 
   function boot() {
+    initPanelCollapseControls();
     resetDraftState({ keepBudget: false });
     populateScenarioFilters();
     populateVictorySelect();
+    renderRulesCommandsGuide();
+    pruneLegacyUiSurface();
     const randomScenario = installRandomStartupScenario();
     populateScenarioSelect();
     if (elDraftModeSel) elDraftModeSel.value = 'off';
@@ -10947,31 +13209,21 @@ function unitColors(side) {
     enterPlay();
 
     const biasLabel = (randomScenario.advantageSide === 'none')
-      ? 'balanced terrain'
-      : `${randomScenario.advantageSide} flank-terrain bias`;
-    let matchupLabel = 'even forces';
-    if (randomScenario.matchup === 'blue_advantage') matchupLabel = 'blue-advantaged forces';
-    else if (randomScenario.matchup === 'red_advantage') matchupLabel = 'red-advantaged forces';
-    else if (randomScenario.matchup === 'blue_elite_outnumbered') matchupLabel = 'blue elite outnumbered by red levy';
-    else if (randomScenario.matchup === 'red_elite_outnumbered') matchupLabel = 'red elite outnumbered by blue levy';
-
-    const doctrineLabel = `doctrine B:${randomScenario.blueDoctrine || 'balanced'} / R:${randomScenario.redDoctrine || 'balanced'}`;
-    const formationLabelText =
-      `formation B:${formationLabel(randomScenario.blueFormation || 'triplex')} / ` +
-      `R:${formationLabel(randomScenario.redFormation || 'triplex')}`;
-    const roleLabelText = `roles B:${randomScenario.blueRole || 'even'} / R:${randomScenario.redRole || 'even'}`;
+      ? 'balanced'
+      : `${randomScenario.advantageSide} flank bias`;
+    const bootModeLabel = state.mode === 'play'
+      ? 'Started in Play mode.'
+      : 'Started in Setup mode (review doctrine, then start battle).';
 
     log(
-      `Booted ${GAME_NAME}. Randomized startup loaded and battle started ` +
-      `(${randomScenario.size} battle, ${matchupLabel}, ` +
-      `B ${randomScenario.blueUnits} / R ${randomScenario.redUnits}, ` +
-      `${doctrineLabel}, ${formationLabelText}, ${roleLabelText}, ` +
-      `terrain=${randomScenario.terrain.length}, ` +
-      `axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}).`
+      `Booted ${GAME_NAME}. Randomized startup loaded ` +
+      `(units=${randomScenario.units.length}, perSide=${randomScenario.unitsPerSide || Math.floor(randomScenario.units.length / 2)}, terrain=${randomScenario.terrain.length}, ` +
+      `axis=${forwardAxisLabel(randomScenario.axis)}, ${biasLabel}, ` +
+      `formations=B:${randomScenario.blueArchetype || 'line'} / R:${randomScenario.redArchetype || 'line'}). ` +
+      bootModeLabel
     );
     updateHud();
     resize();
-    scheduleCombatRailScrollReset();
   }
 
   boot();
