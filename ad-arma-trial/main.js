@@ -155,6 +155,11 @@
   function commandUsageLabel(persistence) {
     return persistence === 'spent' ? 'Single-Use' : 'Reusable';
   }
+  function commandActionSpend(cmd) {
+    if (!cmd) return 0;
+    const rebate = (cmd.persistence === 'spent' && cmd.cost >= 2) ? 1 : 0;
+    return Math.max(1, Number(cmd.cost || 0) - rebate);
+  }
   function commandUsageBadge(persistence) {
     return persistence === 'spent' ? '1x' : 'R';
   }
@@ -5337,11 +5342,14 @@ function unitColors(side) {
     return null;
   }
 
-  function notifyEnemyDirectiveUsed(side, cmd) {
+  function notifyEnemyDirectiveUsed(side, cmd, actionSpend = null) {
     if (!cmd || !side) return;
     const localSide = localPlayerSide();
     if (!localSide || localSide === side) return;
-    const message = `Enemy directive: ${side.toUpperCase()} used ${cmd.name} (${commandUsageLabel(cmd.persistence)}, cost ${cmd.cost}).`;
+    const spend = Number.isFinite(actionSpend) ? Math.max(1, Math.trunc(actionSpend)) : commandActionSpend(cmd);
+    const message =
+      `Enemy directive: ${side.toUpperCase()} used ${cmd.name} ` +
+      `(${commandUsageLabel(cmd.persistence)}, spent ${spend} action${spend === 1 ? '' : 's'}).`;
     state.enemyDirectiveNotice = { text: message, atSerial: state.turnSerial };
     log(`⚠️ ${message}`);
   }
@@ -6741,6 +6749,10 @@ function unitColors(side) {
       headerMeta.push(`Turn ${state.turn}`);
       headerMeta.push(`${sideLabel} to act`);
       headerMeta.push(`Actions ${state.actsUsed}/${ACT_LIMIT}`);
+      if (state.doctrine.commandIssuedThisTurn && state.doctrine.activeCommandThisTurn) {
+        const cmd = COMMAND_BY_ID.get(state.doctrine.activeCommandThisTurn);
+        if (cmd) headerMeta.push(`Directive ${cmd.name} (-${commandActionSpend(cmd)})`);
+      }
     } else {
       headerMeta.push('Battle Setup');
     }
@@ -6801,11 +6813,24 @@ function unitColors(side) {
       }
     }
     if (state.mode === 'play') {
-      statusLines.push(
-        state.doctrine.commandIssuedThisTurn
-          ? `Doctrine: ${state.doctrine.activeCommandThisTurn ? commandLabel(state.doctrine.activeCommandThisTurn) : 'Command intentionally skipped this turn.'}`
-          : `Doctrine: optional once per turn. You may issue a command at any time before actions run out.`
-      );
+      if (state.doctrine.commandIssuedThisTurn) {
+        if (state.doctrine.activeCommandThisTurn) {
+          const cmd = COMMAND_BY_ID.get(state.doctrine.activeCommandThisTurn);
+          if (cmd) {
+            const spend = commandActionSpend(cmd);
+            statusLines.push(
+              `Directive used: ${cmd.name} (${commandUsageLabel(cmd.persistence)}) • ` +
+              `spent ${spend} action${spend === 1 ? '' : 's'} this turn.`
+            );
+          } else {
+            statusLines.push(`Directive used: ${state.doctrine.activeCommandThisTurn}.`);
+          }
+        } else {
+          statusLines.push('Directive: intentionally skipped this turn.');
+        }
+      } else {
+        statusLines.push('Directive: optional once per turn. You may issue one any time before actions run out.');
+      }
     }
     statusLines.push(`Build ${BUILD_ID}`);
     if (elStatusMeta) {
@@ -7323,20 +7348,15 @@ function unitColors(side) {
     if (!cmd) return false;
     const level = normalizeAiDifficulty(state.aiDifficulty);
     const used = Math.max(0, Math.trunc(actionsUsed));
-    let chance = 0.45;
 
-    if (used <= 0) {
-      // Opening command use is optional and less frequent.
-      chance = (level === 'hard') ? 0.35 : (level === 'easy' ? 0.15 : 0.25);
-    } else if (used === 1) {
-      chance = (level === 'hard') ? 0.7 : (level === 'easy' ? 0.4 : 0.55);
-    } else {
-      chance = 0;
-    }
+    // Keep AI turn readability high: only consider directives at turn start.
+    if (used > 0) return false;
 
-    if (cmd.cost >= 2) chance -= 0.1;
-    if (cmd.cost === 1) chance += 0.08;
-    chance = Math.max(0, Math.min(0.95, chance));
+    // Opening command use is intentionally uncommon to avoid "AI only moved twice"
+    // confusion unless a directive clearly helps.
+    let chance = (level === 'hard') ? 0.22 : (level === 'easy' ? 0.08 : 0.15);
+    if (cmd.cost === 1) chance += 0.05;
+    chance = Math.max(0, Math.min(0.75, chance));
     return Math.random() < chance;
   }
 
@@ -7518,14 +7538,19 @@ function unitColors(side) {
     }
 
     const remainingActions = Math.max(0, ACT_LIMIT - state.actsUsed);
-    // Keep at least one normal unit activation in reserve after command use.
-    if (!state.doctrine.commandIssuedThisTurn && remainingActions > 1) {
+    // Keep AI turns legible:
+    // - only consider directives at action 0
+    // - only allow low-cost directives automatically
+    // - always preserve room for at least two unit activations afterward
+    if (!state.doctrine.commandIssuedThisTurn && state.actsUsed === 0 && remainingActions > 2) {
       const commandId = chooseAiDoctrineCommandId({
-        maxCost: Math.max(1, remainingActions - 1),
+        maxCost: 1,
         actionsUsed: state.actsUsed,
       });
       const cmd = commandId ? COMMAND_BY_ID.get(commandId) : null;
       if (cmd && shouldAiIssueDirectiveNow(cmd, state.actsUsed) && issueDoctrineCommand(commandId)) {
+        const spend = commandActionSpend(cmd);
+        log(`AI directive committed: ${cmd.name} (spent ${spend} action${spend === 1 ? '' : 's'}).`);
         if (!isAiTurnActive()) {
           stopAiLoop();
           updateHud();
@@ -8934,7 +8959,8 @@ function unitColors(side) {
     // Single-use orders get a built-in tempo edge:
     // cost 2/3 spent orders effectively rebate 1 action after successful execution.
     const singleUseRebate = (cmd.persistence === 'spent' && cmd.cost >= 2) ? 1 : 0;
-    state.actsUsed = Math.min(ACT_LIMIT, state.actsUsed + cmd.cost - singleUseRebate);
+    const actionSpend = commandActionSpend(cmd);
+    state.actsUsed = Math.min(ACT_LIMIT, state.actsUsed + actionSpend);
     state.doctrine.commandIssuedThisTurn = true;
     state.doctrine.activeCommandThisTurn = commandId;
     markCommandUsed(side, commandId);
@@ -8949,12 +8975,13 @@ function unitColors(side) {
     } else {
       log(`${side.toUpperCase()} used ${cmd.name} (${commandUsageLabel(cmd.persistence)}, ${cmd.cost} actions).`);
     }
-    notifyEnemyDirectiveUsed(side, cmd);
     if (result.message) log(result.message);
+    notifyEnemyDirectiveUsed(side, cmd, actionSpend);
     pushEventTrace('command.resolve', {
       commandId: cmd.id,
       side,
       cost: cmd.cost,
+      actionSpend,
       persistence: cmd.persistence,
       affectedUnitIds,
       spendTargets: !!result.spendTargets,
