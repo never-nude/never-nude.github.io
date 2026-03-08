@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Ad Arma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20260308-war-council-dictionary-v1" />
+</head>
+<body>
+  <header id="hud">
+    <div id="hudTitle">Ad Arma</div>
+    <div id="hudMeta">…</div>
+    <div id="hudLast">…</div>
+  </header>
+
+  <main id="layout">
+    <section id="canvasWrap">
+      <canvas id="c"></canvas>
+      <div id="cornerDiceHud" aria-live="polite" aria-label="Last dice roll">
+        <div id="cornerDiceRow" class="physicalDiceRow"></div>
+      </div>
+    </section>
+
+    <aside id="side">
+      <div id="setupStageBanner" class="setupStageBanner">
+        <div class="setupStageTitle">Battle Setup</div>
+        <div class="setupStageSub">Scenario • War Council • Start Battle</div>
+      </div>
+      <div id="turnOrdersPanel" class="panel">
+        <div class="panelTitle">Turn &amp; Orders</div>
+        <div class="row">
+          <div class="label">Mode</div>
+          <button id="modeBtn" class="btn">To Play</button>
+        </div>
+
+        <div class="row">
+          <div class="label">Game</div>
+          <select id="gameModeSel" class="select">
+            <option value="hvai">Human vs AI</option>
+            <option value="online">Online Host/Guest</option>
+          </select>
+        </div>
+
+        <div id="aiDifficultyRow" class="row">
+          <div class="label">AI</div>
+          <select id="aiDifficultySel" class="select">
+            <option value="easy">Easy</option>
+            <option value="standard">Standard</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div id="humanSideRow" class="row">
+          <div class="label">Play As</div>
+          <select id="humanSideSel" class="select">
+            <option value="blue">Blue</option>
+            <option value="red">Red</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="label">Victory</div>
+          <select id="victorySel" class="select"></select>
+        </div>
+        <div class="row">
+          <button id="endTurnBtn" class="btn wide">End Turn</button>
+        </div>
+        <div class="row">
+          <button id="lineAdvanceBtn" class="btn wide">Line Advance</button>
+        </div>
+        <div class="row playOnlyRow">
+          <div class="label">Directive</div>
+          <select id="commandSel" class="select"></select>
+        </div>
+        <div class="row playOnlyRow">
+          <button id="commandUseBtn" class="btn wide">Use Directive</button>
+          <button id="commandSkipBtn" class="btn wide">Skip Directive</button>
+        </div>
+        <div class="row playOnlyRow">
+          <button id="doctrineOpenTurnBtn" class="btn wide">War Council (3/3/3)</button>
+        </div>
+        <div class="row playOnlyRow">
+          <button id="openOrdersKeyBtn" class="btn wide">Orders Key</button>
+        </div>
+        <div id="commandPhaseNote" class="note">Optional: issue one command at any time during your turn.</div>
+      </div>
+
+      <div id="statusPanel" class="panel">
+        <div class="panelTitle">Battle Status</div>
+        <div id="statusMeta" class="statusMeta">Status loading…</div>
+        <div id="statusLast" class="statusLast">Latest action: -</div>
+      </div>
+
+      <div id="rulesPanel" class="panel">
+        <div class="panelTitle">Rules</div>
+        <div class="row">
+          <button id="openQuickRulesBtn" class="btn wide">Quick Rules</button>
+          <button id="openFullRulesBtn" class="btn wide">Full Reference</button>
+        </div>
+        <div class="row">
+          <button id="doctrineOpenHeroBtn" class="btn wide btnHero">Open War Council</button>
+        </div>
+      </div>
+
+      <div id="scenarioPanel" class="panel">
+        <div class="panelTitle">Scenario</div>
+        <div class="row">
+          <select id="scenarioSel" class="select"></select>
+        </div>
+        <div id="scenarioSides" class="note scenarioSides">Blue: Blue Army • Red: Red Army</div>
+      </div>
+
+      <div id="setupPanel" class="panel">
+        <div class="panelTitle">Battle Setup</div>
+        <div class="row">
+          <div class="label">Tool</div>
+          <button id="toolUnits" class="btn">Units</button>
+          <button id="toolTerrain" class="btn">Terrain</button>
+        </div>
+      </div>
+
+      <div id="ordersPanel" class="panel">
+        <div class="panelTitle">War Council</div>
+        <div id="ordersReadyNote" class="note">
+          Waiting for game setup. In online mode, this panel appears after both commanders are connected.
+        </div>
+        <div class="note">
+          Build each side with 3 Cost-1, 3 Cost-2, and 3 Cost-3 orders.
+          Reusable orders can be issued again in later turns. Single-Use orders are consumed after use.
+        </div>
+        <div class="row">
+          <div class="label">Loadout</div>
+          <button id="doctrineRecommendedBtn" class="btn">Recommended</button>
+          <button id="doctrineRandomBtn" class="btn">Random</button>
+          <button id="doctrineBlankBtn" class="btn">Blank</button>
+        </div>
+        <div class="row">
+          <button id="doctrineOpenBtn" class="btn wide">War Council</button>
+        </div>
+        <div id="doctrineSummary" class="note">Blue and Red doctrine loadouts pending.</div>
+      </div>
+
+      <div id="doctrineIntelPanel" class="panel">
+        <div class="panelTitle">Order Intelligence</div>
+        <div class="note">Own doctrine (hidden to enemy until used):</div>
+        <div id="doctrineOwnList" class="doctrineList"></div>
+        <div class="note">Known enemy doctrine (revealed):</div>
+        <div id="doctrineKnownList" class="doctrineList"></div>
+        <div class="note">Enemy single-use orders already consumed:</div>
+        <div id="doctrineSpentList" class="doctrineList"></div>
+        <div class="note">Command history (recent):</div>
+        <div id="doctrineHistoryList" class="doctrineList"></div>
+      </div>
+
+      <div id="dicePanel" class="panel">
+        <div class="panelTitle">Dice</div>
+        <div class="row">
+          <div class="label">Last Roll</div>
+          <div id="diceSummary" class="diceSummary">No rolls yet.</div>
+        </div>
+        <div id="diceTray" class="diceTray"></div>
+      </div>
+
+      <div id="editorPanel" class="panel editorOnly">
+        <div class="panelTitle">Editor Tools</div>
+        <div class="row">
+          <div class="label">Side</div>
+          <button id="sideBlue" class="btn">Blue</button>
+          <button id="sideRed" class="btn">Red</button>
+        </div>
+
+        <div class="row">
+          <div class="label">Type</div>
+          <div id="typeBtns" class="btnGrid">
+            <button class="btn" data-type="inf">INF</button>
+            <button class="btn" data-type="cav">CAV</button>
+            <button class="btn" data-type="skr">SKR</button>
+            <button class="btn" data-type="arc">ARC</button>
+            <button class="btn" data-type="gen">GEN</button>
+            <button class="btn" data-type="run">RUN</button>
+            <button class="btn" data-type="iat">MED</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="eraseBtn" class="btn wide">Erase</button>
+        </div>
+
+        <div class="row">
+          <div class="label">Quality</div>
+          <button id="qGreen" class="btn">Green</button>
+          <button id="qRegular" class="btn">Regular</button>
+          <button id="qVeteran" class="btn">Veteran</button>
+        </div>
+
+        <div class="row">
+          <div class="label">Terrain</div>
+              <div id="terrainBtns" class="btnGrid">
+                <button class="btn" data-terrain="clear">Clear</button>
+                <button class="btn" data-terrain="hills">Hills</button>
+                <button class="btn" data-terrain="woods">Woods</button>
+                <button class="btn" data-terrain="rough">Rough</button>
+                <button class="btn" data-terrain="water">Water</button>
+                <button class="btn" data-terrain="mountains">Mountains</button>
+              </div>
+            </div>
+
+          </div>
+
+      <div id="rulesSideOverlay" class="rulesSideOverlay" aria-hidden="true">
+        <div class="rulesSideCard" role="dialog" aria-modal="true" aria-labelledby="rulesSideTitle">
+          <div class="rulesSideHead">
+            <h2 id="rulesSideTitle">Rules Reference</h2>
+            <button id="closeRulesSideBtn" class="btn" type="button">Close</button>
+          </div>
+          <div class="rulesSideTabs">
+            <button id="rulesTabQuickBtn" class="btn active" type="button">Quick Rules</button>
+            <button id="rulesTabFullBtn" class="btn" type="button">Full Reference</button>
+            <button id="rulesTabCommandsBtn" class="btn" type="button">Orders Guide</button>
+          </div>
+          <div class="rulesSideBody">
+            <article id="rulesQuickDoc" class="rulesDoc active">
+              <h3>Short Rules</h3>
+              <p>
+                Each side gets 3 actions per turn. Most units can act once. You may move, attack, pass, or use one command order
+                during your turn. After action 3, turn passes automatically.
+              </p>
+              <p>
+                Dice are d6: 6 = hit + retreat + disarray, 5 = hit, 4 = retreat, 3 = disarray, 1-2 = miss.
+                Blocked retreat converts to damage.
+              </p>
+              <p>
+                Command is local. Generals project command (Green 3, Regular 4, Veteran 5). Runners relay command at radius 1.
+                Cavalry and veterans are less restricted by command breaks.
+              </p>
+              <p>
+                Terrain matters: clear is easiest, woods/hills/rough add friction, water and mountains are impassable.
+                Woods also reduce incoming attack dice.
+              </p>
+              <h3>Victory Modes</h3>
+              <ul>
+                <li><b>Clear Victory:</b> capture at least half of the enemy's starting UP.</li>
+                <li><b>Annihilation:</b> destroy all enemy units.</li>
+                <li><b>Decapitation:</b> destroy all enemy generals.</li>
+              </ul>
+              <h3>Controls</h3>
+              <ul>
+                <li><b>P</b> to pass with selected unit.</li>
+                <li><b>L</b> for Line Advance with infantry selection.</li>
+                <li><b>C</b> to toggle command overlay.</li>
+                <li>In Edit mode, click to place units or paint terrain.</li>
+                <li>In Play mode, click a friendly unit to view legal move/attack options.</li>
+              </ul>
+            </article>
+
+            <article id="rulesFullDoc" class="rulesDoc">
+              <h3>Ad Arma Full Reference</h3>
+              <p>
+                Ad Arma is a hex-based tactics game about coordination, pressure, and collapse. Each piece is a formation,
+                not a single person. Infantry holds lines, cavalry changes battle geometry, skirmishers screen and disrupt, and
+                archers create ranged pressure. Generals are command anchors. Runners and medics are support units with no
+                frontline attack role. The core design idea is simple: armies win when they keep cohesion and break the enemy's.
+              </p>
+              <p>
+                A normal turn gives each side three actions. Most units can be activated once in that turn. Because actions are
+                limited, good play is about choosing where to spend attention instead of trying to move everything at once. If a
+                player uses fewer than three actions, the turn can still be ended manually, but after the third action it should
+                advance automatically. This keeps momentum and prevents unnecessary clicks.
+              </p>
+              <p>
+                Unit quality affects staying power and strategic value. In Ad Arma, quality changes HP and UP, and in some
+                cases command dependence and mobility. It does not exist just for flavor. Green formations are cheaper and more
+                brittle. Regular formations are dependable. Veteran formations are harder to break and can operate more
+                independently. This is one of the main balancing levers for scenario design and army drafting.
+              </p>
+              <ul>
+                <li><b>INF HP:</b> 3 / 4 / 5 (Green / Regular / Veteran)</li>
+                <li><b>CAV HP:</b> 2 / 3 / 4</li>
+                <li><b>SKR HP:</b> 1 / 2 / 3</li>
+                <li><b>ARC HP:</b> 1 / 2 / 3</li>
+                <li><b>GEN HP:</b> 2 / 3 / 4</li>
+                <li><b>RUN HP:</b> 2 / 2 / 2</li>
+                <li><b>Medic HP:</b> 1 / 1 / 1</li>
+              </ul>
+              <ul>
+                <li><b>INF UP:</b> 3 / 5 / 7</li>
+                <li><b>CAV UP:</b> 6 / 8 / 10</li>
+                <li><b>SKR UP:</b> 2 / 3 / 4</li>
+                <li><b>ARC UP:</b> 2 / 4 / 6</li>
+                <li><b>GEN UP:</b> 8 / 10 / 12</li>
+                <li><b>RUN UP:</b> 1 / 2 / 3</li>
+                <li><b>Medic UP:</b> 4 / 4 / 4</li>
+              </ul>
+              <p>
+                Movement is constrained by both terrain and engagement. Clear terrain costs 1 movement point. Hills, woods, and
+                rough generally cost 2, except cavalry usually pays 3 there. Water is impassable. Engaged units usually cannot
+                move freely, which creates sticky fronts and makes line shape matter. Skirmishers, runners, and veterans can
+                disengage by one safe hex under the current rules. This means elite or specialized formations can recover from
+                contact better than standard troops.
+              </p>
+              <p>
+                Combat is resolved with d6 dice. A 6 is hit + retreat + disarray, 5 is hit, 4 is retreat, 3 is disarray, and
+                1-2 is miss. Melee and ranged profiles determine how many dice are rolled before modifiers. Standard melee dice are:
+                infantry 2, cavalry 3, skirmishers 2, archers 1, general 1, runner 0, medic 0. Ranged attacks are primarily for
+                archers and skirmishers: archers roll 2 dice at range 2 and 1 die at range 3; skirmishers roll 1 die at range 2.
+                Engaged units cannot perform ranged attacks.
+              </p>
+              <p>
+                Terrain and formation modifiers then adjust those base dice. Defender in woods reduces attacker dice by 1, with a
+                minimum of one die so combat always has some chance to resolve. Retreat results are positional pressure, not just
+                flavor text. If a unit cannot retreat because the target hex is blocked or invalid, that retreat converts into a
+                hit. This is why pinning and encirclement pressure are so dangerous.
+              </p>
+              <p>
+                Command and control are central to Ad Arma. Units are "in command" when they are in range of a friendly
+                general or a runner relay. General command range scales by quality: green 3, regular 4, veteran 5. Runner relay
+                range is 1. Cavalry and veterans are more independent, while lower-quality formations suffer stronger
+                out-of-command limits. This encourages players to protect generals, keep command chains coherent, and use runners
+                to stabilize distant sectors.
+              </p>
+              <p>
+                Special units provide tactical utility. The runner has no attack and exists to move orders forward. The medic also
+                has no attack; instead, the medic can spend its action to heal one adjacent friendly unit for +1 HP. The medic is
+                fragile, so placement and timing matter. Using support units well can preserve your line through key turns.
+              </p>
+              <p>
+                Runner and medic details are fixed and important for balance. Runner HP is 2 at all quality levels, with movement
+                3/4/5 (green/regular/veteran) and UP 1/2/3. Medic is always regular quality in practice, has 1 HP, no attack, and
+                costs 4 UP. Medic action is a single adjacent heal of +1 HP.
+              </p>
+              <p>
+                Line Advance is a formation action for infantry. It lets a connected infantry line push forward together for one
+                action, without attacking as part of that same action. It is designed to model coordinated pressure and controlled
+                front movement. Because board direction and connectivity matter on hexes, previewing line members and direction is
+                important for readability.
+              </p>
+              <p>
+                Two additional tactical behaviors are active in this ruleset: infantry that are in command (or are veteran) can
+                auto-pivot against flank or rear melee before impact, and veteran cavalry can disengage after melee when movement
+                remains and the withdrawal hex is safe. Blocked retreats always convert into hits.
+              </p>
+              <p>
+                Victory conditions are scenario-dependent. In Clear Victory, players race to capture enough enemy UP. In
+                Decapitation, general survival becomes the central objective. In Annihilation, every remaining unit matters.
+                The best way to learn these systems is to watch the combat breakdown, dice outcomes, and modifier text while you
+                play. Ad Arma is intended to make cause-and-effect visible, not hidden.
+              </p>
+              <h3>The Three Elements</h3>
+              <p>
+                Ad Arma combines three forces: strategy, chance, and command doctrine. Strategy is your positioning and timing;
+                chance comes from the dice; command doctrine is the bluff-and-read layer created by hidden orders.
+                That doctrine layer plays like a poker mind game: you infer the opponent's plan as orders are revealed.
+              </p>
+            </article>
+            <article id="rulesCommandsDoc" class="rulesDoc">
+              <h3>Command Orders Primer</h3>
+              <p>
+                Each side builds a 3/3/3 doctrine before battle: three Cost 1, three Cost 2, and three Cost 3 orders.
+                Orders are labeled as <b>Reusable</b> or <b>Single-Use</b>.
+              </p>
+              <p>
+                Reusable means you may issue that order again later if legal. Single-Use means once it is issued, it is consumed.
+                This guide lists every order in plain language.
+              </p>
+              <div class="rulesCommandScopeRow">
+                <button id="rulesCommandsSelectedBtn" class="btn active" type="button">My War Council</button>
+                <button id="rulesCommandsAllBtn" class="btn" type="button">All Orders</button>
+              </div>
+              <div id="rulesCommandsContext" class="note">Showing your selected War Council orders.</div>
+              <div id="rulesCommandsList"></div>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div id="doctrineOverlay" class="rulesSideOverlay" aria-hidden="true">
+        <div class="rulesSideCard doctrineCard" role="dialog" aria-modal="true" aria-labelledby="doctrineTitle">
+          <div class="rulesSideHead">
+            <h2 id="doctrineTitle">War Council (3/3/3)</h2>
+            <button id="closeDoctrineBtn" class="btn" type="button">Minimize</button>
+          </div>
+          <div class="row">
+            <div class="label">Editing</div>
+            <select id="doctrineSideSel" class="select">
+              <option value="blue">Blue</option>
+              <option value="red">Red</option>
+            </select>
+            <button id="doctrineRecommendBtn" class="btn">Recommended</button>
+            <button id="doctrineRandomizeBtn" class="btn">Random</button>
+            <button id="doctrineBlankizeBtn" class="btn">Blank</button>
+          </div>
+          <div id="doctrineBuilderCounts" class="note">Select exactly 3 commands in each cost group.</div>
+          <div id="doctrineExplain" class="doctrineExplain">
+            Select an order to view its full effect and targeting.
+          </div>
+          <div class="doctrineBuilderGrid">
+            <section id="doctrineCost1Col" class="doctrineCostCol">
+              <h3 id="doctrineCost1Title">Cost 1</h3>
+              <div id="doctrineCost1List" class="doctrineBuilderList"></div>
+            </section>
+            <section id="doctrineCost2Col" class="doctrineCostCol">
+              <h3 id="doctrineCost2Title">Cost 2</h3>
+              <div id="doctrineCost2List" class="doctrineBuilderList"></div>
+            </section>
+            <section id="doctrineCost3Col" class="doctrineCostCol">
+              <h3 id="doctrineCost3Title">Cost 3</h3>
+              <div id="doctrineCost3List" class="doctrineBuilderList"></div>
+            </section>
+          </div>
+          <div class="row">
+            <button id="doctrineConfirmBtn" class="btn wide">Confirm Doctrine</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <section id="combatRail" aria-live="polite">
+    <div class="combatCol combatColBreakdown">
+      <div class="combatColTitle">Action Log</div>
+      <div id="combatSummary" class="combatSummary">No combat yet. Select a unit and attack to see exact dice math.</div>
+      <div id="combatMath" class="combatMeta">Dice math: -</div>
+      <div id="combatHint" class="combatHint">Rules: 6=hit+retreat+disarray, 5=hit, 4=retreat, 3=disarray, 1-2=miss.</div>
+    </div>
+    <div id="selectedUnitPanel" class="combatCol combatColInspector">
+      <div class="combatColTitle">Selected Unit</div>
+      <div id="inspectorTitle" class="inspectorTitle">No unit selected.</div>
+      <div class="inspectorGrid">
+        <div class="inspectorKey">Side</div><div id="inspectorSide" class="inspectorVal">-</div>
+        <div class="inspectorKey">Type</div><div id="inspectorType" class="inspectorVal">-</div>
+        <div class="inspectorKey">Quality</div><div id="inspectorQuality" class="inspectorVal">-</div>
+        <div class="inspectorKey">HP</div><div id="inspectorHp" class="inspectorVal">-</div>
+        <div class="inspectorKey">UP</div><div id="inspectorUp" class="inspectorVal">-</div>
+      </div>
+    </div>
+    <div class="combatCol combatColModifiers">
+      <div class="combatColTitle">Modifiers</div>
+      <div id="combatTerrain" class="combatMeta">Defense modifiers: -</div>
+    </div>
+    <div class="combatCol combatColDice">
+      <div class="combatColTitle">Dice</div>
+      <div id="physicalDiceRow" class="physicalDiceRow">
+        <span class="physicalDiceEmpty">No dice yet.</span>
+      </div>
+    </div>
+    <div class="combatCol combatColOutcome">
+      <div class="combatColTitle">Score</div>
+      <div id="combatOutcome" class="combatMeta">Outcome: -</div>
+      <div id="combatForces" class="combatMeta">Forces: Blue - UP / - HP • Red - UP / - HP</div>
+    </div>
+    <div class="combatCol combatColOnline">
+      <div class="combatColTitle">Multiplayer</div>
+      <div class="onlineRow">
+        <div class="onlineLabel">Room</div>
+        <button id="onlineHostBtn" class="btn wide">Create Room</button>
+        <button id="onlineLeaveBtn" class="btn">Leave</button>
+      </div>
+      <div class="onlineRow">
+        <div class="onlineLabel">Code</div>
+        <div id="onlineMyCode" class="monoVal roomCode empty">----</div>
+      </div>
+      <div class="onlineRow">
+        <div class="onlineLabel">Join</div>
+        <input id="onlineJoinCode" class="input" type="text" maxlength="4" autocomplete="off" spellcheck="false" placeholder="Code" />
+        <button id="onlineJoinBtn" class="btn">Connect</button>
+      </div>
+      <div class="onlineRow">
+        <div class="onlineLabel">Draft</div>
+        <select id="draftModeSel" class="select">
+          <option value="off">Off</option>
+          <option value="visible">Visible Placement</option>
+          <option value="fog">Hidden Placement (Reveal)</option>
+        </select>
+      </div>
+      <div class="onlineRow">
+        <div class="onlineLabel">UP</div>
+        <input id="draftBudgetInput" class="input" type="number" min="20" max="300" step="5" value="120" />
+      </div>
+      <div class="onlineDraftBtns">
+        <button id="startDraftBtn" class="btn wide">Start Draft</button>
+        <button id="draftDoneBtn" class="btn wide">Done For Side</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="build.js?v=20260308-war-council-dictionary-v1"></script>
+  <script src="main.js?v=20260308-war-council-dictionary-v1"></script>
+</body>
+</html>
