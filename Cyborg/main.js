@@ -649,6 +649,7 @@
   const elCanvasWrap = document.getElementById('canvasWrap');
   const elBoardDiceDock = document.getElementById('boardDiceDock');
   const elBoardStage = document.getElementById('boardStage');
+  const elSetupStageBanner = document.getElementById('setupStageBanner');
 
   const elHudTitle = document.getElementById('hudTitle');
   const elHudMeta = document.getElementById('hudMeta');
@@ -3740,6 +3741,27 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
   let ORIGIN_Y = 0;
   let diceDockPosRaf = 0;
 
+  function boardTopAnchorPadPx(stageRect) {
+    if (!stageRect) return 8;
+    if (!elSetupStageBanner) return 8;
+    const setupRect = elSetupStageBanner.getBoundingClientRect();
+    if (!setupRect || !Number.isFinite(setupRect.top) || !Number.isFinite(setupRect.height) || setupRect.height <= 0) {
+      return 8;
+    }
+    const relTop = setupRect.top - stageRect.top;
+    if (!Number.isFinite(relTop)) return 8;
+    // Match the top of the board to the top of the setup-stage banner.
+    return Math.max(4, Math.min(56, Math.round(relTop)));
+  }
+
+  function boardDiceReservePx() {
+    if (!elBoardDiceDock) return 122;
+    const rect = elBoardDiceDock.getBoundingClientRect();
+    const h = (rect && Number.isFinite(rect.height) && rect.height > 0) ? rect.height : 108;
+    // Row height + result text + breathing room.
+    return Math.max(104, Math.ceil(h + 14));
+  }
+
   function positionBoardDiceDock() {
     if (!elBoardDiceDock || !elCanvasWrap || !board?.active?.length) return;
     const wrapRect = elCanvasWrap.getBoundingClientRect();
@@ -3754,11 +3776,12 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     if (!boardBottom) return;
 
     const wrapBottom = wrapRect.height;
-    // Keep dice close under the board rather than centered in the remaining gap.
-    let top = boardBottom + 6;
-    const minTop = Math.max(8, boardBottom + 4);
-    const maxTop = Math.max(minTop, wrapBottom - dockRect.height - 6);
-    top = Math.max(minTop, Math.min(maxTop, top));
+    const gap = 10;
+    const minTop = Math.max(8, boardBottom + gap);
+    const maxTop = Math.max(8, wrapBottom - dockRect.height - 8);
+    // Prefer directly under the board, clamp inside available dock lane.
+    let top = Math.min(minTop, maxTop);
+    if (top < 8) top = 8;
 
     elBoardDiceDock.style.bottom = 'auto';
     elBoardDiceDock.style.top = `${Math.round(top)}px`;
@@ -3806,9 +3829,11 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     const availH = rect.height;
     const smallViewport = window.matchMedia('(max-width: 980px)').matches;
     const wideViewport = window.matchMedia('(min-width: 1800px)').matches;
+    const topPad = boardTopAnchorPadPx(rect);
     const boardPad = smallViewport ? 8 : 6;
+    const diceReserve = boardDiceReservePx();
     const fitW = Math.max(1, availW - (boardPad * 2));
-    const fitH = Math.max(1, availH - (boardPad * 2));
+    const fitH = Math.max(1, availH - topPad - boardPad - diceReserve);
 
     // For pointy-top hexes with odd-r offset:
     // width ≈ sqrt(3)*R*(cols + 0.5)
@@ -3829,7 +3854,7 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
 
     ORIGIN_X = boardPad + ((fitW - boardW) / 2) + HEX_W / 2;
     // Top-anchor board to align with top of right-side setup area.
-    ORIGIN_Y = boardPad + R;
+    ORIGIN_Y = topPad + R;
 
     for (const h of board.active) {
       const x = ORIGIN_X + (h.q - board.minQ) * HEX_W + ((h.r & 1) ? (HEX_W / 2) : 0);
