@@ -646,6 +646,8 @@
   // --- DOM
   const elCanvas = document.getElementById('c');
   const ctx = elCanvas.getContext('2d');
+  const elCanvasWrap = document.getElementById('canvasWrap');
+  const elBoardDiceDock = document.getElementById('boardDiceDock');
   const elBoardStage = document.getElementById('boardStage');
 
   const elHudTitle = document.getElementById('hudTitle');
@@ -811,7 +813,7 @@
     aiDifficulty: 'standard', // 'easy' | 'standard' | 'hard'
     humanSide: 'blue', // 'blue' | 'red'
     forwardAxis: 'vertical', // 'vertical' | 'horizontal' | 'diag_tl_br' | 'diag_tr_bl'
-    lineAdvanceDirection: 'forward', // 'forward' | 'backward' | 'left' | 'right'
+    lineAdvanceDirection: '', // dynamic hex dir: 'e'|'w'|'ur'|'ul'|'dr'|'dl' (legacy modes still normalized)
     turn: 1,
     turnSerial: 1,
     side: 'blue',
@@ -3736,6 +3738,40 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
   let STEP_Y = 0;
   let ORIGIN_X = 0;
   let ORIGIN_Y = 0;
+  let diceDockPosRaf = 0;
+
+  function positionBoardDiceDock() {
+    if (!elBoardDiceDock || !elCanvasWrap || !board?.active?.length) return;
+    const wrapRect = elCanvasWrap.getBoundingClientRect();
+    const dockRect = elBoardDiceDock.getBoundingClientRect();
+    if (!wrapRect.height || !dockRect.height) return;
+
+    let boardBottom = 0;
+    for (const h of board.active) {
+      if (!Number.isFinite(h.cy)) continue;
+      boardBottom = Math.max(boardBottom, h.cy + R);
+    }
+    if (!boardBottom) return;
+
+    const wrapBottom = wrapRect.height;
+    // Keep dice close under the board rather than centered in the remaining gap.
+    let top = boardBottom + 6;
+    const minTop = Math.max(8, boardBottom + 4);
+    const maxTop = Math.max(minTop, wrapBottom - dockRect.height - 6);
+    top = Math.max(minTop, Math.min(maxTop, top));
+
+    elBoardDiceDock.style.bottom = 'auto';
+    elBoardDiceDock.style.top = `${Math.round(top)}px`;
+  }
+
+  function scheduleBoardDiceDockPosition() {
+    if (!elBoardDiceDock || !elCanvasWrap) return;
+    if (diceDockPosRaf) cancelAnimationFrame(diceDockPosRaf);
+    diceDockPosRaf = requestAnimationFrame(() => {
+      diceDockPosRaf = 0;
+      positionBoardDiceDock();
+    });
+  }
 
   function syncLayoutChromeHeights() {
     const root = document.documentElement;
@@ -3770,7 +3806,7 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     const availH = rect.height;
     const smallViewport = window.matchMedia('(max-width: 980px)').matches;
     const wideViewport = window.matchMedia('(min-width: 1800px)').matches;
-    const boardPad = smallViewport ? 10 : 12;
+    const boardPad = smallViewport ? 8 : 6;
     const fitW = Math.max(1, availW - (boardPad * 2));
     const fitH = Math.max(1, availH - (boardPad * 2));
 
@@ -3792,7 +3828,8 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     const boardH = R * (((rows - 1) * 1.5) + 2);
 
     ORIGIN_X = boardPad + ((fitW - boardW) / 2) + HEX_W / 2;
-    ORIGIN_Y = boardPad + ((fitH - boardH) / 2) + R;
+    // Top-anchor board to align with top of right-side setup area.
+    ORIGIN_Y = boardPad + R;
 
     for (const h of board.active) {
       const x = ORIGIN_X + (h.q - board.minQ) * HEX_W + ((h.r & 1) ? (HEX_W / 2) : 0);
@@ -3802,6 +3839,7 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     }
 
     draw();
+    scheduleBoardDiceDockPosition();
   }
 
   function hexPath(cx, cy) {
@@ -4949,6 +4987,7 @@ function unitColors(side) {
     state.combatBusyUntil = 0;
     if (elCornerDiceHud) elCornerDiceHud.classList.remove('combat-active');
     clearCombatBreakdown();
+    scheduleBoardDiceDockPosition();
   }
 
   function terrainLabel(terrainId) {
@@ -5268,6 +5307,7 @@ function unitColors(side) {
       `H ${info.hits} / R ${info.retreats} / D ${info.disarrays || 0} / M ${info.misses}`;
     elDiceSummary.textContent = `Rolling ${info.dice} dice…`;
     if (elBoardDiceResult) elBoardDiceResult.textContent = 'Rolling…';
+    scheduleBoardDiceDockPosition();
 
     elDiceTray.innerHTML = '';
     if (elPhysicalDiceRow) elPhysicalDiceRow.innerHTML = '';
@@ -5368,6 +5408,7 @@ function unitColors(side) {
         });
         elBoardDiceResult.textContent = labels.join(' • ');
       }
+      scheduleBoardDiceDockPosition();
       setTimeout(() => {
         if (renderNonce !== diceRenderNonce) return;
         state.combatBusy = false;
@@ -7257,12 +7298,13 @@ function unitColors(side) {
     updateDraftStatusUi();
 
     elEndTurnBtn.disabled = (state.mode !== 'play') || state.gameOver || isAiTurnActive();
+    const lineAdvanceCtx = buildLineAdvanceContext(state.selectedKey, state.lineAdvanceDirection);
     if (elLineAdvanceBtn) {
       elLineAdvanceBtn.disabled = !canIssueLineAdvance();
     }
     if (elLineAdvanceDirSel) {
-      elLineAdvanceDirSel.value = normalizeLineAdvanceDirection(state.lineAdvanceDirection);
-      elLineAdvanceDirSel.disabled = state.mode !== 'play' || state.gameOver || isAiTurnActive();
+      syncLineAdvanceDirectionSelect(lineAdvanceCtx);
+      elLineAdvanceDirSel.disabled = state.mode !== 'play' || state.gameOver || isAiTurnActive() || !lineAdvanceCtx;
     }
 
     const canIssueCommandNow =
@@ -8229,26 +8271,58 @@ function unitColors(side) {
     return null;
   }
 
+  const LINE_ADVANCE_AXES = [
+    { id: 'ew', along: ['w', 'e'] },
+    { id: 'urdl', along: ['ur', 'dl'] },
+    { id: 'uldr', along: ['ul', 'dr'] },
+  ];
+  const LINE_ADVANCE_DIRS = ['e', 'ur', 'ul', 'w', 'dl', 'dr'];
+  const LINE_ADVANCE_DIR_SET = new Set([
+    ...LINE_ADVANCE_DIRS,
+    // Backward compatibility with previous builds/snapshots.
+    'forward',
+    'backward',
+    'left',
+    'right',
+  ]);
+
   function normalizeLineAdvanceDirection(dir) {
-    return (dir === 'forward' || dir === 'backward' || dir === 'left' || dir === 'right')
-      ? dir
-      : 'forward';
+    const d = String(dir || '').trim().toLowerCase();
+    return LINE_ADVANCE_DIR_SET.has(d) ? d : '';
   }
 
-  function lineAdvanceStepDirection(side, axis = state.forwardAxis, mode = state.lineAdvanceDirection) {
-    const forward = sideForwardDirection(side, axis);
+  function lineAdvanceDirectionLabel(dir) {
+    switch (dir) {
+      case 'e': return 'Right';
+      case 'w': return 'Left';
+      case 'ur': return 'Up Right';
+      case 'ul': return 'Up Left';
+      case 'dr': return 'Down Right';
+      case 'dl': return 'Down Left';
+      default: return 'Auto';
+    }
+  }
+
+  function lineAdvanceLegacyToHexDirection(side, modeRaw) {
+    const mode = normalizeLineAdvanceDirection(modeRaw);
+    if (LINE_ADVANCE_DIRS.includes(mode)) return mode;
+
+    const forward = sideForwardDirection(side, state.forwardAxis);
     const back = oppositeDirection(forward);
-    const [left, right] = axisLateralDirections(axis);
-    const m = normalizeLineAdvanceDirection(mode);
-    if (m === 'backward' && back) return back;
-    if (m === 'left') return left;
-    if (m === 'right') return right;
-    return forward;
+    const [left, right] = axisLateralDirections(state.forwardAxis);
+    if (mode === 'forward') return forward;
+    if (mode === 'backward') return back;
+    if (mode === 'left') return left;
+    if (mode === 'right') return right;
+    return null;
   }
 
+  // Used by command-order resolvers that still operate on the scenario forward axis.
   function forwardStepKey(fromKey, side, mode = 'forward') {
-    const dir = lineAdvanceStepDirection(side, state.forwardAxis, mode);
-    return stepKeyInDirection(fromKey, dir);
+    const preferred = lineAdvanceLegacyToHexDirection(side, mode);
+    const fallback = lineAdvanceLegacyToHexDirection(side, 'forward');
+    const dir = preferred || fallback;
+    return dir ? stepKeyInDirection(fromKey, dir) : null;
   }
 
   function canLineAdvanceInfAt(hexKey, u) {
@@ -8261,12 +8335,13 @@ function unitColors(side) {
     return unitCanMoveThisActivation(u, { inCommandStart: inCmd }, hexKey);
   }
 
-  function collectLineAdvanceFormation(anchorKey) {
+  function collectLineAdvanceFormationOnAxis(anchorKey, axisDef) {
     const anchorUnit = unitsByHex.get(anchorKey);
     if (!anchorUnit) return [];
     if (!canLineAdvanceInfAt(anchorKey, anchorUnit)) return [];
+    if (!axisDef || !Array.isArray(axisDef.along) || axisDef.along.length !== 2) return [];
 
-    const [beforeDir, afterDir] = axisLateralDirections(state.forwardAxis);
+    const [beforeDir, afterDir] = axisDef.along;
     const before = [];
     const after = [];
 
@@ -8289,7 +8364,91 @@ function unitColors(side) {
     return [...before, anchorKey, ...after];
   }
 
-  function lineAdvanceMovePlan(formation) {
+  function buildLineAdvanceContext(anchorKey, preferredRaw = state.lineAdvanceDirection) {
+    if (!anchorKey) return null;
+    const anchorUnit = unitsByHex.get(anchorKey);
+    if (!anchorUnit || anchorUnit.type !== 'inf') return null;
+    if (!canLineAdvanceInfAt(anchorKey, anchorUnit)) return null;
+
+    const preferredHex = lineAdvanceLegacyToHexDirection(anchorUnit.side, preferredRaw);
+    const candidates = [];
+
+    for (const axisDef of LINE_ADVANCE_AXES) {
+      const formation = collectLineAdvanceFormationOnAxis(anchorKey, axisDef);
+      if (!formation.length) continue;
+
+      const moveDirs = LINE_ADVANCE_DIRS.filter((d) => !axisDef.along.includes(d));
+      const dirStats = moveDirs.map((dir) => {
+        const planned = lineAdvanceMovePlan(formation, dir);
+        return { dir, movable: planned.moves.length };
+      });
+      if (!dirStats.length) continue;
+
+      const preferred = (preferredHex && moveDirs.includes(preferredHex)) ? preferredHex : null;
+      const best = dirStats.reduce((acc, cur) => (cur.movable > acc.movable ? cur : acc), dirStats[0]);
+      const preferredStat = preferred ? (dirStats.find((s) => s.dir === preferred) || null) : null;
+      const selectedDir = (preferredStat && preferredStat.movable > 0) ? preferred : best.dir;
+
+      candidates.push({
+        axisId: axisDef.id,
+        formation,
+        moveDirs,
+        dirStats,
+        bestMovable: best.movable,
+        selectedDir,
+        preferredMatched: !!preferred,
+      });
+    }
+
+    if (!candidates.length) return null;
+
+    candidates.sort((a, b) => {
+      if (b.formation.length !== a.formation.length) return b.formation.length - a.formation.length;
+      if (b.bestMovable !== a.bestMovable) return b.bestMovable - a.bestMovable;
+      if (b.preferredMatched !== a.preferredMatched) return (b.preferredMatched ? 1 : 0) - (a.preferredMatched ? 1 : 0);
+      return 0;
+    });
+
+    const pick = candidates[0];
+    return {
+      axisId: pick.axisId,
+      formation: pick.formation,
+      moveDirs: pick.moveDirs,
+      direction: pick.selectedDir,
+      bestMovable: pick.bestMovable,
+    };
+  }
+
+  function syncLineAdvanceDirectionSelect(ctx) {
+    if (!elLineAdvanceDirSel) return;
+    const dirs = Array.isArray(ctx?.moveDirs) ? ctx.moveDirs : [];
+
+    if (!dirs.length) {
+      if (elLineAdvanceDirSel.options.length !== 1 || elLineAdvanceDirSel.options[0].value !== '') {
+        elLineAdvanceDirSel.innerHTML = '<option value="">Select infantry line</option>';
+      }
+      elLineAdvanceDirSel.value = '';
+      return;
+    }
+
+    const currentValues = Array.from(elLineAdvanceDirSel.options).map((o) => o.value);
+    const changed = (currentValues.length !== dirs.length) || currentValues.some((v, i) => v !== dirs[i]);
+    if (changed) {
+      elLineAdvanceDirSel.innerHTML = '';
+      for (const dir of dirs) {
+        const opt = document.createElement('option');
+        opt.value = dir;
+        opt.textContent = lineAdvanceDirectionLabel(dir);
+        elLineAdvanceDirSel.appendChild(opt);
+      }
+    }
+
+    const chosen = dirs.includes(ctx.direction) ? ctx.direction : dirs[0];
+    state.lineAdvanceDirection = chosen;
+    elLineAdvanceDirSel.value = chosen;
+  }
+
+  function lineAdvanceMovePlan(formation, moveDir) {
     const formationSet = new Set(formation);
     const moves = [];
     const blocked = [];
@@ -8299,7 +8458,7 @@ function unitColors(side) {
       const u = unitsByHex.get(fromKey);
       if (!u) continue;
 
-      const toKey = forwardStepKey(fromKey, u.side, state.lineAdvanceDirection);
+      const toKey = stepKeyInDirection(fromKey, moveDir);
       if (!toKey) {
         blocked.push({ fromKey, reason: 'off-board' });
         continue;
@@ -8340,9 +8499,9 @@ function unitColors(side) {
 
     const u = unitsByHex.get(state.selectedKey);
     if (!u || u.side !== state.side || u.type !== 'inf') return false;
-    const formation = collectLineAdvanceFormation(state.selectedKey);
-    if (formation.length === 0) return false;
-    return lineAdvanceMovePlan(formation).moves.length > 0;
+    const ctx = buildLineAdvanceContext(state.selectedKey, state.lineAdvanceDirection);
+    if (!ctx || !ctx.formation.length || !ctx.direction) return false;
+    return lineAdvanceMovePlan(ctx.formation, ctx.direction).moves.length > 0;
   }
 
   function lineAdvanceFromSelection() {
@@ -8368,14 +8527,16 @@ function unitColors(side) {
       return;
     }
 
-    const formation = collectLineAdvanceFormation(anchorKey);
-    if (formation.length === 0) {
+    const ctx = buildLineAdvanceContext(anchorKey, state.lineAdvanceDirection);
+    if (!ctx || ctx.formation.length === 0) {
       log('Line Advance unavailable: selected INF cannot form an eligible line.');
       updateHud();
       return;
     }
 
-    const plan = lineAdvanceMovePlan(formation);
+    state.lineAdvanceDirection = ctx.direction;
+    const formation = ctx.formation;
+    const plan = lineAdvanceMovePlan(formation, ctx.direction);
     const moves = plan.moves;
     const blocked = plan.blocked;
 
@@ -8410,7 +8571,7 @@ function unitColors(side) {
     if (byReason.terrain) blockParts.push(`terrain ${byReason.terrain}`);
     const blockText = blockParts.length ? ` blocked(${blockParts.join(', ')})` : '';
 
-    const dirLabel = normalizeLineAdvanceDirection(state.lineAdvanceDirection);
+    const dirLabel = lineAdvanceDirectionLabel(ctx.direction);
     log(`Line Advance (${dirLabel}): ${moves.length}/${formation.length} INF advanced.${blockText}`);
     updateHud();
     maybeAutoEndTurnAtActionLimit();
