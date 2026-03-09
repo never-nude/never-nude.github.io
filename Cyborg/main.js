@@ -3750,16 +3750,16 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     }
     const relTop = setupRect.top - stageRect.top;
     if (!Number.isFinite(relTop)) return 8;
-    // Match the top of the board to the top of the setup-stage banner.
-    return Math.max(4, Math.min(56, Math.round(relTop)));
+    // Keep a slight visual drop from the setup button row so the board does not feel cramped.
+    return Math.max(8, Math.min(72, Math.round(relTop + 6)));
   }
 
   function boardDiceReservePx() {
     if (!elBoardDiceDock) return 122;
     const rect = elBoardDiceDock.getBoundingClientRect();
     const h = (rect && Number.isFinite(rect.height) && rect.height > 0) ? rect.height : 108;
-    // Row height + result text + breathing room.
-    return Math.max(104, Math.ceil(h + 14));
+    // Keep enough lane for dice while avoiding over-shrinking the board on desktop.
+    return Math.max(78, Math.min(118, Math.ceil(h + 8)));
   }
 
   function positionBoardDiceDock() {
@@ -3776,12 +3776,15 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     if (!boardBottom) return;
 
     const wrapBottom = wrapRect.height;
+    const gapTop = 8;
     const gap = 10;
-    const minTop = Math.max(8, boardBottom + gap);
-    const maxTop = Math.max(8, wrapBottom - dockRect.height - 8);
-    // Prefer directly under the board, clamp inside available dock lane.
-    let top = Math.min(minTop, maxTop);
-    if (top < 8) top = 8;
+    const laneTop = Math.max(gapTop, boardBottom + gap);
+    const laneBottom = Math.max(gapTop, wrapBottom - dockRect.height - 8);
+    // Place dice roughly centered in the available lane between board and bottom rail.
+    let top = laneBottom >= laneTop
+      ? Math.round((laneTop + laneBottom) / 2)
+      : laneBottom;
+    if (!Number.isFinite(top) || top < gapTop) top = gapTop;
 
     elBoardDiceDock.style.bottom = 'auto';
     elBoardDiceDock.style.top = `${Math.round(top)}px`;
@@ -3833,7 +3836,7 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
     const boardPad = smallViewport ? 8 : 6;
     const diceReserve = boardDiceReservePx();
     const fitW = Math.max(1, availW - (boardPad * 2));
-    const fitH = Math.max(1, availH - topPad - boardPad - diceReserve);
+    const fitH = Math.max(1, availH - boardPad - diceReserve - Math.round(topPad * 0.45));
 
     // For pointy-top hexes with odd-r offset:
     // width ≈ sqrt(3)*R*(cols + 0.5)
@@ -3854,7 +3857,7 @@ SCENARIOS['History A — Thermopylae Hot Gates (480 BCE)'] = {
 
     ORIGIN_X = boardPad + ((fitW - boardW) / 2) + HEX_W / 2;
     // Top-anchor board to align with top of right-side setup area.
-    ORIGIN_Y = topPad + R;
+    ORIGIN_Y = topPad + R + 2;
 
     for (const h of board.active) {
       const x = ORIGIN_X + (h.q - board.minQ) * HEX_W + ((h.r & 1) ? (HEX_W / 2) : 0);
