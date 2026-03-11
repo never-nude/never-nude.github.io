@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bouchardon Cupid - 3D Viewer</title>
+    <style>
+      :root {
+        --bg0: #0b1014;
+        --bg1: #25313a;
+        --panel: #121920;
+        --panel-border: #30404d;
+        --text: #e8edf4;
+        --muted: #a2b2c0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 16% 10%, var(--bg1) 0%, var(--bg0) 66%);
+        color: var(--text);
+        font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+      }
+      .app {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .panel {
+        padding: 12px 14px 10px;
+        border-bottom: 1px solid var(--panel-border);
+        background: rgba(18, 25, 32, 0.96);
+      }
+      .title {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.02em;
+      }
+      .sub {
+        margin: 4px 0 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px 12px;
+      }
+      .control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+      }
+      .control label {
+        min-width: 94px;
+        color: var(--text);
+      }
+      .control input[type="range"] {
+        width: 100%;
+      }
+      .control output {
+        min-width: 40px;
+        text-align: right;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .row {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        flex-wrap: wrap;
+      }
+      .row label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .btn {
+        border: 1px solid #405361;
+        border-radius: 6px;
+        background: #18222b;
+        color: var(--text);
+        font-size: 12px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      #stage {
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .loading {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <section class="panel">
+        <h1 class="title">Edme Bouchardon: Cupid cutting his bow from the club of Hercules</h1>
+        <p id="stats" class="sub">Preparing 3D scene...</p>
+
+        <div class="grid">
+          <div class="control"><label for="spin">Spin</label><input id="spin" type="range" min="0" max="2.4" step="0.01" value="0.32" /><output id="spinv">0.32</output></div>
+          <div class="control"><label for="zoom">Zoom</label><input id="zoom" type="range" min="1.0" max="5.6" step="0.01" value="2.35" /><output id="zoomv">2.35</output></div>
+          <div class="control"><label for="lightAngle">Light Angle</label><input id="lightAngle" type="range" min="-180" max="180" step="1" value="40" /><output id="lightAnglev">40.00</output></div>
+          <div class="control"><label for="lightPower">Light Power</label><input id="lightPower" type="range" min="0" max="3" step="0.01" value="1.28" /><output id="lightPowerv">1.28</output></div>
+        </div>
+
+        <div class="row">
+          <label><input id="canManipulate" type="checkbox" checked /> Manipulate</label>
+          <label><input id="autoRotate" type="checkbox" checked /> Auto Rotate</label>
+          <label><input id="multiLight" type="checkbox" checked /> Multi-Light</label>
+          <button id="resetBtn" class="btn" type="button">Reset</button>
+          <span>Drag to rotate. Scroll/pinch to zoom. Shift+drag to pan.</span>
+        </div>
+      </section>
+
+      <section id="stage">
+        <div class="loading" id="loading">Preparing 3D scene...</div>
+      </section>
+    </div>
+
+    <script type="module">
+      const MODEL_URL = "./cupid_mesh.json";
+
+      const stage = document.getElementById("stage");
+      const stats = document.getElementById("stats");
+      const loading = document.getElementById("loading");
+
+      const defaults = {
+        spin: 0.32,
+        zoom: 2.35,
+        lightAngle: 40,
+        lightPower: 1.28,
+        canManipulate: true,
+        autoRotate: true,
+        multiLight: true
+      };
+
+      const rangeIds = ["spin", "zoom", "lightAngle", "lightPower"];
+      const checkboxIds = ["canManipulate", "autoRotate", "multiLight"];
+
+      function n(id) {
+        return Number(document.getElementById(id).value);
+      }
+
+      function refreshReadouts() {
+        for (const id of rangeIds) {
+          document.getElementById(id + "v").textContent = n(id).toFixed(2);
+        }
+      }
+
+      function setDefaults() {
+        for (const id of rangeIds) {
+          document.getElementById(id).value = String(defaults[id]);
+        }
+        for (const id of checkboxIds) {
+          document.getElementById(id).checked = defaults[id];
+        }
+        refreshReadouts();
+      }
+
+      async function init() {
+        setDefaults();
+
+        let THREE;
+        let OrbitControls;
+        try {
+          THREE = await import("https://esm.sh/three@0.161.0?bundle");
+          ({ OrbitControls } = await import("https://esm.sh/three@0.161.0/examples/jsm/controls/OrbitControls.js?bundle"));
+        } catch (error) {
+          loading.textContent = `Module load error: ${error.message}`;
+          stats.textContent = "Failed to load 3D engine modules.";
+          return;
+        }
+
+        let model;
+        try {
+          const response = await fetch(MODEL_URL);
+          if (!response.ok) {
+            throw new Error(`Failed to load ${MODEL_URL} (${response.status})`);
+          }
+          model = await response.json();
+        } catch (error) {
+          loading.textContent = `Mesh load error: ${error.message}`;
+          stats.textContent = "Failed to load sculpture mesh.";
+          return;
+        }
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.4));
+        renderer.setSize(stage.clientWidth, stage.clientHeight);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        loading.remove();
+        stage.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b1014);
+
+        const camera = new THREE.PerspectiveCamera(44, stage.clientWidth / stage.clientHeight, 0.01, 90);
+        camera.position.set(1.8, 1.25, defaults.zoom);
+
+        const ambient = new THREE.HemisphereLight(0xf6f9ff, 0x1e2935, 0.2);
+        scene.add(ambient);
+
+        const keyLight = new THREE.DirectionalLight(0xfff3e6, defaults.lightPower);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(1024, 1024);
+        keyLight.shadow.camera.near = 0.1;
+        keyLight.shadow.camera.far = 14;
+        keyLight.shadow.camera.left = -2.8;
+        keyLight.shadow.camera.right = 2.8;
+        keyLight.shadow.camera.top = 2.8;
+        keyLight.shadow.camera.bottom = -2.8;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xcfdded, defaults.lightPower * 0.44);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xeef3ff, defaults.lightPower * 0.33);
+        scene.add(rimLight);
+
+        const floor = new THREE.Mesh(
+          new THREE.CircleGeometry(3.0, 72),
+          new THREE.ShadowMaterial({ opacity: 0.30 })
+        );
+        floor.rotation.x = -Math.PI * 0.5;
+        floor.position.y = 0;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(model.positions), 3));
+        geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(model.indices), 1));
+        geometry.computeVertexNormals();
+        geometry.computeBoundingBox();
+
+        const box = geometry.boundingBox;
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        geometry.translate(-center.x, -box.min.y, -center.z);
+
+        const material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color("#d9d1c4"),
+          roughness: 0.72,
+          metalness: 0.02
+        });
+
+        const sculpture = new THREE.Mesh(geometry, material);
+        const targetHeight = 1.74;
+        const scale = targetHeight / size.y;
+        sculpture.scale.setScalar(scale);
+        sculpture.castShadow = true;
+        sculpture.receiveShadow = true;
+        scene.add(sculpture);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.target.set(0, 0.88, 0);
+        controls.minDistance = 1.0;
+        controls.maxDistance = 6.5;
+
+        const clock = new THREE.Clock();
+
+        function updateLight() {
+          const angle = THREE.MathUtils.degToRad(n("lightAngle"));
+          const radius = 2.9;
+          keyLight.position.set(Math.cos(angle) * radius, 3.15, Math.sin(angle) * radius);
+          fillLight.position.set(-Math.sin(angle) * 2.2, 1.45, Math.cos(angle) * 2.2);
+          rimLight.position.set(-Math.cos(angle) * 2.0, 2.0, -Math.sin(angle) * 2.0);
+
+          const power = n("lightPower");
+          keyLight.intensity = power;
+          fillLight.intensity = power * (document.getElementById("multiLight").checked ? 0.44 : 0.0);
+          rimLight.intensity = power * (document.getElementById("multiLight").checked ? 0.33 : 0.0);
+        }
+
+        function updateCameraDistance() {
+          const z = n("zoom");
+          const dir = camera.position.clone().sub(controls.target).normalize();
+          camera.position.copy(controls.target.clone().addScaledVector(dir, z));
+        }
+
+        const resetBtn = document.getElementById("resetBtn");
+        resetBtn.addEventListener("click", () => {
+          setDefaults();
+          controls.target.set(0, 0.88, 0);
+          camera.position.set(1.8, 1.25, defaults.zoom);
+          controls.update();
+          updateLight();
+          renderer.toneMappingExposure = 1.0;
+        });
+
+        for (const id of rangeIds) {
+          document.getElementById(id).addEventListener("input", () => {
+            refreshReadouts();
+            if (id === "zoom") {
+              updateCameraDistance();
+            }
+            if (id === "lightAngle" || id === "lightPower") {
+              updateLight();
+            }
+          });
+        }
+
+        for (const id of checkboxIds) {
+          document.getElementById(id).addEventListener("change", () => {
+            controls.enabled = document.getElementById("canManipulate").checked;
+            updateLight();
+          });
+        }
+
+        updateLight();
+        controls.enabled = defaults.canManipulate;
+
+        stats.textContent = `${model.meta.vertices.toLocaleString()} vertices | ${model.meta.faces.toLocaleString()} faces | source: ${model.meta.source_file}`;
+
+        function render() {
+          const dt = clock.getDelta();
+
+          if (document.getElementById("autoRotate").checked) {
+            sculpture.rotation.y += dt * n("spin");
+          }
+
+          controls.update();
+          renderer.render(scene, camera);
+          requestAnimationFrame(render);
+        }
+
+        render();
+
+        const onResize = () => {
+          const w = stage.clientWidth;
+          const h = stage.clientHeight;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        };
+
+        window.addEventListener("resize", onResize);
+      }
+
+      init().catch((error) => {
+        console.error(error);
+        loading.textContent = `Unexpected error: ${error.message}`;
+      });
+    </script>
+  </body>
+</html>
