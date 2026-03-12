@@ -6,19 +6,24 @@
     <title>The Archive of Form</title>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #0b0f12;
-        --panel: #121920;
-        --text: #e9ecef;
-        --muted: #adb5bd;
-        --accent: #d4b06a;
+        color-scheme: light;
+        --paper: #f4efe6;
+        --paper-2: #fffaf1;
+        --ink: #1f2328;
+        --muted: #616a73;
+        --line: #d9cfbb;
+        --accent: #3f6f90;
+        --warn: #8f5c1b;
+        --warn-bg: #fff3da;
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
         font-family: "Fraunces", Georgia, serif;
-        background: linear-gradient(160deg, #0b0f12, #151f28 55%, #0c1217);
-        color: var(--text);
+        background:
+          radial-gradient(circle at 12% 18%, #e8f0f4 0%, transparent 38%),
+          linear-gradient(150deg, var(--paper), var(--paper-2) 60%);
+        color: var(--ink);
       }
       .wrap {
         max-width: 980px;
@@ -36,10 +41,11 @@
         font: 500 1.04rem/1.45 "Manrope", system-ui, sans-serif;
       }
       .card {
-        background: color-mix(in hsl, var(--panel) 88%, black);
-        border: 1px solid #2a333d;
+        background: #fffdfa;
+        border: 1px solid var(--line);
         border-radius: 14px;
         padding: 18px 20px;
+        box-shadow: 0 10px 24px rgba(29, 42, 52, 0.08);
       }
       a {
         color: var(--accent);
@@ -64,8 +70,9 @@
         margin-left: 8px;
         padding: 2px 8px;
         border-radius: 999px;
-        border: 1px solid #5e4f30;
-        color: #e3c98f;
+        border: 1px solid #c79b5b;
+        color: var(--warn);
+        background: var(--warn-bg);
         font: 600 0.78rem/1.4 "Manrope", system-ui, sans-serif;
       }
     </style>
