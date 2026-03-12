@@ -218,6 +218,7 @@
           <label><input id="wire" type="checkbox" /> Wireframe</label>
           <button id="frontBtn" class="btn" type="button">Front</button>
           <button id="resetBtn" class="btn" type="button">Reset</button>
+          <button id="museumBtn" class="btn" type="button">Museum</button>
           <span>Drag to rotate. Scroll/pinch to zoom. Shift+drag to pan.</span>
         </div>
       </section>
@@ -548,6 +549,11 @@
           camera.position.set(0.0, focusY + (isMobileLayout ? 0.35 : 0.2), zoomWithMobileOffset());
           controls.target.set(0, focusY + (isMobileLayout ? 0.22 : 0.0), 0);
           controls.update();
+        });
+
+        const museumBtn = document.getElementById("museumBtn");
+        museumBtn.addEventListener("click", () => {
+          window.location.href = "/museum/";
         });
 
         for (const id of rangeIds) {
