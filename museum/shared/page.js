@@ -1,4 +1,8 @@
-import { museumLobby, museumPieces } from "./catalog.js";
+const MODULE_VERSION = "20260312-1918";
+
+async function loadCatalog() {
+  return import(`./catalog.js?v=${MODULE_VERSION}`);
+}
 
 function renderBootError(message, error) {
   console.error(error);
@@ -7,7 +11,10 @@ function renderBootError(message, error) {
 
 export async function initMuseumLobbyPage() {
   try {
-    const { renderMuseumLobby } = await import("./lobby.js");
+    const [{ museumLobby, museumPieces }, { renderMuseumLobby }] = await Promise.all([
+      loadCatalog(),
+      import(`./lobby.js?v=${MODULE_VERSION}`)
+    ]);
     renderMuseumLobby(museumLobby, museumPieces);
   } catch (error) {
     renderBootError("Failed to load the museum lobby.", error);
@@ -15,6 +22,7 @@ export async function initMuseumLobbyPage() {
 }
 
 export async function initMuseumPiecePage(pieceId) {
+  const { museumPieces } = await loadCatalog();
   const piece = museumPieces[pieceId];
   if (!piece) {
     renderBootError(`Unknown museum piece: ${pieceId}`, new Error(`Unknown museum piece: ${pieceId}`));
@@ -23,13 +31,13 @@ export async function initMuseumPiecePage(pieceId) {
 
   try {
     if (piece.kind === "stl") {
-      const { initStlMuseumPage } = await import("./stl-viewer.js");
+      const { initStlMuseumPage } = await import(`./stl-viewer.js?v=${MODULE_VERSION}`);
       await initStlMuseumPage(piece);
       return;
     }
 
     if (piece.kind === "sketchfab") {
-      const { initSketchfabMuseumPage } = await import("./sketchfab-viewer.js");
+      const { initSketchfabMuseumPage } = await import(`./sketchfab-viewer.js?v=${MODULE_VERSION}`);
       await initSketchfabMuseumPage(piece);
       return;
     }
