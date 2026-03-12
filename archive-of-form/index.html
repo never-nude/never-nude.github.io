@@ -13,8 +13,8 @@
         --muted: #616a73;
         --line: #d9cfbb;
         --accent: #3f6f90;
-        --warn: #8f5c1b;
-        --warn-bg: #fff3da;
+        --good: #1f7a40;
+        --good-bg: #e9f7ee;
       }
       * { box-sizing: border-box; }
       body {
@@ -70,9 +70,9 @@
         margin-left: 8px;
         padding: 2px 8px;
         border-radius: 999px;
-        border: 1px solid #c79b5b;
-        color: var(--warn);
-        background: var(--warn-bg);
+        border: 1px solid #74b388;
+        color: var(--good);
+        background: var(--good-bg);
         font: 600 0.78rem/1.4 "Manrope", system-ui, sans-serif;
       }
     </style>
@@ -82,11 +82,19 @@
       <h1>The Archive of Form</h1>
       <p class="subtitle">An Open Library of Sculptures from Antiquity to the Nineteenth Century</p>
       <section class="card">
-        <div class="meta">Intake pattern: <code>/archive-of-form/intake/{NNN}-{slug}/</code></div>
+        <div class="meta">Only sculptures with active local geometry and live render are listed here.</div>
         <ul>
           <li>
-            <a href="/archive-of-form/intake/001-great-sphinx-of-giza/">001 - Great Sphinx of Giza</a>
-            <span class="badge">Ineligible for ingest</span>
+            <a href="/archive-of-form/viewer/?id=david-study">David Study (Michelangelo)</a>
+            <span class="badge">Renderable now</span>
+          </li>
+          <li>
+            <a href="/archive-of-form/viewer/?id=cupid-bouchardon">Cupid Cutting His Bow (Bouchardon)</a>
+            <span class="badge">Renderable now</span>
+          </li>
+          <li>
+            <a href="/archive-of-form/viewer/?id=pieta-wireframe">Pieta Wireframe Study (Michelangelo)</a>
+            <span class="badge">Renderable now</span>
           </li>
         </ul>
       </section>

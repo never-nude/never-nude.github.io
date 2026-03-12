@@ -1,0 +1,3180 @@
+{
+  "name": "Important Sculptures Through the 19th Century",
+  "source": "Wikidata + Wikipedia pageviews",
+  "generatedAt": "2026-03-12T09:47:01.874Z",
+  "criteria": {
+    "limit": 250,
+    "candidateLimit": 1000,
+    "minYear": -800,
+    "maxYear": 1900,
+    "monthsRanked": 12,
+    "materialKeywords": [
+      "marble",
+      "stone",
+      "granite",
+      "limestone",
+      "sandstone",
+      "alabaster",
+      "basalt",
+      "porphyry",
+      "bronze",
+      "brass",
+      "copper",
+      "cast metal",
+      "metal"
+    ]
+  },
+  "stats": {
+    "wikidataCandidates": 831,
+    "filteredCandidates": 719,
+    "enrichedCandidates": 719,
+    "materialPreferred": 68,
+    "sculptureFiltered": 719,
+    "selected": 250
+  },
+  "items": [
+    {
+      "rank": 1,
+      "title": "Pietà (Michelangelo)",
+      "articleTitle": "Pietà (Michelangelo)",
+      "year": 1499,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Piet%C3%A0_(Michelangelo)",
+      "popularityScore": 604149,
+      "monthlyAverageViews": 50346,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Pietà is a Carrara marble sculpture of Jesus and Mary at Mount Golgotha representing the \"Sixth Sorrow\" of the Virgin Mary by Michelangelo Buonarroti, in Saint Peter's Basilica, Vatican City, for which it was made. It is a key work of Italian Renaissance sculpture and ofte..."
+    },
+    {
+      "rank": 2,
+      "title": "Manneken Pis",
+      "articleTitle": "Manneken Pis",
+      "year": 1619,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Manneken_Pis",
+      "popularityScore": 292451,
+      "monthlyAverageViews": 24371,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone",
+        "bronze"
+      ],
+      "summary": "Manneken Pis is a landmark 55.5 cm (21.9 in) bronze fountain sculpture in central Brussels, Belgium, depicting a puer mingens: a nude boy urinating into the fountain's basin. Though its existence is attested as early as the mid-15th century, Manneken Pis was redesigned by the ..."
+    },
+    {
+      "rank": 3,
+      "title": "Ecstasy of Saint Teresa",
+      "articleTitle": "Ecstasy of Saint Teresa",
+      "year": 1647,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ecstasy_of_Saint_Teresa",
+      "popularityScore": 260343,
+      "monthlyAverageViews": 21695,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Ecstasy of Saint Teresa is a sculptural altarpiece group in white marble set in an elevated aedicule in the Cornaro Chapel of the church of Santa Maria della Vittoria in Rome. It was designed and carved by Gian Lorenzo Bernini, the leading sculptor of his day, who also des..."
+    },
+    {
+      "rank": 4,
+      "title": "crystal skull",
+      "articleTitle": "Crystal skull",
+      "year": 1881,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Crystal_skull",
+      "popularityScore": 142635,
+      "monthlyAverageViews": 11886,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": "Crystal skulls are human skull hardstone carvings made of clear, milky white or other types of quartz, claimed to be pre-Columbian Mesoamerican artifacts by their alleged finders; however, these claims have been refuted for all of the specimens made available for scientific st..."
+    },
+    {
+      "rank": 5,
+      "title": "Capitoline Wolf",
+      "articleTitle": "Capitoline Wolf",
+      "year": -500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Capitoline_Wolf",
+      "popularityScore": 128999,
+      "monthlyAverageViews": 10750,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Capitoline Wolf is a bronze sculpture depicting a scene from the legend of the founding of Rome. The sculpture shows a she-wolf suckling the mythical twin founders of Rome, Romulus and Remus. According to the legend, when King Numitor, grandfather of the twins, was overthr..."
+    },
+    {
+      "rank": 6,
+      "title": "Madonna of Bruges",
+      "articleTitle": "Madonna of Bruges",
+      "year": 1503,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Madonna_of_Bruges",
+      "popularityScore": 126482,
+      "monthlyAverageViews": 10540,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Madonna of Bruges is a marble sculpture by Michelangelo of the Virgin and Child."
+    },
+    {
+      "rank": 7,
+      "title": "Chair of Saint Peter",
+      "articleTitle": "Chair of Saint Peter",
+      "year": 1647,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Chair_of_Saint_Peter",
+      "popularityScore": 91750,
+      "monthlyAverageViews": 7646,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Chair of Saint Peter, also known as the Throne of Saint Peter, is a relic conserved in St. Peter's Basilica in Vatican City, the sovereign enclave of the Pope inside Rome, Italy. The relic is a wooden throne that tradition claims belonged to the Apostle Saint Peter, the le..."
+    },
+    {
+      "rank": 8,
+      "title": "Aztec sun stone",
+      "articleTitle": "Aztec sun stone",
+      "year": 1510,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Aztec_sun_stone",
+      "popularityScore": 90923,
+      "monthlyAverageViews": 7577,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": "The Aztec sun stone is a late post-classic Mexica sculpture housed in the National Anthropology Museum in Mexico City, and is perhaps the most famous work of Mexica sculpture. It measures 3.6 metres (12 ft) in diameter and 98 centimetres (39 in) thick, and weighs 24,590 kg (54..."
+    },
+    {
+      "rank": 9,
+      "title": "Apollo and Daphne",
+      "articleTitle": "Apollo and Daphne (Bernini)",
+      "year": 1622,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Apollo_and_Daphne_(Bernini)",
+      "popularityScore": 83928,
+      "monthlyAverageViews": 6994,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "Apollo and Daphne is a life-sized marble sculpture by the Italian artist Gian Lorenzo Bernini, which was executed between 1622 and 1625. It is regarded as one of the artistic marvels of the Baroque age. The statue is housed in the Galleria Borghese in Rome, along with several ..."
+    },
+    {
+      "rank": 10,
+      "title": "Venus Callipyge",
+      "articleTitle": "Venus Callipyge",
+      "year": -50,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Venus_Callipyge",
+      "popularityScore": 78440,
+      "monthlyAverageViews": 6537,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Venus Callipyge, also known as the Aphrodite Kallipygos or the Callipygian Venus, all literally meaning \"Venus of the beautiful buttocks\", is an Ancient Roman marble statue, thought to be a copy of an older Greek original. In an example of anasyrma, it depicts a partially ..."
+    },
+    {
+      "rank": 11,
+      "title": "Riace bronzes",
+      "articleTitle": "Riace bronzes",
+      "year": -459,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Riace_bronzes",
+      "popularityScore": 55955,
+      "monthlyAverageViews": 4663,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Riace bronzes, also called the Riace Warriors, are two full-size Greek bronze statues of bearded warriors, cast about 460–450 BC that were found in the sea in 1972 near Riace, Calabria, in southern Italy. The bronzes are now in the Museo Nazionale della Magna Grecia in the..."
+    },
+    {
+      "rank": 12,
+      "title": "Alexander Sarcophagus",
+      "articleTitle": "Alexander Sarcophagus",
+      "year": -380,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Alexander_Sarcophagus",
+      "popularityScore": 52497,
+      "monthlyAverageViews": 4375,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": "The Alexander Sarcophagus is a late 4th century BC Hellenistic stone sarcophagus from the Royal necropolis of Ayaa near Sidon, Lebanon. It is adorned with high relief carvings of Alexander the Great and scrolling historical and mythological narratives. The work is considered t..."
+    },
+    {
+      "rank": 13,
+      "title": "David",
+      "articleTitle": "David (Bernini)",
+      "year": 1624,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/David_(Bernini)",
+      "popularityScore": 49198,
+      "monthlyAverageViews": 4100,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "David is a life-size marble sculpture by Gian Lorenzo Bernini. The sculpture was one of many commissions to decorate the villa of Bernini's patron Cardinal Scipione Borghese – where it still resides today, as part of the Galleria Borghese. It was completed in the course of eig..."
+    },
+    {
+      "rank": 14,
+      "title": "Lady of Elche",
+      "articleTitle": "Lady of Elche",
+      "year": -500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lady_of_Elche",
+      "popularityScore": 47846,
+      "monthlyAverageViews": 3987,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone",
+        "limestone"
+      ],
+      "summary": "The Lady of Elche is a limestone bust that was discovered in 1897 in La Alcudia, an archaeological site on a private estate two kilometers south of Elche, Spain. It is now exhibited in the National Archaeological Museum of Spain in Madrid."
+    },
+    {
+      "rank": 15,
+      "title": "Rondanini Pietà",
+      "articleTitle": "Rondanini Pietà",
+      "year": 1564,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Rondanini_Piet%C3%A0",
+      "popularityScore": 42796,
+      "monthlyAverageViews": 3566,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Rondanini Pietà is a marble sculpture that Michelangelo worked on from 1552 until the last days of his life, in 1564. Several sources indicate that there were actually three versions, with this one being the last. The name Rondanini refers to the fact that the sculpture st..."
+    },
+    {
+      "rank": 16,
+      "title": "Bacchus",
+      "articleTitle": "Bacchus (Michelangelo)",
+      "year": 1497,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bacchus_(Michelangelo)",
+      "popularityScore": 39228,
+      "monthlyAverageViews": 3269,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "Bacchus (1496–1497) is a marble sculpture by the Italian High Renaissance sculptor, painter, architect and poet Michelangelo. The statue is somewhat over life-size and represents Bacchus, the Roman god of wine, in a reeling pose suggestive of drunkenness. Commissioned by Raffa..."
+    },
+    {
+      "rank": 17,
+      "title": "Serpent Column",
+      "articleTitle": "Serpent Column",
+      "year": -500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Serpent_Column",
+      "popularityScore": 38532,
+      "monthlyAverageViews": 3211,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Serpent Column, also known as the Serpentine Column, Plataean Tripod or Delphi Tripod, is an ancient bronze column at the Hippodrome of Constantinople in what is now Istanbul, Turkey. It is part of an ancient Greek sacrificial tripod, originally in Delphi and relocated to ..."
+    },
+    {
+      "rank": 18,
+      "title": "Muisca raft",
+      "articleTitle": "Muisca raft",
+      "year": 1600,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Muisca_raft",
+      "popularityScore": 30291,
+      "monthlyAverageViews": 2524,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "copper"
+      ],
+      "summary": "The Muisca raft, sometimes referred to as the Golden Raft of El Dorado or the Pasca raft, is a pre-Columbian votive piece created by the Muisca, an Andean people of Colombia in the Eastern Ranges of the Colombian Andes that established multiple chiefdoms in the region. The raf..."
+    },
+    {
+      "rank": 19,
+      "title": "Artemision Bronze",
+      "articleTitle": "Artemision Bronze",
+      "year": -459,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Artemision_Bronze",
+      "popularityScore": 30166,
+      "monthlyAverageViews": 2514,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Artemision Bronze is an ancient Greek sculpture that was recovered from the sea off Cape Artemision, in northern Euboea, Greece. According to most scholars, the bronze represents Zeus, the thunder-god and king of gods, though it has also been suggested it might represent P..."
+    },
+    {
+      "rank": 20,
+      "title": "Judith and Holofernes",
+      "articleTitle": "Judith and Holofernes (Donatello)",
+      "year": 1460,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Judith_and_Holofernes_(Donatello)",
+      "popularityScore": 22379,
+      "monthlyAverageViews": 1865,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "Judith and Holofernes (1457–1464) is a bronze sculpture created by the Italian Renaissance sculptor Donatello towards the end of his life and career. It is located in the Hall of Lilies, in the Palazzo Vecchio, Florence, Italy. A copy stands in one of the sculpture's original ..."
+    },
+    {
+      "rank": 21,
+      "title": "Pediments of the Parthenon",
+      "articleTitle": "Pediments of the Parthenon",
+      "year": -439,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pediments_of_the_Parthenon",
+      "popularityScore": 17099,
+      "monthlyAverageViews": 1425,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The pediments of the Parthenon are the two sets of statues in Pentelic marble originally located as the pedimental sculpture on the east and west facades of the Parthenon on the Acropolis of Athens. They were probably made by several artists, including Agoracritos. The master ..."
+    },
+    {
+      "rank": 22,
+      "title": "Gayer-Anderson cat",
+      "articleTitle": "Gayer-Anderson cat",
+      "year": -331,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Gayer-Anderson_cat",
+      "popularityScore": 16477,
+      "monthlyAverageViews": 1373,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Gayer-Anderson cat is an ancient Egyptian statue of a cat, which dates from the Late Period. It is made of bronze, with gold ornaments."
+    },
+    {
+      "rank": 23,
+      "title": "Kritios Boy",
+      "articleTitle": "Kritios Boy",
+      "year": -480,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Kritios_Boy",
+      "popularityScore": 15720,
+      "monthlyAverageViews": 1310,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The marble Kritios Boy or Kritian Boy belongs to the Early Classical period of ancient Greek sculpture. It is the first statue from classical antiquity known to use contrapposto; Kenneth Clark called it \"the first beautiful nude in art\" The Kritios Boy is thus named because it..."
+    },
+    {
+      "rank": 24,
+      "title": "Kroisos Kouros",
+      "articleTitle": "Kroisos Kouros",
+      "year": -530,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Kroisos_Kouros",
+      "popularityScore": 14585,
+      "monthlyAverageViews": 1215,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Kroisos Kouros is a marble kouros from Anavyssos (Ανάβυσσος) in Attica which functioned as a grave marker for a fallen young warrior named Kroisos (Κροῖσος)."
+    },
+    {
+      "rank": 25,
+      "title": "Gemma Augustea",
+      "articleTitle": "Gemma Augustea",
+      "year": 10,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Gemma_Augustea",
+      "popularityScore": 12901,
+      "monthlyAverageViews": 1075,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": "The Gemma Augustea is an ancient Roman low-relief cameo engraved gem cut from a double-layered Arabian onyx stone. It is commonly agreed that the gem cutter who created it was either Dioscurides or one of his disciples, in the second or third decade of the 1st century AD."
+    },
+    {
+      "rank": 26,
+      "title": "Zbruch Idol",
+      "articleTitle": "Zbruch Idol",
+      "year": 1100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Zbruch_Idol",
+      "popularityScore": 12440,
+      "monthlyAverageViews": 1037,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone",
+        "limestone"
+      ],
+      "summary": "The Zbruch Idol, Sviatovid is a 9th-century limestone sculpture idol, and one of the few monuments of pre-Christian Slavic beliefs. The pillar was commonly incorrectly associated with the Slavic deity Svetovit, although current opinions on the exact meaning of all the bas-reli..."
+    },
+    {
+      "rank": 27,
+      "title": "Sarcophagus of Junius Bassus",
+      "articleTitle": "Sarcophagus of Junius Bassus",
+      "year": 350,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sarcophagus_of_Junius_Bassus",
+      "popularityScore": 11494,
+      "monthlyAverageViews": 958,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Sarcophagus of Junius Bassus is a marble Early Christian sarcophagus used for the burial of Junius Bassus, who died in 359. It has been described as \"probably the single most famous piece of early Christian relief sculpture.\" The sarcophagus was originally placed in or und..."
+    },
+    {
+      "rank": 28,
+      "title": "Sphinx of Naxos",
+      "articleTitle": "Sphinx of Naxos",
+      "year": -559,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sphinx_of_Naxos",
+      "popularityScore": 11441,
+      "monthlyAverageViews": 953,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Sphinx of Naxos, also Sphinx of the Naxians, now in the Archaeological Museum of Delphi, is a 2.22-meter-tall (7.3 ft) marble statue of a sphinx, a mythical creature with the head of a woman, the chest and wings composed of the impressive feathers of a prey bird turned upw..."
+    },
+    {
+      "rank": 29,
+      "title": "James A. Garfield Monument",
+      "articleTitle": "James A. Garfield Monument",
+      "year": 1887,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/James_A._Garfield_Monument",
+      "popularityScore": 10875,
+      "monthlyAverageViews": 906,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "granite",
+        "bronze"
+      ],
+      "summary": "The James A. Garfield Monument stands on the grounds of the United States Capitol in Garfield Circle, a traffic circle at First Street and Maryland Avenue SW in Washington, D.C. It is a memorial to U.S. President James A. Garfield, who was elected in 1880 and assassinated in 1..."
+    },
+    {
+      "rank": 30,
+      "title": "Capitoline Brutus",
+      "articleTitle": "Capitoline Brutus",
+      "year": -274,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Capitoline_Brutus",
+      "popularityScore": 10613,
+      "monthlyAverageViews": 884,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Capitoline Brutus is an ancient Roman bronze bust that is traditionally, but probably wrongly, thought to be an imagined portrait of the Roman consul Lucius Junius Brutus. The bust has historically been dated to the late 4th to early 3rd centuries BC, but is perhaps as lat..."
+    },
+    {
+      "rank": 31,
+      "title": "Pitti Tondo",
+      "articleTitle": "Pitti Tondo",
+      "year": 1504,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pitti_Tondo",
+      "popularityScore": 9972,
+      "monthlyAverageViews": 831,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Pitti Tondo is an unfinished marble relief of the Virgin and Child by Michelangelo in round or tondo form. It was executed between 1503 and 1504 while he was residing in Florence and is now in the Museo nazionale del Bargello in Florence."
+    },
+    {
+      "rank": 32,
+      "title": "Monteverde Angel",
+      "articleTitle": "Monteverde Angel",
+      "year": 1882,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monteverde_Angel",
+      "popularityScore": 8927,
+      "monthlyAverageViews": 744,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Monteverde Angel or Angel of the Resurrection is a masterpiece of neo-classical religious sculpture, created in marble in 1882 by the Italian artist Giulio Monteverde."
+    },
+    {
+      "rank": 33,
+      "title": "Group of Aphrodite, Pan and Eros",
+      "articleTitle": "Group of Aphrodite, Pan and Eros",
+      "year": -99,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Group_of_Aphrodite%2C_Pan_and_Eros",
+      "popularityScore": 8777,
+      "monthlyAverageViews": 731,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Group of Aphrodite, Pan and Eros is an ancient marble Greek sculpture of the first century BC depicting the goat-legged god Pan trying to woo Aphrodite, the goddess of love and desire, unsuccessfully. It was found on the Aegean island of Delos in the early twentieth centur..."
+    },
+    {
+      "rank": 34,
+      "title": "Brunswick Lion",
+      "articleTitle": "Brunswick Lion",
+      "year": 1100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Brunswick_Lion",
+      "popularityScore": 8753,
+      "monthlyAverageViews": 729,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Brunswick Lion is a medieval sculpture, created in bronze between 1164 and 1176, and the best-known landmark in the German city of Brunswick. The Brunswick Lion was originally located on the Burgplatz square in front of the Brunswick Cathedral. The monument was moved to Da..."
+    },
+    {
+      "rank": 35,
+      "title": "Lanzón",
+      "articleTitle": "Lanzón",
+      "year": -500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lanz%C3%B3n",
+      "popularityScore": 8017,
+      "monthlyAverageViews": 668,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "granite"
+      ],
+      "summary": "The Lanzón is a granite stela that is associated with the Chavín culture. It is located in the Old Temple of Chavin de Huantar which rests in the central highlands of Peru. The Chavín religion was the first major religious and cultural movement in the Andes mountains, flourish..."
+    },
+    {
+      "rank": 36,
+      "title": "Phra Bang",
+      "articleTitle": "Phra Bang",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Phra_Bang",
+      "popularityScore": 7841,
+      "monthlyAverageViews": 653,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Phra Bang is a statue of Buddha in the city of Luang Prabang, Laos; it is the namesake of that city. The statue stands at 83 centimetres (33 in), with palms facing forward, cast using thong, an alloy of bronze, gold, and silver. According to local lore, it was cast in Ceyl..."
+    },
+    {
+      "rank": 37,
+      "title": "Antinous Mondragone",
+      "articleTitle": "Antinous Mondragone",
+      "year": 130,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Antinous_Mondragone",
+      "popularityScore": 7801,
+      "monthlyAverageViews": 650,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Antinous Mondragone is a 0.95-metre high marble example of the Mondragone type of the deified Antinous. This colossal head was made sometime in the period between 130 AD to 138 AD and then is believed to have been rediscovered in the early 18th century, near the ruined Rom..."
+    },
+    {
+      "rank": 38,
+      "title": "Bamberg Horseman",
+      "articleTitle": "Bamberg Horseman",
+      "year": 1225,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bamberg_Horseman",
+      "popularityScore": 7635,
+      "monthlyAverageViews": 636,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": "The Bamberg Horseman is an early 13th-century stone equestrian statue by an anonymous medieval sculptor in the cathedral of Bamberg, Germany. It is the first of this kind since antiquity."
+    },
+    {
+      "rank": 39,
+      "title": "Goethe–Schiller Monument",
+      "articleTitle": "Goethe and Schiller Monument",
+      "year": 1857,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Goethe_and_Schiller_Monument",
+      "popularityScore": 7302,
+      "monthlyAverageViews": 609,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The original Goethe and Schiller Monument is in Weimar, Germany. It incorporates Ernst Rietschel's 1857 bronze double statue of Johann Wolfgang von Goethe (1749–1832) and Friedrich Schiller (1759–1805), who are probably the two most revered figures in German literature. The mo..."
+    },
+    {
+      "rank": 40,
+      "title": "Kouros of Apollonas",
+      "articleTitle": "Kouros of Apollonas",
+      "year": -700,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Kouros_of_Apollonas",
+      "popularityScore": 7258,
+      "monthlyAverageViews": 605,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Kouros of Apollonas, also called the Colossus of Dionysus, is a 10.7 metre tall unfinished statue of light grey Naxian marble with a weight of around 80 tonnes. It is located in an ancient quarry near Apollonas, a small town in the northern part of Naxos, one of the Cyclad..."
+    },
+    {
+      "rank": 41,
+      "title": "Ludovisi Throne",
+      "articleTitle": "Ludovisi Throne",
+      "year": -460,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ludovisi_Throne",
+      "popularityScore": 6739,
+      "monthlyAverageViews": 562,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Ludovisi Throne is an ancient Greek sculpture from Locri, Southern Italy. Not an actual throne, the sculpture is a block of white marble intricately carved with bas-reliefs on its three visible sides, with the primary side's relief considered by many to depict Aphrodite ri..."
+    },
+    {
+      "rank": 42,
+      "title": "Pisa Griffin",
+      "articleTitle": "Pisa Griffin",
+      "year": 1000,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pisa_Griffin",
+      "popularityScore": 6726,
+      "monthlyAverageViews": 561,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Pisa Griffin is a large bronze sculpture of a griffin, a mythical beast, that has remained in Pisa, Italy since the Middle Ages despite its Islamic origin, specifically late 11th or early twelfth century Al-Andalus. It is now in the Museo dell'Opera del Duomo in Pisa."
+    },
+    {
+      "rank": 43,
+      "title": "Farnese Cup",
+      "articleTitle": "Farnese Cup",
+      "year": -200,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Farnese_Cup",
+      "popularityScore": 5447,
+      "monthlyAverageViews": 454,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": "The Farnese Cup or Tazza Farnese is a 2nd-century BC cameo hardstone carving bowl or cup made in Hellenistic Egypt of four-layered sardonyx agate. It is at the Naples National Archaeological Museum. It is about 20 cm (8 in) wide and similar in form to a Greek phiale or Roman p..."
+    },
+    {
+      "rank": 44,
+      "title": "Rampin Rider",
+      "articleTitle": "Rampin Rider",
+      "year": -550,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Rampin_Rider",
+      "popularityScore": 3640,
+      "monthlyAverageViews": 303,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Rampin Rider or Rampin Horseman is an equestrian statue from the Archaic Period of Ancient Greece. It is made of marble, and has traces of red and black paint."
+    },
+    {
+      "rank": 45,
+      "title": "Juno Ludovisi",
+      "articleTitle": "Juno Ludovisi",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Juno_Ludovisi",
+      "popularityScore": 3528,
+      "monthlyAverageViews": 294,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Juno Ludovisi is a colossal Roman marble head of the 1st century CE from an acrolithic statue of an idealized and youthful Antonia Minor as the goddess Juno. Added to the Ludovisi collection formed by Cardinal Ludovico Ludovisi, it is now in the Palazzo Altemps, Museo Nazi..."
+    },
+    {
+      "rank": 46,
+      "title": "Bernward Column",
+      "articleTitle": "Bernward Column",
+      "year": 1000,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bernward_Column",
+      "popularityScore": 2757,
+      "monthlyAverageViews": 230,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Bernward Column also known as the Christ Column is a bronze column, made c. 1020 for St. Michael's Church in Hildesheim, Germany, and regarded as a masterpiece of Ottonian art. It was commissioned by Bernward, the thirteenth bishop of Hildesheim in 1020, and made at the sa..."
+    },
+    {
+      "rank": 47,
+      "title": "The Cleveland Apollo: Apollo Sauroktonos (Lizard-Slayer) or Apollo the Python-Slayer",
+      "articleTitle": "Cleveland Apollo",
+      "year": -349,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Cleveland_Apollo",
+      "popularityScore": 2625,
+      "monthlyAverageViews": 219,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Cleveland Apollo is a 4th-century BCE life-size bronze Ancient Greek statue, now in the Cleveland Museum of Art. It acquired it in 2004 using the Severance and Greta Millikin Purchase Fund. The Museum attributed the piece to Praxiteles. Technical features of the Cleveland ..."
+    },
+    {
+      "rank": 48,
+      "title": "Strangford Apollo",
+      "articleTitle": "Strangford Apollo",
+      "year": -490,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Strangford_Apollo",
+      "popularityScore": 2081,
+      "monthlyAverageViews": 173,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Strangford Apollo is an ancient Greek sculpture of a nude boy, with the arms and lower legs missing. It dates to around 490 BC, making it one of the latest examples of the kouros type of statue, and is made of Parian marble. Its provenance is uncertain: it is generally bel..."
+    },
+    {
+      "rank": 49,
+      "title": "Gilt Bronzes from Cartoceto di Pergola",
+      "articleTitle": "Gilt Bronzes from Cartoceto di Pergola",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Gilt_Bronzes_from_Cartoceto_di_Pergola",
+      "popularityScore": 1841,
+      "monthlyAverageViews": 153,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Gilt Bronzes from Cartoceto di Pergola are the only surviving Roman gilt bronze equestrian group. The monumental ensemble was composed of at least two people on horseback, of which only one remains, and two standing women."
+    },
+    {
+      "rank": 50,
+      "title": "Granite bowl",
+      "articleTitle": "Granitschale im Lustgarten",
+      "year": 1834,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Granitschale_im_Lustgarten",
+      "popularityScore": 1837,
+      "monthlyAverageViews": 153,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone",
+        "granite"
+      ],
+      "summary": "The Great Granite Bowl in Berlin's Lustgarten (German: Granitschale im Lustgarten), which is located in front of the Altes Museum, has a diameter of 6.91 meters and weighs approximately 75 tons. With a circumference of 691⁄7 feet (approximately 21.7 meters), it is considered t..."
+    },
+    {
+      "rank": 51,
+      "title": "Angelic Salutation",
+      "articleTitle": "Angelic Salutation (Stoss)",
+      "year": 1518,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Angelic_Salutation_(Stoss)",
+      "popularityScore": 1771,
+      "monthlyAverageViews": 148,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "metal"
+      ],
+      "summary": "Angelic Salutation is an assemblage of life-sized limewood sculptures celebrating the Annunciation by the late-Gothic German artist Veit Stoss. It was commissioned in 1517 by Anton II Tucher and completed the following year. Tucher was a high ranking official in Nuremberg in s..."
+    },
+    {
+      "rank": 52,
+      "title": "Statue of Giovanni delle Bande Nere",
+      "articleTitle": "Monument to Giovanni delle Bande Nere, Florence",
+      "year": 1540,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monument_to_Giovanni_delle_Bande_Nere%2C_Florence",
+      "popularityScore": 1721,
+      "monthlyAverageViews": 143,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Monument to Giovanni delle Bande Nere is an Italian Renaissance sculpture in marble, by Baccio Bandinelli and his workshop, now in Piazza San Lorenzo in Florence, Tuscany, Italy. The work took from 1540 to after 1560 to carve, and the base and statue, though always meant t..."
+    },
+    {
+      "rank": 53,
+      "title": "Angelitos Athena",
+      "articleTitle": "Angelitos Athena",
+      "year": -480,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Angelitos_Athena",
+      "popularityScore": 1699,
+      "monthlyAverageViews": 142,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Angelitos Athena is an ancient marble statue, which was made around 480–470 BC. The figure, the earliest known depiction of the armed Athena, is an example of the severe style, the transitional style between archaic and classical Greek sculpture which developed after the P..."
+    },
+    {
+      "rank": 54,
+      "title": "Boston Throne",
+      "articleTitle": "Boston Throne",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Boston_Throne",
+      "popularityScore": 1292,
+      "monthlyAverageViews": 108,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Boston Throne is an unusual marble sculpture, similar to the Ludovisi Throne. It probably dates from classical antiquity, and first appeared in modern times in 1894, shortly after the Ludovisi Throne was found and sold at auction. It was purchased by Edward Perry Warren fo..."
+    },
+    {
+      "rank": 55,
+      "title": "Kouros",
+      "articleTitle": "Merenda Kouros",
+      "year": -540,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Merenda_Kouros",
+      "popularityScore": 1232,
+      "monthlyAverageViews": 103,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Merenda Kouros  is a Late Archaic Greek Kouros, created approximately 540-530 B.C., measuring 1.89 meters tall and made of Parian marble. As of the present day, it is exhibited in the Sculpture Collection of the National Archaeological Museum, Athens."
+    },
+    {
+      "rank": 56,
+      "title": "Sarcophagus of the Triumph of Bacchus",
+      "articleTitle": "Sarcophagus of the Triumph of Bacchus (Lyon)",
+      "year": 300,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sarcophagus_of_the_Triumph_of_Bacchus_(Lyon)",
+      "popularityScore": 1078,
+      "monthlyAverageViews": 90,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble",
+        "stone"
+      ],
+      "summary": "The Sarcophagus of the Triumph of Bacchus is a monumental ancient Roman stone sarcophagus of Carrara marble. The style and high quality of its reliefs and the choice of Bacchus triumphing over India as its subject suggests it came from a Roman workshop and possibly dates to th..."
+    },
+    {
+      "rank": 57,
+      "title": "Reliquary Bust of Saint Rossore",
+      "articleTitle": "San Rossore Reliquary",
+      "year": 1425,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/San_Rossore_Reliquary",
+      "popularityScore": 844,
+      "monthlyAverageViews": 70,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The San Rossore Reliquary is a gilded bronze sculpture of 1424–1427 by Donatello. The monks of Ognissanti, Florence had acquired the skull of Saint Luxorius in 1422 and two years later they commissioned the reliquary to house it. The casting was handled by Jacopo degli Stroza ..."
+    },
+    {
+      "rank": 58,
+      "title": "Mausoleo Martinengo",
+      "articleTitle": "Martinengo Mausoleum",
+      "year": 1503,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Martinengo_Mausoleum",
+      "popularityScore": 699,
+      "monthlyAverageViews": 58,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble",
+        "bronze"
+      ],
+      "summary": "The Martinengo mausoleum is a funerary monument made through the use of various marbles and bronze by Gasparo Cairano, Bernardino delle Croci and probably the Sanmicheli workshop, dated between 1503 and 1518 and preserved in the museum of Santa Giulia in Brescia, in the nuns' ..."
+    },
+    {
+      "rank": 59,
+      "title": "Madonna dell'Udienza",
+      "articleTitle": "Madonna dell'Udienza",
+      "year": 1515,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Madonna_dell'Udienza",
+      "popularityScore": 638,
+      "monthlyAverageViews": 53,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "Maria Santissima dell'Udienza or Madona dell'Udienza or Our Lady of the Audience is a marble sculpture created by the Renaissance sculptor Antonello Gagini, in the early 1500s. The statue is currently housed in the apse of the Sanctuary of Our Lady of the Audience in Sambuca d..."
+    },
+    {
+      "rank": 60,
+      "title": "Hildburgh Madonna",
+      "articleTitle": "The Virgin and Child (school of Donatello)",
+      "year": 1426,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Virgin_and_Child_(school_of_Donatello)",
+      "popularityScore": 430,
+      "monthlyAverageViews": 36,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Virgin and Child is a c.1426 stiacciato marble relief produced by a pupil or studio assistant of the Italian Renaissance sculptor Donatello, probably after a drawing or autograph sculpture by the master himself. It is sometimes known as the Hildburgh Madonna after Dr. Walt..."
+    },
+    {
+      "rank": 61,
+      "title": "Gallo di Ramperto",
+      "articleTitle": "Gallo di Ramperto",
+      "year": 820,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Gallo_di_Ramperto",
+      "popularityScore": 296,
+      "monthlyAverageViews": 25,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "copper"
+      ],
+      "summary": "The Gallo di Ramperto is a weathercock made of copper sheet, originally gilded and silvered, created in the year 820 or 830 on commission of Bishop Ramperto to adorn the top of the bell tower of the Santi Faustino e Giovita in Brescia."
+    },
+    {
+      "rank": 62,
+      "title": "The Bowls Player",
+      "articleTitle": "The Bowls Player",
+      "year": 1857,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Bowls_Player",
+      "popularityScore": 206,
+      "monthlyAverageViews": 17,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": "The Bowls Player is an 1857 bronze statue by the Danish sculptor Georg Christian Freund. It is a modern adaptation of classical sculptures of athletes such as Polykleitos's Doryphoros and Myron's Discobolus."
+    },
+    {
+      "rank": 63,
+      "title": "Stone Age in America",
+      "articleTitle": "Stone Age in America",
+      "year": 1887,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Stone_Age_in_America",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": ""
+    },
+    {
+      "rank": 64,
+      "title": "Whittington Stone",
+      "articleTitle": "Whittington Stone",
+      "year": 1821,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Whittington_Stone",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "stone"
+      ],
+      "summary": ""
+    },
+    {
+      "rank": 65,
+      "title": "Bronze Head from Ife",
+      "articleTitle": "Bronze Head from Ife",
+      "year": 1300,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bronze_Head_from_Ife",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": ""
+    },
+    {
+      "rank": 66,
+      "title": "Bust of Francesco I d'Este",
+      "articleTitle": "Bust of Francesco I d'Este",
+      "year": 1652,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bust_of_Francesco_I_d'Este",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "marble"
+      ],
+      "summary": "The Bust of Francesco I d'Este is a marble portrait bust by the Italian sculptor Gian Lorenzo Bernini. Completed in 1652, the work depicts Francesco I d'Este, Duke of Modena. It is in the Galleria Estense, Modena, Italy. The noble yet detached expression of the face, the exten..."
+    },
+    {
+      "rank": 67,
+      "title": "Sursock bronze",
+      "articleTitle": "Sursock bronze",
+      "year": 200,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sursock_bronze",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": ""
+    },
+    {
+      "rank": 68,
+      "title": "Bronze man and centaur",
+      "articleTitle": "Bronze man and centaur (Metropolitan Museum of Art)",
+      "year": -800,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bronze_man_and_centaur_(Metropolitan_Museum_of_Art)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "high",
+      "materialSignals": [
+        "bronze"
+      ],
+      "summary": ""
+    },
+    {
+      "rank": 69,
+      "title": "Trevi Fountain",
+      "articleTitle": "Trevi Fountain",
+      "year": 1732,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Trevi_Fountain",
+      "popularityScore": 566728,
+      "monthlyAverageViews": 47227,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Trevi Fountain is an 18th-century fountain in the Trevi district in Rome, Italy, designed by Italian architect Nicola Salvi and completed by Giuseppe Pannini in 1762. Standing 26.3 metres (86 ft) high and 49.15 metres (161.3 ft) wide, it is the largest Baroque fountain in ..."
+    },
+    {
+      "rank": 70,
+      "title": "Laocoön and His Sons",
+      "articleTitle": "Laocoön and His Sons",
+      "year": -1,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Laoco%C3%B6n_and_His_Sons",
+      "popularityScore": 179183,
+      "monthlyAverageViews": 14932,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The statue of Laocoön and His Sons, also called the Laocoön Group, has been one of the most famous ancient sculptures since it was excavated in Rome in 1506 and put on public display in the Vatican Museums, where it remains today. The statue is very likely the same one praised..."
+    },
+    {
+      "rank": 71,
+      "title": "Moses",
+      "articleTitle": "Moses (Michelangelo)",
+      "year": 1510,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Moses_(Michelangelo)",
+      "popularityScore": 152156,
+      "monthlyAverageViews": 12680,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Moses is a sculpture by the Italian High Renaissance artist Michelangelo, housed in the Basilica of San Pietro in Vincoli in Rome. Commissioned in 1505 by Pope Julius II for his tomb, it depicts the biblical figure Moses with horns on his head, based on a description in chapte..."
+    },
+    {
+      "rank": 72,
+      "title": "Lion Monument",
+      "articleTitle": "Lion Monument",
+      "year": 1821,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lion_Monument",
+      "popularityScore": 127157,
+      "monthlyAverageViews": 10596,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Lion Monument, or the Lion of Lucerne, is a rock relief in Lucerne, Switzerland, designed by Bertel Thorvaldsen and hewn in 1820–21 by Lukas Ahorn. It commemorates the Swiss Guards who were killed in 1792 during the French Revolution, when revolutionaries stormed the Tuile..."
+    },
+    {
+      "rank": 73,
+      "title": "Heirloom Seal of the Realm",
+      "articleTitle": "Heirloom Seal of the Realm",
+      "year": -220,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Heirloom_Seal_of_the_Realm",
+      "popularityScore": 77438,
+      "monthlyAverageViews": 6453,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Heirloom Seal of the Realm, also known in English as the Imperial Seal of China, was a Chinese jade seal allegedly carved out of the Heshibi, a sacred piece of jade. The Seal was created in 221 BC, shortly after Qin Shi Huang unified China and established the Qin dynasty, ..."
+    },
+    {
+      "rank": 74,
+      "title": "Hermannsdenkmal",
+      "articleTitle": "Hermannsdenkmal",
+      "year": 1875,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Hermannsdenkmal",
+      "popularityScore": 46450,
+      "monthlyAverageViews": 3871,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Hermann Memorial is a monument located southwest of Detmold in the district of Lippe, in Germany. It stands on the densely forested Grotenburg, sometimes also called the Teutberg or Teut, a hill in the Teutoburger Wald range. The monument is located inside the remains of a..."
+    },
+    {
+      "rank": 75,
+      "title": "Franks Casket",
+      "articleTitle": "Franks Casket",
+      "year": 701,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Franks_Casket",
+      "popularityScore": 28761,
+      "monthlyAverageViews": 2397,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Franks Casket is a small Anglo-Saxon whale's bone chest from the early 8th century, now in the British Museum. The casket is densely decorated with knife-cut narrative scenes in flat two-dimensional low-relief and with inscriptions mostly in Anglo-Saxon runes. Generally th..."
+    },
+    {
+      "rank": 76,
+      "title": "Venus Victrix",
+      "articleTitle": "Venus Victrix (Canova)",
+      "year": 1800,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Venus_Victrix_(Canova)",
+      "popularityScore": 28451,
+      "monthlyAverageViews": 2371,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Pauline Bonaparte as Venus Victrix is a semi-nude and life-size reclining, neo-Classical portrait sculpture of Pauline Bonaparte by the Italian sculptor Antonio Canova, who revived ancient Roman artistic traditions of portraying mortal individuals in the guise of deities, a be..."
+    },
+    {
+      "rank": 77,
+      "title": "Madara Rider",
+      "articleTitle": "Madara Rider",
+      "year": 710,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Madara_Rider",
+      "popularityScore": 27115,
+      "monthlyAverageViews": 2260,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Madara Rider or Madara Horseman is a large early medieval rock relief carved on the Madara Plateau east of Shumen in northeastern Bulgaria, near the village of Madara. The monument is dated to the very late 7th or more often the very early 8th century, during the reign of ..."
+    },
+    {
+      "rank": 78,
+      "title": "Cellini Salt Cellar",
+      "articleTitle": "Cellini Salt Cellar",
+      "year": 1540,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Cellini_Salt_Cellar",
+      "popularityScore": 23584,
+      "monthlyAverageViews": 1965,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Cellini Salt Cellar is a part-enamelled gold table sculpture by Benvenuto Cellini (c.1500–1571). It was completed in 1543 for Francis I of France (r.1515–1547), from silver plate models that had been prepared many years earlier for Cardinal Ippolito d'Este (c.1479–1520)."
+    },
+    {
+      "rank": 79,
+      "title": "Farnese Bull",
+      "articleTitle": "Farnese Bull",
+      "year": -150,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Farnese_Bull",
+      "popularityScore": 20883,
+      "monthlyAverageViews": 1740,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Farnese Bull, formerly in the Farnese collection in Rome, is a massive Roman elaborated copy of a Hellenistic sculpture. It is the largest single sculpture yet recovered from antiquity. Along with the rest of the Farnese antiquities, it has been since 1826 in the collectio..."
+    },
+    {
+      "rank": 80,
+      "title": "Napoleon as Mars the Peacemaker",
+      "articleTitle": "Napoleon as Mars the Peacemaker",
+      "year": 1806,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Napoleon_as_Mars_the_Peacemaker",
+      "popularityScore": 19767,
+      "monthlyAverageViews": 1647,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Napoleon as Mars the Peacemaker is a colossal heroic nude statue by the Italian artist Antonio Canova, of Napoleon I of France in the guise of the Roman god Mars. He holds a gilded Nike or Victory standing on an orb in his right hand and a staff in his left. It was produced be..."
+    },
+    {
+      "rank": 81,
+      "title": "Equestrian statue of Gattamelata",
+      "articleTitle": "Equestrian statue of Gattamelata",
+      "year": 1500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_Gattamelata",
+      "popularityScore": 18285,
+      "monthlyAverageViews": 1524,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Equestrian Statue of Gattamelata is an Italian Renaissance sculpture by Donatello, dating from 1453, located on the Piazza del Santo in Padua, Italy. It portrays the condottiere Erasmo da Narni, known as Gattamelata (\"honey-cat\"), who served mostly under the Republic of Ve..."
+    },
+    {
+      "rank": 82,
+      "title": "Tomb of Pope Alexander VII",
+      "articleTitle": "Tomb of Pope Alexander VII",
+      "year": 1670,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Tomb_of_Pope_Alexander_VII",
+      "popularityScore": 16278,
+      "monthlyAverageViews": 1357,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Tomb of Pope Alexander VII is a sculptural monument designed and partially executed by the Italian artist Gian Lorenzo Bernini. It is located in the south transept of St. Peter's Basilica in the Vatican City. The piece was commissioned by Pope Alexander VII himself. Howeve..."
+    },
+    {
+      "rank": 83,
+      "title": "Coatlicue statue",
+      "articleTitle": "Coatlicue statue",
+      "year": 1487,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Coatlicue_statue",
+      "popularityScore": 14110,
+      "monthlyAverageViews": 1176,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Coatlicue statue is one of the most famous surviving Aztec sculptures. It is a 2.52 metre (8.3 ft) tall andesite statue by an unidentified Mexica artist. Although there are many debates about what or who the statue represents, it is usually identified as the Aztec deity Co..."
+    },
+    {
+      "rank": 84,
+      "title": "Apoxyomenos",
+      "articleTitle": "Apoxyomenos",
+      "year": -330,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Apoxyomenos",
+      "popularityScore": 13890,
+      "monthlyAverageViews": 1158,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Apoxyomenos is one of the conventional subjects of ancient Greek votive sculpture; it represents an athlete, caught in the familiar act of scraping sweat and dust from his body with the small curved instrument that the Greeks called a stlengis and the Romans a strigil."
+    },
+    {
+      "rank": 85,
+      "title": "liver of Piacenza",
+      "articleTitle": "Liver of Piacenza",
+      "year": -200,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Liver_of_Piacenza",
+      "popularityScore": 12981,
+      "monthlyAverageViews": 1082,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Liver of Piacenza is an Etruscan artifact found in a field on September 26, 1877, near Gossolengo, in the province of Piacenza, Italy, now kept in the Municipal Museum of Piacenza, in the Palazzo Farnese."
+    },
+    {
+      "rank": 86,
+      "title": "Tyler Davidson Fountain",
+      "articleTitle": "Tyler Davidson Fountain",
+      "year": 1871,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Tyler_Davidson_Fountain",
+      "popularityScore": 12293,
+      "monthlyAverageViews": 1024,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Tyler Davidson Fountain or The Genius of Water is a statue and fountain located in Cincinnati, Ohio. It is regarded as the city's symbol and one of the area's most-visited attractions. It was dedicated in 1871 and is the centerpiece of Fountain Square, a hardscape plaza at..."
+    },
+    {
+      "rank": 87,
+      "title": "Kyffhäuser Monument",
+      "articleTitle": "Kyffhäuser Monument",
+      "year": 1890,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Kyffh%C3%A4user_Monument",
+      "popularityScore": 12095,
+      "monthlyAverageViews": 1008,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Kyffhäuser Monument, also known as Barbarossa Monument, is an Emperor William monument in the Kyffhäuser mountain range in the German state of Thuringia. It was erected from 1890 to 1896 atop the ruins of the medieval Kyffhausen Castle near Bad Frankenhausen."
+    },
+    {
+      "rank": 88,
+      "title": "Gero Cross",
+      "articleTitle": "Gero Cross",
+      "year": 960,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Gero_Cross",
+      "popularityScore": 11500,
+      "monthlyAverageViews": 958,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Gero Cross or Gero Crucifix, of around 965–970, is the oldest large sculpture of the crucified Christ north of the Alps, and has always been displayed in Cologne Cathedral in Germany. It was commissioned by Gero, Archbishop of Cologne, who died in 976, thus providing a ter..."
+    },
+    {
+      "rank": 89,
+      "title": "Ludovisi Battle sarcophagus",
+      "articleTitle": "Ludovisi Battle sarcophagus",
+      "year": 250,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ludovisi_Battle_sarcophagus",
+      "popularityScore": 11380,
+      "monthlyAverageViews": 948,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Ludovisi Battle sarcophagus or \"Great\" Ludovisi sarcophagus is an ancient Roman sarcophagus dating to around AD 250–260, found in 1621 in the Vigna Bernusconi, a tomb near the Porta Tiburtina. It is also known as the Via Tiburtina Sarcophagus, though other sarcophagi have ..."
+    },
+    {
+      "rank": 90,
+      "title": "Pasquino",
+      "articleTitle": "Pasquino",
+      "year": 150,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pasquino",
+      "popularityScore": 10863,
+      "monthlyAverageViews": 905,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Pasquino or Pasquin is the name used by Romans since the early modern period to describe a battered Hellenistic-style statue perhaps dating to the third century BC, which was unearthed in the Parione district of Rome in the fifteenth century. It is located in a piazza of the s..."
+    },
+    {
+      "rank": 91,
+      "title": "Fontaine Bartholdi",
+      "articleTitle": "Fontaine Bartholdi",
+      "year": 1889,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Fontaine_Bartholdi",
+      "popularityScore": 10283,
+      "monthlyAverageViews": 857,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Fontaine Bartholdi is a fountain sculpted by Frédéric Auguste Bartholdi and realised in 1889 by Gaget & Gautier. It was erected at the Place des Terreaux, in the 1st arrondissement of Lyon, in September 1892."
+    },
+    {
+      "rank": 92,
+      "title": "Altarpiece of Veit Stoss",
+      "articleTitle": "Veit Stoss altarpiece in Kraków",
+      "year": 1477,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Veit_Stoss_altarpiece_in_Krak%C3%B3w",
+      "popularityScore": 9073,
+      "monthlyAverageViews": 756,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Altarpiece by Veit Stoss, also St. Mary's Altar, is a large Gothic altarpiece and a national treasure of Poland. It is located behind the high altar of St. Mary's Basilica in the city of Kraków. The altarpiece was carved between 1477 and 1489 by the German-born sculptor Ve..."
+    },
+    {
+      "rank": 93,
+      "title": "Maisonneuve Monument",
+      "articleTitle": "Maisonneuve Monument",
+      "year": 1891,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Maisonneuve_Monument",
+      "popularityScore": 7822,
+      "monthlyAverageViews": 652,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Maisonneuve Monument is a monument by sculptor Louis-Philippe Hébert built in 1895 in Place d'Armes in Montreal."
+    },
+    {
+      "rank": 94,
+      "title": "Column of Antoninus Pius",
+      "articleTitle": "Column of Antoninus Pius",
+      "year": 161,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Column_of_Antoninus_Pius",
+      "popularityScore": 7103,
+      "monthlyAverageViews": 592,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Column of Antoninus Pius is a Roman honorific column in Rome, Italy, devoted in AD 161 to the Roman emperor Antoninus Pius, in the Campus Martius, on the edge of the hill now known as Monte Citorio, and set up by his successors, the co-emperors Marcus Aurelius and Lucius V..."
+    },
+    {
+      "rank": 95,
+      "title": "Double Herm of Socrates and Seneca",
+      "articleTitle": "Double Herm of Socrates and Seneca",
+      "year": 300,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Double_Herm_of_Socrates_and_Seneca",
+      "popularityScore": 6746,
+      "monthlyAverageViews": 562,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Double Herm of Socrates and Seneca is an ancient Roman statue from the first half of the third century AD. The herm depicts the Greek philosopher Socrates on one side, and the Roman Stoic Seneca the Younger on the other. It currently belongs to the Antikensammlung Berlin, ..."
+    },
+    {
+      "rank": 96,
+      "title": "Hermann Heights Monument",
+      "articleTitle": "Hermann Heights Monument",
+      "year": 1897,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Hermann_Heights_Monument",
+      "popularityScore": 6023,
+      "monthlyAverageViews": 502,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Hermann Heights Monument is a statue erected in New Ulm, Minnesota, United States. The statue depicts Arminius, an ancient Cheruscan, but locals refer to the statue as Hermann the German. The only National Register of Historic Places property of its kind in Minnesota, the ..."
+    },
+    {
+      "rank": 97,
+      "title": "Lemnian Athena",
+      "articleTitle": "Lemnian Athena",
+      "year": -450,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lemnian_Athena",
+      "popularityScore": 5776,
+      "monthlyAverageViews": 481,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Lemnian Athena, or Athena Lemnia, was a classical Greek statue of the goddess Athena that stood on the Acropolis of Athens. According to the traveler Pausanias, who visited Athens in the 2nd century CE, the statue was created by Pheidias, a sculptor of the 5th century BCE,..."
+    },
+    {
+      "rank": 98,
+      "title": "Disc of Theodosius",
+      "articleTitle": "Missorium of Theodosius I",
+      "year": 388,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Missorium_of_Theodosius_I",
+      "popularityScore": 5344,
+      "monthlyAverageViews": 445,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Missorium of Theodosius I is a large ceremonial silver dish preserved in the Real Academia de la Historia, in Madrid, Spain. It was probably made in Constantinople for the tenth anniversary (decennalia) in 388 AD of the reign of the Emperor Theodosius I, the last Emperor t..."
+    },
+    {
+      "rank": 99,
+      "title": "Ombra della sera",
+      "articleTitle": "Ombra della sera",
+      "year": -400,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ombra_della_sera",
+      "popularityScore": 5110,
+      "monthlyAverageViews": 426,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Ombra della sera is an Etruscan statue from the town of Velathri, later Volterra. It was first depicted in a 1737 collection of Etruscan antiquities. Similarities to the work of modern artist Alberto Giacometti have been frequently observed."
+    },
+    {
+      "rank": 100,
+      "title": "Throne of Maximian",
+      "articleTitle": "Throne of Maximian",
+      "year": 500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Throne_of_Maximian",
+      "popularityScore": 5109,
+      "monthlyAverageViews": 426,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Throne of Maximian is a cathedra that was made for Archbishop Maximianus of Ravenna and is now on display at the Archiepiscopal Museum, Ravenna. It is generally agreed that the throne was carved in the Greek East of the Byzantine Empire and shipped to Ravenna, but there ha..."
+    },
+    {
+      "rank": 101,
+      "title": "Monument to Cuauhtémoc",
+      "articleTitle": "Monument to Cuauhtémoc",
+      "year": 1887,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monument_to_Cuauht%C3%A9moc",
+      "popularityScore": 4782,
+      "monthlyAverageViews": 399,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Monument to Cuauhtémoc is an 1887 monument dedicated to the last Mexica ruler (tlatoani) of Tenochtitlan Cuauhtémoc, located at the intersection of Avenida de los Insurgentes and Paseo de la Reforma in Mexico City. It is the work of Francisco Jiménez and Miguel Noreña in t..."
+    },
+    {
+      "rank": 102,
+      "title": "Harbaville Triptych",
+      "articleTitle": "Harbaville Triptych",
+      "year": 950,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Harbaville_Triptych",
+      "popularityScore": 4477,
+      "monthlyAverageViews": 373,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Harbaville Triptych is a Byzantine ivory triptych of the middle of the 10th century with a Deesis and other saints, now in the Louvre. Traces of colouring can still be seen on some figures. It is regarded as the finest, and best-preserved, of the \"Romanos group\" of ivories..."
+    },
+    {
+      "rank": 103,
+      "title": "Fountain (Babuino)",
+      "articleTitle": "Babuino",
+      "year": 1581,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Babuino",
+      "popularityScore": 4330,
+      "monthlyAverageViews": 361,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Babuino is one of the talking statues of Rome, Italy. The fountain is situated in front of the Canova Tadolini Museum, in via del Babuino."
+    },
+    {
+      "rank": 104,
+      "title": "Çineköy inscription",
+      "articleTitle": "Çineköy inscription",
+      "year": -750,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/%C3%87inek%C3%B6y_inscription",
+      "popularityScore": 3825,
+      "monthlyAverageViews": 319,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Çineköy inscription is an ancient bilingual inscription, written in Hieroglyphic Luwian and Phoenician languages. The inscription is dated to the second half of the 8th century BC. It was uncovered in 1997 near the village of Çine, that is located some 30 km south of Adana..."
+    },
+    {
+      "rank": 105,
+      "title": "Symmachi–Nicomachi diptych",
+      "articleTitle": "Symmachi–Nicomachi diptych",
+      "year": 388,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Symmachi%E2%80%93Nicomachi_diptych",
+      "popularityScore": 3451,
+      "monthlyAverageViews": 288,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Symmachi–Nicomachi diptych is a book-size Late Antique ivory diptych dating to the late fourth or early fifth century, whose panels depict scenes of ritual pagan religious practices. Both its style and its content reflect a short-lived revival of traditional Roman religion..."
+    },
+    {
+      "rank": 106,
+      "title": "Fountain of Neptune",
+      "articleTitle": "Fountain of Neptune (Madrid)",
+      "year": 1780,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Fountain_of_Neptune_(Madrid)",
+      "popularityScore": 3436,
+      "monthlyAverageViews": 286,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Fountain of Neptune is a neoclassical fountain located in Madrid, Spain. It lies on the centre of the Plaza de Cánovas del Castillo, a roundabout in the Paseo del Prado. The sculptural group in its centre represents Neptune, a Roman water deity."
+    },
+    {
+      "rank": 107,
+      "title": "Gioiello di Vicenza",
+      "articleTitle": "Jewel of Vicenza",
+      "year": 1500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Jewel_of_Vicenza",
+      "popularityScore": 3112,
+      "monthlyAverageViews": 259,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Jewel of Vicenza was a silver model of the city of Vicenza made as an ex-voto in the 16th century and attributed to the architect Andrea Palladio. The Jewel was stolen by the Napoleonic army during the Italian Campaign in the French Revolutionary Wars and subsequently dest..."
+    },
+    {
+      "rank": 108,
+      "title": "Ballachulish figure",
+      "articleTitle": "Ballachulish figure",
+      "year": -600,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ballachulish_figure",
+      "popularityScore": 2979,
+      "monthlyAverageViews": 248,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 109,
+      "title": "Saint John the Baptist",
+      "articleTitle": "Saint John the Baptist (Donatello)",
+      "year": 1438,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saint_John_the_Baptist_(Donatello)",
+      "popularityScore": 2975,
+      "monthlyAverageViews": 248,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Saint John the Baptist is a painted wood statue of 1438 by the Florentine Italian Renaissance sculptor Donatello. It remains in its original site in the Frari Church in Campo del Friari in the San Polo district of Venice, Italy."
+    },
+    {
+      "rank": 110,
+      "title": "Broddenbjerg idol",
+      "articleTitle": "Broddenbjerg idol",
+      "year": -530,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Broddenbjerg_idol",
+      "popularityScore": 2923,
+      "monthlyAverageViews": 244,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 111,
+      "title": "Medal of John VIII Palaiologos",
+      "articleTitle": "Medal of John VIII Palaeologus",
+      "year": 1438,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Medal_of_John_VIII_Palaeologus",
+      "popularityScore": 2779,
+      "monthlyAverageViews": 232,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The medal of John VIII Palaeologus is a portrait medal by the Italian Renaissance artist Pisanello. It is generally considered to be the first portrait medal of the Renaissance. On the obverse of the medal is a profile portrait of the penultimate Byzantine emperor, John VIII P..."
+    },
+    {
+      "rank": 112,
+      "title": "Castor and Pollux",
+      "articleTitle": "Castor and Pollux (Prado)",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Castor_and_Pollux_(Prado)",
+      "popularityScore": 2577,
+      "monthlyAverageViews": 215,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Castor and Pollux group is an ancient Roman sculptural group of the 1st century AD, now in the Museo del Prado, Madrid."
+    },
+    {
+      "rank": 113,
+      "title": "Tuxtla Statuette",
+      "articleTitle": "Tuxtla Statuette",
+      "year": 162,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Tuxtla_Statuette",
+      "popularityScore": 2435,
+      "monthlyAverageViews": 203,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Tuxtla Statuette is a small rounded Nephrite figurine about 6.5\" high and, carved to resemble a squat, bullet-shaped human with a duck-like bill and wings. It is incised with glyphs of the Epi-Olmec or Isthmian script, two columns in the front and two in the back, one of t..."
+    },
+    {
+      "rank": 114,
+      "title": "Emperor Fountain",
+      "articleTitle": "Emperor Fountain",
+      "year": 1843,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Emperor_Fountain",
+      "popularityScore": 2352,
+      "monthlyAverageViews": 196,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 115,
+      "title": "Tomb of Francis II, Duke of Brittany",
+      "articleTitle": "Tomb of Francis II, Duke of Brittany",
+      "year": 1502,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Tomb_of_Francis_II%2C_Duke_of_Brittany",
+      "popularityScore": 2322,
+      "monthlyAverageViews": 194,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The tomb of Francis II, Duke of Brittany is a monument located in Nantes, in the Cathedral of St. Peter. The project was commissioned by Anne of Brittany, Queen of France, who was the daughter of Francis and his second wife Margaret of Foix, who is also depicted beside Francis..."
+    },
+    {
+      "rank": 116,
+      "title": "Bennett Monolith",
+      "articleTitle": "Bennett Monolith",
+      "year": 373,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bennett_Monolith",
+      "popularityScore": 2255,
+      "monthlyAverageViews": 188,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 117,
+      "title": "Isted Lion",
+      "articleTitle": "Isted Lion",
+      "year": 1860,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Isted_Lion",
+      "popularityScore": 2235,
+      "monthlyAverageViews": 186,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Isted Lion is a Danish war monument originally intended as a monument of the Danish victory over German-minded Schleswig-Holstein insurgents in the Battle of Isted (Idstedt) on 25 July 1850, during the First Schleswig War which was a civil war within the Danish Realm, alth..."
+    },
+    {
+      "rank": 118,
+      "title": "Portrait of Caracalla",
+      "articleTitle": "Portrait of Caracalla",
+      "year": 211,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Portrait_of_Caracalla",
+      "popularityScore": 2154,
+      "monthlyAverageViews": 180,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The best known portrait of Caracalla is that held at the Vatican Museums and of which several copies are known."
+    },
+    {
+      "rank": 119,
+      "title": "Gemma Claudia",
+      "articleTitle": "Gemma Claudia",
+      "year": 40,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Gemma_Claudia",
+      "popularityScore": 2093,
+      "monthlyAverageViews": 174,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Gemma Claudia is a very finely carved and detailed, five-layered, cameo in sardonyx, a type of onyx that has parallel layers of sard which depicts members of the Roman imperial Julio-Claudian dynasty. It is believed to have been created in around 49 AD and by the 17th cent..."
+    },
+    {
+      "rank": 120,
+      "title": "Schiller Monument (Berlin)",
+      "articleTitle": "Schiller Monument (Berlin)",
+      "year": 1869,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Schiller_Monument_(Berlin)",
+      "popularityScore": 2046,
+      "monthlyAverageViews": 171,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Schiller Monument is located in central Berlin (Berlin-Mitte) on Gendarmenmarkt, in front of the flight of steps leading up to the former royal theater, today a concert hall. It honors the poet, philosopher and historian Friedrich Schiller, who is also regarded as one of t..."
+    },
+    {
+      "rank": 121,
+      "title": "Wooldridge Monuments",
+      "articleTitle": "Wooldridge Monuments",
+      "year": 1892,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Wooldridge_Monuments",
+      "popularityScore": 1799,
+      "monthlyAverageViews": 150,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Wooldridge Monuments are a series of historical monuments located in Maplewood Cemetery of Mayfield, Kentucky. They were built for Colonel Henry G. Wooldridge, to commemorate family members and other loved ones of his life, from 1892 until Wooldridge's death on May 30, 189..."
+    },
+    {
+      "rank": 122,
+      "title": "Colonne Vendôme",
+      "articleTitle": "Colonne Vendôme",
+      "year": 1800,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Colonne_Vend%C3%B4me",
+      "popularityScore": 1731,
+      "monthlyAverageViews": 144,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Place Vendôme, originally the Place Louis-le-Grand, and later the Place Internationale, is a public square in the 1st arrondissement of Paris, located to the north of the Tuileries Gardens and east of the Église de la Madeleine. It is the starting point of the Rue de la Pa..."
+    },
+    {
+      "rank": 123,
+      "title": "Martin Luther Monument",
+      "articleTitle": "Luther Monument (Washington, D.C.)",
+      "year": 1884,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Luther_Monument_(Washington%2C_D.C.)",
+      "popularityScore": 1699,
+      "monthlyAverageViews": 142,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 124,
+      "title": "Cristo de La Laguna",
+      "articleTitle": "Cristo de La Laguna",
+      "year": 1514,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Cristo_de_La_Laguna",
+      "popularityScore": 1441,
+      "monthlyAverageViews": 120,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Cristo de La Laguna is a wooden sculpture that represents the crucified Jesus of Nazareth. It is located in the Royal Sanctuary of the Christ, in the city of San Cristóbal de La Laguna."
+    },
+    {
+      "rank": 125,
+      "title": "Dawn",
+      "articleTitle": "Dawn (Michelangelo)",
+      "year": 1524,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Dawn_(Michelangelo)",
+      "popularityScore": 1216,
+      "monthlyAverageViews": 101,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Sagrestia Nuova, also known as the New Sacristy and the Medici Chapel, is a mausoleum that stands as a testament to the grandeur and artistic vision of the Medici family. Constructed in 1520, the mausoleum was designed by the Italian artist and architect Michelangelo. Situ..."
+    },
+    {
+      "rank": 126,
+      "title": "Monument to Vincenzo Bellini",
+      "articleTitle": "Monument to Vincenzo Bellini, Catania",
+      "year": 1882,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monument_to_Vincenzo_Bellini%2C_Catania",
+      "popularityScore": 1170,
+      "monthlyAverageViews": 98,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Monument to Vincenzo Bellini is an outdoor monument located on Piazza Stesicoro, in the city of Catania, Sicily, Italy. Grandbeggers place"
+    },
+    {
+      "rank": 127,
+      "title": "Madonna and Child",
+      "articleTitle": "Madonna and Child (Donatello, Louvre)",
+      "year": 1440,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Madonna_and_Child_(Donatello%2C_Louvre)",
+      "popularityScore": 1140,
+      "monthlyAverageViews": 95,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Madonna and Child is a c. 1440 painted terracotta relief attributed to Donatello of the Madonna and Child that is now in the Louvre."
+    },
+    {
+      "rank": 128,
+      "title": "Bust of Flora (Copy)",
+      "articleTitle": "Flora (sculpture)",
+      "year": 1500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Flora_(sculpture)",
+      "popularityScore": 1116,
+      "monthlyAverageViews": 93,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Flora is a wax sculpture of Roman goddess Flora by English sculptor Richard Cockle Lucas, currently located in the Bode Museum in Berlin."
+    },
+    {
+      "rank": 129,
+      "title": "Day",
+      "articleTitle": "Day (Michelangelo)",
+      "year": 1526,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Day_(Michelangelo)",
+      "popularityScore": 995,
+      "monthlyAverageViews": 83,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Sagrestia Nuova, also known as the New Sacristy and the Medici Chapel, is a mausoleum that stands as a testament to the grandeur and artistic vision of the Medici family. Constructed in 1520, the mausoleum was designed by the Italian artist and architect Michelangelo. Situ..."
+    },
+    {
+      "rank": 130,
+      "title": "Grave relief of Thraseas and Euandria",
+      "articleTitle": "Grave relief of Thraseas and Euandria",
+      "year": 350,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Grave_relief_of_Thraseas_and_Euandria",
+      "popularityScore": 962,
+      "monthlyAverageViews": 80,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Attic Grave relief of Thraseas and Euandria from the middle of the fourth century BC is kept in the Pergamonmuseum and belongs to the Antikensammlung Berlin."
+    },
+    {
+      "rank": 131,
+      "title": "Ecce Homo",
+      "articleTitle": "Ecce Homo (statue)",
+      "year": 1600,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ecce_Homo_(statue)",
+      "popularityScore": 928,
+      "monthlyAverageViews": 77,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 132,
+      "title": "Christ of the Lanterns",
+      "articleTitle": "Christ of the Lanterns",
+      "year": 1794,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Christ_of_the_Lanterns",
+      "popularityScore": 851,
+      "monthlyAverageViews": 71,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Christ of Atonement and Mercy, popularly known as the Christ of the Lanterns, is a large Crucifix located at the Plaza de los Capuchinos in Cordoba, Spain."
+    },
+    {
+      "rank": 133,
+      "title": "Monument to Vittorio Emanuele II",
+      "articleTitle": "Monument to Vittorio Emanuele II (Turin)",
+      "year": 1880,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monument_to_Vittorio_Emanuele_II_(Turin)",
+      "popularityScore": 810,
+      "monthlyAverageViews": 68,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Monument to Vittorio Emanuele II is a statuary monument atop a set of columns, honoring the first King of Italy, and located in Turin, in the Largo of the same name, at the junction between Corso Vittorio Emanuele II and Corso Galileo Ferraris."
+    },
+    {
+      "rank": 134,
+      "title": "Colonel Robert A. Smith Monument",
+      "articleTitle": "Colonel Robert A. Smith Monument",
+      "year": 1885,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Colonel_Robert_A._Smith_Monument",
+      "popularityScore": 794,
+      "monthlyAverageViews": 66,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Colonel Robert A. Smith Monument, located in Hart County, Kentucky, is a monument related to the American Civil War, listed on the National Register of Historic Places. It was built in the memory of Colonel Robert A. Smith and the members of the 10th Mississippi Infantry R..."
+    },
+    {
+      "rank": 135,
+      "title": "Dusk",
+      "articleTitle": "Dusk (Michelangelo)",
+      "year": 1524,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Dusk_(Michelangelo)",
+      "popularityScore": 744,
+      "monthlyAverageViews": 62,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Sagrestia Nuova, also known as the New Sacristy and the Medici Chapel, is a mausoleum that stands as a testament to the grandeur and artistic vision of the Medici family. Constructed in 1520, the mausoleum was designed by the Italian artist and architect Michelangelo. Situ..."
+    },
+    {
+      "rank": 136,
+      "title": "Attic funerary relief",
+      "articleTitle": "Attic funerary relief (NAMA 4464)",
+      "year": -100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Attic_funerary_relief_(NAMA_4464)",
+      "popularityScore": 572,
+      "monthlyAverageViews": 48,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "An Attic funerary relief, sometimes also known as the Mithridates funerary relief is displayed at the National Archaeological Museum of Athens (NAMA), with the inventory number 4464. Its date is uncertain."
+    },
+    {
+      "rank": 137,
+      "title": "Grave stele",
+      "articleTitle": "Grave stele (NAMA 7901)",
+      "year": -550,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Grave_stele_(NAMA_7901)",
+      "popularityScore": 526,
+      "monthlyAverageViews": 44,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Attic Grave stele in the National Archaeological Museum of Athens (NAMA) with the inventory number 7901 is an archaic grave marker of a young Greek, which was made in the middle of the sixth century BC."
+    },
+    {
+      "rank": 138,
+      "title": "James Garfield Memorial, Philadelphia",
+      "articleTitle": "James A. Garfield Monument (Philadelphia)",
+      "year": 1895,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/James_A._Garfield_Monument_(Philadelphia)",
+      "popularityScore": 521,
+      "monthlyAverageViews": 43,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 139,
+      "title": "Erill la Vall Descent from the Cross",
+      "articleTitle": "Erill la Vall Descent from the Cross",
+      "year": 1150,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Erill_la_Vall_Descent_from_the_Cross",
+      "popularityScore": 514,
+      "monthlyAverageViews": 43,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "Erill la Vall Descent from the Cross is a set of seven 12th-century wooden sculptures from the Pyrenees village of Erill la Vall in Catalonia. Originally painted, it comprises a complete Romanesque Descent from the Cross sculpture group, which in Catalonia has the peculiarity ..."
+    },
+    {
+      "rank": 140,
+      "title": "Virgin from Ger",
+      "articleTitle": "Virgin from Ger",
+      "year": 1150,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Virgin_from_Ger",
+      "popularityScore": 511,
+      "monthlyAverageViews": 43,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Virgin from Ger is a 12th century sculpture exhibited at the National Art Museum of Catalonia in Barcelona."
+    },
+    {
+      "rank": 141,
+      "title": "Fountain of the Genius of Fieravecchia",
+      "articleTitle": "Fountain of the Genius of Fieravecchia",
+      "year": 1500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Fountain_of_the_Genius_of_Fieravecchia",
+      "popularityScore": 452,
+      "monthlyAverageViews": 38,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Fountain of the Genius of Fieravecchia is a historic fountain located in Piazza Rivoluzione in the ancient quarter of Kalsa in the historic center of Palermo, region of Sicily, Italy."
+    },
+    {
+      "rank": 142,
+      "title": "Situla of the Pania",
+      "articleTitle": "Situla of the Pania",
+      "year": -700,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Situla_of_the_Pania",
+      "popularityScore": 435,
+      "monthlyAverageViews": 36,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Situla of the Pania is an ivory situla or pyxis from the end of the seventh century BC, found in the Tomb of the Pania in Chiusi and conserved in the Museo archeologico nazionale di Firenze."
+    },
+    {
+      "rank": 143,
+      "title": "Statue of George Washington",
+      "articleTitle": "Statue of George Washington (Newburyport, Massachusetts)",
+      "year": 1878,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Statue_of_George_Washington_(Newburyport%2C_Massachusetts)",
+      "popularityScore": 426,
+      "monthlyAverageViews": 36,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 144,
+      "title": "Standing Youth",
+      "articleTitle": "Standing Youth (Munich SL 162)",
+      "year": -312,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Standing_Youth_(Munich_SL_162)",
+      "popularityScore": 372,
+      "monthlyAverageViews": 31,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Standing Youth is a terracotta Tanagra figurine in the Staatliche Antikensammlungen in Munich with the inventory number SL 162, which was formerly part the collection of James Loeb. The red-brown clay statuette measures 30.7 cm high and was created around 325–300 BC in Boe..."
+    },
+    {
+      "rank": 145,
+      "title": "Adam Mickiewicz Monument, Warsaw",
+      "articleTitle": "Statue of Adam Mickiewicz (Warsaw)",
+      "year": 1898,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Statue_of_Adam_Mickiewicz_(Warsaw)",
+      "popularityScore": 334,
+      "monthlyAverageViews": 28,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The statue of Adam Mickiewicz is a monument dedicated to Adam Mickiewicz at the Krakowskie Przedmieście in the Śródmieście district of Warsaw, Poland. The Neo-Classicist monument was constructed in 1897–1898 by sculptor Cyprian Godebski. It was unveiled on the 100th anniversar..."
+    },
+    {
+      "rank": 146,
+      "title": "Candelabra Angels",
+      "articleTitle": "Putti candle-holders",
+      "year": 1434,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Putti_candle-holders",
+      "popularityScore": 329,
+      "monthlyAverageViews": 27,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The Putti candle-holders are a pair of c.1434-1439 sculptures by Donatello, now in the Musée Jacquemart-André in Paris."
+    },
+    {
+      "rank": 147,
+      "title": "Canapone",
+      "articleTitle": "Canapone",
+      "year": 1846,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Canapone",
+      "popularityScore": 260,
+      "monthlyAverageViews": 22,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The monument to Leopold II, Grand Duke of Tuscany, commonly known as Canapone, is a historical landmark in Grosseto, Italy. The statue stands at the center of Piazza Dante, the city's main square."
+    },
+    {
+      "rank": 148,
+      "title": "Eastman Monument",
+      "articleTitle": "Eastman Monument",
+      "year": 1883,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Eastman_Monument",
+      "popularityScore": 220,
+      "monthlyAverageViews": 18,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 149,
+      "title": "Four seasons altar",
+      "articleTitle": "Four seasons altar of Würzburg",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Four_seasons_altar_of_W%C3%BCrzburg",
+      "popularityScore": 217,
+      "monthlyAverageViews": 18,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "A Roman decorated altar dating from early in the reign of Claudius is known as the Four seasons altar of Würzburg. It is kept in the Martin von Wagner Museum in Würzburg under the inventory number H 5056."
+    },
+    {
+      "rank": 150,
+      "title": "Lion of Bienservida",
+      "articleTitle": "Lion of Bienservida",
+      "year": -600,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lion_of_Bienservida",
+      "popularityScore": 196,
+      "monthlyAverageViews": 16,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 151,
+      "title": "monument to Victor Emmanuel II",
+      "articleTitle": "Equestrian statue of Victor Emmanuel II, Milan",
+      "year": 1879,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_Victor_Emmanuel_II%2C_Milan",
+      "popularityScore": 174,
+      "monthlyAverageViews": 15,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "An equestrian statue of Victor Emmanuel II is installed in Milan, Italy."
+    },
+    {
+      "rank": 152,
+      "title": "Ivriz relief",
+      "articleTitle": "İvriz monuments",
+      "year": -800,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/%C4%B0vriz_monuments",
+      "popularityScore": 61,
+      "monthlyAverageViews": 5,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": "The İvriz monuments are a group of Hittite monuments found in south-central Anatolia, located in the town of Aydınkent, formerly called İvriz."
+    },
+    {
+      "rank": 153,
+      "title": "George Washington Monument",
+      "articleTitle": "Equestrian statue of George Washington (Chicago)",
+      "year": 1900,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_George_Washington_(Chicago)",
+      "popularityScore": 2,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 154,
+      "title": "Barberini ivory",
+      "articleTitle": "Barberini ivory",
+      "year": 525,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Barberini_ivory",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 155,
+      "title": "Elephant and Obelisk",
+      "articleTitle": "Elephant and Obelisk",
+      "year": -600,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Elephant_and_Obelisk",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 156,
+      "title": "Bernward Doors",
+      "articleTitle": "Bernward Doors",
+      "year": 1015,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bernward_Doors",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 157,
+      "title": "Battersea Shield",
+      "articleTitle": "Battersea Shield",
+      "year": -349,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Battersea_Shield",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 158,
+      "title": "Hercules of the Forum Boarium",
+      "articleTitle": "Hercules of the Forum Boarium",
+      "year": -200,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Hercules_of_the_Forum_Boarium",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 159,
+      "title": "Pulpit of Sant' Andrea, Pistoia",
+      "articleTitle": "Pulpit of Sant' Andrea, Pistoia (Giovanni Pisano)",
+      "year": 1298,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pulpit_of_Sant'_Andrea%2C_Pistoia_(Giovanni_Pisano)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 160,
+      "title": "Bust of Severus Alexander",
+      "articleTitle": "Bust of Severus Alexander",
+      "year": 225,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bust_of_Severus_Alexander",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 161,
+      "title": "Portrait of Eleanor of Aragon",
+      "articleTitle": "Portrait of Eleanor of Aragon",
+      "year": 1468,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Portrait_of_Eleanor_of_Aragon",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 162,
+      "title": "Saint Louis of Toulouse",
+      "articleTitle": "Saint Louis of Toulouse (Donatello)",
+      "year": 1423,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saint_Louis_of_Toulouse_(Donatello)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 163,
+      "title": "Saint Peter",
+      "articleTitle": "Saint Peter (Brunelleschi)",
+      "year": 1412,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saint_Peter_(Brunelleschi)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 164,
+      "title": "Commodus as Hercules",
+      "articleTitle": "Commodus as Hercules",
+      "year": 200,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Commodus_as_Hercules",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 165,
+      "title": "Cane Tago",
+      "articleTitle": "Cane Tago",
+      "year": 1777,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Cane_Tago",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 166,
+      "title": "Portonaccio sarcophagus",
+      "articleTitle": "Portonaccio sarcophagus",
+      "year": 180,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Portonaccio_sarcophagus",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 167,
+      "title": "equestrian statue of Ferdinando I de' Medici",
+      "articleTitle": "Equestrian Monument of Ferdinando I",
+      "year": 1608,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_Monument_of_Ferdinando_I",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 168,
+      "title": "The Porter",
+      "articleTitle": "Il Facchino",
+      "year": 1580,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Il_Facchino",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 169,
+      "title": "El Caballito",
+      "articleTitle": "Equestrian statue of Charles IV of Spain",
+      "year": 1802,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_Charles_IV_of_Spain",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 170,
+      "title": "Statue of John of Austria",
+      "articleTitle": "Statue of John of Austria",
+      "year": 1572,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Statue_of_John_of_Austria",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 171,
+      "title": "Shelley Memorial",
+      "articleTitle": "Shelley Memorial",
+      "year": 1892,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Shelley_Memorial",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 172,
+      "title": "Skidmore Fountain",
+      "articleTitle": "Skidmore Fountain",
+      "year": 1888,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Skidmore_Fountain",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 173,
+      "title": "Signal of Peace",
+      "articleTitle": "A Signal of Peace",
+      "year": 1890,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/A_Signal_of_Peace",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 174,
+      "title": "St Bibiana",
+      "articleTitle": "Saint Bibiana (Bernini)",
+      "year": 1624,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saint_Bibiana_(Bernini)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 175,
+      "title": "Statue of Alexander VII",
+      "articleTitle": "Statue of Alexander VII (Bernini)",
+      "year": 1661,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Statue_of_Alexander_VII_(Bernini)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 176,
+      "title": "equestrian statue of George IV",
+      "articleTitle": "Equestrian statue of George IV, Trafalgar Square",
+      "year": 1843,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_George_IV%2C_Trafalgar_Square",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 177,
+      "title": "Stephen Foster",
+      "articleTitle": "Stephen Foster (sculpture)",
+      "year": 1900,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Stephen_Foster_(sculpture)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 178,
+      "title": "Spirit of Commerce",
+      "articleTitle": "Spirit of Commerce",
+      "year": 1881,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Spirit_of_Commerce",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 179,
+      "title": "Sultanganj Buddha",
+      "articleTitle": "Sultanganj Buddha",
+      "year": 500,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sultanganj_Buddha",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 180,
+      "title": "Temperance Fountain",
+      "articleTitle": "Temperance Fountain (Washington, D.C.)",
+      "year": 1884,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Temperance_Fountain_(Washington%2C_D.C.)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 181,
+      "title": "The Alarm",
+      "articleTitle": "The Alarm (Boyle)",
+      "year": 1884,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Alarm_(Boyle)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 182,
+      "title": "Thayer Monument",
+      "articleTitle": "Thayer Monument",
+      "year": 1883,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Thayer_Monument",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 183,
+      "title": "Equestrian Monument of Cosimo I",
+      "articleTitle": "Equestrian Monument of Cosimo I",
+      "year": 1594,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_Monument_of_Cosimo_I",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 184,
+      "title": "The American Volunteer",
+      "articleTitle": "The American Volunteer (statue)",
+      "year": 1876,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_American_Volunteer_(statue)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 185,
+      "title": "Head of Eutropius",
+      "articleTitle": "Head of Eutropius",
+      "year": 425,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Head_of_Eutropius",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 186,
+      "title": "Theseus and the Minotaur",
+      "articleTitle": "Theseus and the Minotaur (sculpture)",
+      "year": 1781,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Theseus_and_the_Minotaur_(sculpture)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 187,
+      "title": "Jockey of Artemision",
+      "articleTitle": "Jockey of Artemision",
+      "year": -149,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Jockey_of_Artemision",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 188,
+      "title": "Venus Tauride",
+      "articleTitle": "Venus Tauride",
+      "year": -200,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Venus_Tauride",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 189,
+      "title": "Holy Trinity Monument, Timişoara",
+      "articleTitle": "Plague Column, Timișoara",
+      "year": 1740,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Plague_Column%2C_Timi%C8%99oara",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 190,
+      "title": "Peace Monument",
+      "articleTitle": "Peace Monument",
+      "year": 1877,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Peace_Monument",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 191,
+      "title": "Madonna of the Stair",
+      "articleTitle": "Madonna of the Stairs",
+      "year": 1490,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Madonna_of_the_Stairs",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 192,
+      "title": "Princesses Monument",
+      "articleTitle": "Princesses Monument",
+      "year": 1795,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Princesses_Monument",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 193,
+      "title": "Sarcophagus of the Spouses",
+      "articleTitle": "Sarcophagus of the Spouses",
+      "year": -520,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sarcophagus_of_the_Spouses",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 194,
+      "title": "Ludovisi Gaul",
+      "articleTitle": "Ludovisi Gaul",
+      "year": -230,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ludovisi_Gaul",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 195,
+      "title": "Night",
+      "articleTitle": "Night (Michelangelo)",
+      "year": 1526,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Night_(Michelangelo)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 196,
+      "title": "Monument to Giuseppe Garibaldi",
+      "articleTitle": "Monument to Garibaldi (Rome)",
+      "year": 1895,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monument_to_Garibaldi_(Rome)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 197,
+      "title": "Patrizio Torlonia",
+      "articleTitle": "Patrician Torlonia",
+      "year": -80,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Patrician_Torlonia",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 198,
+      "title": "Monument to Philip IV of Spain",
+      "articleTitle": "Monument to Philip IV of Spain",
+      "year": 1640,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monument_to_Philip_IV_of_Spain",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 199,
+      "title": "Latona Fountain",
+      "articleTitle": "Latona Fountain",
+      "year": 1666,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Latona_Fountain",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 200,
+      "title": "Crouching Venus",
+      "articleTitle": "Aphrodite of Rhodes",
+      "year": 1,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Aphrodite_of_Rhodes",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 201,
+      "title": "Farnese Diadumenos",
+      "articleTitle": "Farnese Diadumenos",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Farnese_Diadumenos",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 202,
+      "title": "Pioneer Monument",
+      "articleTitle": "Pioneer Monument (San Francisco)",
+      "year": 1894,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Pioneer_Monument_(San_Francisco)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 203,
+      "title": "Sleeping Lion",
+      "articleTitle": "Sleeping Lion, Bytom",
+      "year": 1873,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sleeping_Lion%2C_Bytom",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 204,
+      "title": "Hera Farnese",
+      "articleTitle": "Hera Farnese",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Hera_Farnese",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 205,
+      "title": "Palestrina Pietà",
+      "articleTitle": "Palestrina Pietà",
+      "year": 1550,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Palestrina_Piet%C3%A0",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 206,
+      "title": "Beautiful Virgin Mary from Krużlowa",
+      "articleTitle": "Beautiful Virgin Mary from Krużlowa",
+      "year": 1400,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Beautiful_Virgin_Mary_from_Kru%C5%BClowa",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 207,
+      "title": "Sculpture of a horse (Olympia B 1741)",
+      "articleTitle": "Sculpture of a horse (Olympia B 1741)",
+      "year": -700,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Sculpture_of_a_horse_(Olympia_B_1741)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 208,
+      "title": "Head of a Faun",
+      "articleTitle": "Head of a Faun",
+      "year": 1489,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Head_of_a_Faun",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 209,
+      "title": "Lansdowne Heracles",
+      "articleTitle": "Lansdowne Heracles",
+      "year": 125,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lansdowne_Heracles",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 210,
+      "title": "Landon-Era Birdbath",
+      "articleTitle": "Landon-Era Birdbath",
+      "year": 1900,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Landon-Era_Birdbath",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 211,
+      "title": "Leif, the Discoverer",
+      "articleTitle": "Leif, the Discoverer (Whitney)",
+      "year": 1887,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Leif%2C_the_Discoverer_(Whitney)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 212,
+      "title": "Liberty Arming the Patriot",
+      "articleTitle": "Liberty Arming the Patriot",
+      "year": 1897,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Liberty_Arming_the_Patriot",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 213,
+      "title": "Lion of Venice",
+      "articleTitle": "Lion of Venice",
+      "year": -300,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lion_of_Venice",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 214,
+      "title": "Lieutenant General George Washington",
+      "articleTitle": "Equestrian statue of George Washington (Washington Circle)",
+      "year": 1860,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_George_Washington_(Washington_Circle)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 215,
+      "title": "Major General George Henry Thomas",
+      "articleTitle": "Equestrian statue of George Henry Thomas",
+      "year": 1879,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_George_Henry_Thomas",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 216,
+      "title": "Major General Nathanael Greene",
+      "articleTitle": "Equestrian statue of Nathanael Greene",
+      "year": 1877,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_Nathanael_Greene",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 217,
+      "title": "Major General Marquis Gilbert de Lafayette",
+      "articleTitle": "Statue of the Marquis de Lafayette (Washington, D.C.)",
+      "year": 1890,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Statue_of_the_Marquis_de_Lafayette_(Washington%2C_D.C.)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 218,
+      "title": "Mary Salome and Zebedee",
+      "articleTitle": "Mary Salome and Zebedee",
+      "year": 1505,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Mary_Salome_and_Zebedee",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 219,
+      "title": "Medusa",
+      "articleTitle": "Medusa (Bernini)",
+      "year": 1640,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Medusa_(Bernini)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 220,
+      "title": "Memorial to Maria Raggi",
+      "articleTitle": "Memorial to Maria Raggi",
+      "year": 1647,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Memorial_to_Maria_Raggi",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 221,
+      "title": "Midsummer Carnival Shaft",
+      "articleTitle": "Midsummer Carnival Shaft",
+      "year": 1900,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Midsummer_Carnival_Shaft",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 222,
+      "title": "Battle of the Centaurs",
+      "articleTitle": "Battle of the Centaurs (Michelangelo)",
+      "year": 1492,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Battle_of_the_Centaurs_(Michelangelo)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 223,
+      "title": "Military Courage",
+      "articleTitle": "Military Courage",
+      "year": 1885,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Military_Courage",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 224,
+      "title": "Saqqara Bird",
+      "articleTitle": "Saqqara Bird",
+      "year": -150,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saqqara_Bird",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 225,
+      "title": "The Deposition",
+      "articleTitle": "The Deposition (Michelangelo)",
+      "year": 1600,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Deposition_(Michelangelo)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 226,
+      "title": "Nicolaus Copernicus Monument in Toruń",
+      "articleTitle": "Nicolaus Copernicus Monument, Toruń",
+      "year": 1853,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Nicolaus_Copernicus_Monument%2C_Toru%C5%84",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 227,
+      "title": "The Rape of Proserpina",
+      "articleTitle": "The Rape of Proserpina",
+      "year": 1624,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Rape_of_Proserpina",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 228,
+      "title": "The Kiss",
+      "articleTitle": "The Kiss (Rodin sculpture)",
+      "year": 1880,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Kiss_(Rodin_sculpture)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 229,
+      "title": "Saint Proculus",
+      "articleTitle": "Saint Proculus (Michelangelo)",
+      "year": 1494,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saint_Proculus_(Michelangelo)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 230,
+      "title": "Angel",
+      "articleTitle": "Angel (Michelangelo)",
+      "year": 1494,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Angel_(Michelangelo)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 231,
+      "title": "Saint Petronius",
+      "articleTitle": "Saint Petronius (Michelangelo)",
+      "year": 1494,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saint_Petronius_(Michelangelo)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 232,
+      "title": "St. Peter's Baldachin",
+      "articleTitle": "St. Peter's Baldachin",
+      "year": 1620,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/St._Peter's_Baldachin",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 233,
+      "title": "Taddei Tondo",
+      "articleTitle": "Taddei Tondo",
+      "year": 1504,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Taddei_Tondo",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 234,
+      "title": "Neptune and Triton",
+      "articleTitle": "Neptune and Triton",
+      "year": 1620,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Neptune_and_Triton",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 235,
+      "title": "Ludovisi Ares",
+      "articleTitle": "Ludovisi Ares",
+      "year": 420,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Ludovisi_Ares",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 236,
+      "title": "Portrait of the Four Tetrarchs",
+      "articleTitle": "Portrait of the Four Tetrarchs",
+      "year": 290,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Portrait_of_the_Four_Tetrarchs",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 237,
+      "title": "Lady of Galera",
+      "articleTitle": "Lady of Galera",
+      "year": -650,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Lady_of_Galera",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 238,
+      "title": "Venus Italica",
+      "articleTitle": "Venus Italica",
+      "year": 1804,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Venus_Italica",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 239,
+      "title": "Diana of Versailles",
+      "articleTitle": "Diana of Versailles",
+      "year": 100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Diana_of_Versailles",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 240,
+      "title": "Saint Matthew",
+      "articleTitle": "Saint Matthew (Michelangelo)",
+      "year": 1505,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Saint_Matthew_(Michelangelo)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 241,
+      "title": "The Runaway Slave",
+      "articleTitle": "The Runaway Slave",
+      "year": 1891,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Runaway_Slave",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 242,
+      "title": "Monument to Peter I",
+      "articleTitle": "Monument to Peter I (St. Michael's Castle)",
+      "year": 1800,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Monument_to_Peter_I_(St._Michael's_Castle)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 243,
+      "title": "Monument to Bohdan Khmelnytsky in Kyiv",
+      "articleTitle": "Bohdan Khmelnytsky Monument, Kyiv",
+      "year": 1888,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bohdan_Khmelnytsky_Monument%2C_Kyiv",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 244,
+      "title": "Andrew Jackson",
+      "articleTitle": "Equestrian statue of Andrew Jackson (Washington, D.C.)",
+      "year": 1852,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Equestrian_statue_of_Andrew_Jackson_(Washington%2C_D.C.)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 245,
+      "title": "Nelson Monument",
+      "articleTitle": "Nelson Monument, Liverpool",
+      "year": 1813,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Nelson_Monument%2C_Liverpool",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 246,
+      "title": "Amazon statue types",
+      "articleTitle": "Amazon statue types",
+      "year": 150,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Amazon_statue_types",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 247,
+      "title": "Abraham Lincoln",
+      "articleTitle": "Bust of Abraham Lincoln (Indianapolis)",
+      "year": 1862,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Bust_of_Abraham_Lincoln_(Indianapolis)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 248,
+      "title": "Togatus Barberini",
+      "articleTitle": "Togatus Barberini",
+      "year": -100,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Togatus_Barberini",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 249,
+      "title": "A Faun Teased by Children",
+      "articleTitle": "A Faun Teased by Children",
+      "year": 1616,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/A_Faun_Teased_by_Children",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    },
+    {
+      "rank": 250,
+      "title": "Admiral David G. Farragut",
+      "articleTitle": "Statue of David Farragut (Washington, D.C.)",
+      "year": 1881,
+      "wikipediaUrl": "https://en.wikipedia.org/wiki/Statue_of_David_Farragut_(Washington%2C_D.C.)",
+      "popularityScore": 0,
+      "monthlyAverageViews": 0,
+      "materialConfidence": "unknown",
+      "materialSignals": [],
+      "summary": ""
+    }
+  ]
+}

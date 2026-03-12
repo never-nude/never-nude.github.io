@@ -1,0 +1,251 @@
+rank,title,articleTitle,year,wikipediaUrl,popularityScore,monthlyAverageViews,materialConfidence,materialSignals
+1,Pietà (Michelangelo),Pietà (Michelangelo),1499,https://en.wikipedia.org/wiki/Piet%C3%A0_(Michelangelo),604149,50346,high,marble
+2,Manneken Pis,Manneken Pis,1619,https://en.wikipedia.org/wiki/Manneken_Pis,292451,24371,high,stone|bronze
+3,Ecstasy of Saint Teresa,Ecstasy of Saint Teresa,1647,https://en.wikipedia.org/wiki/Ecstasy_of_Saint_Teresa,260343,21695,high,marble
+4,crystal skull,Crystal skull,1881,https://en.wikipedia.org/wiki/Crystal_skull,142635,11886,high,stone
+5,Capitoline Wolf,Capitoline Wolf,-500,https://en.wikipedia.org/wiki/Capitoline_Wolf,128999,10750,high,bronze
+6,Madonna of Bruges,Madonna of Bruges,1503,https://en.wikipedia.org/wiki/Madonna_of_Bruges,126482,10540,high,marble
+7,Chair of Saint Peter,Chair of Saint Peter,1647,https://en.wikipedia.org/wiki/Chair_of_Saint_Peter,91750,7646,high,bronze
+8,Aztec sun stone,Aztec sun stone,1510,https://en.wikipedia.org/wiki/Aztec_sun_stone,90923,7577,high,stone
+9,Apollo and Daphne,Apollo and Daphne (Bernini),1622,https://en.wikipedia.org/wiki/Apollo_and_Daphne_(Bernini),83928,6994,high,marble
+10,Venus Callipyge,Venus Callipyge,-50,https://en.wikipedia.org/wiki/Venus_Callipyge,78440,6537,high,marble
+11,Riace bronzes,Riace bronzes,-459,https://en.wikipedia.org/wiki/Riace_bronzes,55955,4663,high,bronze
+12,Alexander Sarcophagus,Alexander Sarcophagus,-380,https://en.wikipedia.org/wiki/Alexander_Sarcophagus,52497,4375,high,stone
+13,David,David (Bernini),1624,https://en.wikipedia.org/wiki/David_(Bernini),49198,4100,high,marble
+14,Lady of Elche,Lady of Elche,-500,https://en.wikipedia.org/wiki/Lady_of_Elche,47846,3987,high,stone|limestone
+15,Rondanini Pietà,Rondanini Pietà,1564,https://en.wikipedia.org/wiki/Rondanini_Piet%C3%A0,42796,3566,high,marble
+16,Bacchus,Bacchus (Michelangelo),1497,https://en.wikipedia.org/wiki/Bacchus_(Michelangelo),39228,3269,high,marble
+17,Serpent Column,Serpent Column,-500,https://en.wikipedia.org/wiki/Serpent_Column,38532,3211,high,bronze
+18,Muisca raft,Muisca raft,1600,https://en.wikipedia.org/wiki/Muisca_raft,30291,2524,high,copper
+19,Artemision Bronze,Artemision Bronze,-459,https://en.wikipedia.org/wiki/Artemision_Bronze,30166,2514,high,bronze
+20,Judith and Holofernes,Judith and Holofernes (Donatello),1460,https://en.wikipedia.org/wiki/Judith_and_Holofernes_(Donatello),22379,1865,high,bronze
+21,Pediments of the Parthenon,Pediments of the Parthenon,-439,https://en.wikipedia.org/wiki/Pediments_of_the_Parthenon,17099,1425,high,marble
+22,Gayer-Anderson cat,Gayer-Anderson cat,-331,https://en.wikipedia.org/wiki/Gayer-Anderson_cat,16477,1373,high,bronze
+23,Kritios Boy,Kritios Boy,-480,https://en.wikipedia.org/wiki/Kritios_Boy,15720,1310,high,marble
+24,Kroisos Kouros,Kroisos Kouros,-530,https://en.wikipedia.org/wiki/Kroisos_Kouros,14585,1215,high,marble
+25,Gemma Augustea,Gemma Augustea,10,https://en.wikipedia.org/wiki/Gemma_Augustea,12901,1075,high,stone
+26,Zbruch Idol,Zbruch Idol,1100,https://en.wikipedia.org/wiki/Zbruch_Idol,12440,1037,high,stone|limestone
+27,Sarcophagus of Junius Bassus,Sarcophagus of Junius Bassus,350,https://en.wikipedia.org/wiki/Sarcophagus_of_Junius_Bassus,11494,958,high,marble
+28,Sphinx of Naxos,Sphinx of Naxos,-559,https://en.wikipedia.org/wiki/Sphinx_of_Naxos,11441,953,high,marble
+29,James A. Garfield Monument,James A. Garfield Monument,1887,https://en.wikipedia.org/wiki/James_A._Garfield_Monument,10875,906,high,granite|bronze
+30,Capitoline Brutus,Capitoline Brutus,-274,https://en.wikipedia.org/wiki/Capitoline_Brutus,10613,884,high,bronze
+31,Pitti Tondo,Pitti Tondo,1504,https://en.wikipedia.org/wiki/Pitti_Tondo,9972,831,high,marble
+32,Monteverde Angel,Monteverde Angel,1882,https://en.wikipedia.org/wiki/Monteverde_Angel,8927,744,high,marble
+33,"Group of Aphrodite, Pan and Eros","Group of Aphrodite, Pan and Eros",-99,https://en.wikipedia.org/wiki/Group_of_Aphrodite%2C_Pan_and_Eros,8777,731,high,marble
+34,Brunswick Lion,Brunswick Lion,1100,https://en.wikipedia.org/wiki/Brunswick_Lion,8753,729,high,bronze
+35,Lanzón,Lanzón,-500,https://en.wikipedia.org/wiki/Lanz%C3%B3n,8017,668,high,granite
+36,Phra Bang,Phra Bang,100,https://en.wikipedia.org/wiki/Phra_Bang,7841,653,high,bronze
+37,Antinous Mondragone,Antinous Mondragone,130,https://en.wikipedia.org/wiki/Antinous_Mondragone,7801,650,high,marble
+38,Bamberg Horseman,Bamberg Horseman,1225,https://en.wikipedia.org/wiki/Bamberg_Horseman,7635,636,high,stone
+39,Goethe–Schiller Monument,Goethe and Schiller Monument,1857,https://en.wikipedia.org/wiki/Goethe_and_Schiller_Monument,7302,609,high,bronze
+40,Kouros of Apollonas,Kouros of Apollonas,-700,https://en.wikipedia.org/wiki/Kouros_of_Apollonas,7258,605,high,marble
+41,Ludovisi Throne,Ludovisi Throne,-460,https://en.wikipedia.org/wiki/Ludovisi_Throne,6739,562,high,marble
+42,Pisa Griffin,Pisa Griffin,1000,https://en.wikipedia.org/wiki/Pisa_Griffin,6726,561,high,bronze
+43,Farnese Cup,Farnese Cup,-200,https://en.wikipedia.org/wiki/Farnese_Cup,5447,454,high,stone
+44,Rampin Rider,Rampin Rider,-550,https://en.wikipedia.org/wiki/Rampin_Rider,3640,303,high,marble
+45,Juno Ludovisi,Juno Ludovisi,100,https://en.wikipedia.org/wiki/Juno_Ludovisi,3528,294,high,marble
+46,Bernward Column,Bernward Column,1000,https://en.wikipedia.org/wiki/Bernward_Column,2757,230,high,bronze
+47,The Cleveland Apollo: Apollo Sauroktonos (Lizard-Slayer) or Apollo the Python-Slayer,Cleveland Apollo,-349,https://en.wikipedia.org/wiki/Cleveland_Apollo,2625,219,high,bronze
+48,Strangford Apollo,Strangford Apollo,-490,https://en.wikipedia.org/wiki/Strangford_Apollo,2081,173,high,marble
+49,Gilt Bronzes from Cartoceto di Pergola,Gilt Bronzes from Cartoceto di Pergola,100,https://en.wikipedia.org/wiki/Gilt_Bronzes_from_Cartoceto_di_Pergola,1841,153,high,bronze
+50,Granite bowl,Granitschale im Lustgarten,1834,https://en.wikipedia.org/wiki/Granitschale_im_Lustgarten,1837,153,high,stone|granite
+51,Angelic Salutation,Angelic Salutation (Stoss),1518,https://en.wikipedia.org/wiki/Angelic_Salutation_(Stoss),1771,148,high,metal
+52,Statue of Giovanni delle Bande Nere,"Monument to Giovanni delle Bande Nere, Florence",1540,https://en.wikipedia.org/wiki/Monument_to_Giovanni_delle_Bande_Nere%2C_Florence,1721,143,high,marble
+53,Angelitos Athena,Angelitos Athena,-480,https://en.wikipedia.org/wiki/Angelitos_Athena,1699,142,high,marble
+54,Boston Throne,Boston Throne,100,https://en.wikipedia.org/wiki/Boston_Throne,1292,108,high,marble
+55,Kouros,Merenda Kouros,-540,https://en.wikipedia.org/wiki/Merenda_Kouros,1232,103,high,marble
+56,Sarcophagus of the Triumph of Bacchus,Sarcophagus of the Triumph of Bacchus (Lyon),300,https://en.wikipedia.org/wiki/Sarcophagus_of_the_Triumph_of_Bacchus_(Lyon),1078,90,high,marble|stone
+57,Reliquary Bust of Saint Rossore,San Rossore Reliquary,1425,https://en.wikipedia.org/wiki/San_Rossore_Reliquary,844,70,high,bronze
+58,Mausoleo Martinengo,Martinengo Mausoleum,1503,https://en.wikipedia.org/wiki/Martinengo_Mausoleum,699,58,high,marble|bronze
+59,Madonna dell'Udienza,Madonna dell'Udienza,1515,https://en.wikipedia.org/wiki/Madonna_dell'Udienza,638,53,high,marble
+60,Hildburgh Madonna,The Virgin and Child (school of Donatello),1426,https://en.wikipedia.org/wiki/The_Virgin_and_Child_(school_of_Donatello),430,36,high,marble
+61,Gallo di Ramperto,Gallo di Ramperto,820,https://en.wikipedia.org/wiki/Gallo_di_Ramperto,296,25,high,copper
+62,The Bowls Player,The Bowls Player,1857,https://en.wikipedia.org/wiki/The_Bowls_Player,206,17,high,bronze
+63,Stone Age in America,Stone Age in America,1887,https://en.wikipedia.org/wiki/Stone_Age_in_America,0,0,high,stone
+64,Whittington Stone,Whittington Stone,1821,https://en.wikipedia.org/wiki/Whittington_Stone,0,0,high,stone
+65,Bronze Head from Ife,Bronze Head from Ife,1300,https://en.wikipedia.org/wiki/Bronze_Head_from_Ife,0,0,high,bronze
+66,Bust of Francesco I d'Este,Bust of Francesco I d'Este,1652,https://en.wikipedia.org/wiki/Bust_of_Francesco_I_d'Este,0,0,high,marble
+67,Sursock bronze,Sursock bronze,200,https://en.wikipedia.org/wiki/Sursock_bronze,0,0,high,bronze
+68,Bronze man and centaur,Bronze man and centaur (Metropolitan Museum of Art),-800,https://en.wikipedia.org/wiki/Bronze_man_and_centaur_(Metropolitan_Museum_of_Art),0,0,high,bronze
+69,Trevi Fountain,Trevi Fountain,1732,https://en.wikipedia.org/wiki/Trevi_Fountain,566728,47227,unknown,
+70,Laocoön and His Sons,Laocoön and His Sons,-1,https://en.wikipedia.org/wiki/Laoco%C3%B6n_and_His_Sons,179183,14932,unknown,
+71,Moses,Moses (Michelangelo),1510,https://en.wikipedia.org/wiki/Moses_(Michelangelo),152156,12680,unknown,
+72,Lion Monument,Lion Monument,1821,https://en.wikipedia.org/wiki/Lion_Monument,127157,10596,unknown,
+73,Heirloom Seal of the Realm,Heirloom Seal of the Realm,-220,https://en.wikipedia.org/wiki/Heirloom_Seal_of_the_Realm,77438,6453,unknown,
+74,Hermannsdenkmal,Hermannsdenkmal,1875,https://en.wikipedia.org/wiki/Hermannsdenkmal,46450,3871,unknown,
+75,Franks Casket,Franks Casket,701,https://en.wikipedia.org/wiki/Franks_Casket,28761,2397,unknown,
+76,Venus Victrix,Venus Victrix (Canova),1800,https://en.wikipedia.org/wiki/Venus_Victrix_(Canova),28451,2371,unknown,
+77,Madara Rider,Madara Rider,710,https://en.wikipedia.org/wiki/Madara_Rider,27115,2260,unknown,
+78,Cellini Salt Cellar,Cellini Salt Cellar,1540,https://en.wikipedia.org/wiki/Cellini_Salt_Cellar,23584,1965,unknown,
+79,Farnese Bull,Farnese Bull,-150,https://en.wikipedia.org/wiki/Farnese_Bull,20883,1740,unknown,
+80,Napoleon as Mars the Peacemaker,Napoleon as Mars the Peacemaker,1806,https://en.wikipedia.org/wiki/Napoleon_as_Mars_the_Peacemaker,19767,1647,unknown,
+81,Equestrian statue of Gattamelata,Equestrian statue of Gattamelata,1500,https://en.wikipedia.org/wiki/Equestrian_statue_of_Gattamelata,18285,1524,unknown,
+82,Tomb of Pope Alexander VII,Tomb of Pope Alexander VII,1670,https://en.wikipedia.org/wiki/Tomb_of_Pope_Alexander_VII,16278,1357,unknown,
+83,Coatlicue statue,Coatlicue statue,1487,https://en.wikipedia.org/wiki/Coatlicue_statue,14110,1176,unknown,
+84,Apoxyomenos,Apoxyomenos,-330,https://en.wikipedia.org/wiki/Apoxyomenos,13890,1158,unknown,
+85,liver of Piacenza,Liver of Piacenza,-200,https://en.wikipedia.org/wiki/Liver_of_Piacenza,12981,1082,unknown,
+86,Tyler Davidson Fountain,Tyler Davidson Fountain,1871,https://en.wikipedia.org/wiki/Tyler_Davidson_Fountain,12293,1024,unknown,
+87,Kyffhäuser Monument,Kyffhäuser Monument,1890,https://en.wikipedia.org/wiki/Kyffh%C3%A4user_Monument,12095,1008,unknown,
+88,Gero Cross,Gero Cross,960,https://en.wikipedia.org/wiki/Gero_Cross,11500,958,unknown,
+89,Ludovisi Battle sarcophagus,Ludovisi Battle sarcophagus,250,https://en.wikipedia.org/wiki/Ludovisi_Battle_sarcophagus,11380,948,unknown,
+90,Pasquino,Pasquino,150,https://en.wikipedia.org/wiki/Pasquino,10863,905,unknown,
+91,Fontaine Bartholdi,Fontaine Bartholdi,1889,https://en.wikipedia.org/wiki/Fontaine_Bartholdi,10283,857,unknown,
+92,Altarpiece of Veit Stoss,Veit Stoss altarpiece in Kraków,1477,https://en.wikipedia.org/wiki/Veit_Stoss_altarpiece_in_Krak%C3%B3w,9073,756,unknown,
+93,Maisonneuve Monument,Maisonneuve Monument,1891,https://en.wikipedia.org/wiki/Maisonneuve_Monument,7822,652,unknown,
+94,Column of Antoninus Pius,Column of Antoninus Pius,161,https://en.wikipedia.org/wiki/Column_of_Antoninus_Pius,7103,592,unknown,
+95,Double Herm of Socrates and Seneca,Double Herm of Socrates and Seneca,300,https://en.wikipedia.org/wiki/Double_Herm_of_Socrates_and_Seneca,6746,562,unknown,
+96,Hermann Heights Monument,Hermann Heights Monument,1897,https://en.wikipedia.org/wiki/Hermann_Heights_Monument,6023,502,unknown,
+97,Lemnian Athena,Lemnian Athena,-450,https://en.wikipedia.org/wiki/Lemnian_Athena,5776,481,unknown,
+98,Disc of Theodosius,Missorium of Theodosius I,388,https://en.wikipedia.org/wiki/Missorium_of_Theodosius_I,5344,445,unknown,
+99,Ombra della sera,Ombra della sera,-400,https://en.wikipedia.org/wiki/Ombra_della_sera,5110,426,unknown,
+100,Throne of Maximian,Throne of Maximian,500,https://en.wikipedia.org/wiki/Throne_of_Maximian,5109,426,unknown,
+101,Monument to Cuauhtémoc,Monument to Cuauhtémoc,1887,https://en.wikipedia.org/wiki/Monument_to_Cuauht%C3%A9moc,4782,399,unknown,
+102,Harbaville Triptych,Harbaville Triptych,950,https://en.wikipedia.org/wiki/Harbaville_Triptych,4477,373,unknown,
+103,Fountain (Babuino),Babuino,1581,https://en.wikipedia.org/wiki/Babuino,4330,361,unknown,
+104,Çineköy inscription,Çineköy inscription,-750,https://en.wikipedia.org/wiki/%C3%87inek%C3%B6y_inscription,3825,319,unknown,
+105,Symmachi–Nicomachi diptych,Symmachi–Nicomachi diptych,388,https://en.wikipedia.org/wiki/Symmachi%E2%80%93Nicomachi_diptych,3451,288,unknown,
+106,Fountain of Neptune,Fountain of Neptune (Madrid),1780,https://en.wikipedia.org/wiki/Fountain_of_Neptune_(Madrid),3436,286,unknown,
+107,Gioiello di Vicenza,Jewel of Vicenza,1500,https://en.wikipedia.org/wiki/Jewel_of_Vicenza,3112,259,unknown,
+108,Ballachulish figure,Ballachulish figure,-600,https://en.wikipedia.org/wiki/Ballachulish_figure,2979,248,unknown,
+109,Saint John the Baptist,Saint John the Baptist (Donatello),1438,https://en.wikipedia.org/wiki/Saint_John_the_Baptist_(Donatello),2975,248,unknown,
+110,Broddenbjerg idol,Broddenbjerg idol,-530,https://en.wikipedia.org/wiki/Broddenbjerg_idol,2923,244,unknown,
+111,Medal of John VIII Palaiologos,Medal of John VIII Palaeologus,1438,https://en.wikipedia.org/wiki/Medal_of_John_VIII_Palaeologus,2779,232,unknown,
+112,Castor and Pollux,Castor and Pollux (Prado),100,https://en.wikipedia.org/wiki/Castor_and_Pollux_(Prado),2577,215,unknown,
+113,Tuxtla Statuette,Tuxtla Statuette,162,https://en.wikipedia.org/wiki/Tuxtla_Statuette,2435,203,unknown,
+114,Emperor Fountain,Emperor Fountain,1843,https://en.wikipedia.org/wiki/Emperor_Fountain,2352,196,unknown,
+115,"Tomb of Francis II, Duke of Brittany","Tomb of Francis II, Duke of Brittany",1502,https://en.wikipedia.org/wiki/Tomb_of_Francis_II%2C_Duke_of_Brittany,2322,194,unknown,
+116,Bennett Monolith,Bennett Monolith,373,https://en.wikipedia.org/wiki/Bennett_Monolith,2255,188,unknown,
+117,Isted Lion,Isted Lion,1860,https://en.wikipedia.org/wiki/Isted_Lion,2235,186,unknown,
+118,Portrait of Caracalla,Portrait of Caracalla,211,https://en.wikipedia.org/wiki/Portrait_of_Caracalla,2154,180,unknown,
+119,Gemma Claudia,Gemma Claudia,40,https://en.wikipedia.org/wiki/Gemma_Claudia,2093,174,unknown,
+120,Schiller Monument (Berlin),Schiller Monument (Berlin),1869,https://en.wikipedia.org/wiki/Schiller_Monument_(Berlin),2046,171,unknown,
+121,Wooldridge Monuments,Wooldridge Monuments,1892,https://en.wikipedia.org/wiki/Wooldridge_Monuments,1799,150,unknown,
+122,Colonne Vendôme,Colonne Vendôme,1800,https://en.wikipedia.org/wiki/Colonne_Vend%C3%B4me,1731,144,unknown,
+123,Martin Luther Monument,"Luther Monument (Washington, D.C.)",1884,https://en.wikipedia.org/wiki/Luther_Monument_(Washington%2C_D.C.),1699,142,unknown,
+124,Cristo de La Laguna,Cristo de La Laguna,1514,https://en.wikipedia.org/wiki/Cristo_de_La_Laguna,1441,120,unknown,
+125,Dawn,Dawn (Michelangelo),1524,https://en.wikipedia.org/wiki/Dawn_(Michelangelo),1216,101,unknown,
+126,Monument to Vincenzo Bellini,"Monument to Vincenzo Bellini, Catania",1882,https://en.wikipedia.org/wiki/Monument_to_Vincenzo_Bellini%2C_Catania,1170,98,unknown,
+127,Madonna and Child,"Madonna and Child (Donatello, Louvre)",1440,https://en.wikipedia.org/wiki/Madonna_and_Child_(Donatello%2C_Louvre),1140,95,unknown,
+128,Bust of Flora (Copy),Flora (sculpture),1500,https://en.wikipedia.org/wiki/Flora_(sculpture),1116,93,unknown,
+129,Day,Day (Michelangelo),1526,https://en.wikipedia.org/wiki/Day_(Michelangelo),995,83,unknown,
+130,Grave relief of Thraseas and Euandria,Grave relief of Thraseas and Euandria,350,https://en.wikipedia.org/wiki/Grave_relief_of_Thraseas_and_Euandria,962,80,unknown,
+131,Ecce Homo,Ecce Homo (statue),1600,https://en.wikipedia.org/wiki/Ecce_Homo_(statue),928,77,unknown,
+132,Christ of the Lanterns,Christ of the Lanterns,1794,https://en.wikipedia.org/wiki/Christ_of_the_Lanterns,851,71,unknown,
+133,Monument to Vittorio Emanuele II,Monument to Vittorio Emanuele II (Turin),1880,https://en.wikipedia.org/wiki/Monument_to_Vittorio_Emanuele_II_(Turin),810,68,unknown,
+134,Colonel Robert A. Smith Monument,Colonel Robert A. Smith Monument,1885,https://en.wikipedia.org/wiki/Colonel_Robert_A._Smith_Monument,794,66,unknown,
+135,Dusk,Dusk (Michelangelo),1524,https://en.wikipedia.org/wiki/Dusk_(Michelangelo),744,62,unknown,
+136,Attic funerary relief,Attic funerary relief (NAMA 4464),-100,https://en.wikipedia.org/wiki/Attic_funerary_relief_(NAMA_4464),572,48,unknown,
+137,Grave stele,Grave stele (NAMA 7901),-550,https://en.wikipedia.org/wiki/Grave_stele_(NAMA_7901),526,44,unknown,
+138,"James Garfield Memorial, Philadelphia",James A. Garfield Monument (Philadelphia),1895,https://en.wikipedia.org/wiki/James_A._Garfield_Monument_(Philadelphia),521,43,unknown,
+139,Erill la Vall Descent from the Cross,Erill la Vall Descent from the Cross,1150,https://en.wikipedia.org/wiki/Erill_la_Vall_Descent_from_the_Cross,514,43,unknown,
+140,Virgin from Ger,Virgin from Ger,1150,https://en.wikipedia.org/wiki/Virgin_from_Ger,511,43,unknown,
+141,Fountain of the Genius of Fieravecchia,Fountain of the Genius of Fieravecchia,1500,https://en.wikipedia.org/wiki/Fountain_of_the_Genius_of_Fieravecchia,452,38,unknown,
+142,Situla of the Pania,Situla of the Pania,-700,https://en.wikipedia.org/wiki/Situla_of_the_Pania,435,36,unknown,
+143,Statue of George Washington,"Statue of George Washington (Newburyport, Massachusetts)",1878,https://en.wikipedia.org/wiki/Statue_of_George_Washington_(Newburyport%2C_Massachusetts),426,36,unknown,
+144,Standing Youth,Standing Youth (Munich SL 162),-312,https://en.wikipedia.org/wiki/Standing_Youth_(Munich_SL_162),372,31,unknown,
+145,"Adam Mickiewicz Monument, Warsaw",Statue of Adam Mickiewicz (Warsaw),1898,https://en.wikipedia.org/wiki/Statue_of_Adam_Mickiewicz_(Warsaw),334,28,unknown,
+146,Candelabra Angels,Putti candle-holders,1434,https://en.wikipedia.org/wiki/Putti_candle-holders,329,27,unknown,
+147,Canapone,Canapone,1846,https://en.wikipedia.org/wiki/Canapone,260,22,unknown,
+148,Eastman Monument,Eastman Monument,1883,https://en.wikipedia.org/wiki/Eastman_Monument,220,18,unknown,
+149,Four seasons altar,Four seasons altar of Würzburg,100,https://en.wikipedia.org/wiki/Four_seasons_altar_of_W%C3%BCrzburg,217,18,unknown,
+150,Lion of Bienservida,Lion of Bienservida,-600,https://en.wikipedia.org/wiki/Lion_of_Bienservida,196,16,unknown,
+151,monument to Victor Emmanuel II,"Equestrian statue of Victor Emmanuel II, Milan",1879,https://en.wikipedia.org/wiki/Equestrian_statue_of_Victor_Emmanuel_II%2C_Milan,174,15,unknown,
+152,Ivriz relief,İvriz monuments,-800,https://en.wikipedia.org/wiki/%C4%B0vriz_monuments,61,5,unknown,
+153,George Washington Monument,Equestrian statue of George Washington (Chicago),1900,https://en.wikipedia.org/wiki/Equestrian_statue_of_George_Washington_(Chicago),2,0,unknown,
+154,Barberini ivory,Barberini ivory,525,https://en.wikipedia.org/wiki/Barberini_ivory,0,0,unknown,
+155,Elephant and Obelisk,Elephant and Obelisk,-600,https://en.wikipedia.org/wiki/Elephant_and_Obelisk,0,0,unknown,
+156,Bernward Doors,Bernward Doors,1015,https://en.wikipedia.org/wiki/Bernward_Doors,0,0,unknown,
+157,Battersea Shield,Battersea Shield,-349,https://en.wikipedia.org/wiki/Battersea_Shield,0,0,unknown,
+158,Hercules of the Forum Boarium,Hercules of the Forum Boarium,-200,https://en.wikipedia.org/wiki/Hercules_of_the_Forum_Boarium,0,0,unknown,
+159,"Pulpit of Sant' Andrea, Pistoia","Pulpit of Sant' Andrea, Pistoia (Giovanni Pisano)",1298,https://en.wikipedia.org/wiki/Pulpit_of_Sant'_Andrea%2C_Pistoia_(Giovanni_Pisano),0,0,unknown,
+160,Bust of Severus Alexander,Bust of Severus Alexander,225,https://en.wikipedia.org/wiki/Bust_of_Severus_Alexander,0,0,unknown,
+161,Portrait of Eleanor of Aragon,Portrait of Eleanor of Aragon,1468,https://en.wikipedia.org/wiki/Portrait_of_Eleanor_of_Aragon,0,0,unknown,
+162,Saint Louis of Toulouse,Saint Louis of Toulouse (Donatello),1423,https://en.wikipedia.org/wiki/Saint_Louis_of_Toulouse_(Donatello),0,0,unknown,
+163,Saint Peter,Saint Peter (Brunelleschi),1412,https://en.wikipedia.org/wiki/Saint_Peter_(Brunelleschi),0,0,unknown,
+164,Commodus as Hercules,Commodus as Hercules,200,https://en.wikipedia.org/wiki/Commodus_as_Hercules,0,0,unknown,
+165,Cane Tago,Cane Tago,1777,https://en.wikipedia.org/wiki/Cane_Tago,0,0,unknown,
+166,Portonaccio sarcophagus,Portonaccio sarcophagus,180,https://en.wikipedia.org/wiki/Portonaccio_sarcophagus,0,0,unknown,
+167,equestrian statue of Ferdinando I de' Medici,Equestrian Monument of Ferdinando I,1608,https://en.wikipedia.org/wiki/Equestrian_Monument_of_Ferdinando_I,0,0,unknown,
+168,The Porter,Il Facchino,1580,https://en.wikipedia.org/wiki/Il_Facchino,0,0,unknown,
+169,El Caballito,Equestrian statue of Charles IV of Spain,1802,https://en.wikipedia.org/wiki/Equestrian_statue_of_Charles_IV_of_Spain,0,0,unknown,
+170,Statue of John of Austria,Statue of John of Austria,1572,https://en.wikipedia.org/wiki/Statue_of_John_of_Austria,0,0,unknown,
+171,Shelley Memorial,Shelley Memorial,1892,https://en.wikipedia.org/wiki/Shelley_Memorial,0,0,unknown,
+172,Skidmore Fountain,Skidmore Fountain,1888,https://en.wikipedia.org/wiki/Skidmore_Fountain,0,0,unknown,
+173,Signal of Peace,A Signal of Peace,1890,https://en.wikipedia.org/wiki/A_Signal_of_Peace,0,0,unknown,
+174,St Bibiana,Saint Bibiana (Bernini),1624,https://en.wikipedia.org/wiki/Saint_Bibiana_(Bernini),0,0,unknown,
+175,Statue of Alexander VII,Statue of Alexander VII (Bernini),1661,https://en.wikipedia.org/wiki/Statue_of_Alexander_VII_(Bernini),0,0,unknown,
+176,equestrian statue of George IV,"Equestrian statue of George IV, Trafalgar Square",1843,https://en.wikipedia.org/wiki/Equestrian_statue_of_George_IV%2C_Trafalgar_Square,0,0,unknown,
+177,Stephen Foster,Stephen Foster (sculpture),1900,https://en.wikipedia.org/wiki/Stephen_Foster_(sculpture),0,0,unknown,
+178,Spirit of Commerce,Spirit of Commerce,1881,https://en.wikipedia.org/wiki/Spirit_of_Commerce,0,0,unknown,
+179,Sultanganj Buddha,Sultanganj Buddha,500,https://en.wikipedia.org/wiki/Sultanganj_Buddha,0,0,unknown,
+180,Temperance Fountain,"Temperance Fountain (Washington, D.C.)",1884,https://en.wikipedia.org/wiki/Temperance_Fountain_(Washington%2C_D.C.),0,0,unknown,
+181,The Alarm,The Alarm (Boyle),1884,https://en.wikipedia.org/wiki/The_Alarm_(Boyle),0,0,unknown,
+182,Thayer Monument,Thayer Monument,1883,https://en.wikipedia.org/wiki/Thayer_Monument,0,0,unknown,
+183,Equestrian Monument of Cosimo I,Equestrian Monument of Cosimo I,1594,https://en.wikipedia.org/wiki/Equestrian_Monument_of_Cosimo_I,0,0,unknown,
+184,The American Volunteer,The American Volunteer (statue),1876,https://en.wikipedia.org/wiki/The_American_Volunteer_(statue),0,0,unknown,
+185,Head of Eutropius,Head of Eutropius,425,https://en.wikipedia.org/wiki/Head_of_Eutropius,0,0,unknown,
+186,Theseus and the Minotaur,Theseus and the Minotaur (sculpture),1781,https://en.wikipedia.org/wiki/Theseus_and_the_Minotaur_(sculpture),0,0,unknown,
+187,Jockey of Artemision,Jockey of Artemision,-149,https://en.wikipedia.org/wiki/Jockey_of_Artemision,0,0,unknown,
+188,Venus Tauride,Venus Tauride,-200,https://en.wikipedia.org/wiki/Venus_Tauride,0,0,unknown,
+189,"Holy Trinity Monument, Timişoara","Plague Column, Timișoara",1740,https://en.wikipedia.org/wiki/Plague_Column%2C_Timi%C8%99oara,0,0,unknown,
+190,Peace Monument,Peace Monument,1877,https://en.wikipedia.org/wiki/Peace_Monument,0,0,unknown,
+191,Madonna of the Stair,Madonna of the Stairs,1490,https://en.wikipedia.org/wiki/Madonna_of_the_Stairs,0,0,unknown,
+192,Princesses Monument,Princesses Monument,1795,https://en.wikipedia.org/wiki/Princesses_Monument,0,0,unknown,
+193,Sarcophagus of the Spouses,Sarcophagus of the Spouses,-520,https://en.wikipedia.org/wiki/Sarcophagus_of_the_Spouses,0,0,unknown,
+194,Ludovisi Gaul,Ludovisi Gaul,-230,https://en.wikipedia.org/wiki/Ludovisi_Gaul,0,0,unknown,
+195,Night,Night (Michelangelo),1526,https://en.wikipedia.org/wiki/Night_(Michelangelo),0,0,unknown,
+196,Monument to Giuseppe Garibaldi,Monument to Garibaldi (Rome),1895,https://en.wikipedia.org/wiki/Monument_to_Garibaldi_(Rome),0,0,unknown,
+197,Patrizio Torlonia,Patrician Torlonia,-80,https://en.wikipedia.org/wiki/Patrician_Torlonia,0,0,unknown,
+198,Monument to Philip IV of Spain,Monument to Philip IV of Spain,1640,https://en.wikipedia.org/wiki/Monument_to_Philip_IV_of_Spain,0,0,unknown,
+199,Latona Fountain,Latona Fountain,1666,https://en.wikipedia.org/wiki/Latona_Fountain,0,0,unknown,
+200,Crouching Venus,Aphrodite of Rhodes,1,https://en.wikipedia.org/wiki/Aphrodite_of_Rhodes,0,0,unknown,
+201,Farnese Diadumenos,Farnese Diadumenos,100,https://en.wikipedia.org/wiki/Farnese_Diadumenos,0,0,unknown,
+202,Pioneer Monument,Pioneer Monument (San Francisco),1894,https://en.wikipedia.org/wiki/Pioneer_Monument_(San_Francisco),0,0,unknown,
+203,Sleeping Lion,"Sleeping Lion, Bytom",1873,https://en.wikipedia.org/wiki/Sleeping_Lion%2C_Bytom,0,0,unknown,
+204,Hera Farnese,Hera Farnese,100,https://en.wikipedia.org/wiki/Hera_Farnese,0,0,unknown,
+205,Palestrina Pietà,Palestrina Pietà,1550,https://en.wikipedia.org/wiki/Palestrina_Piet%C3%A0,0,0,unknown,
+206,Beautiful Virgin Mary from Krużlowa,Beautiful Virgin Mary from Krużlowa,1400,https://en.wikipedia.org/wiki/Beautiful_Virgin_Mary_from_Kru%C5%BClowa,0,0,unknown,
+207,Sculpture of a horse (Olympia B 1741),Sculpture of a horse (Olympia B 1741),-700,https://en.wikipedia.org/wiki/Sculpture_of_a_horse_(Olympia_B_1741),0,0,unknown,
+208,Head of a Faun,Head of a Faun,1489,https://en.wikipedia.org/wiki/Head_of_a_Faun,0,0,unknown,
+209,Lansdowne Heracles,Lansdowne Heracles,125,https://en.wikipedia.org/wiki/Lansdowne_Heracles,0,0,unknown,
+210,Landon-Era Birdbath,Landon-Era Birdbath,1900,https://en.wikipedia.org/wiki/Landon-Era_Birdbath,0,0,unknown,
+211,"Leif, the Discoverer","Leif, the Discoverer (Whitney)",1887,https://en.wikipedia.org/wiki/Leif%2C_the_Discoverer_(Whitney),0,0,unknown,
+212,Liberty Arming the Patriot,Liberty Arming the Patriot,1897,https://en.wikipedia.org/wiki/Liberty_Arming_the_Patriot,0,0,unknown,
+213,Lion of Venice,Lion of Venice,-300,https://en.wikipedia.org/wiki/Lion_of_Venice,0,0,unknown,
+214,Lieutenant General George Washington,Equestrian statue of George Washington (Washington Circle),1860,https://en.wikipedia.org/wiki/Equestrian_statue_of_George_Washington_(Washington_Circle),0,0,unknown,
+215,Major General George Henry Thomas,Equestrian statue of George Henry Thomas,1879,https://en.wikipedia.org/wiki/Equestrian_statue_of_George_Henry_Thomas,0,0,unknown,
+216,Major General Nathanael Greene,Equestrian statue of Nathanael Greene,1877,https://en.wikipedia.org/wiki/Equestrian_statue_of_Nathanael_Greene,0,0,unknown,
+217,Major General Marquis Gilbert de Lafayette,"Statue of the Marquis de Lafayette (Washington, D.C.)",1890,https://en.wikipedia.org/wiki/Statue_of_the_Marquis_de_Lafayette_(Washington%2C_D.C.),0,0,unknown,
+218,Mary Salome and Zebedee,Mary Salome and Zebedee,1505,https://en.wikipedia.org/wiki/Mary_Salome_and_Zebedee,0,0,unknown,
+219,Medusa,Medusa (Bernini),1640,https://en.wikipedia.org/wiki/Medusa_(Bernini),0,0,unknown,
+220,Memorial to Maria Raggi,Memorial to Maria Raggi,1647,https://en.wikipedia.org/wiki/Memorial_to_Maria_Raggi,0,0,unknown,
+221,Midsummer Carnival Shaft,Midsummer Carnival Shaft,1900,https://en.wikipedia.org/wiki/Midsummer_Carnival_Shaft,0,0,unknown,
+222,Battle of the Centaurs,Battle of the Centaurs (Michelangelo),1492,https://en.wikipedia.org/wiki/Battle_of_the_Centaurs_(Michelangelo),0,0,unknown,
+223,Military Courage,Military Courage,1885,https://en.wikipedia.org/wiki/Military_Courage,0,0,unknown,
+224,Saqqara Bird,Saqqara Bird,-150,https://en.wikipedia.org/wiki/Saqqara_Bird,0,0,unknown,
+225,The Deposition,The Deposition (Michelangelo),1600,https://en.wikipedia.org/wiki/The_Deposition_(Michelangelo),0,0,unknown,
+226,Nicolaus Copernicus Monument in Toruń,"Nicolaus Copernicus Monument, Toruń",1853,https://en.wikipedia.org/wiki/Nicolaus_Copernicus_Monument%2C_Toru%C5%84,0,0,unknown,
+227,The Rape of Proserpina,The Rape of Proserpina,1624,https://en.wikipedia.org/wiki/The_Rape_of_Proserpina,0,0,unknown,
+228,The Kiss,The Kiss (Rodin sculpture),1880,https://en.wikipedia.org/wiki/The_Kiss_(Rodin_sculpture),0,0,unknown,
+229,Saint Proculus,Saint Proculus (Michelangelo),1494,https://en.wikipedia.org/wiki/Saint_Proculus_(Michelangelo),0,0,unknown,
+230,Angel,Angel (Michelangelo),1494,https://en.wikipedia.org/wiki/Angel_(Michelangelo),0,0,unknown,
+231,Saint Petronius,Saint Petronius (Michelangelo),1494,https://en.wikipedia.org/wiki/Saint_Petronius_(Michelangelo),0,0,unknown,
+232,St. Peter's Baldachin,St. Peter's Baldachin,1620,https://en.wikipedia.org/wiki/St._Peter's_Baldachin,0,0,unknown,
+233,Taddei Tondo,Taddei Tondo,1504,https://en.wikipedia.org/wiki/Taddei_Tondo,0,0,unknown,
+234,Neptune and Triton,Neptune and Triton,1620,https://en.wikipedia.org/wiki/Neptune_and_Triton,0,0,unknown,
+235,Ludovisi Ares,Ludovisi Ares,420,https://en.wikipedia.org/wiki/Ludovisi_Ares,0,0,unknown,
+236,Portrait of the Four Tetrarchs,Portrait of the Four Tetrarchs,290,https://en.wikipedia.org/wiki/Portrait_of_the_Four_Tetrarchs,0,0,unknown,
+237,Lady of Galera,Lady of Galera,-650,https://en.wikipedia.org/wiki/Lady_of_Galera,0,0,unknown,
+238,Venus Italica,Venus Italica,1804,https://en.wikipedia.org/wiki/Venus_Italica,0,0,unknown,
+239,Diana of Versailles,Diana of Versailles,100,https://en.wikipedia.org/wiki/Diana_of_Versailles,0,0,unknown,
+240,Saint Matthew,Saint Matthew (Michelangelo),1505,https://en.wikipedia.org/wiki/Saint_Matthew_(Michelangelo),0,0,unknown,
+241,The Runaway Slave,The Runaway Slave,1891,https://en.wikipedia.org/wiki/The_Runaway_Slave,0,0,unknown,
+242,Monument to Peter I,Monument to Peter I (St. Michael's Castle),1800,https://en.wikipedia.org/wiki/Monument_to_Peter_I_(St._Michael's_Castle),0,0,unknown,
+243,Monument to Bohdan Khmelnytsky in Kyiv,"Bohdan Khmelnytsky Monument, Kyiv",1888,https://en.wikipedia.org/wiki/Bohdan_Khmelnytsky_Monument%2C_Kyiv,0,0,unknown,
+244,Andrew Jackson,"Equestrian statue of Andrew Jackson (Washington, D.C.)",1852,https://en.wikipedia.org/wiki/Equestrian_statue_of_Andrew_Jackson_(Washington%2C_D.C.),0,0,unknown,
+245,Nelson Monument,"Nelson Monument, Liverpool",1813,https://en.wikipedia.org/wiki/Nelson_Monument%2C_Liverpool,0,0,unknown,
+246,Amazon statue types,Amazon statue types,150,https://en.wikipedia.org/wiki/Amazon_statue_types,0,0,unknown,
+247,Abraham Lincoln,Bust of Abraham Lincoln (Indianapolis),1862,https://en.wikipedia.org/wiki/Bust_of_Abraham_Lincoln_(Indianapolis),0,0,unknown,
+248,Togatus Barberini,Togatus Barberini,-100,https://en.wikipedia.org/wiki/Togatus_Barberini,0,0,unknown,
+249,A Faun Teased by Children,A Faun Teased by Children,1616,https://en.wikipedia.org/wiki/A_Faun_Teased_by_Children,0,0,unknown,
+250,Admiral David G. Farragut,"Statue of David Farragut (Washington, D.C.)",1881,https://en.wikipedia.org/wiki/Statue_of_David_Farragut_(Washington%2C_D.C.),0,0,unknown,
