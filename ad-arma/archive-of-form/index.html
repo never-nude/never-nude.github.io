@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Archive of Form</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f12;
+        --panel: #121920;
+        --text: #e9ecef;
+        --muted: #adb5bd;
+        --accent: #d4b06a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Fraunces", Georgia, serif;
+        background: linear-gradient(160deg, #0b0f12, #151f28 55%, #0c1217);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 40px 20px 64px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        letter-spacing: 0.02em;
+      }
+      .subtitle {
+        margin: 0 0 28px;
+        color: var(--muted);
+        font: 500 1.04rem/1.45 "Manrope", system-ui, sans-serif;
+      }
+      .card {
+        background: color-mix(in hsl, var(--panel) 88%, black);
+        border: 1px solid #2a333d;
+        border-radius: 14px;
+        padding: 18px 20px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .meta {
+        color: var(--muted);
+        font: 500 0.95rem/1.45 "Manrope", system-ui, sans-serif;
+      }
+      ul {
+        margin: 12px 0 0;
+        padding-left: 18px;
+      }
+      li {
+        margin: 10px 0;
+      }
+      .badge {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #5e4f30;
+        color: #e3c98f;
+        font: 600 0.78rem/1.4 "Manrope", system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>The Archive of Form</h1>
+      <p class="subtitle">An Open Library of Sculptures from Antiquity to the Nineteenth Century</p>
+      <section class="card">
+        <div class="meta">Intake pattern: <code>/ad-arma/archive-of-form/intake/{NNN}-{slug}/</code></div>
+        <ul>
+          <li>
+            <a href="/ad-arma/archive-of-form/intake/001-great-sphinx-of-giza/">001 - Great Sphinx of Giza</a>
+            <span class="badge">Ineligible for ingest</span>
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
