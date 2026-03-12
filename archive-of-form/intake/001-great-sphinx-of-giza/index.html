@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Archive of Form - Intake 001 - Great Sphinx of Giza</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f12;
+        --panel: #121920;
+        --line: #2a333d;
+        --text: #ebedf0;
+        --muted: #aeb6bf;
+        --accent: #d4b06a;
+        --good: #89d19d;
+        --bad: #e78e8e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at 15% 15%, #233243 0%, #0b0f12 55%);
+        color: var(--text);
+        font: 500 16px/1.55 "Manrope", system-ui, sans-serif;
+      }
+      .wrap {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 34px 20px 64px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font: 600 clamp(1.8rem, 4vw, 2.8rem)/1.1 "Fraunces", Georgia, serif;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font: 600 1.2rem/1.2 "Fraunces", Georgia, serif;
+      }
+      .subtitle {
+        margin: 0 0 20px;
+        color: var(--muted);
+      }
+      .crumb {
+        margin: 0 0 8px;
+        font-size: 0.9rem;
+      }
+      .card {
+        background: color-mix(in hsl, var(--panel) 90%, black);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin: 0 0 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .good { color: var(--good); }
+      .bad { color: var(--bad); }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+      th, td {
+        text-align: left;
+        vertical-align: top;
+        border-top: 1px solid var(--line);
+        padding: 10px 8px;
+      }
+      th {
+        color: #d6dde5;
+        font-weight: 700;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover { text-decoration: underline; }
+      code {
+        background: #1b2430;
+        border: 1px solid #334152;
+        border-radius: 6px;
+        padding: 1px 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <p class="crumb"><a href="/archive-of-form/">The Archive of Form</a> / Intake 001</p>
+      <h1>Great Sphinx of Giza</h1>
+      <p class="subtitle">An Open Library of Sculptures from Antiquity to the Nineteenth Century</p>
+
+      <section class="card">
+        <h2>Eligibility Split</h2>
+        <div class="grid">
+          <div>Importance eligibility: <span class="pill good">Eligible</span></div>
+          <div>STL data availability: <span class="pill bad">Ineligible</span></div>
+          <div>Intake date: 2026-03-12</div>
+          <div>Intake id: <code>001-great-sphinx-of-giza</code></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Identity Verification</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Value</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Work</td>
+              <td>Great Sphinx of Giza</td>
+              <td><a href="https://en.wikipedia.org/wiki/Great_Sphinx_of_Giza">Wikipedia</a></td>
+            </tr>
+            <tr>
+              <td>Period</td>
+              <td>Old Kingdom Egypt (c. 26th century BCE)</td>
+              <td><a href="https://www.wikidata.org/wiki/Q130958">Wikidata Q130958</a></td>
+            </tr>
+            <tr>
+              <td>Material</td>
+              <td>Limestone (stone-carved)</td>
+              <td><a href="https://www.wikidata.org/wiki/Q130958">Wikidata Q130958</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>STL-Style Source Audit</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Triangles</th>
+              <th>Vertices</th>
+              <th>License / Download</th>
+              <th>Decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="https://api.sketchfab.com/v3/models/c126509af31142a9a0d116e264e7b629">Sketchfab API: c126...</a></td>
+              <td>1,487,624</td>
+              <td>847,687</td>
+              <td>CC BY 4.0 / downloadable</td>
+              <td>Rejected: identity mismatch (1903 cast bronze model, not the ancient monument).</td>
+            </tr>
+            <tr>
+              <td><a href="https://api.sketchfab.com/v3/models/f169dbe7974648babe327179091e0ee3">Sketchfab API: f169...</a></td>
+              <td>40,000</td>
+              <td>20,002</td>
+              <td>CC BY 4.0 / downloadable</td>
+              <td>Rejected: below density target (under 300k triangles).</td>
+            </tr>
+            <tr>
+              <td><a href="https://api.sketchfab.com/v3/models/b2b6cd14feed451b9ca8a13ff1fe0ff6">Sketchfab API: b2b6...</a></td>
+              <td>379,092</td>
+              <td>202,266</td>
+              <td>Standard / not downloadable</td>
+              <td>Rejected: license/access unusable for local ingest.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Query used:
+          <a href="https://api.sketchfab.com/v3/search?type=models&q=Great%20Sphinx%20Giza&count=30">Sketchfab search endpoint</a>
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Ingest Result</h2>
+        <p>
+          No source currently satisfies all required conditions at once:
+          correct identity, usable downloadable mesh, usable license, and density threshold.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
