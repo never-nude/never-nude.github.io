@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Dying Gaul - Museum Viewer</title>
+    <style>
+      :root {
+        --bg0: #efe6d8;
+        --bg1: #d8c9b3;
+        --panel: #efe6d8f2;
+        --panel-border: #c6b79f;
+        --text: #2f2a22;
+        --muted: #6a5f51;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 18% 8%, var(--bg1) 0%, var(--bg0) 64%);
+        color: var(--text);
+        font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      .app {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .panel {
+        padding: 12px 14px 10px;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--panel);
+        backdrop-filter: blur(6px);
+      }
+      .title {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.01em;
+      }
+      .sub {
+        margin: 4px 0 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 8px 12px;
+      }
+      .control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+      }
+      .control label {
+        min-width: 88px;
+        color: var(--text);
+      }
+      .control input[type="range"] {
+        width: 100%;
+        accent-color: #8d7550;
+      }
+      .control output {
+        min-width: 40px;
+        text-align: right;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .row {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        flex-wrap: wrap;
+      }
+      .row label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--text);
+      }
+      .btn {
+        border: 1px solid #a18f73;
+        border-radius: 6px;
+        background: #ece1cf;
+        color: #2d261f;
+        font-size: 12px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      #stage {
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .loading {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      @supports (padding: max(0px)) {
+        .panel {
+          padding-top: max(12px, env(safe-area-inset-top));
+          padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+      }
+      @media (max-width: 760px) {
+        .control label {
+          min-width: 78px;
+        }
+      }
+      @media (max-width: 820px) {
+        .app {
+          display: flex;
+          flex-direction: column;
+          height: 100svh;
+          min-height: 100svh;
+        }
+        #stage {
+          order: 1;
+          width: 100%;
+          height: auto;
+          flex: 1 1 auto;
+          min-height: 46svh;
+        }
+        .panel {
+          order: 2;
+          position: relative;
+          border-top: 1px solid var(--panel-border);
+          border-bottom: 0;
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 -6px 18px #0000001f;
+          max-height: min(48svh, 430px);
+          overflow: auto;
+          padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+        }
+        .title {
+          font-size: 16px;
+          line-height: 1.25;
+        }
+        .sub {
+          font-size: 12px;
+          margin-bottom: 8px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .control {
+          font-size: 13px;
+        }
+        .control label {
+          min-width: 96px;
+          font-weight: 600;
+        }
+        .control input[type="range"] {
+          min-height: 32px;
+        }
+        .row {
+          gap: 10px;
+          font-size: 12px;
+        }
+        .row label input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+        }
+        .btn {
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+      }
+      @media (max-width: 820px) and (orientation: landscape) {
+        .panel {
+          max-height: min(46svh, 350px);
+        }
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <section class="panel">
+        <h1 class="title">Dying Gaul (Roman copy after Hellenistic original, c. 230-220 BCE)</h1>
+        <p id="stats" class="sub">Loading high-fidelity STL sculpture...</p>
+
+        <div class="grid">
+          <div class="control"><label for="spin">Spin</label><input id="spin" type="range" min="0" max="1.6" step="0.01" value="0.12" /><output id="spinv">0.12</output></div>
+          <div class="control"><label for="zoom">Zoom</label><input id="zoom" type="range" min="1.2" max="6.4" step="0.01" value="3.30" /><output id="zoomv">3.30</output></div>
+          <div class="control"><label for="lightAngle">Key Angle</label><input id="lightAngle" type="range" min="-180" max="180" step="1" value="34" /><output id="lightAnglev">34.00</output></div>
+          <div class="control"><label for="lightPower">Light Power</label><input id="lightPower" type="range" min="0.2" max="4.5" step="0.01" value="2.20" /><output id="lightPowerv">2.20</output></div>
+          <div class="control"><label for="exposure">Exposure</label><input id="exposure" type="range" min="0" max="2.8" step="0.01" value="0.39" /><output id="exposurev">0.39</output></div>
+          <div class="control"><label for="rough">Roughness</label><input id="rough" type="range" min="0.2" max="1" step="0.01" value="0.58" /><output id="roughv">0.58</output></div>
+        </div>
+
+        <div class="row">
+          <label><input id="canManipulate" type="checkbox" checked /> Manipulate</label>
+          <label><input id="autoRotate" type="checkbox" checked /> Auto Rotate</label>
+          <label><input id="multiLight" type="checkbox" checked /> Multi-Light</label>
+          <label><input id="wire" type="checkbox" /> Wireframe</label>
+          <button id="frontBtn" class="btn" type="button">Front</button>
+          <button id="resetBtn" class="btn" type="button">Reset</button>
+          <button id="museumBtn" class="btn" type="button">Museum</button>
+          <span>Drag to rotate. Scroll/pinch to zoom. Shift+drag to pan.</span>
+        </div>
+      </section>
+
+      <section id="stage">
+        <div class="loading" id="loading">Loading high-fidelity STL sculpture...</div>
+      </section>
+    </div>
+
+    <script type="module">
+      const MODEL_URL_PRIMARY = "https://api.smk.dk/api/v1/download-3d/4f16c782s_smk-190-inv-dying-gladiator.stl";
+      const MODEL_URL_FALLBACK = "https://api.smk.dk/api/v1/download-3d/5t34sq60f_KAS1312_small.stl";
+      const HAS_DISTINCT_FALLBACK = MODEL_URL_FALLBACK !== MODEL_URL_PRIMARY;
+      const PRIMARY_TIMEOUT_MS = 45000;
+      const FALLBACK_TIMEOUT_MS = 30000;
+      let modelUrlInUse = MODEL_URL_PRIMARY;
+
+      const stage = document.getElementById("stage");
+      const stats = document.getElementById("stats");
+      const loading = document.getElementById("loading");
+
+      const defaults = {
+        spin: 0.12,
+        zoom: 3.30,
+        lightAngle: 34,
+        lightPower: 2.20,
+        exposure: 0.39,
+        rough: 0.58,
+        canManipulate: true,
+        autoRotate: true,
+        multiLight: true,
+        wire: false
+      };
+
+      const rangeIds = ["spin", "zoom", "lightAngle", "lightPower", "exposure", "rough"];
+      const checkboxIds = ["canManipulate", "autoRotate", "multiLight", "wire"];
+
+      function n(id) {
+        return Number(document.getElementById(id).value);
+      }
+
+      function refreshReadouts() {
+        for (const id of rangeIds) {
+          document.getElementById(id + "v").textContent = n(id).toFixed(2);
+        }
+      }
+
+      function setDefaults() {
+        for (const id of rangeIds) {
+          document.getElementById(id).value = String(defaults[id]);
+        }
+        for (const id of checkboxIds) {
+          document.getElementById(id).checked = defaults[id];
+        }
+        refreshReadouts();
+      }
+
+      function withTimeout(promise, timeoutMs, label) {
+        return new Promise((resolve, reject) => {
+          const timer = setTimeout(() => {
+            reject(new Error(`${label} timed out after ${Math.round(timeoutMs / 1000)}s`));
+          }, timeoutMs);
+
+          promise.then(
+            (value) => {
+              clearTimeout(timer);
+              resolve(value);
+            },
+            (error) => {
+              clearTimeout(timer);
+              reject(error);
+            }
+          );
+        });
+      }
+
+      async function fetchModelByteLength(url) {
+        try {
+          const head = await fetch(url, { method: "HEAD" });
+          if (!head.ok) return null;
+          const len = Number(head.headers.get("content-length"));
+          return Number.isFinite(len) && len > 0 ? len : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function chooseInitialModelUrl() {
+        return MODEL_URL_PRIMARY;
+      }
+
+      async function init() {
+        setDefaults();
+
+        let THREE;
+        let OrbitControls;
+        let STLLoader;
+        let RoomEnvironment;
+        let mergeVertices;
+
+        try {
+          THREE = await import("https://esm.sh/three@0.161.0?bundle");
+          ({ OrbitControls } = await import("https://esm.sh/three@0.161.0/examples/jsm/controls/OrbitControls.js?bundle"));
+          ({ STLLoader } = await import("https://esm.sh/three@0.161.0/examples/jsm/loaders/STLLoader.js?bundle"));
+          ({ RoomEnvironment } = await import("https://esm.sh/three@0.161.0/examples/jsm/environments/RoomEnvironment.js?bundle"));
+          ({ mergeVertices } = await import("https://esm.sh/three@0.161.0/examples/jsm/utils/BufferGeometryUtils.js?bundle"));
+        } catch (error) {
+          loading.textContent = `Module load error: ${error.message}`;
+          stats.textContent = "Failed to load 3D engine modules.";
+          return;
+        }
+
+        const isMobileRender = window.matchMedia("(max-width: 820px)").matches;
+        modelUrlInUse = chooseInitialModelUrl();
+        stats.textContent =
+          modelUrlInUse === MODEL_URL_PRIMARY
+            ? "Loading high-fidelity STL sculpture..."
+            : "Loading STL sculpture...";
+
+        let stlByteLength = await fetchModelByteLength(modelUrlInUse);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobileRender ? 1.15 : 1.8));
+        renderer.setSize(stage.clientWidth, stage.clientHeight);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = defaults.exposure;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xe8dfd0);
+        scene.fog = new THREE.Fog(0xe8dfd0, 7.0, 12.0);
+
+        const camera = new THREE.PerspectiveCamera(44, stage.clientWidth / stage.clientHeight, 0.01, 120);
+        camera.position.set(2.3, 1.6, defaults.zoom);
+
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.03).texture;
+
+        const hemi = new THREE.HemisphereLight(0xfff7e9, 0xbcad98, 0.95);
+        scene.add(hemi);
+
+        const keyLight = new THREE.DirectionalLight(0xfff7ea, defaults.lightPower);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(isMobileRender ? 1024 : 2048, isMobileRender ? 1024 : 2048);
+        keyLight.shadow.camera.near = 0.1;
+        keyLight.shadow.camera.far = 16;
+        keyLight.shadow.camera.left = -3.2;
+        keyLight.shadow.camera.right = 3.2;
+        keyLight.shadow.camera.top = 3.2;
+        keyLight.shadow.camera.bottom = -3.2;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xf4efe7, defaults.lightPower * 0.82);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xdde4f4, defaults.lightPower * 0.66);
+        scene.add(rimLight);
+
+        const bounceLight = new THREE.PointLight(0xffead1, defaults.lightPower * 0.34, 12, 2);
+        bounceLight.position.set(0.0, 0.9, 1.25);
+        scene.add(bounceLight);
+
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(12, 12),
+          new THREE.MeshStandardMaterial({ color: 0xd2c5b2, roughness: 0.96, metalness: 0.0 })
+        );
+        floor.rotation.x = -Math.PI * 0.5;
+        floor.position.y = 0;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const pedestalHeight = 0.30;
+        const pedestal = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.46, 0.56, pedestalHeight, 80),
+          new THREE.MeshStandardMaterial({ color: 0xc5b7a4, roughness: 0.82, metalness: 0.02 })
+        );
+        pedestal.position.y = pedestalHeight * 0.5;
+        pedestal.castShadow = true;
+        pedestal.receiveShadow = true;
+        scene.add(pedestal);
+
+        let sculptureMaterial = null;
+        let sculpture = null;
+        let focusY = 1.0;
+
+        try {
+          const loader = new STLLoader();
+          let geometry = null;
+          const startUrl = modelUrlInUse;
+          const startTimeout = startUrl === MODEL_URL_PRIMARY ? PRIMARY_TIMEOUT_MS : FALLBACK_TIMEOUT_MS;
+
+          try {
+            geometry = await withTimeout(loader.loadAsync(startUrl), startTimeout, "STL load");
+          } catch (error) {
+            if (HAS_DISTINCT_FALLBACK && startUrl !== MODEL_URL_FALLBACK) {
+              modelUrlInUse = MODEL_URL_FALLBACK;
+              stlByteLength = await fetchModelByteLength(modelUrlInUse);
+              stats.textContent = "Full-resolution mesh unavailable; switching to optimized STL...";
+              loading.textContent = "Switching to optimized STL mesh...";
+              geometry = await withTimeout(loader.loadAsync(modelUrlInUse), FALLBACK_TIMEOUT_MS, "Fallback STL load");
+            } else {
+              throw error;
+            }
+          }
+
+          // Source scan uses Z-up. Rotate into Y-up so it stands upright by default.
+          geometry.rotateX(-Math.PI * 0.5);
+          // On very dense scans, skip mergeVertices to avoid mobile memory spikes.
+          const vertexCount = geometry.attributes.position?.count || 0;
+          if (vertexCount < 1_800_000) {
+            geometry = mergeVertices(geometry, 1e-4);
+          }
+          geometry.computeVertexNormals();
+          geometry.computeBoundingBox();
+
+          const box = geometry.boundingBox;
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          geometry.translate(-center.x, -box.min.y, -center.z);
+
+          sculptureMaterial = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color("#ece3d3"),
+            roughness: defaults.rough,
+            metalness: 0.0,
+            clearcoat: 0.18,
+            clearcoatRoughness: 0.38,
+            sheen: 0.22,
+            sheenRoughness: 0.8,
+            sheenColor: new THREE.Color("#fff2df"),
+            reflectivity: 0.38
+          });
+
+          sculpture = new THREE.Mesh(geometry, sculptureMaterial);
+          const targetHeight = 1.58;
+          const scale = targetHeight / size.y;
+          sculpture.scale.setScalar(scale);
+          sculpture.position.y = pedestalHeight;
+          sculpture.castShadow = true;
+          sculpture.receiveShadow = true;
+          scene.add(sculpture);
+
+          focusY = pedestalHeight + targetHeight * 0.57;
+
+          const triCount = geometry.index ? geometry.index.count / 3 : geometry.attributes.position.count / 3;
+          const sizeLabel = stlByteLength ? `${(stlByteLength / (1024 * 1024)).toFixed(1)} MB STL` : "High-fidelity STL";
+          const fidelityLabel = HAS_DISTINCT_FALLBACK && modelUrlInUse === MODEL_URL_FALLBACK ? " (fallback)" : "";
+          stats.textContent = `${Math.round(triCount).toLocaleString()} triangles | ${sizeLabel}${fidelityLabel}`;
+
+          loading.remove();
+          stage.appendChild(renderer.domElement);
+        } catch (error) {
+          stats.textContent = "Failed to load STL mesh.";
+          loading.textContent = `Mesh load error: ${error.message}`;
+          return;
+        }
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.minDistance = 1.2;
+        controls.maxDistance = 8.0;
+        controls.maxPolarAngle = Math.PI * 0.5 - 0.04;
+        const mobileQuery = window.matchMedia("(max-width: 820px)");
+        let isMobileLayout = mobileQuery.matches;
+
+        function zoomWithMobileOffset() {
+          return n("zoom") + (isMobileLayout ? 0.85 : 0.0);
+        }
+
+        function applyDefaultView() {
+          const mobileTargetLift = isMobileLayout ? 0.22 : 0.0;
+          controls.target.set(0, focusY + mobileTargetLift, 0);
+          const viewVector = isMobileLayout
+            ? new THREE.Vector3(1.1, 0.45, 2.2)
+            : new THREE.Vector3(1.8, 0.72, 1.85);
+          camera.position.copy(
+            controls.target.clone().add(viewVector.normalize().multiplyScalar(defaults.zoom + (isMobileLayout ? 0.85 : 0.0)))
+          );
+          controls.update();
+        }
+
+        applyDefaultView();
+
+        const clock = new THREE.Clock();
+
+        function updateLight() {
+          const angle = THREE.MathUtils.degToRad(n("lightAngle"));
+          const radius = 3.6;
+          keyLight.position.set(Math.cos(angle) * radius, 4.2, Math.sin(angle) * radius);
+          fillLight.position.set(-Math.sin(angle) * 3.2, 2.3, Math.cos(angle) * 2.8);
+          rimLight.position.set(-Math.cos(angle) * 2.7, 2.7, -Math.sin(angle) * 2.9);
+
+          const power = n("lightPower");
+          const multi = document.getElementById("multiLight").checked;
+
+          keyLight.intensity = power;
+          fillLight.intensity = multi ? power * 0.82 : 0;
+          rimLight.intensity = multi ? power * 0.66 : 0;
+          bounceLight.intensity = multi ? power * 0.34 : 0;
+        }
+
+        function updateCameraDistance() {
+          const z = zoomWithMobileOffset();
+          const dir = camera.position.clone().sub(controls.target).normalize();
+          camera.position.copy(controls.target.clone().addScaledVector(dir, z));
+        }
+
+        function updateLook() {
+          renderer.toneMappingExposure = n("exposure");
+          if (sculptureMaterial) {
+            sculptureMaterial.roughness = n("rough");
+            sculptureMaterial.wireframe = document.getElementById("wire").checked;
+          }
+        }
+
+        const resetBtn = document.getElementById("resetBtn");
+        resetBtn.addEventListener("click", () => {
+          setDefaults();
+          applyDefaultView();
+          updateLight();
+          updateLook();
+        });
+
+        const frontBtn = document.getElementById("frontBtn");
+        frontBtn.addEventListener("click", () => {
+          camera.position.set(0.0, focusY + (isMobileLayout ? 0.35 : 0.2), zoomWithMobileOffset());
+          controls.target.set(0, focusY + (isMobileLayout ? 0.22 : 0.0), 0);
+          controls.update();
+        });
+
+        const museumBtn = document.getElementById("museumBtn");
+        museumBtn.addEventListener("click", () => {
+          window.location.href = "/museum/";
+        });
+
+        for (const id of rangeIds) {
+          document.getElementById(id).addEventListener("input", () => {
+            refreshReadouts();
+            if (id === "zoom") {
+              updateCameraDistance();
+            }
+            if (id === "lightAngle" || id === "lightPower") {
+              updateLight();
+            }
+            if (id === "exposure" || id === "rough") {
+              updateLook();
+            }
+          });
+        }
+
+        for (const id of checkboxIds) {
+          document.getElementById(id).addEventListener("change", () => {
+            controls.enabled = document.getElementById("canManipulate").checked;
+            updateLight();
+            updateLook();
+          });
+        }
+
+        updateLight();
+        updateLook();
+        controls.enabled = defaults.canManipulate;
+
+        function render() {
+          const dt = clock.getDelta();
+
+          if (sculpture && document.getElementById("autoRotate").checked) {
+            sculpture.rotation.y += dt * n("spin");
+          }
+
+          controls.update();
+          renderer.render(scene, camera);
+          requestAnimationFrame(render);
+        }
+
+        render();
+
+        const onResize = () => {
+          const w = stage.clientWidth;
+          const h = stage.clientHeight;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+          const nextMobile = mobileQuery.matches;
+          if (nextMobile !== isMobileLayout) {
+            isMobileLayout = nextMobile;
+            applyDefaultView();
+          } else {
+            updateCameraDistance();
+          }
+        };
+
+        window.addEventListener("resize", onResize);
+      }
+
+      init().catch((error) => {
+        console.error(error);
+        loading.textContent = `Unexpected error: ${error.message}`;
+      });
+    </script>
+  </body>
+</html>
