@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Charioteer of Delphi - Museum Viewer</title>
+    <style>
+      :root {
+        --bg0: #efe6d8;
+        --bg1: #d8c9b3;
+        --panel: #efe6d8f2;
+        --panel-border: #c6b79f;
+        --text: #2f2a22;
+        --muted: #6a5f51;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 18% 8%, var(--bg1) 0%, var(--bg0) 64%);
+        color: var(--text);
+        font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      .app {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .panel {
+        padding: 12px 14px 10px;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--panel);
+        backdrop-filter: blur(6px);
+      }
+      .title {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.01em;
+      }
+      .sub {
+        margin: 4px 0 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 8px 12px;
+      }
+      .control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+      }
+      .control label {
+        min-width: 88px;
+        color: var(--text);
+      }
+      .control input[type="range"] {
+        width: 100%;
+        accent-color: #8d7550;
+      }
+      .control output {
+        min-width: 40px;
+        text-align: right;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .row {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        flex-wrap: wrap;
+      }
+      .row label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--text);
+      }
+      .btn {
+        border: 1px solid #a18f73;
+        border-radius: 6px;
+        background: #ece1cf;
+        color: #2d261f;
+        font-size: 12px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      #stage {
+        width: 100%;
+        height: 100%;
+      }
+      .viewer-frame {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+      .loading {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      @supports (padding: max(0px)) {
+        .panel {
+          padding-top: max(12px, env(safe-area-inset-top));
+          padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+      }
+      @media (max-width: 760px) {
+        .control label {
+          min-width: 78px;
+        }
+      }
+      @media (max-width: 820px) {
+        .app {
+          display: flex;
+          flex-direction: column;
+          height: 100svh;
+          min-height: 100svh;
+        }
+        #stage {
+          order: 1;
+          width: 100%;
+          height: auto;
+          flex: 1 1 auto;
+          min-height: 46svh;
+        }
+        .panel {
+          order: 2;
+          position: relative;
+          border-top: 1px solid var(--panel-border);
+          border-bottom: 0;
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 -6px 18px #0000001f;
+          max-height: min(48svh, 430px);
+          overflow: auto;
+          padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+        }
+        .title {
+          font-size: 16px;
+          line-height: 1.25;
+        }
+        .sub {
+          font-size: 12px;
+          margin-bottom: 8px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .control {
+          font-size: 13px;
+        }
+        .control label {
+          min-width: 96px;
+          font-weight: 600;
+        }
+        .control input[type="range"] {
+          min-height: 32px;
+        }
+        .row {
+          gap: 10px;
+          font-size: 12px;
+        }
+        .row label input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+        }
+        .btn {
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+      }
+      @media (max-width: 820px) and (orientation: landscape) {
+        .panel {
+          max-height: min(46svh, 350px);
+        }
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <section class="panel">
+        <h1 class="title">Charioteer of Delphi (c. 478-474 BCE)</h1>
+        <p class="sub">Artist: Unknown Ancient Greek sculptor (lifespan unknown)</p>
+        <p id="stats" class="sub">Loading high-fidelity source mesh...</p>
+
+        <div class="grid">
+          <div class="control"><label for="spin">Spin</label><input id="spin" type="range" min="0" max="1.6" step="0.01" value="0.12" /><output id="spinv">0.12</output></div>
+          <div class="control"><label for="zoom">Zoom</label><input id="zoom" type="range" min="1.2" max="6.4" step="0.01" value="3.30" /><output id="zoomv">3.30</output></div>
+          <div class="control"><label for="lightAngle">Key Angle</label><input id="lightAngle" type="range" min="-180" max="180" step="1" value="34" /><output id="lightAnglev">34.00</output></div>
+          <div class="control"><label for="lightPower">Light Power</label><input id="lightPower" type="range" min="0.2" max="4.5" step="0.01" value="2.20" /><output id="lightPowerv">2.20</output></div>
+          <div class="control"><label for="exposure">Exposure</label><input id="exposure" type="range" min="0" max="2.8" step="0.01" value="0.39" /><output id="exposurev">0.39</output></div>
+          <div class="control"><label for="rough">Roughness</label><input id="rough" type="range" min="0.2" max="1" step="0.01" value="0.58" /><output id="roughv">0.58</output></div>
+        </div>
+
+        <div class="row">
+          <label><input id="canManipulate" type="checkbox" checked /> Manipulate</label>
+          <label><input id="autoRotate" type="checkbox" checked /> Auto Rotate</label>
+          <label><input id="multiLight" type="checkbox" checked /> Multi-Light</label>
+          <label><input id="wire" type="checkbox" /> Wireframe</label>
+          <button id="frontBtn" class="btn" type="button">Front</button>
+          <button id="resetBtn" class="btn" type="button">Reset</button>
+          <button id="museumBtn" class="btn" type="button">Museum</button>
+          <span>Drag to rotate. Scroll/pinch to zoom. Shift+drag to pan.</span>
+        </div>
+      </section>
+
+      <section id="stage">
+        <div class="loading" id="loading">Loading high-fidelity source mesh...</div>
+      </section>
+    </div>
+
+    <script type="module">
+      const MODEL_UID = "0d55b629f1334200ab8efa7195e1450f";
+      const MODEL_TRIANGLES = 508203;
+      const MODEL_SOURCE_BYTES = 66185275;
+
+      const stage = document.getElementById("stage");
+      const stats = document.getElementById("stats");
+      const loading = document.getElementById("loading");
+
+      const defaults = {
+        spin: 0.12,
+        zoom: 3.30,
+        lightAngle: 34,
+        lightPower: 2.20,
+        exposure: 0.39,
+        rough: 0.58,
+        canManipulate: true,
+        autoRotate: true,
+        multiLight: true,
+        wire: false
+      };
+
+      const rangeIds = ["spin", "zoom", "lightAngle", "lightPower", "exposure", "rough"];
+      const checkboxIds = ["canManipulate", "autoRotate", "multiLight", "wire"];
+
+      const state = {
+        api: null,
+        camera: null,
+        defaultCamera: null,
+        orbitAxis: null,
+        orbitOffset: null,
+        zoomScale: null,
+        envBase: null,
+        postBase: null,
+        materialsBase: null,
+        roughnessTimer: null,
+        sceneReady: false,
+        programmaticMoveUntil: 0,
+        userInteracting: false
+      };
+
+      function n(id) {
+        return Number(document.getElementById(id).value);
+      }
+
+      function isMobileLayout() {
+        return window.matchMedia("(max-width: 820px)").matches;
+      }
+
+      function refreshReadouts() {
+        for (const id of rangeIds) {
+          document.getElementById(id + "v").textContent = n(id).toFixed(2);
+        }
+      }
+
+      function setDefaults() {
+        for (const id of rangeIds) {
+          document.getElementById(id).value = String(defaults[id]);
+        }
+        for (const id of checkboxIds) {
+          document.getElementById(id).checked = defaults[id];
+        }
+        refreshReadouts();
+      }
+
+      function cloneJson(value) {
+        return value ? JSON.parse(JSON.stringify(value)) : value;
+      }
+
+      function vAdd(a, b) {
+        return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+      }
+
+      function vSub(a, b) {
+        return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+      }
+
+      function vScale(v, s) {
+        return [v[0] * s, v[1] * s, v[2] * s];
+      }
+
+      function vLen(v) {
+        return Math.hypot(v[0], v[1], v[2]);
+      }
+
+      function detectVerticalAxis(offset) {
+        const abs0 = Math.abs(offset[0]);
+        const abs1 = Math.abs(offset[1]);
+        const abs2 = Math.abs(offset[2]);
+        if (abs0 <= abs1 && abs0 <= abs2) return 0;
+        if (abs1 <= abs0 && abs1 <= abs2) return 1;
+        return 2;
+      }
+
+      function rotateAroundAxis(vec, angle, axisIndex) {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        const [x, y, z] = vec;
+        if (axisIndex === 0) {
+          return [x, y * c - z * s, y * s + z * c];
+        }
+        if (axisIndex === 1) {
+          return [x * c + z * s, y, -x * s + z * c];
+        }
+        return [x * c - y * s, x * s + y * c, z];
+      }
+
+      async function loadSketchfabApi() {
+        if (window.Sketchfab) return;
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js";
+          script.async = true;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error("Unable to load Sketchfab Viewer API"));
+          document.head.appendChild(script);
+        });
+      }
+
+      function syncOrbitState(camera) {
+        if (!camera) return;
+        const offset = vSub(camera.position, camera.target);
+        const distance = vLen(offset);
+        if (!Number.isFinite(distance) || distance <= 0.0001) return;
+        state.camera = {
+          position: camera.position.slice(0, 3),
+          target: camera.target.slice(0, 3)
+        };
+        if (state.orbitAxis === null) {
+          state.orbitAxis = detectVerticalAxis(offset);
+        }
+        state.orbitOffset = offset;
+        if (!state.zoomScale) {
+          state.zoomScale = distance / defaults.zoom;
+        }
+      }
+
+      function getCameraLookAt() {
+        return new Promise((resolve) => {
+          if (!state.api || typeof state.api.getCameraLookAt !== "function") {
+            resolve(null);
+            return;
+          }
+          state.api.getCameraLookAt((err, camera) => {
+            if (err || !camera || !Array.isArray(camera.position) || !Array.isArray(camera.target)) {
+              resolve(null);
+              return;
+            }
+            resolve({
+              position: camera.position.slice(0, 3),
+              target: camera.target.slice(0, 3)
+            });
+          });
+        });
+      }
+
+      function setCamera(position, target, duration = 0) {
+        if (!state.api || typeof state.api.setCameraLookAt !== "function") return;
+        state.programmaticMoveUntil = performance.now() + Math.max(220, duration * 1000 + 120);
+        state.api.setCameraLookAt(position, target, duration, () => {});
+        syncOrbitState({ position, target });
+      }
+
+      function desiredDistance() {
+        const base = state.zoomScale || 2.8;
+        const mobileLift = isMobileLayout() ? 0.85 : 0.0;
+        return (n("zoom") + mobileLift) * base;
+      }
+
+      function applyZoom() {
+        if (!state.camera || !state.orbitOffset) return;
+        const target = state.camera.target.slice(0, 3);
+        const currentOffset = state.orbitOffset.slice(0, 3);
+        const currentDistance = vLen(currentOffset);
+        if (currentDistance <= 0.0001) return;
+        const scaledOffset = vScale(currentOffset, desiredDistance() / currentDistance);
+        setCamera(vAdd(target, scaledOffset), target, 0.2);
+      }
+
+      function applyFrontView(duration = 0.9) {
+        if (!state.camera || !state.orbitOffset) return;
+        const target = state.camera.target.slice(0, 3);
+        const offset = state.orbitOffset.slice(0, 3);
+        const axis = state.orbitAxis;
+        const turned = rotateAroundAxis(offset, Math.PI, axis);
+        state.defaultCamera = {
+          position: vAdd(target, turned),
+          target: target.slice(0, 3)
+        };
+        setCamera(state.defaultCamera.position, state.defaultCamera.target, duration);
+        setTimeout(applyZoom, Math.max(150, Math.floor(duration * 900)));
+      }
+
+      function applyManipulation() {
+        if (!state.api || typeof state.api.setUserInteraction !== "function") return;
+        const enabled = document.getElementById("canManipulate").checked;
+        state.api.setUserInteraction(enabled, () => {});
+        if (!enabled) state.userInteracting = false;
+      }
+
+      function applyWireframe() {
+        if (!state.api || typeof state.api.setWireframe !== "function") return;
+        state.api.setWireframe(document.getElementById("wire").checked, { color: "8D7550FF" }, () => {});
+      }
+
+      function applyEnvironment() {
+        if (!state.api || !state.envBase || typeof state.api.setEnvironment !== "function") return;
+        const env = cloneJson(state.envBase);
+        const multi = document.getElementById("multiLight").checked;
+
+        if ("enabled" in env) env.enabled = true;
+        if ("enable" in env) env.enable = true;
+        if ("rotation" in env) env.rotation = (n("lightAngle") * Math.PI) / 180;
+        if ("lightIntensity" in env) env.lightIntensity = multi ? n("lightPower") : n("lightPower") * 0.36;
+        if ("exposure" in env) env.exposure = 0.45 + n("exposure") * 1.5;
+        if ("backgroundExposure" in env) env.backgroundExposure = 0.82 + n("exposure") * 0.85;
+        if ("shadowEnabled" in env) env.shadowEnabled = multi;
+        if ("shadowEnable" in env) env.shadowEnable = multi;
+
+        state.api.setEnvironment(env, () => {});
+      }
+
+      function applyPostProcessing() {
+        if (!state.api || !state.postBase || typeof state.api.setPostProcessing !== "function") return;
+        const post = cloneJson(state.postBase);
+        post.enable = true;
+
+        if (post.toneMapping) {
+          post.toneMapping.enable = true;
+          post.toneMapping.exposure = 0.82 + n("exposure") * 1.15;
+          if (typeof post.toneMapping.contrast === "number") {
+            post.toneMapping.contrast = Math.min(0.3, n("exposure") * 0.15);
+          }
+        }
+
+        if (post.vignette && typeof post.vignette.amount === "number") {
+          post.vignette.amount = Math.max(0.08, 0.34 - n("exposure") * 0.18);
+        }
+
+        state.api.setPostProcessing(post, () => {});
+      }
+
+      function applyRoughness() {
+        if (state.roughnessTimer) {
+          clearTimeout(state.roughnessTimer);
+        }
+        state.roughnessTimer = setTimeout(() => {
+          if (!state.api || !Array.isArray(state.materialsBase) || typeof state.api.setMaterial !== "function") return;
+          const roughness = n("rough");
+          for (const source of state.materialsBase) {
+            const material = cloneJson(source);
+            const channels = material && material.channels ? material.channels : null;
+            if (!channels) continue;
+
+            let touched = false;
+            if (channels.RoughnessPBR && typeof channels.RoughnessPBR.factor === "number") {
+              channels.RoughnessPBR.factor = roughness;
+              channels.RoughnessPBR.enable = true;
+              touched = true;
+            }
+            if (channels.GlossinessPBR && typeof channels.GlossinessPBR.factor === "number") {
+              channels.GlossinessPBR.factor = 1 - roughness;
+              touched = true;
+            }
+            if (channels.ClearCoatRoughness && typeof channels.ClearCoatRoughness.factor === "number") {
+              channels.ClearCoatRoughness.factor = Math.min(1, roughness * 0.7);
+              touched = true;
+            }
+            if (touched) {
+              state.api.setMaterial(material, () => {});
+            }
+          }
+        }, 80);
+      }
+
+      function startAutoRotateLoop() {
+        let lastTs = performance.now();
+        let lastSend = 0;
+
+        const frame = (ts) => {
+          const dt = Math.min(0.06, (ts - lastTs) / 1000);
+          lastTs = ts;
+
+          if (state.sceneReady && state.camera && state.orbitOffset && document.getElementById("autoRotate").checked && !state.userInteracting) {
+            const speed = n("spin");
+            if (speed > 0.0001 && ts - lastSend > 70) {
+              const axis = state.orbitAxis;
+              const target = state.camera.target.slice(0, 3);
+              const nextOffset = rotateAroundAxis(state.orbitOffset, dt * speed, axis);
+              setCamera(vAdd(target, nextOffset), target, 0);
+              lastSend = ts;
+            }
+          }
+
+          requestAnimationFrame(frame);
+        };
+
+        requestAnimationFrame(frame);
+      }
+
+      function bindUi() {
+        for (const id of rangeIds) {
+          document.getElementById(id).addEventListener("input", () => {
+            refreshReadouts();
+
+            if (id === "zoom") applyZoom();
+            if (id === "lightAngle" || id === "lightPower" || id === "exposure") {
+              applyEnvironment();
+            }
+            if (id === "exposure") {
+              applyPostProcessing();
+            }
+            if (id === "rough") {
+              applyRoughness();
+            }
+          });
+        }
+
+        for (const id of checkboxIds) {
+          document.getElementById(id).addEventListener("change", () => {
+            if (id === "canManipulate") applyManipulation();
+            if (id === "multiLight") applyEnvironment();
+            if (id === "wire") applyWireframe();
+          });
+        }
+
+        document.getElementById("frontBtn").addEventListener("click", () => applyFrontView(0.9));
+        document.getElementById("resetBtn").addEventListener("click", () => {
+          setDefaults();
+          applyManipulation();
+          applyWireframe();
+          applyEnvironment();
+          applyPostProcessing();
+          applyRoughness();
+          applyFrontView(0.95);
+        });
+
+        document.getElementById("museumBtn").addEventListener("click", () => {
+          window.location.href = "/museum/";
+        });
+      }
+
+      async function initViewer() {
+        await loadSketchfabApi();
+
+        const iframe = document.createElement("iframe");
+        iframe.className = "viewer-frame";
+        iframe.title = "Charioteer of Delphi";
+        iframe.allow = "autoplay; fullscreen; xr-spatial-tracking";
+        iframe.setAttribute("allowfullscreen", "true");
+        iframe.setAttribute("mozallowfullscreen", "true");
+        iframe.setAttribute("webkitallowfullscreen", "true");
+        stage.appendChild(iframe);
+
+        const client = new window.Sketchfab("1.12.1", iframe);
+        client.init(MODEL_UID, {
+          autostart: 1,
+          preload: 1,
+          camera: 0,
+          dnt: 1,
+          transparent: 0,
+          ui_infos: 0,
+          ui_controls: 0,
+          ui_stop: 0,
+          ui_hint: 0,
+          ui_watermark: 0,
+          ui_watermark_link: 0,
+          ui_ar: 0,
+          ui_vr: 0,
+          ui_help: 0,
+          ui_fullscreen: 0,
+          ui_inspector: 1,
+          success: (api) => {
+            state.api = api;
+            api.start();
+            api.addEventListener("viewerready", async () => {
+              loading.remove();
+              state.sceneReady = true;
+
+              const sizeLabel = `${(MODEL_SOURCE_BYTES / (1024 * 1024)).toFixed(1)} MB source OBJ`;
+              stats.textContent = `${MODEL_TRIANGLES.toLocaleString()} triangles | ${sizeLabel}`;
+
+              if (typeof api.setShadingStyle === "function") {
+                api.setShadingStyle("pbr", { type: "lit" }, () => {});
+              }
+
+              api.getEnvironment((err, env) => {
+                if (!err && env) {
+                  state.envBase = env;
+                  applyEnvironment();
+                }
+              });
+
+              api.getPostProcessing((post) => {
+                if (post && typeof post === "object") {
+                  state.postBase = post;
+                  applyPostProcessing();
+                }
+              });
+
+              api.getMaterialList((err, materials) => {
+                if (!err && Array.isArray(materials)) {
+                  state.materialsBase = materials;
+                  applyRoughness();
+                }
+              });
+
+              const syncFromViewer = async () => {
+                const camera = await getCameraLookAt();
+                if (camera) syncOrbitState(camera);
+              };
+
+              api.addEventListener("camerastart", () => {
+                if (performance.now() > state.programmaticMoveUntil + 40) {
+                  state.userInteracting = true;
+                }
+              });
+
+              api.addEventListener("camerastop", async () => {
+                await syncFromViewer();
+                state.userInteracting = false;
+              });
+
+              if (typeof api.recenterCamera === "function") {
+                api.recenterCamera(async () => {
+                  setTimeout(async () => {
+                    const camera = await getCameraLookAt();
+                    if (camera) {
+                      syncOrbitState(camera);
+                      applyFrontView(1.05);
+                    }
+                  }, 260);
+                });
+              } else {
+                const camera = await getCameraLookAt();
+                if (camera) {
+                  syncOrbitState(camera);
+                  applyFrontView(1.05);
+                }
+              }
+
+              applyManipulation();
+              applyWireframe();
+            });
+          },
+          error: () => {
+            loading.textContent = "Failed to initialize 3D viewer.";
+            stats.textContent = "Unable to load Sketchfab model.";
+          }
+        });
+      }
+
+      async function init() {
+        setDefaults();
+        bindUi();
+        startAutoRotateLoop();
+        await initViewer();
+      }
+
+      init().catch((error) => {
+        console.error(error);
+        loading.textContent = `Unexpected error: ${error.message}`;
+        stats.textContent = "Unexpected model loader failure.";
+      });
+    </script>
+  </body>
+</html>
