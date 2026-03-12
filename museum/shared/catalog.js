@@ -42,8 +42,8 @@ export const museumPieces = {
       zoom: 3.9
     },
     model: {
-      primaryUrl: "https://api.smk.dk/api/v1/download-3d/x059cd223_smk57-kas285-laocoon-group-decimated.stl",
-      fallbackUrl: "https://api.smk.dk/api/v1/download-3d/r494vq86r_KAS285_small.stl"
+      primaryUrl: "./laocoon_source_small.stl",
+      fallbackUrl: "./laocoon_source_small.stl"
     },
     scene: {
       targetHeight: 1.58,
