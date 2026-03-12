@@ -2,143 +2,75 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>The Archive of Form</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>The Archive of Form - Viewer</title>
     <meta
       name="description"
-      content="The Archive of Form: An Open Library of Sculptures from Antiquity to the Nineteenth Century."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
+      content="The Archive of Form: minimalist STL-style viewer for renderable sculptures."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="shell">
-      <header class="topbar">
-        <div>
-          <p class="kicker">The Archive of Form</p>
-          <h1>The Archive of Form</h1>
-          <p class="lead">
-            Enter a curated hall of world sculpture from antiquity through the 19th century. Browse by sculptor, style, origin,
-            and material, then step into each piece with a consistent 3D viewing experience.
-          </p>
-          <p class="lead-subtle">An Open Library of Sculptures from Antiquity to the Nineteenth Century</p>
+    <div class="app">
+      <section class="panel" aria-label="Viewer controls">
+        <h1 id="pieceTitle" class="title">The Archive of Form</h1>
+        <p id="stats" class="sub">Loading renderable sculpture catalog...</p>
+
+        <div class="grid">
+          <div class="control control-wide">
+            <label for="workSelect">Sculpture</label>
+            <select id="workSelect" aria-label="Sculpture selector">
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="spin">Spin</label>
+            <input id="spin" type="range" min="0" max="1.6" step="0.01" value="0.12" />
+            <output id="spinv">0.12</output>
+          </div>
+          <div class="control">
+            <label for="zoom">Zoom</label>
+            <input id="zoom" type="range" min="1.2" max="6.4" step="0.01" value="2.70" />
+            <output id="zoomv">2.70</output>
+          </div>
+          <div class="control">
+            <label for="lightAngle">Key Angle</label>
+            <input id="lightAngle" type="range" min="-180" max="180" step="1" value="34" />
+            <output id="lightAnglev">34.00</output>
+          </div>
+          <div class="control">
+            <label for="lightPower">Light Power</label>
+            <input id="lightPower" type="range" min="0.2" max="4.5" step="0.01" value="2.20" />
+            <output id="lightPowerv">2.20</output>
+          </div>
+          <div class="control">
+            <label for="exposure">Exposure</label>
+            <input id="exposure" type="range" min="0" max="2.8" step="0.01" value="0.39" />
+            <output id="exposurev">0.39</output>
+          </div>
+          <div class="control">
+            <label for="rough">Roughness</label>
+            <input id="rough" type="range" min="0.2" max="1" step="0.01" value="0.58" />
+            <output id="roughv">0.58</output>
+          </div>
         </div>
-        <div class="topbar-stats">
-          <div>
-            <span>Total Works</span>
-            <strong id="statTotalWorks">0</strong>
-          </div>
-          <div>
-            <span>Total Nodes</span>
-            <strong id="statTotalNodes">0</strong>
-          </div>
-          <div>
-            <span>Total Triangles</span>
-            <strong id="statTotalTriangles">0</strong>
-          </div>
+
+        <div class="row">
+          <label><input id="canManipulate" type="checkbox" checked /> Manipulate</label>
+          <label><input id="autoRotate" type="checkbox" checked /> Auto Rotate</label>
+          <label><input id="multiLight" type="checkbox" checked /> Multi-Light</label>
+          <label><input id="wire" type="checkbox" /> Wireframe</label>
+          <button id="frontBtn" class="btn" type="button">Front</button>
+          <button id="resetBtn" class="btn" type="button">Reset</button>
+          <a class="btn btn-link" href="/archive-of-form/">Catalog</a>
+          <span>Drag to rotate. Scroll/pinch to zoom. Shift+drag to pan.</span>
         </div>
-      </header>
+      </section>
 
-      <main class="layout">
-        <aside class="catalog-panel">
-          <section class="controls">
-            <label for="collectionSelect">Collection</label>
-            <select id="collectionSelect">
-              <option value="local">Renderable local meshes</option>
-            </select>
-
-            <label for="groupBySelect">Group Works By</label>
-            <select id="groupBySelect">
-              <option value="artist">Sculptor</option>
-              <option value="style">Style or period</option>
-              <option value="origin">Origin or source</option>
-              <option value="material">Material signal</option>
-              <option value="none">Flat list</option>
-            </select>
-
-            <label for="searchInput">Search</label>
-            <input id="searchInput" type="search" placeholder="Title, artist, era, tag" autocomplete="off" />
-
-            <label for="workSelect">Works Index</label>
-            <select id="workSelect" size="14" aria-label="All works in current collection">
-              <option value="">Loading works...</option>
-            </select>
-            <div class="works-batch">
-              <p class="results" id="workBatchStatus">Renderable catalog only</p>
-              <button id="loadMoreWorksBtn" type="button">Load 4 More</button>
-            </div>
-
-            <div class="split-row">
-              <div>
-                <label for="styleFilter">Style</label>
-                <select id="styleFilter">
-                  <option value="all">All styles</option>
-                </select>
-              </div>
-              <div>
-                <label for="sortSelect">Sort</label>
-                <select id="sortSelect">
-                  <option value="popularity_desc">Popularity score</option>
-                  <option value="nodes_desc">Most nodes</option>
-                  <option value="triangles_desc">Most triangles</option>
-                  <option value="title_asc">Title A-Z</option>
-                  <option value="artist_asc">Artist A-Z</option>
-                </select>
-              </div>
-            </div>
-
-            <p class="results" id="resultsCount">0 results</p>
-          </section>
-
-          <section id="catalogScroll" class="catalog-scroll" aria-label="Sculpture catalog">
-            <div id="catalogSpacer" class="catalog-spacer"></div>
-            <div id="catalogItems" class="catalog-items"></div>
-          </section>
-        </aside>
-
-        <section class="viewer-panel">
-          <div class="viewer-stage">
-            <canvas id="viewerCanvas" aria-label="3D sculpture viewer"></canvas>
-            <div id="viewerMessage" class="viewer-message">Choose a sculpture to begin.</div>
-            <div class="viewer-fade"></div>
-          </div>
-
-          <section class="viewer-controls">
-            <div class="control-group">
-              <label for="qualitySelect">Quality</label>
-              <select id="qualitySelect">
-                <option value="auto">Auto</option>
-                <option value="cinematic">Cinematic</option>
-                <option value="gallery">Gallery</option>
-                <option value="balanced">Balanced</option>
-                <option value="performance">Performance</option>
-              </select>
-            </div>
-
-            <div class="control-group">
-              <label for="nodeSize">Node size</label>
-              <input id="nodeSize" type="range" min="0.4" max="2.4" step="0.05" value="1.05" />
-            </div>
-
-            <div class="toggle-row">
-              <label><input id="toggleNodes" type="checkbox" checked /> Nodes</label>
-              <label><input id="toggleEdges" type="checkbox" checked /> Edges</label>
-              <label><input id="toggleSurface" type="checkbox" checked /> Surface</label>
-              <label><input id="toggleRotate" type="checkbox" checked /> Auto rotate</label>
-              <button id="recenterBtn" type="button">Recenter</button>
-            </div>
-          </section>
-
-          <section class="details" id="detailsPanel">
-            <p class="details-empty">No sculpture selected.</p>
-          </section>
-        </section>
-      </main>
+      <section id="stage" aria-label="Sculpture viewer stage">
+        <canvas id="viewerCanvas" aria-label="3D sculpture viewer"></canvas>
+        <div id="viewerMessage" class="viewer-message">Loading...</div>
+      </section>
     </div>
 
     <script type="module" src="./app.js"></script>

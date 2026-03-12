@@ -1,64 +1,60 @@
-import * as THREE from "./vendor/three/build/three.module.js?v=20260312a";
-import { OrbitControls } from "./vendor/three/examples/jsm/controls/OrbitControls.js?v=20260312a";
+import * as THREE from "./vendor/three/build/three.module.js";
+import { OrbitControls } from "./vendor/three/examples/jsm/controls/OrbitControls.js";
 
 const CATALOG_URL = "./data/catalog.json";
-const ROW_HEIGHT = 132;
-const OVERSCAN = 6;
 const NUMBER = new Intl.NumberFormat("en-US");
 
-const dom = {
-  statTotalWorks: getById("statTotalWorks"),
-  statTotalNodes: getById("statTotalNodes"),
-  statTotalTriangles: getById("statTotalTriangles"),
-  collectionSelect: getById("collectionSelect"),
-  groupBySelect: getById("groupBySelect"),
-  searchInput: getById("searchInput"),
-  workSelect: getById("workSelect"),
-  loadMoreWorksBtn: getById("loadMoreWorksBtn"),
-  workBatchStatus: getById("workBatchStatus"),
-  styleFilter: getById("styleFilter"),
-  sortSelect: getById("sortSelect"),
-  resultsCount: getById("resultsCount"),
-  catalogScroll: getById("catalogScroll"),
-  catalogSpacer: getById("catalogSpacer"),
-  catalogItems: getById("catalogItems"),
-  viewerCanvas: getById("viewerCanvas"),
-  viewerMessage: getById("viewerMessage"),
-  qualitySelect: getById("qualitySelect"),
-  nodeSize: getById("nodeSize"),
-  toggleNodes: getById("toggleNodes"),
-  toggleEdges: getById("toggleEdges"),
-  toggleSurface: getById("toggleSurface"),
-  toggleRotate: getById("toggleRotate"),
-  recenterBtn: getById("recenterBtn"),
-  detailsPanel: getById("detailsPanel")
+const defaults = {
+  spin: 0.12,
+  zoom: 2.7,
+  lightAngle: 34,
+  lightPower: 2.2,
+  exposure: 0.39,
+  rough: 0.58,
+  canManipulate: true,
+  autoRotate: true,
+  multiLight: true,
+  wire: false
 };
+
+const dom = {
+  pieceTitle: getById("pieceTitle"),
+  stats: getById("stats"),
+  workSelect: getById("workSelect"),
+  spin: getById("spin"),
+  spinv: getById("spinv"),
+  zoom: getById("zoom"),
+  zoomv: getById("zoomv"),
+  lightAngle: getById("lightAngle"),
+  lightAnglev: getById("lightAnglev"),
+  lightPower: getById("lightPower"),
+  lightPowerv: getById("lightPowerv"),
+  exposure: getById("exposure"),
+  exposurev: getById("exposurev"),
+  rough: getById("rough"),
+  roughv: getById("roughv"),
+  canManipulate: getById("canManipulate"),
+  autoRotate: getById("autoRotate"),
+  multiLight: getById("multiLight"),
+  wire: getById("wire"),
+  frontBtn: getById("frontBtn"),
+  resetBtn: getById("resetBtn"),
+  viewerCanvas: getById("viewerCanvas"),
+  viewerMessage: getById("viewerMessage")
+};
+
+const rangeIds = ["spin", "zoom", "lightAngle", "lightPower", "exposure", "rough"];
+const checkIds = ["canManipulate", "autoRotate", "multiLight", "wire"];
 
 const state = {
-  catalog: [],
-  filtered: [],
+  items: [],
   byId: new Map(),
   activeId: null,
-  scope: "local",
-  groupBy: dom.groupBySelect.value,
-  search: "",
-  style: "all",
-  sort: dom.sortSelect.value,
-  quality: dom.qualitySelect.value,
-  layers: {
-    nodes: dom.toggleNodes.checked,
-    edges: dom.toggleEdges.checked,
-    surface: dom.toggleSurface.checked,
-    autoRotate: dom.toggleRotate.checked
-  },
-  nodeSize: Number(dom.nodeSize.value),
-  batchSize: 4,
-  localTotal: 0,
-  historicTotal: 0,
-  historicQueue: []
+  zoomBaseDistance: null,
+  loadingId: null
 };
 
-const viewer = new AtlasViewer({
+const viewer = new MinimalArchiveViewer({
   canvas: dom.viewerCanvas,
   messageEl: dom.viewerMessage
 });
@@ -66,143 +62,192 @@ const viewer = new AtlasViewer({
 bindEvents();
 
 boot().catch((error) => {
-  viewer.setMessage(`Failed to initialize catalog: ${error.message}`, true);
+  viewer.setMessage(`Failed to initialize viewer: ${error.message}`, true);
+  dom.stats.textContent = "Viewer initialization failed.";
 });
 
 async function boot() {
-  await viewer.init();
-  const manifest = await loadCatalogs();
-  state.localTotal = manifest.localItems.length;
-  state.historicTotal = 0;
-  state.historicQueue = [];
-  state.catalog = [...manifest.localItems];
-  state.byId = new Map(state.catalog.map((item) => [item.id, item]));
-  const requestedId = resolveRequestedModelId();
-  if (requestedId) {
-    state.activeId = requestedId;
-  }
-  hydrateCollectionFilter({
-    local: state.localTotal
-  });
-  updateWorkBatchStatus();
+  setDefaults();
+  refreshReadouts();
 
-  updateTopStats();
-  hydrateStyleFilter();
-  applyFilters();
+  await viewer.init();
+
+  const manifest = await fetchJson(CATALOG_URL);
+  const items = (manifest.items || []).map(normalizeItem).filter((item) => item.dataUrl);
+
+  if (items.length === 0) {
+    dom.workSelect.innerHTML = '<option value="">No renderable sculptures found</option>';
+    dom.workSelect.disabled = true;
+    viewer.setMessage("No renderable sculptures are available.", true);
+    dom.stats.textContent = "Renderable catalog is empty.";
+    return;
+  }
+
+  state.items = items;
+  state.byId = new Map(items.map((item) => [item.id, item]));
+  populateWorkSelect();
+
+  const requested = new URLSearchParams(window.location.search).get("id");
+  const initialId = state.byId.has(requested) ? requested : items[0].id;
+
+  await selectItem(initialId, { replaceHistory: true, resetPose: true });
 }
 
 function bindEvents() {
-  dom.collectionSelect.addEventListener("change", () => {
-    state.scope = dom.collectionSelect.value;
-    hydrateStyleFilter();
-    updateTopStats();
-    applyFilters();
-  });
-
-  dom.groupBySelect.addEventListener("change", () => {
-    state.groupBy = dom.groupBySelect.value;
-    applyFilters();
-  });
-
-  const onSearchChange = () => {
-    state.search = dom.searchInput.value.trim().toLowerCase();
-    applyFilters();
-  };
-  dom.searchInput.addEventListener("input", onSearchChange);
-  dom.searchInput.addEventListener("search", onSearchChange);
-  dom.searchInput.addEventListener("change", onSearchChange);
-  dom.searchInput.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") {
-      return;
-    }
-
-    event.preventDefault();
-    onSearchChange();
-
-    if (state.filtered.length > 0) {
-      void selectItem(state.filtered[0].id, { resetScroll: false });
-    }
-  });
-
   dom.workSelect.addEventListener("change", () => {
-    const selectedId = dom.workSelect.value;
-    if (!selectedId) {
+    const id = dom.workSelect.value;
+    if (!id) {
       return;
     }
-    void selectItem(selectedId, { resetScroll: false });
+    void selectItem(id, { pushHistory: true, resetPose: true });
   });
 
-  dom.loadMoreWorksBtn.addEventListener("click", () => {
-    loadMoreHistoricBatch();
+  for (const id of rangeIds) {
+    getById(id).addEventListener("input", () => {
+      refreshReadouts();
+      applyViewerControls({ preserveView: true });
+    });
+  }
+
+  for (const id of checkIds) {
+    getById(id).addEventListener("change", () => {
+      applyViewerControls({ preserveView: true });
+    });
+  }
+
+  dom.frontBtn.addEventListener("click", () => {
+    viewer.frontView(Number(dom.zoom.value), state.zoomBaseDistance, defaults.zoom);
   });
 
-  dom.styleFilter.addEventListener("change", () => {
-    state.style = dom.styleFilter.value;
-    applyFilters();
+  dom.resetBtn.addEventListener("click", () => {
+    setDefaults();
+    refreshReadouts();
+    viewer.resetView(Number(dom.zoom.value), state.zoomBaseDistance, defaults.zoom);
+    applyViewerControls({ preserveView: true });
   });
 
-  dom.sortSelect.addEventListener("change", () => {
-    state.sort = dom.sortSelect.value;
-    applyFilters();
-  });
-
-  dom.catalogScroll.addEventListener("scroll", renderCatalogWindow);
-  window.addEventListener("resize", renderCatalogWindow);
-
-  dom.catalogItems.addEventListener("click", (event) => {
-    const card = event.target.closest(".catalog-card[data-model-id]");
-    if (!card) {
-      return;
+  window.addEventListener("popstate", () => {
+    const requested = new URLSearchParams(window.location.search).get("id");
+    if (requested && state.byId.has(requested)) {
+      void selectItem(requested, { resetPose: true });
     }
-    void selectItem(card.dataset.modelId);
-  });
-
-  dom.qualitySelect.addEventListener("change", () => {
-    state.quality = dom.qualitySelect.value;
-    if (state.activeId) {
-      void selectItem(state.activeId);
-    }
-  });
-
-  dom.nodeSize.addEventListener("input", () => {
-    state.nodeSize = Number(dom.nodeSize.value);
-    viewer.setNodeSize(state.nodeSize);
-  });
-
-  dom.toggleNodes.addEventListener("change", () => {
-    state.layers.nodes = dom.toggleNodes.checked;
-    viewer.setLayerVisibility(state.layers);
-  });
-
-  dom.toggleEdges.addEventListener("change", () => {
-    state.layers.edges = dom.toggleEdges.checked;
-    viewer.setLayerVisibility(state.layers);
-  });
-
-  dom.toggleSurface.addEventListener("change", () => {
-    state.layers.surface = dom.toggleSurface.checked;
-    viewer.setLayerVisibility(state.layers);
-  });
-
-  dom.toggleRotate.addEventListener("change", () => {
-    state.layers.autoRotate = dom.toggleRotate.checked;
-    viewer.setAutoRotate(state.layers.autoRotate);
-  });
-
-  dom.recenterBtn.addEventListener("click", () => {
-    viewer.recenter();
   });
 }
 
-async function loadCatalogs() {
-  const localManifest = await fetchJson(CATALOG_URL);
+function setDefaults() {
+  for (const id of rangeIds) {
+    getById(id).value = String(defaults[id]);
+  }
+  for (const id of checkIds) {
+    getById(id).checked = Boolean(defaults[id]);
+  }
+}
 
-  const localItems = (localManifest.items || []).map((item) => normalizeLocalItem(item));
+function refreshReadouts() {
+  dom.spinv.textContent = Number(dom.spin.value).toFixed(2);
+  dom.zoomv.textContent = Number(dom.zoom.value).toFixed(2);
+  dom.lightAnglev.textContent = Number(dom.lightAngle.value).toFixed(2);
+  dom.lightPowerv.textContent = Number(dom.lightPower.value).toFixed(2);
+  dom.exposurev.textContent = Number(dom.exposure.value).toFixed(2);
+  dom.roughv.textContent = Number(dom.rough.value).toFixed(2);
+}
 
+function normalizeItem(item) {
   return {
-    localItems,
-    historicItems: []
+    ...item,
+    id: String(item.id || ""),
+    title: item.title || "Untitled",
+    artist: item.artist || "Unknown artist",
+    year: item.year || "",
+    sourceTriangleCount: Number(item.sourceTriangleCount || item.triangleCount || 0),
+    triangleCount: Number(item.triangleCount || 0),
+    nodeCount: Number(item.nodeCount || 0),
+    edgeCount: Number(item.edgeCount || 0)
   };
+}
+
+function populateWorkSelect() {
+  dom.workSelect.innerHTML = state.items
+    .map((item) => {
+      const meta = item.artist ? ` — ${item.artist}` : "";
+      return `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title)}${escapeHtml(meta)}</option>`;
+    })
+    .join("");
+  dom.workSelect.disabled = false;
+}
+
+async function selectItem(id, options = {}) {
+  const item = state.byId.get(id);
+  if (!item) {
+    return;
+  }
+
+  state.activeId = id;
+  state.loadingId = id;
+  dom.workSelect.value = id;
+
+  const title = item.artist ? `${item.artist}: ${item.title}` : item.title;
+  dom.pieceTitle.textContent = title;
+  dom.stats.textContent = `Loading ${item.title}...`;
+
+  if (options.pushHistory || options.replaceHistory) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("id", id);
+    if (options.pushHistory) {
+      window.history.pushState({ id }, "", url);
+    } else {
+      window.history.replaceState({ id }, "", url);
+    }
+  }
+
+  try {
+    const renderStats = await viewer.load(item, "auto");
+
+    if (state.loadingId !== id) {
+      return;
+    }
+
+    state.zoomBaseDistance = viewer.getFitDistance() || state.zoomBaseDistance;
+
+    if (options.resetPose) {
+      viewer.resetView(Number(dom.zoom.value), state.zoomBaseDistance, defaults.zoom);
+    }
+
+    applyViewerControls({ preserveView: true });
+    dom.stats.textContent = buildStatsLabel(item, renderStats);
+  } catch (error) {
+    if (String(error.message).includes("superseded")) {
+      return;
+    }
+    viewer.setMessage(`Failed to render ${item.title}: ${error.message}`, true);
+    dom.stats.textContent = `Failed to render ${item.title}.`;
+  }
+}
+
+function applyViewerControls({ preserveView }) {
+  viewer.setSpin(Number(dom.spin.value));
+  viewer.setAutoRotate(dom.autoRotate.checked);
+  viewer.setManipulation(dom.canManipulate.checked);
+
+  viewer.applyZoom(Number(dom.zoom.value), state.zoomBaseDistance, defaults.zoom, {
+    preserveDirection: Boolean(preserveView)
+  });
+
+  viewer.updateLights(Number(dom.lightAngle.value), Number(dom.lightPower.value), dom.multiLight.checked);
+  viewer.setExposure(Number(dom.exposure.value));
+  viewer.setRoughness(Number(dom.rough.value));
+  viewer.setWireframe(dom.wire.checked);
+}
+
+function buildStatsLabel(item, renderStats) {
+  const renderedTriangles = Number(renderStats?.renderedTriangles || item.triangleCount || 0);
+  const sourceTriangles = Number(renderStats?.sourceTriangles || item.sourceTriangleCount || 0);
+  const profile = renderStats?.profileName || "auto";
+  const period = item.year ? ` • ${item.year}` : "";
+
+  return `${item.artist}${period} • ${NUMBER.format(renderedTriangles)} rendered triangles • ${NUMBER.format(
+    sourceTriangles
+  )} source triangles • ${profile} profile`;
 }
 
 async function fetchJson(url) {
@@ -213,393 +258,45 @@ async function fetchJson(url) {
   return response.json();
 }
 
-function normalizeLocalItem(item) {
-  return {
-    ...item,
-    id: `local-${item.id}`,
-    catalogType: "local",
-    renderable: true
-  };
-}
-
-function normalizeHistoricItem(item) {
-  const style = formatHistoricStyle(item.estimatedPeriod);
-  const creator = item.creator || null;
-  const inferredArtist = formatHistoricArtist(item.estimatedArtist);
-  const artist = inferredArtist || creator || "Unknown artist";
-
-  return {
-    id: `historic-${item.uid}`,
-    title: item.title || "Untitled",
-    artist,
-    creator,
-    year: inferCenturyLabel(item.estimatedPeriod),
-    origin: creator ? `Sketchfab by ${creator}` : "Sketchfab source",
-    style: style || "Historic catalog",
-    description: item.description || "Historic sculpture listing with downloadable mesh archives.",
-    tags: item.tags || [],
-    matchedQueries: item.matchedQueries || [],
-    dataUrl: null,
-    format: "external_reference",
-    nodeCount: Number(item.vertexCount || 0),
-    triangleCount: Number(item.faceCount || 0),
-    edgeCount: 0,
-    sourceTriangleCount: Number(item.faceCount || 0),
-    palette: {
-      background: "#0f1a24",
-      surface: "#d9d4c7",
-      edge: "#80b4d8",
-      node: "#f2be90"
-    },
-    catalogType: "historic",
-    renderable: false,
-    externalUrl: item.viewerUrl || null,
-    embedUrl: item.embedUrl || null,
-    thumbnailUrl: item.thumbnailUrl || null,
-    publishedAt: item.publishedAt || null,
-    archiveTypes: item.archiveTypes || [],
-    license: item.license || null,
-    popularityScore: Number(item.popularityScore || 0)
-  };
-}
-
-function inferCenturyLabel(period) {
-  if (!period) {
-    return "";
-  }
-  const label = String(period).toLowerCase();
-  if (label.includes("renaissance")) {
-    return "15th-16th century";
-  }
-  if (label.includes("baroque")) {
-    return "17th century";
-  }
-  if (label.includes("18th")) {
-    return "18th century";
-  }
-  if (label.includes("19th") || label.includes("xix")) {
-    return "19th century";
-  }
-  if (label.includes("neoclassic")) {
-    return "18th-19th century";
-  }
-  return period;
-}
-
-function hydrateCollectionFilter(counts) {
-  const localCount = counts.local || 0;
-  dom.collectionSelect.innerHTML = `
-    <option value="local">Renderable local meshes (${NUMBER.format(localCount)})</option>
-  `;
-  state.scope = "local";
-  dom.collectionSelect.value = "local";
-  dom.collectionSelect.disabled = true;
-}
-
-function updateWorkBatchStatus() {
-  dom.workBatchStatus.textContent = "Renderable catalog only";
-  dom.loadMoreWorksBtn.disabled = true;
-}
-
-function getHistoricLoadedCount() {
-  return state.catalog.reduce((sum, item) => sum + (item.catalogType === "historic" ? 1 : 0), 0);
-}
-
-function loadMoreHistoricBatch() {
-  updateWorkBatchStatus();
-}
-
-function updateTopStats() {
-  const scoped = getScopedCatalog();
-  const totalNodes = scoped.reduce((sum, item) => sum + Number(item.nodeCount || 0), 0);
-  const totalTriangles = scoped.reduce((sum, item) => sum + Number(item.triangleCount || 0), 0);
-
-  dom.statTotalWorks.textContent = NUMBER.format(scoped.length);
-  dom.statTotalNodes.textContent = NUMBER.format(totalNodes);
-  dom.statTotalTriangles.textContent = NUMBER.format(totalTriangles);
-}
-
-function hydrateStyleFilter() {
-  const scoped = getScopedCatalog();
-  const uniqueStyles = new Set();
-  for (const item of scoped) {
-    if (item.style) {
-      uniqueStyles.add(item.style);
-    }
-  }
-
-  const sorted = [...uniqueStyles].sort((a, b) => a.localeCompare(b));
-  const options = sorted
-    .map((style) => `<option value="${escapeHtml(style)}">${escapeHtml(style)}</option>`)
-    .join("");
-
-  dom.styleFilter.innerHTML = `<option value="all">All styles</option>${options}`;
-  if (state.style !== "all" && !uniqueStyles.has(state.style)) {
-    state.style = "all";
-  }
-  dom.styleFilter.value = state.style;
-}
-
-function applyFilters() {
-  const query = state.search;
-  const scoped = getScopedCatalog();
-  const previousActiveId = state.activeId;
-
-  const filtered = scoped.filter((item) => {
-    if (state.style !== "all" && String(item.style || "") !== state.style) {
-      return false;
-    }
-
-    if (!query) {
-      return true;
-    }
-
-    const text = [
-      item.title,
-      item.artist,
-      item.style,
-      item.origin,
-      item.year,
-      item.creator,
-      item.license,
-      ...(item.archiveTypes || []),
-      ...(item.matchedQueries || []),
-      ...(item.tags || [])
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return text.includes(query);
-  });
-
-  sortItems(filtered, state.sort, state.groupBy);
-  state.filtered = filtered;
-
-  if (!state.filtered.find((item) => item.id === state.activeId)) {
-    state.activeId = state.filtered[0]?.id || null;
-  }
-
-  dom.resultsCount.textContent = `${NUMBER.format(state.filtered.length)} result${
-    state.filtered.length === 1 ? "" : "s"
-  }`;
-
-  renderCatalogWindow(true);
-  populateWorkDropdown();
-
-  if (state.activeId && state.activeId !== previousActiveId) {
-    void selectItem(state.activeId, { resetScroll: false });
-    return;
-  }
-
-  if (!state.activeId) {
-    setViewerControlsEnabled(false);
-    viewer.showEmptyState();
-    renderDetails(null, null);
-  }
-}
-
-function sortItems(items, sortBy, groupBy) {
-  items.sort((a, b) => {
-    if (groupBy !== "none") {
-      const groupCompare = getGroupValue(a, groupBy).localeCompare(getGroupValue(b, groupBy));
-      if (groupCompare !== 0) {
-        return groupCompare;
-      }
-    }
-    return compareBySort(a, b, sortBy);
-  });
-}
-
-function compareBySort(a, b, sortBy) {
-  switch (sortBy) {
-    case "nodes_desc":
-      return Number(b.nodeCount || 0) - Number(a.nodeCount || 0);
-    case "triangles_desc":
-      return Number(b.triangleCount || 0) - Number(a.triangleCount || 0);
-    case "popularity_desc":
-      return Number(b.popularityScore || 0) - Number(a.popularityScore || 0);
-    case "artist_asc":
-      return (a.artist || "").localeCompare(b.artist || "");
-    case "title_asc":
-    default:
-      return (a.title || "").localeCompare(b.title || "");
-  }
-}
-
-function renderCatalogWindow(resetScroll = false) {
-  if (resetScroll) {
-    dom.catalogScroll.scrollTop = 0;
-  }
-
-  const total = state.filtered.length;
-  const totalHeight = total * ROW_HEIGHT + 20;
-  dom.catalogSpacer.style.height = `${totalHeight}px`;
-
-  if (total === 0) {
-    dom.catalogItems.style.transform = "translateY(0px)";
-    dom.catalogItems.innerHTML = `<div class="card-empty">No entries matched your filter.</div>`;
-    return;
-  }
-
-  const scrollTop = dom.catalogScroll.scrollTop;
-  const viewportHeight = dom.catalogScroll.clientHeight;
-  const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
-  const end = Math.min(total, Math.ceil((scrollTop + viewportHeight) / ROW_HEIGHT) + OVERSCAN);
-
-  const windowItems = state.filtered.slice(start, end);
-  dom.catalogItems.style.transform = `translateY(${start * ROW_HEIGHT}px)`;
-  dom.catalogItems.innerHTML = windowItems.map((item) => catalogCardHtml(item)).join("");
-}
-
-function catalogCardHtml(item) {
-  const activeClass = item.id === state.activeId ? "active" : "";
-  const sourceBadge = item.renderable ? "Renderable" : "Historic index";
-  const triangleLabel = item.renderable ? "Triangles" : "Faces";
-  const metricLabel = item.renderable ? "Nodes" : "Vertices";
-  const groupingTag = state.groupBy !== "none" ? getGroupValue(item, state.groupBy) : null;
-  const media = item.thumbnailUrl
-    ? `<img class="catalog-thumb" loading="lazy" decoding="async" src="${escapeHtml(item.thumbnailUrl)}" alt="${escapeHtml(
-        `${item.title || "Sculpture"} preview`
-      )}" />`
-    : `<div class="catalog-thumb-fallback" aria-hidden="true"></div>`;
-
-  return `
-    <article class="catalog-card ${activeClass}" data-model-id="${escapeHtml(item.id)}" style="--accent:${
-      item.palette?.edge || "#9bc9c6"
-    }">
-      <div class="catalog-media">${media}</div>
-      <div class="catalog-copy">
-        <h3>${escapeHtml(item.title || "Untitled")}</h3>
-        <p class="meta">${escapeHtml(item.artist || "Unknown artist")} ${
-    item.year ? "• " + escapeHtml(item.year) : ""
-  }</p>
-        <p class="meta">${metricLabel} ${NUMBER.format(Number(item.nodeCount || 0))} • ${triangleLabel} ${NUMBER.format(
-    Number(item.triangleCount || 0)
-  )}</p>
-        <div class="pills">
-          ${groupingTag ? `<span class="pill pill-group">${escapeHtml(groupingTag)}</span>` : ""}
-          <span class="pill">${escapeHtml(item.style || "Unsorted")}</span>
-          <span class="pill">${escapeHtml(sourceBadge)}</span>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
-async function selectItem(id, options = {}) {
-  if (!id) {
-    return;
-  }
-
-  const item = state.byId.get(id);
-  if (!item) {
-    return;
-  }
-
-  state.activeId = id;
-  if (dom.workSelect.querySelector(`option[value="${cssEscape(id)}"]`)) {
-    dom.workSelect.value = id;
-  }
-  renderCatalogWindow(Boolean(options.resetScroll));
-  renderDetails(item, null);
-
-  const canRender = isRenderableItem(item);
-  setViewerControlsEnabled(canRender);
-  if (!canRender) {
-    viewer.showReferenceOnly(item);
-    renderDetails(item, null);
-    return;
-  }
-
-  try {
-    const stats = await viewer.load(item, state.quality);
-
-    if (state.activeId !== item.id) {
-      return;
-    }
-
-    viewer.setLayerVisibility(state.layers);
-    viewer.setNodeSize(state.nodeSize);
-    viewer.setAutoRotate(state.layers.autoRotate);
-    renderDetails(item, stats);
-  } catch (error) {
-    if (String(error.message).includes("superseded")) {
-      return;
-    }
-    viewer.setMessage(`Failed to render ${item.title}: ${error.message}`, true);
-  }
-}
-
-function renderDetails(item, renderStats) {
-  if (!item) {
-    dom.detailsPanel.innerHTML = '<p class="details-empty">No sculpture selected.</p>';
-    return;
-  }
-
-  const canRender = isRenderableItem(item);
-  const sourceTriangles = Number(item.sourceTriangleCount || item.triangleCount || 0);
-  const renderedTriangles = canRender ? Number(renderStats?.renderedTriangles || item.triangleCount || 0) : null;
-  const renderedNodes = canRender ? Number(renderStats?.renderedNodes || item.nodeCount || 0) : null;
-  const renderedEdges = canRender ? Number(renderStats?.renderedEdgeSegments || item.edgeCount || 0) : null;
-  const profile = renderStats?.profileName || (state.quality === "auto" ? "auto" : state.quality);
-  const sourceLabel = canRender ? "Source Triangles" : "Source Faces";
-  const actionLink = item.externalUrl
-    ? `<p><a class="detail-link" href="${escapeHtml(item.externalUrl)}" target="_blank" rel="noopener noreferrer">Open source model</a></p>`
-    : "";
-  const archiveLabel = item.archiveTypes?.length ? item.archiveTypes.join(", ") : "n/a";
-  const modeLabel = canRender ? "Local Renderable Mesh" : "External Historic Listing";
-  const profileLabel = canRender ? profile : "reference";
-  const publishedLabel = item.publishedAt ? formatPublishedDate(item.publishedAt) : "n/a";
-  const preview = item.thumbnailUrl
-    ? `<figure class="details-preview"><img src="${escapeHtml(item.thumbnailUrl)}" alt="${escapeHtml(
-        `${item.title || "Sculpture"} preview`
-      )}" /></figure>`
-    : "";
-
-  dom.detailsPanel.innerHTML = `
-    ${preview}
-    <h2>${escapeHtml(item.title)}</h2>
-    <p>${escapeHtml(item.artist || "Unknown artist")} ${item.year ? `(${escapeHtml(item.year)})` : ""}</p>
-    <p>${escapeHtml(item.description || "No description available.")}</p>
-    ${actionLink}
-    <div class="stats-grid">
-      <div><span>Rendered Triangles</span><strong>${formatMetric(renderedTriangles)}</strong></div>
-      <div><span>${sourceLabel}</span><strong>${NUMBER.format(sourceTriangles)}</strong></div>
-      <div><span>Rendered Nodes</span><strong>${formatMetric(renderedNodes)}</strong></div>
-      <div><span>Edge Segments</span><strong>${formatMetric(renderedEdges)}</strong></div>
-      <div><span>Profile</span><strong>${escapeHtml(profileLabel)}</strong></div>
-      <div><span>Style</span><strong>${escapeHtml(item.style || "Unknown")}</strong></div>
-      <div><span>Origin</span><strong>${escapeHtml(item.origin || "Unknown")}</strong></div>
-      <div><span>Mode</span><strong>${escapeHtml(modeLabel)}</strong></div>
-      <div><span>Published</span><strong>${escapeHtml(publishedLabel)}</strong></div>
-      <div><span>Archives</span><strong>${escapeHtml(archiveLabel)}</strong></div>
-      <div><span>License</span><strong>${escapeHtml(item.license || "n/a")}</strong></div>
-      <div><span>Tags</span><strong>${escapeHtml((item.tags || []).slice(0, 2).join(" / ") || "none")}</strong></div>
-    </div>
-  `;
-}
-
-class AtlasViewer {
+class MinimalArchiveViewer {
   constructor({ canvas, messageEl }) {
     this.canvas = canvas;
     this.messageEl = messageEl;
+
     this.renderer = null;
     this.scene = null;
     this.camera = null;
     this.controls = null;
     this.root = null;
 
-    this.layers = {
-      surface: null,
-      edges: null,
-      nodes: null
-    };
+    this.surfaceMesh = null;
+    this.edgeLines = null;
+    this.nodePoints = null;
+    this.floor = null;
 
-    this.nodeBaseSize = 0.012;
-    this.lastFit = null;
+    this.keyLight = null;
+    this.fillLight = null;
+    this.rimLight = null;
+    this.bounceLight = null;
+
+    this.autoRotate = true;
+    this.spinSpeed = defaults.spin;
+    this.userInteracting = false;
+
+    this.lightAngle = defaults.lightAngle;
+    this.lightPower = defaults.lightPower;
+    this.multiLight = defaults.multiLight;
+    this.roughness = defaults.rough;
+    this.wireframe = defaults.wire;
+
     this.requestCounter = 0;
     this.latestRequestId = 0;
     this.pendingRequests = new Map();
+
+    this.fitCenter = null;
+    this.fitOffset = null;
+    this.fitDistance = null;
+    this.fitHeight = 1.6;
 
     this.worker = new Worker(new URL("./model-worker.js", import.meta.url), { type: "module" });
     this.worker.onmessage = (event) => this.onWorkerMessage(event);
@@ -615,46 +312,72 @@ class AtlasViewer {
       alpha: false,
       powerPreference: "high-performance"
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
     this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.toneMappingExposure = defaults.exposure;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xf0ece3);
+    this.scene.background = new THREE.Color(0xe8dfd0);
+    this.scene.fog = new THREE.Fog(0xe8dfd0, 9.0, 18.0);
 
     const width = this.canvas.clientWidth || 2;
     const height = this.canvas.clientHeight || 2;
-    this.camera = new THREE.PerspectiveCamera(46, width / height, 0.01, 2000);
-    this.camera.position.set(0, 0.35, 2.4);
+    this.camera = new THREE.PerspectiveCamera(44, width / height, 0.01, 120);
+    this.camera.position.set(2.4, 1.5, defaults.zoom);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.06;
     this.controls.enablePan = true;
-    this.controls.autoRotate = true;
-    this.controls.autoRotateSpeed = 0.65;
+    this.controls.minDistance = 0.7;
+    this.controls.maxDistance = 20;
+
+    this.controls.addEventListener("start", () => {
+      this.userInteracting = true;
+    });
+    this.controls.addEventListener("end", () => {
+      this.userInteracting = false;
+    });
 
     this.root = new THREE.Group();
     this.scene.add(this.root);
 
-    const hemi = new THREE.HemisphereLight(0xf6f7ff, 0xc8bfae, 0.88);
+    const hemi = new THREE.HemisphereLight(0xfff7e9, 0xbcad98, 0.95);
     this.scene.add(hemi);
 
-    const key = new THREE.DirectionalLight(0xfff4dc, 1.15);
-    key.position.set(2.7, 2.2, 1.8);
-    this.scene.add(key);
+    this.keyLight = new THREE.DirectionalLight(0xfff7ea, defaults.lightPower);
+    this.keyLight.castShadow = true;
+    this.keyLight.shadow.mapSize.set(2048, 2048);
+    this.keyLight.shadow.camera.near = 0.1;
+    this.keyLight.shadow.camera.far = 30;
+    this.keyLight.shadow.camera.left = -6;
+    this.keyLight.shadow.camera.right = 6;
+    this.keyLight.shadow.camera.top = 6;
+    this.keyLight.shadow.camera.bottom = -6;
+    this.scene.add(this.keyLight);
+    this.scene.add(this.keyLight.target);
 
-    const rim = new THREE.DirectionalLight(0xb3d7d3, 0.46);
-    rim.position.set(-2.5, 1.3, -2.8);
-    this.scene.add(rim);
+    this.fillLight = new THREE.DirectionalLight(0xf4efe7, defaults.lightPower * 0.82);
+    this.scene.add(this.fillLight);
+    this.scene.add(this.fillLight.target);
+
+    this.rimLight = new THREE.DirectionalLight(0xdde4f4, defaults.lightPower * 0.66);
+    this.scene.add(this.rimLight);
+    this.scene.add(this.rimLight.target);
+
+    this.bounceLight = new THREE.PointLight(0xffead1, defaults.lightPower * 0.34, 24, 2);
+    this.scene.add(this.bounceLight);
 
     this.floor = new THREE.Mesh(
-      new THREE.CircleGeometry(2.2, 80),
-      new THREE.MeshBasicMaterial({ color: 0xd9d0c2, transparent: true, opacity: 0.82 })
+      new THREE.PlaneGeometry(24, 24),
+      new THREE.MeshStandardMaterial({ color: 0xd2c5b2, roughness: 0.96, metalness: 0.0 })
     );
     this.floor.rotation.x = -Math.PI * 0.5;
-    this.floor.position.y = -0.9;
+    this.floor.receiveShadow = true;
     this.scene.add(this.floor);
 
     this.resizeObserver = new ResizeObserver(this.resize);
@@ -681,7 +404,7 @@ class AtlasViewer {
     pending.resolve(payload.model);
   }
 
-  async load(item, qualityName) {
+  async load(item, profileName) {
     this.setMessage(`Loading ${item.title}...`);
 
     const requestId = ++this.requestCounter;
@@ -694,7 +417,7 @@ class AtlasViewer {
     this.worker.postMessage({
       requestId,
       item,
-      profileName: qualityName
+      profileName
     });
 
     const model = await resultPromise;
@@ -704,10 +427,11 @@ class AtlasViewer {
     }
 
     this.applyModel(item, model);
+
     this.setMessage(
-      `Profile ${model.profileName}: ${NUMBER.format(model.stats.renderedTriangles)} triangles, ${NUMBER.format(
+      `${NUMBER.format(model.stats.renderedTriangles)} triangles • ${NUMBER.format(
         model.stats.renderedNodes
-      )} nodes.`
+      )} nodes • ${model.profileName}`
     );
 
     return {
@@ -716,207 +440,268 @@ class AtlasViewer {
     };
   }
 
-  showReferenceOnly(item) {
-    this.disposeLayers();
-    const palette = item.palette || {};
-    this.scene.background = new THREE.Color(palette.background || "#ece7dc");
-    this.setMessage("Metadata entry only. Open the source model from details.");
-  }
-
-  showEmptyState() {
-    this.disposeLayers();
-    this.setMessage("No matching sculptures. Adjust search or filters.");
-  }
-
   applyModel(item, model) {
-    this.disposeLayers();
+    this.disposeModel();
 
     const palette = item.palette || {};
-    this.scene.background = new THREE.Color(palette.background || "#f0ece3");
 
     if (model.surface && model.surface.positions.length > 0 && model.surface.indices.length > 0) {
-      const surfaceGeometry = new THREE.BufferGeometry();
-      surfaceGeometry.setAttribute("position", new THREE.BufferAttribute(model.surface.positions, 3));
-      surfaceGeometry.setIndex(new THREE.BufferAttribute(model.surface.indices, 1));
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(model.surface.positions, 3));
+      geometry.setIndex(new THREE.BufferAttribute(model.surface.indices, 1));
+      geometry.computeVertexNormals();
 
-      const renderedTriangles = Math.floor(model.surface.indices.length / 3);
-      let surfaceMaterial;
+      const material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(palette.surface || "#ece3d3"),
+        roughness: this.roughness,
+        metalness: 0.02,
+        clearcoat: 0.14,
+        clearcoatRoughness: 0.38,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.93
+      });
 
-      if (renderedTriangles > 550_000) {
-        surfaceMaterial = new THREE.MeshBasicMaterial({
-          color: palette.surface || "#d8ceb6",
-          transparent: true,
-          opacity: 0.7,
-          side: THREE.DoubleSide
-        });
-      } else {
-        surfaceGeometry.computeVertexNormals();
-        surfaceMaterial = new THREE.MeshStandardMaterial({
-          color: palette.surface || "#d8ceb6",
-          roughness: 0.75,
-          metalness: 0.05,
-          transparent: true,
-          opacity: 0.86,
-          flatShading: renderedTriangles > 300_000,
-          side: THREE.DoubleSide
-        });
-      }
-
-      this.layers.surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
-      this.root.add(this.layers.surface);
+      this.surfaceMesh = new THREE.Mesh(geometry, material);
+      this.surfaceMesh.castShadow = true;
+      this.surfaceMesh.receiveShadow = true;
+      this.root.add(this.surfaceMesh);
     }
 
     if (model.edges && model.edges.positions.length > 0) {
       const edgeGeometry = new THREE.BufferGeometry();
       edgeGeometry.setAttribute("position", new THREE.BufferAttribute(model.edges.positions, 3));
       const edgeMaterial = new THREE.LineBasicMaterial({
-        color: palette.edge || "#7dc4c1",
+        color: palette.edge || "#8d7550",
         transparent: true,
-        opacity: 0.42
+        opacity: 0.28
       });
-      this.layers.edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-      this.root.add(this.layers.edges);
+      this.edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+      this.edgeLines.visible = this.wireframe;
+      this.root.add(this.edgeLines);
     }
 
-    if (model.nodes && model.nodes.positions.length > 0) {
+    if (!this.surfaceMesh && model.nodes && model.nodes.positions.length > 0) {
       const nodeGeometry = new THREE.BufferGeometry();
       nodeGeometry.setAttribute("position", new THREE.BufferAttribute(model.nodes.positions, 3));
-
-      this.nodeBaseSize = this.deriveNodeSize(model.stats.renderedNodes);
-
       const nodeMaterial = new THREE.PointsMaterial({
-        color: palette.node || "#f0b88b",
-        size: this.nodeBaseSize,
+        color: palette.node || "#b68d5f",
+        size: 0.006,
         sizeAttenuation: true,
         transparent: true,
         opacity: 0.9
       });
-      this.layers.nodes = new THREE.Points(nodeGeometry, nodeMaterial);
-      this.root.add(this.layers.nodes);
+      this.nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
+      this.root.add(this.nodePoints);
     }
 
-    this.fitToCurrentModel();
+    this.fitToModel();
+    this.updateLights(this.lightAngle, this.lightPower, this.multiLight);
+    this.setWireframe(this.wireframe);
+    this.setRoughness(this.roughness);
   }
 
-  deriveNodeSize(renderedNodes) {
-    if (renderedNodes > 700_000) {
-      return 0.004;
-    }
-    if (renderedNodes > 350_000) {
-      return 0.006;
-    }
-    if (renderedNodes > 100_000) {
-      return 0.009;
-    }
-    return 0.012;
-  }
-
-  fitToCurrentModel() {
-    const bounds = new THREE.Box3();
-    let hasBounds = false;
-
-    for (const key of ["surface", "edges", "nodes"]) {
-      const layer = this.layers[key];
-      if (!layer) {
-        continue;
-      }
-      bounds.expandByObject(layer);
-      hasBounds = true;
-    }
-
-    if (!hasBounds) {
+  fitToModel() {
+    const bounds = new THREE.Box3().setFromObject(this.root);
+    if (bounds.isEmpty()) {
       return;
     }
 
-    const size = bounds.getSize(new THREE.Vector3());
     const center = bounds.getCenter(new THREE.Vector3());
+    const size = bounds.getSize(new THREE.Vector3());
 
     const maxDim = Math.max(size.x, size.y, size.z, 0.001);
-    const distance = maxDim * 1.75;
+    const distance = maxDim * 1.85;
 
-    this.camera.position.set(center.x + distance * 0.35, center.y + distance * 0.22, center.z + distance);
-    this.camera.near = Math.max(maxDim / 1200, 0.001);
-    this.camera.far = Math.max(maxDim * 120, 200);
-    this.camera.updateProjectionMatrix();
+    this.fitCenter = center.clone();
+    this.fitDistance = distance;
+    this.fitHeight = size.y;
+
+    const startOffset = new THREE.Vector3(distance * 0.82, distance * 0.34, distance);
+    this.fitOffset = startOffset.clone();
 
     this.controls.target.copy(center);
+    this.camera.position.copy(center.clone().add(startOffset));
+
+    this.camera.near = Math.max(maxDim / 1500, 0.001);
+    this.camera.far = Math.max(maxDim * 160, 200);
+    this.camera.updateProjectionMatrix();
     this.controls.update();
 
-    this.lastFit = {
-      center,
-      distance
-    };
-
-    this.floor.position.set(center.x, center.y - maxDim * 0.62, center.z);
-    this.floor.scale.setScalar(Math.max(maxDim * 1.2, 1));
+    this.floor.position.set(center.x, bounds.min.y - 0.02, center.z);
+    this.floor.scale.setScalar(Math.max(maxDim * 1.9, 7.5));
   }
 
-  setLayerVisibility(config) {
-    if (this.layers.surface) {
-      this.layers.surface.visible = Boolean(config.surface);
-    }
-    if (this.layers.edges) {
-      this.layers.edges.visible = Boolean(config.edges);
-    }
-    if (this.layers.nodes) {
-      this.layers.nodes.visible = Boolean(config.nodes);
-    }
+  getFitDistance() {
+    return this.fitDistance;
   }
 
-  setNodeSize(multiplier) {
-    if (!this.layers.nodes) {
+  applyZoom(zoomValue, zoomBaseDistance, baseZoomValue, options = {}) {
+    if (!this.fitCenter) {
       return;
     }
 
-    const mat = this.layers.nodes.material;
-    mat.size = this.nodeBaseSize * Math.max(0.1, multiplier);
-    mat.needsUpdate = true;
+    const baseDistance = zoomBaseDistance || this.fitDistance || 2.8;
+    const targetDistance = Math.max(0.6, baseDistance * (zoomValue / Math.max(baseZoomValue, 0.1)));
+
+    const preserveDirection = options.preserveDirection !== false;
+    const target = this.controls.target.clone();
+    let direction = null;
+
+    if (preserveDirection) {
+      direction = this.camera.position.clone().sub(target);
+    } else if (this.fitOffset) {
+      direction = this.fitOffset.clone();
+    }
+
+    if (!direction || direction.lengthSq() < 1e-7) {
+      direction = new THREE.Vector3(0.82, 0.34, 1.0);
+    }
+
+    direction.normalize();
+    this.camera.position.copy(target.addScaledVector(direction, targetDistance));
+    this.controls.update();
+  }
+
+  frontView(zoomValue, zoomBaseDistance, baseZoomValue) {
+    if (!this.fitCenter) {
+      return;
+    }
+
+    const baseDistance = zoomBaseDistance || this.fitDistance || 2.8;
+    const distance = Math.max(0.6, baseDistance * (zoomValue / Math.max(baseZoomValue, 0.1)));
+
+    this.controls.target.copy(this.fitCenter);
+    this.camera.position.set(
+      this.fitCenter.x,
+      this.fitCenter.y + this.fitHeight * 0.08,
+      this.fitCenter.z + distance
+    );
+    this.controls.update();
+  }
+
+  resetView(zoomValue, zoomBaseDistance, baseZoomValue) {
+    if (!this.fitCenter || !this.fitOffset) {
+      return;
+    }
+
+    this.root.rotation.set(0, 0, 0);
+
+    const baseDistance = zoomBaseDistance || this.fitDistance || 2.8;
+    const distance = Math.max(0.6, baseDistance * (zoomValue / Math.max(baseZoomValue, 0.1)));
+
+    const direction = this.fitOffset.clone().normalize();
+    this.controls.target.copy(this.fitCenter);
+    this.camera.position.copy(this.fitCenter.clone().addScaledVector(direction, distance));
+    this.controls.update();
+  }
+
+  setManipulation(enabled) {
+    if (!this.controls) {
+      return;
+    }
+    this.controls.enabled = Boolean(enabled);
+    if (!enabled) {
+      this.userInteracting = false;
+    }
+  }
+
+  setSpin(value) {
+    this.spinSpeed = Number(value) || 0;
   }
 
   setAutoRotate(enabled) {
-    this.controls.autoRotate = Boolean(enabled);
+    this.autoRotate = Boolean(enabled);
   }
 
-  recenter() {
-    if (!this.lastFit) {
+  updateLights(angleDeg, power, multiLight) {
+    this.lightAngle = Number(angleDeg) || 0;
+    this.lightPower = Number(power) || 1;
+    this.multiLight = Boolean(multiLight);
+
+    if (!this.fitCenter || !this.keyLight) {
       return;
     }
 
-    const { center, distance } = this.lastFit;
-    this.camera.position.set(center.x + distance * 0.35, center.y + distance * 0.22, center.z + distance);
-    this.controls.target.copy(center);
-    this.controls.update();
+    const angle = THREE.MathUtils.degToRad(this.lightAngle);
+    const target = this.controls.target;
+
+    this.keyLight.position.set(target.x + Math.cos(angle) * 4.6, target.y + 4.2, target.z + Math.sin(angle) * 4.6);
+    this.fillLight.position.set(target.x - Math.sin(angle) * 3.8, target.y + 2.6, target.z + Math.cos(angle) * 3.2);
+    this.rimLight.position.set(target.x - Math.cos(angle) * 3.2, target.y + 3.2, target.z - Math.sin(angle) * 3.4);
+    this.bounceLight.position.set(target.x, target.y + 0.9, target.z + 1.3);
+
+    this.keyLight.target.position.copy(target);
+    this.fillLight.target.position.copy(target);
+    this.rimLight.target.position.copy(target);
+
+    this.keyLight.intensity = this.lightPower;
+    this.fillLight.intensity = this.multiLight ? this.lightPower * 0.82 : 0;
+    this.rimLight.intensity = this.multiLight ? this.lightPower * 0.66 : 0;
+    this.bounceLight.intensity = this.multiLight ? this.lightPower * 0.34 : 0;
+
+    this.keyLight.target.updateMatrixWorld();
+    this.fillLight.target.updateMatrixWorld();
+    this.rimLight.target.updateMatrixWorld();
   }
 
-  disposeLayers() {
-    for (const key of Object.keys(this.layers)) {
-      const layer = this.layers[key];
-      if (!layer) {
+  setExposure(value) {
+    if (!this.renderer) {
+      return;
+    }
+    this.renderer.toneMappingExposure = Number(value) || defaults.exposure;
+  }
+
+  setRoughness(value) {
+    this.roughness = THREE.MathUtils.clamp(Number(value) || defaults.rough, 0.08, 1);
+    if (this.surfaceMesh && this.surfaceMesh.material && "roughness" in this.surfaceMesh.material) {
+      this.surfaceMesh.material.roughness = this.roughness;
+      this.surfaceMesh.material.needsUpdate = true;
+    }
+  }
+
+  setWireframe(enabled) {
+    this.wireframe = Boolean(enabled);
+
+    if (this.surfaceMesh && this.surfaceMesh.material) {
+      this.surfaceMesh.material.wireframe = this.wireframe;
+      this.surfaceMesh.material.needsUpdate = true;
+    }
+
+    if (this.edgeLines) {
+      this.edgeLines.visible = this.wireframe;
+    }
+  }
+
+  disposeModel() {
+    for (const mesh of [this.surfaceMesh, this.edgeLines, this.nodePoints]) {
+      if (!mesh) {
         continue;
       }
-
-      if (layer.geometry) {
-        layer.geometry.dispose();
+      if (mesh.geometry) {
+        mesh.geometry.dispose();
       }
-      if (layer.material) {
-        if (Array.isArray(layer.material)) {
-          for (const material of layer.material) {
+      if (mesh.material) {
+        if (Array.isArray(mesh.material)) {
+          for (const material of mesh.material) {
             material.dispose();
           }
         } else {
-          layer.material.dispose();
+          mesh.material.dispose();
         }
       }
-
-      this.root.remove(layer);
-      this.layers[key] = null;
+      this.root.remove(mesh);
     }
+
+    this.surfaceMesh = null;
+    this.edgeLines = null;
+    this.nodePoints = null;
   }
 
   setMessage(text, isError = false) {
     this.messageEl.textContent = text;
-    this.messageEl.style.borderColor = isError ? "rgba(184, 68, 42, 0.65)" : "rgba(96, 122, 108, 0.36)";
-    this.messageEl.style.color = isError ? "#74270f" : "#264538";
+    this.messageEl.style.borderColor = isError ? "rgba(184, 68, 42, 0.65)" : "rgba(133, 145, 129, 0.36)";
+    this.messageEl.style.color = isError ? "#74270f" : "#304538";
   }
 
   resize() {
@@ -936,11 +721,21 @@ class AtlasViewer {
     this.camera.updateProjectionMatrix();
   }
 
-  animate() {
+  animate(timestamp = 0) {
     requestAnimationFrame(this.animate);
 
     if (!this.renderer || !this.scene || !this.camera || !this.controls) {
       return;
+    }
+
+    if (!this.lastTimestamp) {
+      this.lastTimestamp = timestamp;
+    }
+    const dt = Math.min(0.06, Math.max(0.001, (timestamp - this.lastTimestamp) / 1000));
+    this.lastTimestamp = timestamp;
+
+    if (this.root && this.autoRotate && !this.userInteracting && this.spinSpeed > 0.0001) {
+      this.root.rotation.y += dt * this.spinSpeed;
     }
 
     this.controls.update();
@@ -956,230 +751,11 @@ function getById(id) {
   return element;
 }
 
-function resolveRequestedModelId() {
-  const raw = new URLSearchParams(window.location.search).get("id");
-  if (!raw) {
-    return null;
-  }
-
-  const direct = raw.trim();
-  if (state.byId.has(direct)) {
-    return direct;
-  }
-
-  const localId = direct.startsWith("local-") ? direct : `local-${direct}`;
-  if (state.byId.has(localId)) {
-    return localId;
-  }
-
-  return null;
-}
-
-function getScopedCatalog() {
-  if (state.scope === "all") {
-    return state.catalog;
-  }
-  return state.catalog.filter((item) => item.catalogType === state.scope);
-}
-
-function populateWorkDropdown() {
-  const items = state.filtered.slice();
-  if (items.length === 0) {
-    dom.workSelect.innerHTML = `<option value="">No works available</option>`;
-    dom.workSelect.disabled = true;
-    dom.workSelect.value = "";
-    return;
-  }
-  const html = buildGroupedWorkOptions(items, state.groupBy);
-  dom.workSelect.innerHTML = html;
-  dom.workSelect.disabled = false;
-  if (state.activeId && items.some((item) => item.id === state.activeId)) {
-    dom.workSelect.value = state.activeId;
-  } else {
-    dom.workSelect.selectedIndex = -1;
-  }
-}
-
-function buildGroupedWorkOptions(items, groupBy) {
-  if (groupBy === "none") {
-    return items
-      .map((item) => {
-        const artist = item.artist ? ` — ${item.artist}` : "";
-        return `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title || "Untitled")}${escapeHtml(artist)}</option>`;
-      })
-      .join("");
-  }
-
-  const grouped = new Map();
-  for (const item of items) {
-    const group = getGroupValue(item, groupBy);
-    if (!grouped.has(group)) {
-      grouped.set(group, []);
-    }
-    grouped.get(group).push(item);
-  }
-
-  return Array.from(grouped.entries())
-    .map(([group, groupItems]) => {
-      const options = groupItems
-        .map((item) => {
-          const artist = item.artist ? ` — ${item.artist}` : "";
-          return `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title || "Untitled")}${escapeHtml(artist)}</option>`;
-        })
-        .join("");
-      return `<optgroup label="${escapeHtml(getGroupLabel(groupBy))}: ${escapeHtml(group)}">${options}</optgroup>`;
-    })
-    .join("");
-}
-
-function getGroupLabel(groupBy) {
-  switch (groupBy) {
-    case "artist":
-      return "Sculptor";
-    case "style":
-      return "Style";
-    case "origin":
-      return "Origin";
-    case "material":
-      return "Material";
-    default:
-      return "Group";
-  }
-}
-
-function getGroupValue(item, groupBy) {
-  switch (groupBy) {
-    case "artist":
-      return item.artist || "Unknown sculptor";
-    case "style":
-      return item.style || "Unknown style";
-    case "origin":
-      return item.origin || "Unknown origin";
-    case "material":
-      return inferMaterialGroup(item);
-    case "none":
-    default:
-      return "All works";
-  }
-}
-
-function inferMaterialGroup(item) {
-  const text = [item.title, item.description, ...(item.tags || [])].join(" ").toLowerCase();
-  if (text.includes("marble")) {
-    return "Marble";
-  }
-  if (text.includes("granite")) {
-    return "Granite";
-  }
-  if (text.includes("stone") || text.includes("limestone") || text.includes("sandstone")) {
-    return "Stone";
-  }
-  if (text.includes("bronze")) {
-    return "Bronze";
-  }
-  if (text.includes("metal") || text.includes("cast")) {
-    return "Cast metal";
-  }
-  return "Material unconfirmed";
-}
-
-function isRenderableItem(item) {
-  return Boolean(item && item.renderable && item.dataUrl);
-}
-
-function setViewerControlsEnabled(enabled) {
-  const controls = [
-    dom.qualitySelect,
-    dom.nodeSize,
-    dom.toggleNodes,
-    dom.toggleEdges,
-    dom.toggleSurface,
-    dom.toggleRotate,
-    dom.recenterBtn
-  ];
-
-  for (const control of controls) {
-    control.disabled = !enabled;
-  }
-}
-
-function formatMetric(value) {
-  return Number.isFinite(value) ? NUMBER.format(value) : "n/a";
-}
-
-function formatPublishedDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "n/a";
-  }
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric"
-  });
-}
-
-function formatHistoricStyle(value) {
-  if (!value) {
-    return "";
-  }
-
-  const normalized = String(value).trim().toLowerCase();
-  if (!normalized) {
-    return "";
-  }
-
-  if (normalized.includes("renaissance")) {
-    return "Renaissance";
-  }
-  if (normalized.includes("baroque")) {
-    return "Baroque";
-  }
-  if (normalized.includes("neoclassic")) {
-    return "Neoclassical";
-  }
-  if (normalized.includes("romantic")) {
-    return "Romantic";
-  }
-  if (normalized.includes("19th")) {
-    return "19th Century";
-  }
-  if (normalized.includes("18th")) {
-    return "18th Century";
-  }
-  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatHistoricArtist(value) {
-  if (!value) {
-    return "";
-  }
-
-  return String(value)
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .map((token) =>
-      token
-        .split("-")
-        .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
-        .join("-")
-    )
-    .join(" ");
-}
-
-function cssEscape(value) {
-  if (window.CSS && typeof window.CSS.escape === "function") {
-    return window.CSS.escape(String(value));
-  }
-  return String(value).replace(/\"/g, "\\\"");
-}
-
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
