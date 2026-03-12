@@ -54,9 +54,23 @@
       .stage {
         width: 100%;
         padding: 16px 14px 20px;
+        display: grid;
+        gap: 14px;
+      }
+      .section-title {
+        margin: 0;
+        font-size: 14px;
+        color: #4f4333;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+      .section-sub {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 12px;
       }
       .list {
-        margin: 0;
+        margin: 8px 0 0;
         padding: 0;
         list-style: none;
         display: grid;
@@ -89,7 +103,7 @@
         color: #5f4d33;
       }
       .note {
-        margin-top: 12px;
+        margin-top: 4px;
         font-size: 12px;
         color: var(--muted);
       }
@@ -118,21 +132,109 @@
     <div class="app">
       <section class="panel">
         <h1 class="title">ad-arma Museum Lobby</h1>
-        <p class="sub">Sculpture and 3D works from antiquity through the nineteenth century. Trial collection (ungrouped).</p>
+        <p class="sub">Sculpture and 3D works from antiquity through the nineteenth century. Each listing includes year and artist lifespan.</p>
       </section>
 
       <section class="stage">
-        <ul class="list">
-          <li>
-            <a class="piece" href="/sphinx/">
-              <h2 class="piece-title">Great Sphinx of Giza</h2>
-              <p class="piece-meta">c. 2558-2532 BCE · Giza, Egypt · Monumental limestone sculpture</p>
-              <p class="piece-link">Open viewer</p>
-            </a>
-          </li>
-        </ul>
+        <section>
+          <h2 class="section-title">Antiquity</h2>
+          <p class="section-sub">Early monumental works</p>
+          <ul class="list">
+            <li>
+              <a class="piece" href="/sphinx/">
+                <h3 class="piece-title">Great Sphinx of Giza (c. 2558-2532 BCE)</h3>
+                <p class="piece-meta">Artist: Unknown Egyptian workshop (lifespan unknown)</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+          </ul>
+        </section>
 
-        <p class="note">This lobby will expand one work at a time as new pages are added.</p>
+        <section>
+          <h2 class="section-title">Michelangelo</h2>
+          <p class="section-sub">Artist: Michelangelo Buonarroti (1475-1564)</p>
+          <ul class="list">
+            <li>
+              <a class="piece" href="/michelangelo/david/">
+                <h3 class="piece-title">David (1501-1504)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/pieta/">
+                <h3 class="piece-title">Pieta (1497-1500)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/battle-of-the-centaurs/">
+                <h3 class="piece-title">Battle of the Centaurs (c. 1490-1492)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/bruges-madonna/">
+                <h3 class="piece-title">Bruges Madonna (1501-1504)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/dying-slave/">
+                <h3 class="piece-title">Dying Slave (1513-1516)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/dawn/?v=20260312-0757">
+                <h3 class="piece-title">Dawn (1524-1531)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/dusk/">
+                <h3 class="piece-title">Dusk (1524-1531)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/giuliano-duke-of-nemours/">
+                <h3 class="piece-title">Giuliano, Duke of Nemours (1526-1534)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/prisoner/">
+                <h3 class="piece-title">Prisoner (c. 1519)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/night/">
+                <h3 class="piece-title">Night (Notte) (1526-1531)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+            <li>
+              <a class="piece" href="/michelangelo/lorenzo-duke-of-urbino/">
+                <h3 class="piece-title">Lorenzo, Duke of Urbino (1526-1534)</h3>
+                <p class="piece-meta">Artist lifespan: 1475-1564</p>
+                <p class="piece-link">Open viewer</p>
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <p class="note">We can later group the museum by culture, geography, period, or movement without changing individual work URLs.</p>
       </section>
     </div>
   </body>
