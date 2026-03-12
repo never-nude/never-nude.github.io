@@ -1,4 +1,4 @@
-const MODULE_VERSION = "20260312-1918";
+const MODULE_VERSION = "20260312-1932";
 
 async function loadCatalog() {
   return import(`./catalog.js?v=${MODULE_VERSION}`);

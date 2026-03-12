@@ -270,11 +270,6 @@ export const museumLobby = {
       items: ["sphinx", "charioteer-of-delphi", "laocoon"]
     },
     {
-      title: "Donatello",
-      subtitle: "Artist: Donatello (c. 1386-1466)",
-      items: ["donatello-saint-george"]
-    },
-    {
       title: "Michelangelo",
       subtitle: "Artist: Michelangelo Buonarroti (1475-1564)",
       items: [
@@ -297,6 +292,17 @@ export const museumLobby = {
         "michelangelo-giuliano-duke-of-nemours",
         "michelangelo-lorenzo-duke-of-urbino",
         "michelangelo-night"
+      ]
+    },
+    {
+      title: "Bouchardon",
+      subtitle: "Artist: Edme Bouchardon (1698-1762)",
+      items: [
+        {
+          href: "/bouchardon/cupid/",
+          title: "Cupid Cutting His Bow from the Club of Hercules (c. 1747-1750)",
+          meta: "Artist lifespan: 1698-1762"
+        }
       ]
     }
   ]
