@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThreadKeep</title>
+  <meta
+    name="description"
+    content="ThreadKeep is a Mac app that turns Messages into a personal library you can browse, search, and revisit."
+  >
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f1e8;
+      --paper: rgba(255, 252, 246, 0.9);
+      --ink: #1e1c19;
+      --muted: #625d57;
+      --line: rgba(30, 28, 25, 0.12);
+      --accent: #1f6a5c;
+      --accent-soft: rgba(31, 106, 92, 0.12);
+      --shadow: 0 24px 60px rgba(47, 38, 26, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --max: 1160px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.75), transparent 36%),
+        linear-gradient(180deg, #f8f3ea 0%, #f0eadf 100%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .shell {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 0 12px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(31, 106, 92, 0.08);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 34px;
+      align-items: center;
+      padding: 34px 0 38px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.66);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font: 600 0.83rem/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(3rem, 6vw, 5.3rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 32rem;
+      color: var(--muted);
+      font: 500 1.12rem/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 20px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font: 700 0.98rem/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(30, 28, 25, 0.16);
+    }
+
+    .button-secondary {
+      background: rgba(255, 255, 255, 0.75);
+      border-color: var(--line);
+      color: var(--ink);
+    }
+
+    .note {
+      margin-top: 18px;
+      color: var(--muted);
+      font: 500 0.92rem/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .window {
+      padding: 16px;
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.52);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+    }
+
+    .window-inner {
+      display: grid;
+      grid-template-columns: 270px 1fr;
+      min-height: 500px;
+      overflow: hidden;
+      border-radius: 22px;
+      background: #fbf8f2;
+      border: 1px solid rgba(30, 28, 25, 0.08);
+    }
+
+    .sidebar {
+      padding: 22px 18px 18px;
+      background: #f2ede3;
+      border-right: 1px solid rgba(30, 28, 25, 0.08);
+    }
+
+    .sidebar-title {
+      margin: 0 0 2px;
+      font-size: 1.7rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .sidebar-subtitle,
+    .conversation-subtitle,
+    .library-meta,
+    .bubble-time,
+    .step p,
+    .section-copy {
+      color: var(--muted);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .sidebar-subtitle {
+      margin: 0 0 8px;
+      font-size: 0.96rem;
+    }
+
+    .library-meta {
+      margin: 0 0 18px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .search {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: 12px;
+      border: 1px solid rgba(30, 28, 25, 0.1);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--muted);
+      font: 0.93rem/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .thread-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .thread {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid transparent;
+    }
+
+    .thread.active {
+      background: #fff;
+      border-color: rgba(31, 106, 92, 0.18);
+      box-shadow: 0 6px 18px rgba(31, 106, 92, 0.08);
+    }
+
+    .thread strong {
+      display: block;
+      margin-bottom: 3px;
+      font: 700 0.95rem/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .thread span {
+      display: block;
+      color: var(--muted);
+      font: 0.82rem/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .conversation {
+      padding: 24px 26px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.88)),
+        linear-gradient(135deg, rgba(31,106,92,0.06), transparent 35%);
+    }
+
+    .conversation-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .conversation-header h2 {
+      margin: 0 0 4px;
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .conversation-subtitle {
+      margin: 0;
+      font-size: 0.96rem;
+      line-height: 1.45;
+    }
+
+    .pill {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(30, 28, 25, 0.09);
+      white-space: nowrap;
+      font: 700 0.8rem/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--muted);
+    }
+
+    .bubbles {
+      display: grid;
+      gap: 12px;
+      margin-top: 2px;
+    }
+
+    .bubble {
+      max-width: 76%;
+      padding: 14px 15px 12px;
+      border-radius: 18px;
+      font: 0.97rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .bubble.incoming {
+      background: rgba(255, 255, 255, 0.9);
+      border-top-left-radius: 8px;
+      box-shadow: 0 10px 24px rgba(30, 28, 25, 0.07);
+    }
+
+    .bubble.outgoing {
+      justify-self: end;
+      background: rgba(31, 106, 92, 0.12);
+      border-top-right-radius: 8px;
+    }
+
+    .bubble-time {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.75rem;
+    }
+
+    .section {
+      padding: 22px 0 48px;
+    }
+
+    .section h3 {
+      margin: 0 0 10px;
+      font-size: clamp(1.9rem, 3vw, 2.7rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .section-copy {
+      margin: 0;
+      max-width: 44rem;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .step {
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      border: 1px solid rgba(30, 28, 25, 0.08);
+      box-shadow: 0 12px 34px rgba(37, 30, 21, 0.06);
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font: 800 0.92rem/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .step h4 {
+      margin: 0 0 8px;
+      font-size: 1.2rem;
+      line-height: 1.1;
+    }
+
+    .step p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    .footer {
+      padding: 10px 0 42px;
+      color: var(--muted);
+      font: 0.9rem/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .steps,
+      .window-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .window-inner {
+        min-height: unset;
+      }
+
+      .conversation {
+        border-top: 1px solid rgba(30, 28, 25, 0.08);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        width: min(calc(100% - 22px), var(--max));
+      }
+
+      h1 {
+        font-size: 2.9rem;
+      }
+
+      .lead,
+      .section-copy {
+        font-size: 0.98rem;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .conversation-header {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">💬</div>
+        <span>ThreadKeep</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Mac app preview</div>
+          <h1>Your Messages, easier to revisit.</h1>
+          <p class="lead">
+            ThreadKeep turns Messages on your Mac into a calm personal library you can browse, search, and come back to later.
+          </p>
+          <div class="actions">
+            <a class="button button-primary" href="#preview">See the preview</a>
+            <a class="button button-secondary" href="#how-it-works">How it works</a>
+          </div>
+          <p class="note">
+            Real message imports happen in the Mac app, on your Mac. This website is a preview of the product, not a browser upload tool.
+          </p>
+        </div>
+
+        <div class="window" id="preview" aria-label="ThreadKeep preview">
+          <div class="window-inner">
+            <aside class="sidebar">
+              <h2 class="sidebar-title">Your Messages</h2>
+              <p class="sidebar-subtitle">All your conversations in one place.</p>
+              <p class="library-meta">945 conversations</p>
+              <div class="search">Search conversations</div>
+              <div class="thread-list">
+                <div class="thread active">
+                  <strong>Sam Rivera</strong>
+                  <span>Studio plans and dinner</span>
+                </div>
+                <div class="thread">
+                  <strong>Family Group</strong>
+                  <span>Photos, birthdays, and addresses</span>
+                </div>
+                <div class="thread">
+                  <strong>Dr. Weiss</strong>
+                  <span>Appointment reminders and notes</span>
+                </div>
+              </div>
+            </aside>
+
+            <section class="conversation">
+              <div class="conversation-header">
+                <div>
+                  <h2>Sam Rivera</h2>
+                  <p class="conversation-subtitle">Messages, photos, dates, and small details kept easy to find.</p>
+                </div>
+                <div class="pill">Searchable conversation</div>
+              </div>
+
+              <div class="bubbles">
+                <div class="bubble incoming">
+                  Found the restaurant name. It was Estela, not Este.
+                  <span class="bubble-time">2:14 PM</span>
+                </div>
+                <div class="bubble outgoing">
+                  Thank you. I knew I would want that later.
+                  <span class="bubble-time">2:16 PM</span>
+                </div>
+                <div class="bubble incoming">
+                  Also sending the photo from that night so you have it with the conversation.
+                  <span class="bubble-time">2:17 PM</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="how-it-works">
+        <h3>How ThreadKeep works</h3>
+        <p class="section-copy">
+          ThreadKeep is designed for people who already use Messages on their Mac and want an easier way to revisit older conversations.
+        </p>
+
+        <div class="steps">
+          <article class="step">
+            <div class="step-number">1</div>
+            <h4>Bring in your Messages</h4>
+            <p>Choose all your conversations or only the ones you want to keep handy.</p>
+          </article>
+          <article class="step">
+            <div class="step-number">2</div>
+            <h4>Browse them like a library</h4>
+            <p>See names, dates, and conversations in one place instead of scrolling forever in Messages.</p>
+          </article>
+          <article class="step">
+            <div class="step-number">3</div>
+            <h4>Find what you forgot</h4>
+            <p>Search for places, links, plans, and details you know are in a conversation somewhere.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      ThreadKeep is a Mac-first product. This page is a preview hosted on GitHub Pages at <code>/threadkeep/</code>.
+    </footer>
+  </div>
+</body>
+</html>
