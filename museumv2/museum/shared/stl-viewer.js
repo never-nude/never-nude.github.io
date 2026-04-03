@@ -179,6 +179,7 @@ export async function initStlMuseumPage(piece) {
   const materialConfig = { ...DEFAULT_MATERIAL, ...(piece.material || {}) };
   const stage = ui.stage;
   const stats = ui.stats;
+  const isChecked = (id) => document.getElementById(id)?.checked ?? Boolean(defaults[id]);
 
   try {
     const { THREE, OrbitControls, STLLoader, RoomEnvironment, mergeVertices } = await getThreeModules();
@@ -375,7 +376,7 @@ export async function initStlMuseumPage(piece) {
       rimLight.position.set(-Math.cos(angle) * 2.7, 2.7, -Math.sin(angle) * 2.9);
 
       const power = ui.n("lightPower");
-      const multi = document.getElementById("multiLight").checked;
+      const multi = isChecked("multiLight");
 
       keyLight.intensity = power;
       fillLight.intensity = multi ? power * 0.82 : 0;
@@ -393,7 +394,7 @@ export async function initStlMuseumPage(piece) {
       renderer.toneMappingExposure = ui.n("exposure") + exposureBoost;
       if (sculptureMaterial) {
         sculptureMaterial.roughness = ui.n("rough");
-        sculptureMaterial.wireframe = document.getElementById("wire").checked;
+        sculptureMaterial.wireframe = isChecked("wire");
       }
     }
 
@@ -412,7 +413,7 @@ export async function initStlMuseumPage(piece) {
         }
       },
       onCheckboxChange: () => {
-        controls.enabled = document.getElementById("canManipulate").checked;
+        controls.enabled = isChecked("canManipulate");
         updateLight();
         updateLook();
       },
@@ -441,7 +442,7 @@ export async function initStlMuseumPage(piece) {
     function render() {
       const dt = clock.getDelta();
 
-      if (sculpture && document.getElementById("autoRotate").checked) {
+      if (sculpture && isChecked("autoRotate")) {
         sculpture.rotation.y += dt * ui.n("spin");
       }
 
