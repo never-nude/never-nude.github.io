@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Form Gallery</title>
+    <link rel="icon" href="/museumv2/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/museumv2/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/museumv2/apple-touch-icon.png" />
+    <meta http-equiv="refresh" content="0; url=/museumv2/museum/" />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #efe7da;
+        --text: #2c251d;
+        --muted: #6d6152;
+        --line: #ccbaa0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(circle at top right, #ddc39f3d 0%, transparent 28%), var(--bg);
+        color: var(--text);
+        font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+      }
+
+      main {
+        max-width: 560px;
+        padding: 28px 30px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #f7efe4f2;
+        box-shadow: 0 18px 36px #5d452415, inset 0 1px 0 #fff8;
+      }
+
+      p {
+        margin: 0 0 12px;
+        line-height: 1.55;
+      }
+
+      a {
+        color: inherit;
+      }
+    </style>
+    <script>
+      window.location.replace("/museumv2/museum/");
+    </script>
+  </head>
+  <body>
+    <main>
+      <p><strong>Form Gallery</strong></p>
+      <p>Opening the digital sculpture collection.</p>
+      <p><a href="/museumv2/museum/">Open Form Gallery</a></p>
+    </main>
+  </body>
+</html>
