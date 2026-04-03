@@ -126,6 +126,7 @@ body {
   line-height: 1.5;
   overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 html {
@@ -211,6 +212,9 @@ iframe {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 /* ------------------------------------------------------------
@@ -287,6 +291,9 @@ iframe {
 .fg-main {
   display: grid;
   gap: clamp(56px, 8vw, 88px);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 /* ------------------------------------------------------------
@@ -1974,16 +1981,18 @@ canvas {
 }
 
 /* ------------------------------------------------------------
-   22. RESPONSIVE — Mobile (max-width: 820px)
+   22. RESPONSIVE — Phone (max-width: 640px)
    ------------------------------------------------------------ */
 
-@media (max-width: 820px) {
+@media (max-width: 640px) {
   :root {
-    --header-h: 48px;
+    --header-h: 52px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
   }
 
   .fg-header {
-    padding: 0 var(--space-md);
+    padding: 0 14px;
   }
 
   .fg-nav {
@@ -1991,34 +2000,82 @@ canvas {
   }
 
   .fg-hero {
-    height: 100svh;
-    min-height: 400px;
+    height: min(calc(100svh - var(--header-h)), 760px);
+    min-height: 620px;
+  }
+
+  .fg-hero-stage .hero-frame {
+    transform: scale(1.08) translateX(-10%) translateY(-2%);
+    transform-origin: center center;
+  }
+
+  .fg-hero-scrim {
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.04) 8%,
+      rgba(0, 0, 0, 0.18) 44%,
+      rgba(0, 0, 0, 0.78) 100%
+    );
   }
 
   .fg-hero-content {
-    padding: var(--space-xl) var(--space-md);
+    padding: 0 var(--space-md) calc(var(--space-xl) + env(safe-area-inset-bottom, 0px));
+    max-width: 100%;
   }
 
   .fg-hero-title {
-    font-size: clamp(2.5rem, 10vw, 4rem);
+    font-size: clamp(2.6rem, 16vw, 4.25rem);
+    max-width: 8ch;
+  }
+
+  .fg-hero-artist {
+    max-width: 22rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .fg-hero-cta {
+    padding: 12px 20px;
+    font-size: 0.75rem;
   }
 
   .fg-piece-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: var(--space-md);
-    padding: var(--space-md);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0 var(--space-md) var(--space-md);
   }
 
   .fg-filter-bar {
     padding: var(--space-md);
+    gap: 12px;
+  }
+
+  .fg-facet-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .fg-facet-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fg-facet {
+    flex: 0 0 auto;
   }
 
   .fg-chrono-head {
-    margin-left: var(--space-md);
+    margin: 0 0 var(--space-md);
+    padding: 0 var(--space-md);
   }
 
   .fg-chrono-title {
     font-size: clamp(1.75rem, 6vw, 2.5rem);
+  }
+
+  .fg-chrono-meta {
+    margin: 0;
   }
 
   /* Viewer mobile */
@@ -2052,13 +2109,17 @@ canvas {
     padding: var(--space-md);
   }
 
+  .fg-gallery-meta {
+    flex-wrap: wrap;
+  }
+
   .fg-gallery-title {
     font-size: var(--text-lg);
   }
 
   /* Recent strip */
   .fg-recent-card {
-    flex: 0 0 170px;
+    flex: 0 0 148px;
   }
 
   .fg-recent-heading {
@@ -2066,18 +2127,147 @@ canvas {
   }
 
   .fg-recent-scroll {
+    gap: 12px;
     padding: 0 var(--space-md);
+    scroll-padding-left: var(--space-md);
+  }
+
+  .fg-section-head,
+  .fg-filter-status,
+  .fg-filter-reset,
+  .fg-timeline,
+  .fg-gallery-head {
+    max-width: 100%;
+  }
+
+  .fg-section-head {
+    padding: 0 var(--space-md) var(--space-sm);
+  }
+
+  .fg-section-title {
+    font-size: clamp(1.85rem, 8vw, 2.5rem);
+  }
+
+  .fg-filter-status {
+    padding: 0 var(--space-md);
+    font-size: var(--text-sm);
+  }
+
+  .fg-filter-reset {
+    margin: 0 var(--space-md);
+  }
+
+  .fg-timeline {
+    padding: 0 var(--space-md);
+    gap: 10px;
+  }
+
+  .fg-timeline-era {
+    min-width: 148px;
+  }
+
+  .fg-piece-info {
+    padding: 10px 2px 0;
   }
 }
 
 /* ------------------------------------------------------------
-   23. RESPONSIVE — Tablet (max-width: 1040px)
+   23. RESPONSIVE — Tablet (641px - 1040px)
    ------------------------------------------------------------ */
 
-@media (max-width: 1040px) and (min-width: 821px) {
+@media (min-width: 641px) and (max-width: 1040px) {
+  .fg-header {
+    padding: 0 20px;
+  }
+
+  .fg-nav {
+    display: flex;
+    gap: 14px;
+  }
+
+  .fg-nav a,
+  .fg-nav-link {
+    font-size: 0.78rem;
+  }
+
+  .fg-hero {
+    height: min(calc(88svh - var(--header-h)), 860px);
+    min-height: 760px;
+  }
+
+  .fg-hero-stage .hero-frame {
+    transform: scale(1.04) translateX(-6%);
+    transform-origin: center center;
+  }
+
+  .fg-hero-content {
+    max-width: 460px;
+    padding: var(--space-xl) 24px 32px;
+  }
+
+  .fg-hero-title {
+    font-size: clamp(4rem, 9vw, 5.75rem);
+    max-width: 7ch;
+  }
+
+  .fg-hero-artist {
+    max-width: 34ch;
+  }
+
+  .fg-section-head {
+    padding: 0 24px var(--space-md);
+  }
+
+  .fg-recent-scroll {
+    gap: 16px;
+    padding: 0 24px;
+  }
+
+  .fg-recent-card {
+    flex: 0 0 clamp(190px, 24vw, 230px);
+  }
+
+  .fg-filter-bar {
+    padding: var(--space-md) 24px;
+  }
+
+  .fg-filter-status {
+    padding: 0 24px;
+  }
+
+  .fg-filter-reset {
+    margin: 0 24px;
+  }
+
+  .fg-timeline {
+    padding: 0 24px;
+  }
+
+  .fg-timeline-era {
+    min-width: 170px;
+  }
+
+  .fg-chrono-head {
+    margin: 0 0 var(--space-md);
+    padding: 0 24px;
+  }
+
+  .fg-chrono-meta {
+    margin: 0;
+  }
+
+  .fg-gallery-grid {
+    gap: 32px;
+  }
+
+  .fg-gallery-head {
+    padding: var(--space-md) 24px;
+  }
+
   .fg-piece-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--space-md);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    padding: 0 24px 24px;
   }
 }
 
