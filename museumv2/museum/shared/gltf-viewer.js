@@ -20,19 +20,6 @@ const DEFAULT_DARK_STAGE = Object.freeze({
   floor: 0x201b23,
   pedestal: 0x2c2530
 });
-const HERO_PREVIEW_STAGE = Object.freeze({
-  background: 0xe9e1dc,
-  fog: 0xe1d6d2,
-  hemiSky: 0xfffcf8,
-  hemiGround: 0x8e807d,
-  key: 0xfffcf8,
-  fill: 0xe8c7d4,
-  rim: 0xcfe4d7,
-  bounce: 0xcabddc,
-  floor: 0xd6cbc6,
-  pedestal: 0xebe4de
-});
-
 let threeModulesPromise = null;
 
 function getThreeModules() {
@@ -329,8 +316,8 @@ export async function initGltfMuseumPage(piece) {
   const embedMode = searchParams.get("embed") || searchParams.get("mode") || "";
   const isHeroEmbed = embedMode === "hero";
   const isPreviewMode = isHeroEmbed || searchParams.get("preview") === "1";
-  const stagePalette = isHeroEmbed ? HERO_PREVIEW_STAGE : DEFAULT_DARK_STAGE;
-  const exposureBoost = isHeroEmbed ? 0.34 : 0;
+  const stagePalette = DEFAULT_DARK_STAGE;
+  const exposureBoost = 0;
   const defaultYaw = sceneConfig.defaultYaw ?? DEFAULT_MODEL_YAW;
   const rotateX = sceneConfig.rotateX ?? 0;
   const rotateY = sceneConfig.rotateY ?? 0;
@@ -343,6 +330,7 @@ export async function initGltfMuseumPage(piece) {
   const focusYRatio = sceneConfig.focusYRatio ?? 0.57;
   const stage = ui.stage;
   const stats = ui.stats;
+  const isChecked = (id) => document.getElementById(id)?.checked ?? Boolean(defaults[id]);
 
   try {
     const { THREE, OrbitControls, GLTFLoader, DRACOLoader, RoomEnvironment } = await getThreeModules();
@@ -581,7 +569,7 @@ export async function initGltfMuseumPage(piece) {
       rimLight.position.set(-Math.cos(angle) * 2.7, 2.7, -Math.sin(angle) * 2.9);
 
       const power = ui.n("lightPower");
-      const multi = document.getElementById("multiLight").checked;
+      const multi = isChecked("multiLight");
 
       keyLight.intensity = power;
       fillLight.intensity = multi ? power * 0.82 : 0;
@@ -604,7 +592,7 @@ export async function initGltfMuseumPage(piece) {
         if (roughness !== null) {
           material.roughness = Math.max(0, Math.min(1, roughnessValue));
         }
-        material.wireframe = document.getElementById("wire").checked ? true : wireframe;
+        material.wireframe = isChecked("wire") ? true : wireframe;
         material.needsUpdate = true;
       }
     }
@@ -624,7 +612,7 @@ export async function initGltfMuseumPage(piece) {
         }
       },
       onCheckboxChange: () => {
-        controls.enabled = document.getElementById("canManipulate").checked;
+        controls.enabled = isChecked("canManipulate");
         updateLight();
         updateLook();
       },
@@ -653,7 +641,7 @@ export async function initGltfMuseumPage(piece) {
     function render() {
       const dt = clock.getDelta();
 
-      if (sculpture && document.getElementById("autoRotate").checked) {
+      if (sculpture && isChecked("autoRotate")) {
         sculpture.rotation.y += dt * ui.n("spin");
       }
 

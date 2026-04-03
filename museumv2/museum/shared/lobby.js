@@ -894,6 +894,7 @@ function hydrateLobbyPreviews() {
 
   let loadIndex = 0;
   const STAGGER_DELAY = 200;
+  const PRELOAD_DELAY = 1200;
 
   function loadFrame(frame) {
     const src = frame.dataset.previewSrc;
@@ -913,6 +914,12 @@ function hydrateLobbyPreviews() {
     }
   }
 
+  function preloadRemainingFrames() {
+    for (const frame of lazyFrames) {
+      loadFrame(frame);
+    }
+  }
+
   if ("IntersectionObserver" in window) {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -923,17 +930,17 @@ function hydrateLobbyPreviews() {
           }
         }
       },
-      { rootMargin: "200px 0px" }
+      { rootMargin: "1200px 0px" }
     );
 
     for (const frame of lazyFrames) {
       observer.observe(frame);
     }
+
+    window.setTimeout(preloadRemainingFrames, PRELOAD_DELAY);
   } else {
     // Fallback: load all with stagger
-    for (const frame of lazyFrames) {
-      loadFrame(frame);
-    }
+    preloadRemainingFrames();
   }
 }
 
