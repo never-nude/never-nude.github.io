@@ -1,4 +1,4 @@
-import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js";
+import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260404-1354";
 import { createPedestalMesh, inferPedestalEnabled, resolveObjectPedestalRadius, resolvePedestalHeight } from "./pedestal.js";
 
 const DEFAULT_PRIMARY_TIMEOUT_MS = 45000;
