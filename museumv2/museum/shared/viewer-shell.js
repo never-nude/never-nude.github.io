@@ -115,6 +115,7 @@ export function renderViewerShell(config) {
               <input id="exposure" type="range" min="0" max="2.8" step="0.01" value="${defaults.exposure.toFixed(2)}" />
               <output id="exposurev">${defaults.exposure.toFixed(2)}</output>
             </div>
+            <label class="fg-bottombar-toggle"><input id="wire" type="checkbox"${checkedAttr(defaults.wire)} /> Wireframe</label>
           </div>
           <div class="fg-bottombar-row fg-bottombar-actions">
             <button class="fg-btn fg-btn-ghost" id="resetBtn" type="button">Reset</button>
@@ -150,7 +151,6 @@ export function renderViewerShell(config) {
             <input id="canManipulate" type="checkbox"${checkedAttr(defaults.canManipulate)} hidden />
             <input id="autoRotate" type="checkbox"${checkedAttr(defaults.autoRotate)} hidden />
             <input id="multiLight" type="checkbox"${checkedAttr(defaults.multiLight)} hidden />
-            <input id="wire" type="checkbox"${checkedAttr(defaults.wire)} hidden />
 
             ${relatedHtml}
 

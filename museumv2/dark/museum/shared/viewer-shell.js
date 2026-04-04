@@ -154,10 +154,12 @@ export function renderViewerShell(config) {
             <input id="canManipulate" type="checkbox"${checkedAttr(defaults.canManipulate)} hidden />
             <input id="autoRotate" type="checkbox"${checkedAttr(defaults.autoRotate)} hidden />
             <input id="multiLight" type="checkbox"${checkedAttr(defaults.multiLight)} hidden />
-            <input id="wire" type="checkbox"${checkedAttr(defaults.wire)} hidden />
             <div class="grid">
               <div class="control"><label for="lightAngle">Light Angle</label><input id="lightAngle" type="range" min="-180" max="180" step="1" value="${defaults.lightAngle}" /><output id="lightAnglev">${Number(defaults.lightAngle).toFixed(0)}&deg;</output></div>
               <div class="control"><label for="exposure">Exposure</label><input id="exposure" type="range" min="0" max="2.8" step="0.01" value="${defaults.exposure.toFixed(2)}" /><output id="exposurev">${defaults.exposure.toFixed(2)}</output></div>
+            </div>
+            <div class="viewer-toggle-row">
+              <label><input id="wire" type="checkbox"${checkedAttr(defaults.wire)} /> Wireframe</label>
             </div>
           </div>
         </details>

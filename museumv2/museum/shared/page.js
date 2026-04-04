@@ -1,6 +1,6 @@
 import { LOCATION_OVERRIDES_BY_PIECE } from "./location-overrides.js";
 
-const MODULE_VERSION = "20260404-1354";
+const MODULE_VERSION = "20260404-1406";
 
 let catalogPromise = null;
 const COLLECTION_DESCRIPTION = "Form Gallery is a digital sculpture collection spanning antiquity through the twenty-first century. Browse by gallery, era, region, or maker.";

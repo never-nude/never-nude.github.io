@@ -1,4 +1,4 @@
-import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260404-1354";
+import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260404-1406";
 
 let sketchfabApiPromise = null;
 

@@ -1,4 +1,4 @@
-import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260404-1354";
+import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260404-1406";
 import { createPedestalMesh, inferPedestalEnabled, resolveGeometryPedestalRadius, resolvePedestalHeight } from "./pedestal.js";
 import { getActiveTheme, getViewerThemePalette } from "./theme.js";
 
