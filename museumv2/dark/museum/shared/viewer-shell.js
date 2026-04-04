@@ -145,30 +145,20 @@ export function renderViewerShell(config) {
           <div class="viewer-controls-panel">
             <input id="spin" type="hidden" value="${defaults.spin.toFixed(2)}" />
             <output id="spinv" hidden>${defaults.spin.toFixed(2)}</output>
+            <input id="zoom" type="hidden" value="${defaults.zoom.toFixed(2)}" />
+            <output id="zoomv" hidden>${defaults.zoom.toFixed(2)}</output>
+            <input id="lightPower" type="hidden" value="${defaults.lightPower.toFixed(2)}" />
+            <output id="lightPowerv" hidden>${defaults.lightPower.toFixed(2)}</output>
+            <input id="rough" type="hidden" value="${defaults.rough.toFixed(2)}" />
+            <output id="roughv" hidden>${defaults.rough.toFixed(2)}</output>
+            <input id="canManipulate" type="checkbox"${checkedAttr(defaults.canManipulate)} hidden />
+            <input id="autoRotate" type="checkbox"${checkedAttr(defaults.autoRotate)} hidden />
+            <input id="multiLight" type="checkbox"${checkedAttr(defaults.multiLight)} hidden />
+            <input id="wire" type="checkbox"${checkedAttr(defaults.wire)} hidden />
             <div class="grid">
-              <div class="control"><label for="zoom">Zoom</label><input id="zoom" type="range" min="0.55" max="6.4" step="0.01" value="${defaults.zoom.toFixed(2)}" /><output id="zoomv">${defaults.zoom.toFixed(2)}</output></div>
-              <div class="control"><label for="lightAngle">Key Angle</label><input id="lightAngle" type="range" min="-180" max="180" step="1" value="${defaults.lightAngle}" /><output id="lightAnglev">${Number(defaults.lightAngle).toFixed(2)}</output></div>
-              <div class="control"><label for="lightPower">Light Power</label><input id="lightPower" type="range" min="0.2" max="4.5" step="0.01" value="${defaults.lightPower.toFixed(2)}" /><output id="lightPowerv">${defaults.lightPower.toFixed(2)}</output></div>
+              <div class="control"><label for="lightAngle">Light Angle</label><input id="lightAngle" type="range" min="-180" max="180" step="1" value="${defaults.lightAngle}" /><output id="lightAnglev">${Number(defaults.lightAngle).toFixed(0)}&deg;</output></div>
               <div class="control"><label for="exposure">Exposure</label><input id="exposure" type="range" min="0" max="2.8" step="0.01" value="${defaults.exposure.toFixed(2)}" /><output id="exposurev">${defaults.exposure.toFixed(2)}</output></div>
-              <div class="control"><label for="rough">Roughness</label><input id="rough" type="range" min="0.2" max="1" step="0.01" value="${defaults.rough.toFixed(2)}" /><output id="roughv">${defaults.rough.toFixed(2)}</output></div>
             </div>
-
-            <div class="viewer-controls-toolbar">
-              <div class="viewer-toggle-row">
-                <label><input id="canManipulate" type="checkbox"${checkedAttr(defaults.canManipulate)} /> Manipulate</label>
-                <label><input id="autoRotate" type="checkbox"${checkedAttr(defaults.autoRotate)} /> Auto Rotate</label>
-                <label><input id="multiLight" type="checkbox"${checkedAttr(defaults.multiLight)} /> Multi-Light</label>
-                <label><input id="wire" type="checkbox"${checkedAttr(defaults.wire)} /> Wireframe</label>
-              </div>
-
-              <div class="viewer-action-row">
-                <button id="frontBtn" class="btn" type="button">Front</button>
-                <button id="resetBtn" class="btn" type="button">Reset</button>
-                <button id="museumBtn" class="btn" type="button">Back to Atrium</button>
-              </div>
-            </div>
-
-            <p class="viewer-controls-hint">${config.controlsHint || "Drag to rotate. Scroll or pinch to zoom. Shift-drag to pan."}</p>
           </div>
         </details>
       </section>
@@ -201,21 +191,29 @@ export function createViewerUi(defaults) {
   const loadingMessage = document.querySelector("[data-loading-message]");
 
   function n(id) {
-    return Number(document.getElementById(id).value);
+    const el = document.getElementById(id);
+    return el ? Number(el.value) : (defaults[id] ?? 0);
   }
 
   function refreshReadouts() {
     for (const id of RANGE_IDS) {
-      document.getElementById(`${id}v`).textContent = n(id).toFixed(2);
+      const out = document.getElementById(`${id}v`);
+      if (out) {
+        out.textContent = id === "lightAngle"
+          ? `${Math.round(n(id))}\u00b0`
+          : n(id).toFixed(2);
+      }
     }
   }
 
   function setDefaults() {
     for (const id of RANGE_IDS) {
-      document.getElementById(id).value = String(defaults[id]);
+      const el = document.getElementById(id);
+      if (el) el.value = String(defaults[id]);
     }
     for (const id of CHECKBOX_IDS) {
-      document.getElementById(id).checked = defaults[id];
+      const el = document.getElementById(id);
+      if (el) el.checked = defaults[id];
     }
     refreshReadouts();
   }
@@ -248,33 +246,48 @@ export function createViewerUi(defaults) {
 
   function bindControls(handlers = {}) {
     for (const id of RANGE_IDS) {
-      document.getElementById(id).addEventListener("input", () => {
-        refreshReadouts();
-        handlers.onRangeInput?.(id);
-      });
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", () => {
+          refreshReadouts();
+          handlers.onRangeInput?.(id);
+        });
+      }
     }
 
     for (const id of CHECKBOX_IDS) {
-      document.getElementById(id).addEventListener("change", () => {
-        handlers.onCheckboxChange?.(id);
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("change", () => {
+          handlers.onCheckboxChange?.(id);
+        });
+      }
+    }
+
+    const frontBtn = document.getElementById("frontBtn");
+    if (frontBtn) {
+      frontBtn.addEventListener("click", () => {
+        handlers.onFront?.();
       });
     }
 
-    document.getElementById("frontBtn").addEventListener("click", () => {
-      handlers.onFront?.();
-    });
+    const resetBtn = document.getElementById("resetBtn");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        handlers.onReset?.();
+      });
+    }
 
-    document.getElementById("resetBtn").addEventListener("click", () => {
-      handlers.onReset?.();
-    });
-
-    document.getElementById("museumBtn").addEventListener("click", () => {
-      if (handlers.onMuseum) {
-        handlers.onMuseum();
-      } else {
-        window.location.href = document.body.dataset.atriumHref || "/museumv2/museum/";
-      }
-    });
+    const museumBtn = document.getElementById("museumBtn");
+    if (museumBtn) {
+      museumBtn.addEventListener("click", () => {
+        if (handlers.onMuseum) {
+          handlers.onMuseum();
+        } else {
+          window.location.href = document.body.dataset.atriumHref || "/museumv2/museum/";
+        }
+      });
+    }
   }
 
   return {

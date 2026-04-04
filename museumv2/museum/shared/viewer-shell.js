@@ -14,15 +14,7 @@ export const DEFAULT_VIEWER_DEFAULTS = Object.freeze({
 export const RANGE_IDS = Object.freeze(["spin", "zoom", "lightAngle", "lightPower", "exposure", "rough"]);
 export const CHECKBOX_IDS = Object.freeze(["canManipulate", "autoRotate", "multiLight", "wire"]);
 
-const LIGHTING_PRESETS = {
-  museum: { lightAngle: 34, lightPower: 2.2, exposure: 0.24, multiLight: true },
-  dramatic: { lightAngle: -60, lightPower: 3.2, exposure: 0.18, multiLight: false },
-  soft: { lightAngle: 0, lightPower: 1.4, exposure: 0.42, multiLight: true },
-  rim: { lightAngle: 150, lightPower: 2.8, exposure: 0.2, multiLight: true }
-};
-
 const AUTO_HIDE_DELAY = 3000;
-const PRESET_ANIM_DURATION = 600;
 
 function checkedAttr(value) {
   return value ? " checked" : "";
@@ -112,21 +104,17 @@ export function renderViewerShell(config) {
         </div>
 
         <div class="fg-viewer-bottombar" data-auto-hide>
-          <div class="fg-bottombar-row fg-bottombar-presets">
-            <div class="fg-preset-group" role="group" aria-label="Lighting presets">
-              <button class="fg-preset-btn is-active" type="button" data-preset="museum">Museum</button>
-              <button class="fg-preset-btn" type="button" data-preset="dramatic">Dramatic</button>
-              <button class="fg-preset-btn" type="button" data-preset="soft">Soft</button>
-              <button class="fg-preset-btn" type="button" data-preset="rim">Rim</button>
-            </div>
-          </div>
           <div class="fg-bottombar-row fg-bottombar-controls">
             <div class="fg-bottombar-slider">
               <label for="lightAngle">Light Angle</label>
               <input id="lightAngle" type="range" min="-180" max="180" step="1" value="${defaults.lightAngle}" />
               <output id="lightAnglev">${Number(defaults.lightAngle).toFixed(0)}&deg;</output>
             </div>
-            <label class="fg-bottombar-toggle"><input id="wire" type="checkbox"${checkedAttr(defaults.wire)} /> Wireframe</label>
+            <div class="fg-bottombar-slider">
+              <label for="exposure">Exposure</label>
+              <input id="exposure" type="range" min="0" max="2.8" step="0.01" value="${defaults.exposure.toFixed(2)}" />
+              <output id="exposurev">${defaults.exposure.toFixed(2)}</output>
+            </div>
           </div>
           <div class="fg-bottombar-row fg-bottombar-actions">
             <button class="fg-btn fg-btn-ghost" id="resetBtn" type="button">Reset</button>
@@ -151,27 +139,18 @@ export function renderViewerShell(config) {
               <p id="stats" class="fg-drawer-stats-text">${statsLoading}</p>
               ${sourceCard}
             </div>
-
-            <details class="fg-drawer-advanced">
-              <summary>Advanced Controls</summary>
-              <div class="fg-drawer-controls">
-                <input id="spin" type="hidden" value="${defaults.spin.toFixed(2)}" />
-                <output id="spinv" hidden>${defaults.spin.toFixed(2)}</output>
-                <div class="fg-control-grid">
-                  <div class="fg-control"><label for="zoom">Zoom</label><input id="zoom" type="range" min="0.55" max="6.4" step="0.01" value="${defaults.zoom.toFixed(2)}" /><output id="zoomv">${defaults.zoom.toFixed(2)}</output></div>
-                  <div class="fg-control"><label for="lightPower">Light Power</label><input id="lightPower" type="range" min="0.2" max="4.5" step="0.01" value="${defaults.lightPower.toFixed(2)}" /><output id="lightPowerv">${defaults.lightPower.toFixed(2)}</output></div>
-                  <div class="fg-control"><label for="exposure">Exposure</label><input id="exposure" type="range" min="0" max="2.8" step="0.01" value="${defaults.exposure.toFixed(2)}" /><output id="exposurev">${defaults.exposure.toFixed(2)}</output></div>
-                  <div class="fg-control"><label for="rough">Roughness</label><input id="rough" type="range" min="0.2" max="1" step="0.01" value="${defaults.rough.toFixed(2)}" /><output id="roughv">${defaults.rough.toFixed(2)}</output></div>
-                </div>
-                <div class="fg-toggle-row">
-                  <label><input id="canManipulate" type="checkbox"${checkedAttr(defaults.canManipulate)} /> Manipulate</label>
-                  <label><input id="autoRotate" type="checkbox"${checkedAttr(defaults.autoRotate)} /> Auto Rotate</label>
-                  <label><input id="multiLight" type="checkbox"${checkedAttr(defaults.multiLight)} /> Multi-Light</label>
-                </div>
-                <button id="frontBtn" class="fg-btn fg-btn-ghost" type="button">Front View</button>
-                <p class="fg-controls-hint">${config.controlsHint || "Drag to rotate. Scroll or pinch to zoom. Shift-drag to pan."}</p>
-              </div>
-            </details>
+            <input id="spin" type="hidden" value="${defaults.spin.toFixed(2)}" />
+            <output id="spinv" hidden>${defaults.spin.toFixed(2)}</output>
+            <input id="zoom" type="hidden" value="${defaults.zoom.toFixed(2)}" />
+            <output id="zoomv" hidden>${defaults.zoom.toFixed(2)}</output>
+            <input id="lightPower" type="hidden" value="${defaults.lightPower.toFixed(2)}" />
+            <output id="lightPowerv" hidden>${defaults.lightPower.toFixed(2)}</output>
+            <input id="rough" type="hidden" value="${defaults.rough.toFixed(2)}" />
+            <output id="roughv" hidden>${defaults.rough.toFixed(2)}</output>
+            <input id="canManipulate" type="checkbox"${checkedAttr(defaults.canManipulate)} hidden />
+            <input id="autoRotate" type="checkbox"${checkedAttr(defaults.autoRotate)} hidden />
+            <input id="multiLight" type="checkbox"${checkedAttr(defaults.multiLight)} hidden />
+            <input id="wire" type="checkbox"${checkedAttr(defaults.wire)} hidden />
 
             ${relatedHtml}
 
@@ -373,59 +352,6 @@ export function createViewerUi(defaults) {
     }
   }
 
-  // --- Preset animation helper ---
-  function animatePreset(preset, handlers) {
-    const target = LIGHTING_PRESETS[preset];
-    if (!target) return;
-
-    const rangeKeys = ["lightAngle", "lightPower", "exposure"];
-    const checkboxKeys = ["multiLight"];
-
-    // Capture starting values
-    const startValues = {};
-    for (const key of rangeKeys) {
-      startValues[key] = n(key);
-    }
-
-    const startTime = performance.now();
-
-    function tick(now) {
-      const elapsed = now - startTime;
-      const t = Math.min(elapsed / PRESET_ANIM_DURATION, 1);
-      // Ease-out cubic
-      const ease = 1 - Math.pow(1 - t, 3);
-
-      for (const key of rangeKeys) {
-        if (key in target) {
-          const current = startValues[key] + (target[key] - startValues[key]) * ease;
-          const el = document.getElementById(key);
-          if (el) {
-            el.value = String(current);
-            handlers?.onRangeInput?.(key);
-          }
-        }
-      }
-      refreshReadouts();
-
-      if (t < 1) {
-        requestAnimationFrame(tick);
-      } else {
-        // Set final checkbox values at end of animation
-        for (const key of checkboxKeys) {
-          if (key in target) {
-            const el = document.getElementById(key);
-            if (el) {
-              el.checked = target[key];
-              handlers?.onCheckboxChange?.(key);
-            }
-          }
-        }
-      }
-    }
-
-    requestAnimationFrame(tick);
-  }
-
   function bindControls(handlers = {}) {
     for (const id of RANGE_IDS) {
       const el = document.getElementById(id);
@@ -469,19 +395,6 @@ export function createViewerUi(defaults) {
         } else {
           window.location.href = "/museumv2/museum/";
         }
-      });
-    }
-
-    // --- Preset buttons ---
-    const presetButtons = document.querySelectorAll("[data-preset]");
-    for (const btn of presetButtons) {
-      btn.addEventListener("click", () => {
-        const preset = btn.dataset.preset;
-        // Update active state
-        for (const b of presetButtons) {
-          b.classList.toggle("is-active", b === btn);
-        }
-        animatePreset(preset, handlers);
       });
     }
   }
