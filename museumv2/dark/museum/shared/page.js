@@ -1,4 +1,4 @@
-const MODULE_VERSION = "20260404-1406";
+const MODULE_VERSION = "20260406-1215";
 const DARK_ROOT = "/museumv2/dark/";
 
 let catalogPromise = null;

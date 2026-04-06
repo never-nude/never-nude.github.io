@@ -324,6 +324,11 @@ iframe {
   border: 0;
 }
 
+.fg-hero-stage .hero-frame {
+  transform: scale(0.97) translateY(-8%);
+  transform-origin: center 36%;
+}
+
 .fg-hero-scrim {
   position: absolute;
   inset: 0;
