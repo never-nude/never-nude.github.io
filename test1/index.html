@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>ATRIUM.EARTH Test Preview</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <meta http-equiv="refresh" content="0; url=/museumv2/museum/" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --surface: rgba(255, 255, 255, 0.04);
+        --text: #e8e4df;
+        --text-dim: #8a847d;
+        --accent: #c8a97e;
+        --border: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top, rgba(200, 169, 126, 0.14), transparent 42%),
+          var(--bg);
+        color: var(--text);
+        font: 16px/1.5 "Georgia", "Times New Roman", serif;
+      }
+
+      main {
+        width: min(560px, calc(100vw - 32px));
+        padding: 28px;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--surface);
+        text-align: center;
+      }
+
+      p {
+        margin: 0;
+        color: var(--text-dim);
+      }
+
+      a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Opening the ATRIUM.EARTH test preview.</p>
+      <p><a href="/museumv2/museum/">Continue to the museum</a></p>
+    </main>
+    <script>
+      window.location.replace("/museumv2/museum/");
+    </script>
+  </body>
+</html>
