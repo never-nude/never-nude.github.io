@@ -3,27 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Page Not Found — Form Gallery</title>
-    <meta name="theme-color" content="#111017" />
+    <title>Page Not Found — Atrium</title>
+    <meta name="theme-color" content="#050505" />
     <style>
       :root {
         color-scheme: dark;
-        --bg: #111017;
-        --text: #f7f1ee;
-        --muted: #bcaeb7;
-        --accent: #f0c0a4;
-        --border: #4a3e51;
-        --surface: #16131b;
+        --bg: #050505;
+        --text: #e8e4df;
+        --muted: #9b948d;
+        --accent: #c8a97e;
+        --border: rgba(255,255,255,0.08);
+        --surface: rgba(255,255,255,0.03);
       }
       * { box-sizing: border-box; }
       html, body {
         margin: 0;
         min-height: 100vh;
-        background: radial-gradient(circle at 16% 0%, #f0b6a91f 0%, transparent 28%),
-                    radial-gradient(circle at 84% 12%, #b8e4d51a 0%, transparent 24%),
-                    linear-gradient(180deg, #111017 0%, #0b0a10 100%);
+        background: radial-gradient(circle at 16% 0%, rgba(200,169,126,0.12) 0%, transparent 28%),
+                    radial-gradient(circle at 84% 12%, rgba(255,255,255,0.05) 0%, transparent 24%),
+                    linear-gradient(180deg, #090909 0%, #030303 100%);
         color: var(--text);
-        font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+        font-family: "DM Sans", "Avenir Next", sans-serif;
         display: grid;
         place-items: center;
         padding: 24px;
@@ -34,9 +34,9 @@
         gap: 20px;
         padding: 36px 32px;
         border: 1px solid var(--border);
-        border-radius: 20px;
-        background: linear-gradient(180deg, var(--surface) 0%, #0f0c14 100%);
-        box-shadow: inset 0 1px 0 #ffffff08, 0 18px 38px #00000044;
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 38px rgba(0,0,0,0.44);
       }
       .kicker {
         margin: 0;
@@ -48,9 +48,9 @@
       }
       h1 {
         margin: 0;
-        font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+        font-family: "Cormorant Garamond", "Iowan Old Style", serif;
         font-size: clamp(2.5rem, 5vw, 3.5rem);
-        line-height: 0.92;
+        line-height: 0.88;
         letter-spacing: -0.04em;
         font-weight: 600;
       }
@@ -64,9 +64,9 @@
       a.btn {
         width: fit-content;
         padding: 12px 18px;
-        border: 1px solid #745c70;
-        border-radius: 10px;
-        background: #241c29;
+        border: 1px solid rgba(200,169,126,0.28);
+        border-radius: 999px;
+        background: rgba(200,169,126,0.12);
         color: var(--text);
         font-size: 12px;
         font-weight: 600;
@@ -76,7 +76,7 @@
         transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
       }
       a.btn:hover {
-        background: #322638;
+        background: rgba(200,169,126,0.18);
         border-color: var(--accent);
         transform: translateY(-1px);
       }
@@ -84,7 +84,7 @@
   </head>
   <body>
     <main>
-      <p class="kicker">Form Gallery</p>
+      <p class="kicker">ATRIUM.EARTH</p>
       <h1>Page Not Found</h1>
       <p>The sculpture you're looking for isn't in this wing. It may have been moved, or the path may be incorrect.</p>
       <a class="btn" href="/museumv2/museum/">Return to the Collection</a>

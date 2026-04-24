@@ -1,4 +1,4 @@
-import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260406-1215";
+import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260424-1515";
 import { createPedestalMesh, inferPedestalEnabled, resolveGeometryPedestalRadius, resolvePedestalHeight } from "./pedestal.js";
 
 const DEFAULT_PRIMARY_TIMEOUT_MS = 45000;
@@ -6,6 +6,7 @@ const DEFAULT_FALLBACK_TIMEOUT_MS = 30000;
 const DEFAULT_TARGET_HEIGHT = 1.58;
 const DEFAULT_ROTATE_X = -Math.PI * 0.5;
 const DEFAULT_MODEL_YAW = 0;
+const AUTO_ROTATE_RESUME_DELAY_MS = 5000;
 const DEFAULT_PRIMARY_LOADING_TEXT = "Loading high-fidelity STL sculpture...";
 const DEFAULT_FALLBACK_LOADING_TEXT = "Loading optimized STL sculpture...";
 const DEFAULT_SWITCH_LOADING_TEXT = "Full-resolution mesh unavailable; switching to optimized STL...";
@@ -20,18 +21,27 @@ const DEFAULT_MATERIAL = Object.freeze({
   reflectivity: 0.38
 });
 const DEFAULT_DARK_STAGE = Object.freeze({
-  background: 0x111018,
-  fog: 0x111018,
-  hemiSky: 0xf0e7e4,
-  hemiGround: 0x17131b,
-  key: 0xfff6f0,
-  fill: 0xd8b2c5,
-  rim: 0xbfe1d3,
-  bounce: 0x8e79a6,
-  floor: 0x201b23,
-  pedestal: 0x2c2530
+  background: 0x050505,
+  hemiSky: 0xf7eadf,
+  hemiGround: 0x050505,
+  key: 0xffd7b8,
+  fill: 0x93acd7,
+  rim: 0xf6ecdf,
+  bounce: 0x7b6044,
+  pedestal: 0x171717
 });
 let threeModulesPromise = null;
+
+function suggestedRoughness(piece, currentValue) {
+  const medium = String(piece?.medium || "").toLowerCase();
+  if (/bronze|brass|copper|metal|alloy/.test(medium)) {
+    return Math.max(0.36, currentValue);
+  }
+  if (/terracotta|wood|oak|cedar|paint/.test(medium)) {
+    return Math.max(0.48, currentValue);
+  }
+  return Math.max(0.54, currentValue);
+}
 
 function getThreeModules() {
   if (!threeModulesPromise) {
@@ -122,6 +132,7 @@ function loadMessageForUrl(piece, url, primaryUrl, fallbackUrl) {
 
 export async function initStlMuseumPage(piece) {
   const defaults = createViewerDefaults(piece.defaults);
+  defaults.rough = suggestedRoughness(piece, defaults.rough);
   const model = piece.model || {};
   const sceneConfig = piece.scene || {};
   const primaryUrl = model.primaryUrl || model.url;
@@ -138,11 +149,21 @@ export async function initStlMuseumPage(piece) {
     dimensions: piece.dimensions,
     location: piece.location,
     locationLabel: piece.locationLabel,
+    region: piece.region,
+    period: piece.period,
+    gallery: piece.gallery,
+    scanSource: piece.scan_source || piece.lobbyMeta,
+    meshFormat: piece.mesh_format,
     source: piece.source,
     statsLoading: initialLoadingText,
     loadingText: initialLoadingText,
     defaults,
-    controlsHint: piece.controlsHint
+    controlsHint: piece.controlsHint,
+    relatedWorks: piece.relatedWorks,
+    prevPiece: piece.prevPiece,
+    nextPiece: piece.nextPiece,
+    downloadHref: primaryUrl,
+    downloadLabel: piece.mesh_format ? `Download ${piece.mesh_format}` : "Download Model"
   });
 
   ui.setDefaults();
@@ -160,7 +181,7 @@ export async function initStlMuseumPage(piece) {
   const rotateY = sceneConfig.rotateY ?? 0;
   const rotateZ = sceneConfig.rotateZ ?? 0;
   const targetHeight = sceneConfig.targetHeight ?? DEFAULT_TARGET_HEIGHT;
-  const showPedestal = inferPedestalEnabled(piece, sceneConfig);
+  const showPedestal = !isPreviewMode && inferPedestalEnabled(piece, sceneConfig);
   const pedestalHeight = showPedestal ? resolvePedestalHeight(sceneConfig, targetHeight) : 0.004;
   const focusYRatio = sceneConfig.focusYRatio ?? 0.57;
   const materialConfig = { ...DEFAULT_MATERIAL, ...(piece.material || {}) };
@@ -182,9 +203,10 @@ export async function initStlMuseumPage(piece) {
 
     let stlByteLength = await fetchModelByteLength(modelUrlInUse);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isPreviewMode ? 1 : isMobileRender ? 1.15 : 1.8));
     renderer.setSize(stage.clientWidth, stage.clientHeight);
+    renderer.setClearColor(stagePalette.background, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = defaults.exposure + exposureBoost;
@@ -192,8 +214,6 @@ export async function initStlMuseumPage(piece) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(stagePalette.background);
-    scene.fog = new THREE.Fog(stagePalette.fog, 7.0, 12.0);
 
     const camera = new THREE.PerspectiveCamera(44, stage.clientWidth / stage.clientHeight, 0.01, 120);
     camera.position.set(2.3, 1.6, defaults.zoom);
@@ -201,12 +221,15 @@ export async function initStlMuseumPage(piece) {
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.03).texture;
 
-    const hemi = new THREE.HemisphereLight(stagePalette.hemiSky, stagePalette.hemiGround, 0.95);
+    const hemi = new THREE.HemisphereLight(stagePalette.hemiSky, stagePalette.hemiGround, 0.42);
     scene.add(hemi);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.14);
+    scene.add(ambient);
 
     const keyLight = new THREE.DirectionalLight(stagePalette.key, defaults.lightPower);
     keyLight.castShadow = true;
-    const shadowMapSize = isPreviewMode ? 768 : isMobileRender ? 1024 : 2048;
+    const shadowMapSize = isPreviewMode ? 768 : isMobileRender ? 1024 : 1536;
     keyLight.shadow.mapSize.set(shadowMapSize, shadowMapSize);
     keyLight.shadow.camera.near = 0.1;
     keyLight.shadow.camera.far = 16;
@@ -216,24 +239,32 @@ export async function initStlMuseumPage(piece) {
     keyLight.shadow.camera.bottom = -3.2;
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(stagePalette.fill, defaults.lightPower * 0.82);
+    const fillLight = new THREE.DirectionalLight(stagePalette.fill, defaults.lightPower * 0.4);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(stagePalette.rim, defaults.lightPower * 0.66);
+    const rimLight = new THREE.DirectionalLight(stagePalette.rim, defaults.lightPower * 0.62);
     scene.add(rimLight);
 
-    const bounceLight = new THREE.PointLight(stagePalette.bounce, defaults.lightPower * 0.34, 12, 2);
-    bounceLight.position.set(0.0, 0.9, 1.25);
+    const bounceLight = new THREE.PointLight(stagePalette.bounce, defaults.lightPower * 0.16, 10, 2);
+    bounceLight.position.set(0.0, 0.72, 1.1);
     scene.add(bounceLight);
 
-    const floor = new THREE.Mesh(
+    const shadowPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(12, 12),
-      new THREE.MeshStandardMaterial({ color: stagePalette.floor, roughness: 0.96, metalness: 0.0 })
+      new THREE.ShadowMaterial({ color: 0x000000, opacity: isPreviewMode ? 0.18 : 0.28 })
     );
-    floor.rotation.x = -Math.PI * 0.5;
-    floor.position.y = 0;
-    floor.receiveShadow = true;
-    scene.add(floor);
+    shadowPlane.rotation.x = -Math.PI * 0.5;
+    shadowPlane.position.y = 0.001;
+    shadowPlane.receiveShadow = true;
+    scene.add(shadowPlane);
+
+    const contactDisc = new THREE.Mesh(
+      new THREE.CircleGeometry(1.2, 64),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: isPreviewMode ? 0.08 : 0.12 })
+    );
+    contactDisc.rotation.x = -Math.PI * 0.5;
+    contactDisc.position.y = 0.002;
+    scene.add(contactDisc);
 
     let sculptureMaterial = null;
     let sculpture = null;
@@ -294,6 +325,8 @@ export async function initStlMuseumPage(piece) {
 
       sculpture = new THREE.Mesh(geometry, sculptureMaterial);
       const scale = targetHeight / size.y;
+      const shadowRadius = Math.max(1.1, Math.max(size.x, size.z) * scale * 0.66);
+      contactDisc.scale.setScalar(shadowRadius);
       if (showPedestal) {
         scene.add(
           createPedestalMesh(
@@ -338,6 +371,7 @@ export async function initStlMuseumPage(piece) {
     controls.minDistance = 0.55;
     controls.maxDistance = 8.0;
     controls.maxPolarAngle = Math.PI * 0.64;
+    let lastInteractionAt = performance.now();
     const mobileQuery = window.matchMedia("(max-width: 820px)");
     let isMobileLayout = mobileQuery.matches;
 
@@ -357,18 +391,17 @@ export async function initStlMuseumPage(piece) {
 
     function updateLight() {
       const angle = THREE.MathUtils.degToRad(ui.n("lightAngle"));
-      const radius = 3.6;
-      keyLight.position.set(Math.cos(angle) * radius, 4.2, Math.sin(angle) * radius);
-      fillLight.position.set(-Math.sin(angle) * 3.2, 2.3, Math.cos(angle) * 2.8);
-      rimLight.position.set(-Math.cos(angle) * 2.7, 2.7, -Math.sin(angle) * 2.9);
+      keyLight.position.set(-Math.cos(angle) * 3.1, 4.6, Math.sin(angle) * 3.0);
+      fillLight.position.set(Math.cos(angle + Math.PI * 0.55) * 3.8, 2.0, Math.sin(angle + Math.PI * 0.55) * 3.5);
+      rimLight.position.set(Math.cos(angle + Math.PI) * 2.6, 3.3, Math.sin(angle + Math.PI) * 2.6);
 
       const power = ui.n("lightPower");
       const multi = isChecked("multiLight");
 
       keyLight.intensity = power;
-      fillLight.intensity = multi ? power * 0.82 : 0;
-      rimLight.intensity = multi ? power * 0.66 : 0;
-      bounceLight.intensity = multi ? power * 0.34 : 0;
+      fillLight.intensity = multi ? power * 0.4 : 0;
+      rimLight.intensity = multi ? power * 0.62 : 0;
+      bounceLight.intensity = multi ? power * 0.16 : 0;
     }
 
     function updateCameraDistance() {
@@ -423,13 +456,21 @@ export async function initStlMuseumPage(piece) {
     updateLight();
     updateLook();
     controls.enabled = defaults.canManipulate;
+    const noteInteraction = () => {
+      lastInteractionAt = performance.now();
+      ui.registerActivity?.();
+    };
+    controls.addEventListener("start", noteInteraction);
+    renderer.domElement.addEventListener("pointerdown", noteInteraction, { passive: true });
+    renderer.domElement.addEventListener("wheel", noteInteraction, { passive: true });
+    renderer.domElement.addEventListener("touchstart", noteInteraction, { passive: true });
 
     const clock = new THREE.Clock();
 
     function render() {
       const dt = clock.getDelta();
 
-      if (sculpture && isChecked("autoRotate")) {
+      if (sculpture && isChecked("autoRotate") && performance.now() - lastInteractionAt > AUTO_ROTATE_RESUME_DELAY_MS) {
         sculpture.rotation.y += dt * ui.n("spin");
       }
 

@@ -1,6 +1,18 @@
-import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260406-1215";
+import { createViewerDefaults, renderViewerShell } from "./viewer-shell.js?v=20260424-1515";
 
 let sketchfabApiPromise = null;
+const AUTO_ROTATE_RESUME_DELAY_MS = 5000;
+
+function suggestedRoughness(piece, currentValue) {
+  const medium = String(piece?.medium || "").toLowerCase();
+  if (/bronze|brass|copper|metal|alloy/.test(medium)) {
+    return Math.max(0.36, currentValue);
+  }
+  if (/terracotta|wood|oak|cedar|paint/.test(medium)) {
+    return Math.max(0.48, currentValue);
+  }
+  return Math.max(0.54, currentValue);
+}
 
 function cloneJson(value) {
   return value ? JSON.parse(JSON.stringify(value)) : value;
@@ -73,6 +85,7 @@ function bootError(message, error) {
 
 export async function initSketchfabMuseumPage(piece) {
   const defaults = createViewerDefaults(piece.defaults);
+  defaults.rough = suggestedRoughness(piece, defaults.rough);
   const ui = renderViewerShell({
     pageTitle: piece.pageTitle,
     viewerTitle: piece.viewerTitle,
@@ -81,11 +94,19 @@ export async function initSketchfabMuseumPage(piece) {
     dimensions: piece.dimensions,
     location: piece.location,
     locationLabel: piece.locationLabel,
+    region: piece.region,
+    period: piece.period,
+    gallery: piece.gallery,
+    scanSource: piece.scan_source || piece.lobbyMeta,
+    meshFormat: piece.mesh_format,
     source: piece.source,
     statsLoading: piece.view?.primaryLoadingText || "Loading high-fidelity source mesh...",
     loadingText: piece.view?.primaryLoadingText || "Loading high-fidelity source mesh...",
     defaults,
-    controlsHint: piece.controlsHint
+    controlsHint: piece.controlsHint,
+    relatedWorks: piece.relatedWorks,
+    prevPiece: piece.prevPiece,
+    nextPiece: piece.nextPiece
   });
 
   ui.setDefaults();
@@ -103,7 +124,8 @@ export async function initSketchfabMuseumPage(piece) {
     roughnessTimer: null,
     sceneReady: false,
     programmaticMoveUntil: 0,
-    userInteracting: false
+    userInteracting: false,
+    lastUserInteractionAt: performance.now()
   };
 
   function syncOrbitState(camera) {
@@ -271,6 +293,10 @@ export async function initSketchfabMuseumPage(piece) {
       lastTs = ts;
 
       if (state.sceneReady && state.camera && state.orbitOffset && document.getElementById("autoRotate").checked && !state.userInteracting) {
+        if (ts - state.lastUserInteractionAt <= AUTO_ROTATE_RESUME_DELAY_MS) {
+          requestAnimationFrame(frame);
+          return;
+        }
         const speed = ui.n("spin");
         if (speed > 0.0001 && ts - lastSend > 70) {
           const target = state.camera.target.slice(0, 3);
@@ -306,7 +332,7 @@ export async function initSketchfabMuseumPage(piece) {
     await new Promise((resolve, reject) => {
       client.init(model.uid, {
         autostart: 1,
-        transparent: model.transparent ? 1 : 0,
+        transparent: 1,
         cameraConstraints: false,
         ui_infos: 0,
         ui_controls: 0,
@@ -365,11 +391,14 @@ export async function initSketchfabMuseumPage(piece) {
                 api.addEventListener("camerastart", () => {
                   if (performance.now() > state.programmaticMoveUntil) {
                     state.userInteracting = true;
+                    state.lastUserInteractionAt = performance.now();
+                    ui.registerActivity?.();
                   }
                 });
 
                 api.addEventListener("camerastop", async () => {
                   state.userInteracting = false;
+                   state.lastUserInteractionAt = performance.now();
                   const camera = await getCameraLookAt();
                   if (camera) {
                     syncOrbitState(camera);

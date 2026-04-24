@@ -644,7 +644,7 @@ export function renderMuseumLobby(lobby, pieces) {
     `;
   }).join("");
   const heroFrame = featuredPiece ? heroPreviewHref(featuredPiece.href) : "";
-  const brandWords = String(lobby.brand || "FORM GALLERY").trim().split(/\s+/);
+  const brandWords = String(lobby.brand || "ATRIUM.EARTH").trim().split(/\s+/);
   const brandForm = brandWords[0] || "FORM";
   const brandGallery = brandWords.slice(1).join(" ") || "GALLERY";
   const titleText = lobby.title || "Atrium";
@@ -669,7 +669,7 @@ export function renderMuseumLobby(lobby, pieces) {
     <a class="skip-link" href="#main-content">Skip to collection content</a>
     <div class="app lobby-app">
       <header class="museum-header museum-header--simple">
-        <p class="page-title page-title--progressive" aria-label="${lobby.brand || "FORM GALLERY"}">
+        <p class="page-title page-title--progressive" aria-label="${lobby.brand || "ATRIUM.EARTH"}">
           <span class="page-title-form">${brandForm}</span>
           <span class="page-title-gallery">${brandGallery}</span>
         </p>

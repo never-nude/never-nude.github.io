@@ -449,7 +449,7 @@ export const museumPiecesExtension = {
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS403",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/4q77fw74p_smk8-kas403-uffizi-wrestlers-1.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/8w32rb35m_KAS403_small.stl",
-      note: "The Form Gallery title uses the common English name. SMK catalogs the object itself as a plaster cast after the Uffizi group."
+      note: "The Atrium title uses the common English name. SMK catalogs the object itself as a plaster cast after the Uffizi group."
     }),
     defaults: {
       zoom: 3.25,
@@ -472,7 +472,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 16.5 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2226)",
     source: smkSource({
-      summary: "SMK Open source mesh for Princess from Amarna, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Princess from Amarna, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2226",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/cj82kc77d_smk-kas2226-princess-of-amarna.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/v979v741f_KAS2226_small.stl",
@@ -517,7 +517,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 94 cm | W: 65 cm | D: 144.5 cm",
     lobbyMeta: "Source: SMK Open painted plaster cast (KAS837); bronze material pass",
     source: smkSource({
-      summary: "SMK Open source mesh for the Capitoline Wolf type, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Capitoline Wolf type, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS837",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/g445cj932_smk39-kas837-capitoline-wolf-decimated.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/05741x168_KAS837_small.stl",
@@ -562,7 +562,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 154 cm | W: 59 cm | D: 41.5 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS185)",
     source: smkSource({
-      summary: "SMK Open source mesh for Aphrodite Anadyomene, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Aphrodite Anadyomene, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS185",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/rn301581s_16-smk-esquiline-aphrodite-inv-1141.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/1z40kz34x_KAS185_small.stl",
@@ -591,7 +591,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 208 cm | W: 88 cm | D: 76 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS224)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Lansdowne Herakles type, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Lansdowne Herakles type, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS224",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/mg74qr49g_smk-110-kas224.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/kd17cz49m_KAS224_small.stl",
@@ -620,7 +620,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 104 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2125)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Kneeling Archer from the Temple of Aphaia, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Kneeling Archer from the Temple of Aphaia, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2125",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/tt44ps735_smk-kas2125-aphaia-kneeling-archer.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/kh04dv58t_KAS2125.stl",
@@ -649,7 +649,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 158 cm | W: 101 cm | D: 51 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2362)",
     source: smkSource({
-      summary: "SMK Open source mesh for Castor and Pollux, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Castor and Pollux, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2362",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/cv43p265m_smk54-kas2362-castor-and-pollux-d.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/4j03d4287_KAS2362_small.stl",
@@ -678,7 +678,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 219 cm | W: 93 cm | D: 65 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS255)",
     source: smkSource({
-      summary: "SMK Open source mesh for Athena Pallas Giustiniani, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Athena Pallas Giustiniani, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS255",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/g732df32k_smk52-kas255-athena-pallas-giustiniani.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/pz50h152p_KAS255_small.stl",
@@ -707,7 +707,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 141.5 cm | W: 81 cm | D: 54.5 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS460)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Medici Faun, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Medici Faun, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS460",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/kk91fr31m_09-smk-dancing-satyr-inv-460.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/44558j590_KAS460_small.stl",
@@ -736,7 +736,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 74.7 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS701)",
     source: source(
-      "SMK Open source mesh for the Farnese Hercules head type, localized into Form Gallery's native STL viewer.",
+      "SMK Open source mesh for the Farnese Hercules head type, localized into Atrium's native STL viewer.",
       [
         link("SMK record", "https://open.smk.dk/en/artwork/image/KAS701"),
         link("Full STL", "https://api.smk.dk/api/v1/download-3d/f4752n479_smk26-kas701-head-from-farnese-hercules.stl"),
@@ -807,7 +807,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 213 cm | W: 75.5 cm | D: 77 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS11)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Doryphoros / Spear-Bearer type, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Doryphoros / Spear-Bearer type, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS11",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/q237hx73t_smk-doryphoros.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/th83m405d_KAS11_small.stl",
@@ -842,7 +842,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 146 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS1242)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Pourtales Torso, a Doryphoros-related fragment localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Pourtales Torso, a Doryphoros-related fragment localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS1242",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/qn59q832b_185-smk-kas1242.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/3b591f10n_KAS1242_small.stl",
@@ -878,7 +878,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 61 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS432)",
     source: smkSource({
-      summary: "SMK Open source mesh for a Diadoumenos bust, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for a Diadoumenos bust, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS432",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/zk51vn418_smk19-kas432-diadoumenos-bust-d.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/fx719s41q_KAS432_small.stl",
@@ -914,7 +914,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 120 cm | W: 79.5 cm | D: 57 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS248)",
     source: smkSource({
-      summary: "SMK Open source mesh for the kneeling youth traditionally identified as Ilioneus, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the kneeling youth traditionally identified as Ilioneus, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS248",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/mp48sj40r_smk7-kas248-kneeling-youth.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/rr172264n_KAS248_small.stl",
@@ -950,7 +950,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 199 cm | W: 76 cm | D: 51.5 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS229)",
     source: smkSource({
-      summary: "SMK Open source mesh for Antinoos Farnese, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Antinoos Farnese, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS229",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/bv73c474q_smk-farnese-antinous-inv-6030-scan-the-world.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/fj236691w_KAS229_small.stl",
@@ -985,7 +985,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 87.5 cm | W: 56 cm | D: 42 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS618)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Crouching Venus type, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Crouching Venus type, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS618",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/mc87pv84t_smk6-kas618-crouching-venus.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/cj82kc853_KAS618_small.stl",
@@ -1021,7 +1021,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 185 cm | W: 82.5 cm | D: 63 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS240)",
     source: smkSource({
-      summary: "SMK Open source mesh for the standing philosopher traditionally identified as Menippos of Gadara, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the standing philosopher traditionally identified as Menippos of Gadara, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS240",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/5m60qx27n_smk-109-kas240.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/qv33s222k_KAS240_small.stl",
@@ -1056,7 +1056,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 130 cm | W: 74 cm | D: 86 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2288)",
     source: smkSource({
-      summary: "SMK Open source mesh for the figure traditionally known as the Old Fisherman or 'Dying Seneca' type, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the figure traditionally known as the Old Fisherman or 'Dying Seneca' type, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2288",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/5x21tk78x_smk57-kas2288-dying-seneca-d.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/x920g267z_KAS2288_small.stl",
@@ -1091,7 +1091,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 137 cm | W: 154 cm | D: 93 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2157)",
     source: smkSource({
-      summary: "SMK Open source mesh for the seated boar known as Porcellino, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the seated boar known as Porcellino, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2157",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/r207tt73g_porcellino.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/1n79h940q_KAS2157_small.stl",
@@ -1127,7 +1127,7 @@ export const museumPiecesExtension = {
     dimensions: "W: 160 cm | D: 51 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS1016)",
     source: smkSource({
-      summary: "SMK Open source mesh for the lion from the Nereid Monument, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the lion from the Nereid Monument, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS1016",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/g158bn64c_smk-54-lion.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/qf85nh32s_KAS1016_small.stl",
@@ -1163,7 +1163,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 233.5 cm | W: 80 cm | D: 66.5 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS1161)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Belvedere Antinous type, now often identified as Hermes, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Belvedere Antinous type, now often identified as Hermes, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS1161",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/js956m23t_smk38-kas1161.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/0v838549t_KAS1161_small.stl",
@@ -1198,7 +1198,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 119 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS836)",
     source: smkSource({
-      summary: "SMK Open source mesh for the portrait bust of Antinoos, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the portrait bust of Antinoos, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS836",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/xw42nc95h_smk48-kas836-portrait-of-antinous-d-no-base.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/wp988q70q_KAS836-no-base_small.stl",
@@ -1234,7 +1234,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 39 cm | W: 54 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS767)",
     source: smkSource({
-      summary: "SMK Open source mesh for the Strangford Shield relief, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the Strangford Shield relief, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS767",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/bv73c4750_strangford-skjoldet-repaired-2022.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/5x21tk87w_KAS767-repaired_small.stl",
@@ -1270,7 +1270,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 95 cm | W: 68 cm | D: 72 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS99)",
     source: smkSource({
-      summary: "SMK Open source mesh for the seated Dionysos Farnese torso, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the seated Dionysos Farnese torso, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS99",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/n870zw578_smk-47-kas99.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/2b88qh62d_KAS99_small.stl",
@@ -1306,7 +1306,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 61 cm | W: 43.5 cm | D: 45.5 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2382)",
     source: smkSource({
-      summary: "SMK Open source mesh for Michelangelo's Crouching Boy, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Michelangelo's Crouching Boy, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2382",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/q524jt29h_smk-51-kas2382.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/3197xs07d_KAS2382_small.stl",
@@ -1342,7 +1342,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 124 cm | W: 74.5 cm | D: 46 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS202)",
     source: smkSource({
-      summary: "SMK Open source mesh for Penelope, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Penelope, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS202",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/b5644x06s_penelope-1.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/dv13zz67n_KAS202_small.stl",
@@ -1377,7 +1377,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 161 cm | W: 80 cm | D: 86.5 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS35)",
     source: smkSource({
-      summary: "SMK Open source mesh for Thalia, muse of comedy, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Thalia, muse of comedy, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS35",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/v979v730x_smk-103-kas35.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/gt54ks43p_KAS35_small.stl",
@@ -1412,7 +1412,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 128 cm | W: 57 cm | D: 90 cm",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS207)",
     source: smkSource({
-      summary: "SMK Open source mesh for the seated portrait of Aristippos of Cyrene, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the seated portrait of Aristippos of Cyrene, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS207",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/df65vd347_smk-kas-43.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/8910k003r_KAS207_small.stl",
@@ -1449,7 +1449,7 @@ export const museumPiecesExtension = {
     location: "Sallust's Gardens, Rome",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2051)",
     source: smkSource({
-      summary: "SMK Open source mesh for Dying Niobid, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Dying Niobid, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2051",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/w6634853q_smk36-kas2051.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/w9505475s_KAS2051_small.stl",
@@ -1486,7 +1486,7 @@ export const museumPiecesExtension = {
     location: "Parthenon east pediment, Acropolis, Athens",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS2118)",
     source: smkSource({
-      summary: "SMK Open source mesh for the seated woman identified as Hestia?, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the seated woman identified as Hestia?, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS2118",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/vj23cc54r_smk-kas2118-east-gable-of-the-parthenon.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/hh63t193x_KAS2118_small.stl",
@@ -1523,7 +1523,7 @@ export const museumPiecesExtension = {
     location: "Ex Villa Mattei, later Vatican collections",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS199)",
     source: smkSource({
-      summary: "SMK Open source mesh for Pudicity, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for Pudicity, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS199",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/ff365989p_smk34-kas199-pudicitia.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/qz20sz34f_KAS199_small.stl",
@@ -1560,7 +1560,7 @@ export const museumPiecesExtension = {
     location: "Ex Farnese Collection, Italy",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS210)",
     source: smkSource({
-      summary: "SMK Open source mesh for the portrait bust of Homer, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the portrait bust of Homer, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS210",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/g445cj835_smk-kas210-homer.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/ms35tf42j_KAS210_small.stl",
@@ -1597,7 +1597,7 @@ export const museumPiecesExtension = {
     location: "Italy, probably Rome",
     lobbyMeta: "Source: SMK Open plaster-cast scan (KAS1164)",
     source: smkSource({
-      summary: "SMK Open source mesh for the lying lion, localized into Form Gallery's native STL viewer.",
+      summary: "SMK Open source mesh for the lying lion, localized into Atrium's native STL viewer.",
       recordUrl: "https://open.smk.dk/en/artwork/image/KAS1164",
       fullUrl: "https://api.smk.dk/api/v1/download-3d/0d316r65f_smk-kas1164-lion.stl",
       fallbackUrl: "https://api.smk.dk/api/v1/download-3d/wp988q728_KAS1164_small.stl",
@@ -1634,7 +1634,7 @@ export const museumPiecesExtension = {
     location: "Acropolis, Athens (west of the Erechtheion)",
     lobbyMeta: "Source: Wikimedia Commons / SMK Open STL (KAS1800)",
     source: source(
-      "Rendered from the Wikimedia Commons STL for SMK's 3D model of the Acropolis kore in chiton and epiblema, loaded directly into Form Gallery's native STL viewer.",
+      "Rendered from the Wikimedia Commons STL for SMK's 3D model of the Acropolis kore in chiton and epiblema, loaded directly into Atrium's native STL viewer.",
       [
         link("SMK record", "https://open.smk.dk/artwork/image/KAS1800"),
         link("Wikimedia Commons file", "https://commons.wikimedia.org/wiki/File:Ubekendt,_Kore_if%C3%B8rt_chiton_og_kappe_epiblema_,_,_KAS1800,_Statens_Museum_for_Kunst,_3D_model.stl"),
@@ -1677,7 +1677,7 @@ export const museumPiecesExtension = {
     location: "Villa dei Papiri, Herculaneum",
     lobbyMeta: "Source: Wikimedia Commons / SMK Open STL (KAS94)",
     source: source(
-      "Rendered from the Wikimedia Commons STL for SMK's 3D model of the so-called Pseudo-Seneca portrait, loaded directly into Form Gallery's native STL viewer.",
+      "Rendered from the Wikimedia Commons STL for SMK's 3D model of the so-called Pseudo-Seneca portrait, loaded directly into Atrium's native STL viewer.",
       [
         link("SMK record", "https://open.smk.dk/artwork/image/KAS94"),
         link("Wikimedia Commons file", "https://commons.wikimedia.org/wiki/File:Ubekendt,_Pseudo-Seneca,_portr%C3%A6t_af_Hesiod_8_%C3%A5rh_fKr_,_,_KAS94,_Statens_Museum_for_Kunst,_3D_model.stl"),
@@ -1718,7 +1718,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 48.5 cm",
     lobbyMeta: "Source: Wikimedia Commons / SMK Open STL (KAS866)",
     source: source(
-      "Rendered from the Wikimedia Commons STL for SMK's 3D model of Julia Titi, loaded directly into Form Gallery's native STL viewer.",
+      "Rendered from the Wikimedia Commons STL for SMK's 3D model of Julia Titi, loaded directly into Atrium's native STL viewer.",
       [
         link("SMK record", "https://open.smk.dk/artwork/image/KAS866"),
         link("Wikimedia Commons file", "https://commons.wikimedia.org/wiki/File:Ubekendt,_Julia_Titi,_,_KAS866,_Statens_Museum_for_Kunst,_3D_model.stl"),
@@ -1759,7 +1759,7 @@ export const museumPiecesExtension = {
     dimensions: "H: 54 cm",
     lobbyMeta: "Source: Wikimedia Commons / SMK Open STL (KAS1110)",
     source: source(
-      "Rendered from the Wikimedia Commons STL for SMK's 3D model of Zeus Ammon, loaded directly into Form Gallery's native STL viewer.",
+      "Rendered from the Wikimedia Commons STL for SMK's 3D model of Zeus Ammon, loaded directly into Atrium's native STL viewer.",
       [
         link("SMK record", "https://open.smk.dk/artwork/image/KAS1110"),
         link("Wikimedia Commons file", "https://commons.wikimedia.org/wiki/File:Ubekendt,_Zeus_Ammon,_,_KAS1110,_Statens_Museum_for_Kunst,_3D_model.stl"),
@@ -4013,7 +4013,7 @@ export const museumPiecesExtension = {
         link("Voyager document", "https://3d-api.si.edu/content/document/3d_package:46fd85b8-3d84-4cf3-b5d8-9673ac778bb9/document.json"),
         link("High GLB", "https://3d-api.si.edu/content/document/3d_package:46fd85b8-3d84-4cf3-b5d8-9673ac778bb9/pisac-intihuatana-150k-4096-high.glb")
       ],
-      "The National Museum of the American Indian source page describes Intihuatana as a district at Pisac dedicated to the cult of the sun. The source page does not publish object dimensions, so Form Gallery omits them here rather than inferring scale from the site scan."
+      "The National Museum of the American Indian source page describes Intihuatana as a district at Pisac dedicated to the cult of the sun. The source page does not publish object dimensions, so Atrium omits them here rather than inferring scale from the site scan."
     ),
     defaults: {
       zoom: 2.26,
@@ -4054,7 +4054,7 @@ export const museumPiecesExtension = {
         link("Voyager document", "https://3d-api.si.edu/content/document/3d_package:c49dbdb8-d4c8-49d7-be17-820c87edeb68/document.json"),
         link("High GLB", "https://3d-api.si.edu/content/document/3d_package:c49dbdb8-d4c8-49d7-be17-820c87edeb68/hatunrumiyoc-150k-4096-high.glb")
       ],
-      "The National Museum of the American Indian source page identifies Hatunrumiyoc as part of the palace of Inka Roca in Cusco. The source page does not publish object dimensions, so Form Gallery omits them here rather than inferring scale from the site scan."
+      "The National Museum of the American Indian source page identifies Hatunrumiyoc as part of the palace of Inka Roca in Cusco. The source page does not publish object dimensions, so Atrium omits them here rather than inferring scale from the site scan."
     ),
     defaults: {
       zoom: 2.24,
@@ -4385,7 +4385,7 @@ export const museumPiecesExtension = {
       packageId: "e2e5f282-51e9-459e-9810-c341c21f06ca",
       highFile: "tree_of_life-150k-4096-high.glb",
       mediumFile: "tree_of_life-150k-2048-medium.glb",
-      note: "The public 3D record exposes title and data-source information but limited object metadata; Form Gallery leaves unsupported fields blank rather than inferring them."
+      note: "The public 3D record exposes title and data-source information but limited object metadata; Atrium leaves unsupported fields blank rather than inferring them."
     }),
     model: {
       primaryUrl: smithsonianAsset("e2e5f282-51e9-459e-9810-c341c21f06ca", "tree_of_life-150k-4096-high.glb"),

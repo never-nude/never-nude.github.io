@@ -1,10 +1,10 @@
-const MODULE_VERSION = "20260406-1215";
+const MODULE_VERSION = "20260424-1515";
 const DARK_ROOT = "/museumv2/dark/";
 
 let catalogPromise = null;
 let themePromise = null;
 let printingPromise = null;
-const COLLECTION_DESCRIPTION = "Form Gallery is a digital sculpture collection spanning antiquity through the twenty-first century. Browse by gallery, era, region, or maker.";
+const COLLECTION_DESCRIPTION = "Atrium is a digital sculpture collection spanning antiquity through the twenty-first century. Browse by gallery, era, region, or maker.";
 
 function loadThemeModule() {
   if (!themePromise) {
@@ -549,7 +549,7 @@ function renderBootError(message, error) {
     <a class="skip-link" href="#system-state">Skip to message</a>
     <main class="system-state" id="system-state">
       <section class="system-state-card" role="alert">
-        <p class="system-state-kicker">Form Gallery</p>
+        <p class="system-state-kicker">Atrium</p>
         <h1 class="system-state-title">${escapeHtml(message)}</h1>
         <p class="system-state-copy">The page shell loaded, but this view could not be prepared. Refresh the page or return to the atrium and try again.</p>
         <a class="explore-button" href="${atriumHref}">Return to Atrium</a>
@@ -613,7 +613,7 @@ function buildPiecePageDescription(piece) {
     segments.push(medium);
   }
 
-  segments.push("Viewable in Form Gallery, a digital sculpture collection spanning antiquity through the twenty-first century.");
+  segments.push("Viewable in Atrium, a digital sculpture collection spanning antiquity through the twenty-first century.");
   return segments.join(". ").replace(/\.\s*$/, "") + ".";
 }
 
@@ -638,7 +638,7 @@ export async function initMuseumLobbyPage(options = {}) {
     const lobbyConfig = {
       ...museumLobby,
       title: darkMount ? "Dark Room" : museumLobby.title || "Atrium",
-      pageTitle: darkMount ? "Dark Room — Form Gallery" : "Atrium — Form Gallery",
+      pageTitle: darkMount ? "Dark Room — Atrium" : "Atrium — Atrium",
       tourHref: darkMount ? "" : museumLobby.tourHref
     };
     document.body.dataset.atriumHref = darkMount ? DARK_ROOT : "/museumv2/museum/";
@@ -668,8 +668,8 @@ export async function initMuseumPiecePage(pieceId, options = {}) {
       ...preparedPiece,
       printing: buildPrintingInfo(preparedPiece),
       pageTitle: darkMount
-        ? `${simplifyWorkTitle(preparedPiece.viewerTitle)} — Dark Room — Form Gallery`
-        : `${simplifyWorkTitle(preparedPiece.viewerTitle)} — Form Gallery`
+        ? `${simplifyWorkTitle(preparedPiece.viewerTitle)} — Dark Room — Atrium`
+        : `${simplifyWorkTitle(preparedPiece.viewerTitle)} — Atrium`
     };
     document.body.dataset.atriumHref = pagePiece.atriumHref || "/museumv2/museum/";
 

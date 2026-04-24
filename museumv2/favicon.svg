@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#111017"/museumv2/>
-  <text x="16" y="22" text-anchor="middle" font-family="Avenir Next,Helvetica Neue,sans-serif" font-size="18" font-weight="700" fill="#f0c0a4" letter-spacing="-1">FG</text>
+  <rect width="32" height="32" rx="7" fill="#050505" />
+  <path d="M16 6 9 25h3.3l1.5-4.2h6.5l1.5 4.2H25L18 6Zm-1.2 12.1 2.2-6.1 2.2 6.1Z" fill="#e8e4df" />
+  <circle cx="25.2" cy="8.2" r="1.6" fill="#c8a97e" />
 </svg>

@@ -458,9 +458,10 @@ function pickFeaturedPiece(lobby, sections) {
   return allEntries[0] || null;
 }
 
-function heroPreviewHref(href) {
+function previewHref(href, mode = "card") {
   if (!href || /^https?:\/\//.test(href)) return "";
-  return href.includes("?") ? `${href}&embed=hero&preview=1` : `${href}?embed=hero&preview=1`;
+  const suffix = `embed=${mode}&preview=1`;
+  return href.includes("?") ? `${href}&${suffix}` : `${href}?${suffix}`;
 }
 
 function restoreHashPosition() {
@@ -485,12 +486,49 @@ function escapeAttr(str) {
     .replace(/>/g, "&gt;");
 }
 
+function escapeHtml(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function classifyMedium(medium = "") {
+  const value = String(medium || "").toLowerCase();
+  if (/bronze|brass|copper|metal|alloy|gilt/.test(value)) return "bronze";
+  if (/marble|plaster|alabaster/.test(value)) return "marble";
+  if (/limestone|sandstone|stone|granite|basalt|quartzite|schist/.test(value)) return "stone";
+  if (/terracotta|clay|ceramic/.test(value)) return "terracotta";
+  if (/wood|oak|cedar|ivory|bone/.test(value)) return "organic";
+  return "mixed";
+}
+
+function renderThumbSurface(entry, className, previewMode = "card") {
+  const previewSrc = isPreviewableEntry(entry) ? previewHref(entry.href, previewMode) : "";
+  const medium = entry.piece?.medium || "";
+  const caption = medium.split(",")[0] || entry.gallery || "3D scan";
+
+  return `
+    <span
+      class="${className} is-${classifyMedium(medium)}"
+      data-medium="${escapeAttr(medium)}"
+      ${previewSrc ? `data-preview-src="${escapeAttr(previewSrc)}" data-preview-title="${escapeAttr(`${entry.title} preview`)}"` : ""}
+    >
+      <span class="fg-thumb-glow" aria-hidden="true"></span>
+      <span class="fg-thumb-form" aria-hidden="true"></span>
+      <span class="fg-thumb-plinth" aria-hidden="true"></span>
+      <span class="fg-thumb-caption">${escapeHtml(caption)}</span>
+    </span>
+  `;
+}
+
 function renderHeader(lobby) {
   return `
     <header class="fg-header">
-      <a class="fg-brand" href="/museumv2/museum/" aria-label="Form Gallery">
-        <span class="fg-brand-form">FORM</span>
-        <span class="fg-brand-gallery">GALLERY</span>
+      <a class="fg-brand" href="/museumv2/museum/" aria-label="${escapeAttr(lobby.title || "ATRIUM.EARTH")}">
+        <span class="fg-brand-wordmark">ATRIUM<span class="fg-brand-suffix">.EARTH</span></span>
       </a>
       <nav class="fg-nav" aria-label="Museum navigation">
         <a class="fg-nav-link" href="#fg-hero">Featured</a>
@@ -501,9 +539,9 @@ function renderHeader(lobby) {
   `;
 }
 
-function renderHero(lobby, featuredPiece) {
+function renderHero(lobby, featuredPiece, collectionMeta) {
   if (!featuredPiece) return "";
-  const heroFrame = heroPreviewHref(featuredPiece.href);
+  const heroFrame = previewHref(featuredPiece.href, "hero");
   const attribution = featuredPiece.attribution || "";
   const date = featuredPiece.date || "";
 
@@ -517,19 +555,20 @@ function renderHero(lobby, featuredPiece) {
         <p class="fg-hero-kicker">${lobby.featuredLabel || "Featured Sculpture"}</p>
         <h1 class="fg-hero-title">${featuredPiece.title}</h1>
         <p class="fg-hero-artist">${attribution}${attribution && date ? " \u00b7 " : ""}${date}</p>
-        <a class="fg-btn fg-btn-primary fg-hero-cta" href="${escapeAttr(featuredPiece.href)}">${lobby.featuredCtaLabel || "Explore"}</a>
+        <p class="fg-hero-copy">${lobby.subtitle || "A free, open digital sculpture museum hosting 231 3D-scanned works spanning antiquity through the twenty-first century."}</p>
+        <div class="fg-hero-actions">
+          <a class="fg-btn fg-btn-primary fg-hero-cta" href="${escapeAttr(featuredPiece.href)}">${lobby.featuredCtaLabel || "Explore the Work"}</a>
+          <p class="fg-hero-meta">${escapeHtml(collectionMeta)}</p>
+        </div>
       </div>
     </section>
   `;
 }
 
 function renderRecentCard(entry) {
-  const previewFrame = heroPreviewHref(entry.href);
   return `
     <a class="fg-recent-card" href="${escapeAttr(entry.href)}">
-      <span class="fg-recent-thumb" data-medium="${escapeAttr(entry.piece?.medium || "")}">
-        ${previewFrame ? `<iframe class="new-addition-frame" data-preview-src="${escapeAttr(previewFrame)}" tabindex="-1" loading="lazy" title="${escapeAttr(entry.title)} preview"></iframe>` : ""}
-      </span>
+      ${renderThumbSurface(entry, "fg-recent-thumb", "card")}
       <span class="fg-recent-info">
         <span class="fg-recent-gallery">${entry.gallery}</span>
         <span class="fg-recent-title">${entry.title}</span>
@@ -584,15 +623,17 @@ function renderFilterSection(lobby, browseGroups) {
           <h2 class="fg-section-title">${lobby.browseTitle || "Browse the Collection"}</h2>
         </div>
       </div>
-      <div class="fg-filter-bar">
-        <input class="fg-search-input" type="search" placeholder="Search works..." aria-label="Search the collection" data-filter-search />
-        <div class="fg-facet-row">
-          ${facetsHtml}
+      <div class="fg-filter-shell">
+        <div class="fg-filter-bar">
+          <input class="fg-search-input" type="search" placeholder="Search works, makers, periods..." aria-label="Search the collection" data-filter-search />
+          <div class="fg-facet-row">
+            ${facetsHtml}
+          </div>
+          <button class="fg-btn fg-btn-ghost fg-filter-reset" type="button" data-filter-reset hidden>${lobby.browseResetLabel || "Show all works"}</button>
         </div>
         <div class="fg-active-filters" data-active-filters></div>
       </div>
       <p class="fg-filter-status" id="filterStatus" aria-live="polite">Viewing the full collection</p>
-      <button class="fg-btn fg-btn-ghost fg-filter-reset" type="button" data-filter-reset hidden>${lobby.browseResetLabel || "Show all works"}</button>
     </section>
   `;
 }
@@ -600,6 +641,7 @@ function renderFilterSection(lobby, browseGroups) {
 function renderTimeline(sectionGroups) {
   const erasHtml = sectionGroups.map((group) => `
     <a class="fg-timeline-era" href="#fg-chrono-${escapeAttr(group.id)}" style="--era-weight: ${group.workCount}">
+      <span class="fg-timeline-dot" aria-hidden="true"></span>
       <span class="fg-timeline-era-title">${group.title}</span>
       <span class="fg-timeline-era-count">${group.workCount} works</span>
     </a>
@@ -631,7 +673,7 @@ function renderPieceCard(entry) {
 
   return `
     <a class="fg-piece-card" href="${escapeAttr(entry.href)}" id="fg-work-${escapeAttr(entry.id)}" data-era="${escapeAttr(entry.era)}" data-region="${escapeAttr(entry.region)}" data-artist="${escapeAttr(entry.artist)}" data-gallery="${escapeAttr(entry.gallery)}" data-searchable="${escapeAttr(searchable)}">
-      <span class="fg-piece-thumb" data-medium="${escapeAttr(entry.piece?.medium || "")}"></span>
+      ${renderThumbSurface(entry, "fg-piece-thumb", "card")}
       <span class="fg-piece-info">
         <span class="fg-piece-title">${entry.title}</span>
         ${entry.creator ? `<span class="fg-piece-creator">${entry.creator}</span>` : ""}
@@ -888,59 +930,66 @@ function hydrateLobbyPreviews() {
     }
   }
 
-  // Use IntersectionObserver for lazy-loaded iframes
-  const lazyFrames = Array.from(document.querySelectorAll("iframe.new-addition-frame[data-preview-src]"));
-  if (!lazyFrames.length) return;
+  const previewThumbs = Array.from(document.querySelectorAll("[data-preview-src].fg-recent-thumb, [data-preview-src].fg-piece-thumb"));
+  if (!previewThumbs.length) return;
 
-  let loadIndex = 0;
-  const STAGGER_DELAY = 200;
-  const PRELOAD_DELAY = 1200;
+  const maxAutoLoads = window.matchMedia("(min-width: 1040px)").matches ? 14 : 6;
+  let autoLoads = 0;
 
-  function loadFrame(frame) {
-    const src = frame.dataset.previewSrc;
+  function mountFrame(container) {
+    if (!container || container.dataset.previewLoaded === "1") return;
+    const src = container.dataset.previewSrc;
     if (!src) return;
 
-    const delay = loadIndex * STAGGER_DELAY;
-    loadIndex++;
-
-    if (delay === 0) {
-      frame.src = src;
-      delete frame.dataset.previewSrc;
-    } else {
-      setTimeout(() => {
-        frame.src = src;
-        delete frame.dataset.previewSrc;
-      }, delay);
-    }
+    const frame = document.createElement("iframe");
+    frame.className = "fg-thumb-frame";
+    frame.tabIndex = -1;
+    frame.loading = "lazy";
+    frame.title = container.dataset.previewTitle || "Sculpture preview";
+    frame.setAttribute("aria-hidden", "true");
+    frame.addEventListener("load", () => {
+      container.classList.add("is-preview-ready");
+    }, { once: true });
+    frame.src = src;
+    container.prepend(frame);
+    container.dataset.previewLoaded = "1";
   }
 
-  function preloadRemainingFrames() {
-    for (const frame of lazyFrames) {
-      loadFrame(frame);
+  function queuePreview(container, immediate = false) {
+    if (!container || container.dataset.previewLoaded === "1") return;
+    if (!immediate && autoLoads >= maxAutoLoads) return;
+    if (!immediate) autoLoads += 1;
+
+    const work = () => mountFrame(container);
+    if (!immediate && "requestIdleCallback" in window) {
+      window.requestIdleCallback(work, { timeout: 900 });
+      return;
     }
+    window.setTimeout(work, immediate ? 0 : 120);
+  }
+
+  for (const thumb of previewThumbs) {
+    thumb.addEventListener("pointerenter", () => queuePreview(thumb, true), { once: true });
+    thumb.addEventListener("focusin", () => queuePreview(thumb, true), { once: true });
   }
 
   if ("IntersectionObserver" in window) {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const ioEntry of entries) {
-          if (ioEntry.isIntersecting) {
-            observer.unobserve(ioEntry.target);
-            loadFrame(ioEntry.target);
-          }
+          if (!ioEntry.isIntersecting) continue;
+          observer.unobserve(ioEntry.target);
+          queuePreview(ioEntry.target, false);
         }
       },
-      { rootMargin: "1200px 0px" }
+      { rootMargin: "240px 0px" }
     );
 
-    for (const frame of lazyFrames) {
-      observer.observe(frame);
+    for (const thumb of previewThumbs) {
+      observer.observe(thumb);
     }
-
-    window.setTimeout(preloadRemainingFrames, PRELOAD_DELAY);
   } else {
-    // Fallback: load all with stagger
-    preloadRemainingFrames();
+    previewThumbs.slice(0, maxAutoLoads).forEach((thumb) => queuePreview(thumb, false));
   }
 }
 
@@ -954,6 +1003,9 @@ export function renderMuseumLobby(lobby, pieces) {
   const entries = sections.flatMap((s) => s.items);
   const recentAdditions = buildRecentAdditions(pieces, sections);
   const featuredPiece = pickFeaturedPiece(lobby, sections);
+  const regionCount = buildBrowseItems("region", REGION_ORDER, entries).length;
+  const makerCount = buildBrowseItems("artist", ARTIST_ORDER, entries).length;
+  const collectionMeta = `${entries.length} works \u00b7 ${sections.length} galleries \u00b7 ${regionCount} regions \u00b7 ${makerCount} makers`;
   const browseGroups = [
     { id: "era", title: "Era", items: buildBrowseItems("era", ERA_ORDER, entries) },
     { id: "region", title: "Region", items: buildBrowseItems("region", REGION_ORDER, entries) },
@@ -969,7 +1021,7 @@ export function renderMuseumLobby(lobby, pieces) {
     <a class="skip-link" href="#fg-collection">Skip to collection</a>
     ${renderHeader(lobby)}
     <main class="fg-main">
-      ${renderHero(lobby, featuredPiece)}
+      ${renderHero(lobby, featuredPiece, collectionMeta)}
       ${renderRecentSection(recentAdditions)}
       ${renderFilterSection(lobby, browseGroups)}
       ${renderTimeline(sectionGroups)}

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://never-nude.github.io/museumv2/sitemap.xml
+Sitemap: https://atrium.earth/museumv2/sitemap.xml

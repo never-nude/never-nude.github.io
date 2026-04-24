@@ -2,6 +2,12 @@
 
 Long-range sculpture backlog for the ad-arma museum.
 
+## Recently completed
+
+- `2026-04-24`: Rebranded the public museum experience to `ATRIUM.EARTH` / `Atrium` across the shared lobby, viewer shell, 404 page, redirect shell, and favicon.
+- `2026-04-24`: Rebuilt the gallery visual system around a near-black palette with warm off-white type, gold accents, glass overlays, a cinematic hero, and darker thumbnail stages.
+- `2026-04-24`: Upgraded the shared STL, glTF, and Sketchfab viewers with auto-hiding overlay chrome, keyboard shortcuts, prev/next navigation, fullscreen support, richer info drawer presentation, and darker museum-style lighting.
+
 ## Status tags
 
 - `live`: published in the museum lobby and working in the shared viewer

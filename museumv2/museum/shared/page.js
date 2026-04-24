@@ -1,11 +1,14 @@
 import { LOCATION_OVERRIDES_BY_PIECE } from "./location-overrides.js";
 
-const MODULE_VERSION = "20260406-1215";
+const MODULE_VERSION = "20260424-1515";
+const SITE_ORIGIN = "https://atrium.earth";
+const GALLERY_CANONICAL_PATH = "/museum/";
+const BRAND_NAME = "ATRIUM.EARTH";
 
 let catalogPromise = null;
-const COLLECTION_DESCRIPTION = "Form Gallery is a digital sculpture collection spanning antiquity through the twenty-first century. Browse by gallery, era, region, or maker.";
+const COLLECTION_DESCRIPTION = "ATRIUM.EARTH is a free, open digital sculpture museum hosting 231 3D-scanned works spanning antiquity through the twenty-first century. Browse by gallery, era, region, or maker.";
 const DEFAULT_THEME = "dark";
-const DEFAULT_THEME_COLOR = "#111017";
+const DEFAULT_THEME_COLOR = "#050505";
 
 function applyDefaultDarkTheme() {
   document.documentElement.dataset.theme = DEFAULT_THEME;
@@ -447,6 +450,7 @@ function buildMergedCatalog(base, extension) {
     museumChronology,
     museumSections,
     museumPieces,
+    museumPieceOrder: buildPieceOrder(museumChronology, museumSections, museumPieces),
     museumLobby: {
       ...(base.museumLobby || {}),
       sections,
@@ -456,6 +460,48 @@ function buildMergedCatalog(base, extension) {
       Object.entries(museumPieces).flatMap(([pieceId, piece]) => routeEntriesForPath(piece.path, pieceId))
     )
   };
+}
+
+function buildPieceOrder(museumChronology, museumSections, museumPieces) {
+  const chronologyPosition = new Map();
+  museumChronology.forEach((group, groupIndex) => {
+    (group.sectionIds || []).forEach((sectionId, sectionIndex) => {
+      chronologyPosition.set(sectionId, {
+        groupIndex,
+        sectionIndex
+      });
+    });
+  });
+
+  const sectionFallbackIndex = new Map(museumSections.map((section, index) => [section.id, index]));
+
+  return Object.entries(museumPieces)
+    .filter(([, piece]) => piece?.path)
+    .sort(([, a], [, b]) => {
+      const aPosition = chronologyPosition.get(a.sectionId) || {
+        groupIndex: Number.POSITIVE_INFINITY,
+        sectionIndex: sectionFallbackIndex.get(a.sectionId) ?? Number.POSITIVE_INFINITY
+      };
+      const bPosition = chronologyPosition.get(b.sectionId) || {
+        groupIndex: Number.POSITIVE_INFINITY,
+        sectionIndex: sectionFallbackIndex.get(b.sectionId) ?? Number.POSITIVE_INFINITY
+      };
+
+      if (aPosition.groupIndex !== bPosition.groupIndex) {
+        return aPosition.groupIndex - bPosition.groupIndex;
+      }
+
+      if (aPosition.sectionIndex !== bPosition.sectionIndex) {
+        return aPosition.sectionIndex - bPosition.sectionIndex;
+      }
+
+      if ((a.sortOrder ?? 9999) !== (b.sortOrder ?? 9999)) {
+        return (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999);
+      }
+
+      return (a.viewerTitle || "").localeCompare(b.viewerTitle || "", undefined, { numeric: true });
+    })
+    .map(([pieceId]) => pieceId);
 }
 
 function loadCatalog() {
@@ -497,7 +543,7 @@ function renderBootError(message, error) {
     <a class="skip-link" href="#system-state">Skip to message</a>
     <main class="system-state" id="system-state">
       <section class="system-state-card" role="alert">
-        <p class="system-state-kicker">Form Gallery</p>
+        <p class="system-state-kicker">${BRAND_NAME}</p>
         <h1 class="system-state-title">${escapeHtml(message)}</h1>
         <p class="system-state-copy">The page shell loaded, but this view could not be prepared. Refresh the page or return to the atrium and try again.</p>
         <a class="explore-button" href="/museumv2/museum/">Return to Atrium</a>
@@ -550,7 +596,7 @@ function setPageMetadata({ title, description, canonicalPath, jsonLd }) {
   }
 
   if (canonicalPath) {
-    setCanonicalUrl(`https://never-nude.github.io${canonicalPath}`);
+    setCanonicalUrl(`${SITE_ORIGIN}${canonicalPath}`);
   }
 
   if (jsonLd) {
@@ -562,9 +608,9 @@ function buildLobbyJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Form Gallery — Digital Sculpture Collection",
+    name: "ATRIUM.EARTH — Digital Sculpture Museum",
     description: COLLECTION_DESCRIPTION,
-    url: "https://never-nude.github.io/museumv2/museum/"
+    url: `${SITE_ORIGIN}${GALLERY_CANONICAL_PATH}`
   };
 }
 
@@ -574,7 +620,7 @@ function buildPieceJsonLd(piece) {
     "@type": "VisualArtwork",
     name: cleanMetadataText(piece.viewerTitle || ""),
     artform: "Sculpture",
-    url: `https://never-nude.github.io${piece.path || ""}`
+    url: `${SITE_ORIGIN}${piece.path || ""}`
   };
   const artist = cleanMetadataText(piece.subtitle || "");
   if (artist && !/unknown|workshop/i.test(artist)) {
@@ -647,8 +693,36 @@ function buildPiecePageDescription(piece) {
     segments.push(medium);
   }
 
-  segments.push("Viewable in Form Gallery, a digital sculpture collection spanning antiquity through the twenty-first century.");
+  segments.push("Viewable in Atrium, a free digital sculpture museum spanning antiquity through the twenty-first century.");
   return segments.join(". ").replace(/\.\s*$/, "") + ".";
+}
+
+function navigatorEntryForPiece(pieceId, museumPieces) {
+  const piece = museumPieces[pieceId];
+  if (!piece?.path) {
+    return null;
+  }
+
+  return {
+    id: pieceId,
+    href: piece.path,
+    title: simplifyWorkTitle(piece.viewerTitle || piece.title || "")
+  };
+}
+
+function buildAdjacentPieces(pieceId, museumPieces, museumPieceOrder) {
+  const index = museumPieceOrder.indexOf(pieceId);
+  if (index === -1) {
+    return {
+      prevPiece: null,
+      nextPiece: null
+    };
+  }
+
+  return {
+    prevPiece: navigatorEntryForPiece(museumPieceOrder[index - 1], museumPieces),
+    nextPiece: navigatorEntryForPiece(museumPieceOrder[index + 1], museumPieces)
+  };
 }
 
 export async function initMuseumLobbyPage() {
@@ -659,14 +733,14 @@ export async function initMuseumLobbyPage() {
     ]);
     const lobbyConfig = {
       ...museumLobby,
-      title: museumLobby.title || "Atrium",
-      pageTitle: "Atrium — Form Gallery"
+      title: museumLobby.title || BRAND_NAME,
+      pageTitle: museumLobby.pageTitle || "ATRIUM.EARTH — Digital Sculpture Museum"
     };
     renderMuseumLobby(lobbyConfig, museumPieces);
     setPageMetadata({
       title: lobbyConfig.pageTitle,
       description: COLLECTION_DESCRIPTION,
-      canonicalPath: "/museumv2/museum/",
+      canonicalPath: GALLERY_CANONICAL_PATH,
       jsonLd: buildLobbyJsonLd()
     });
   } catch (error) {
@@ -675,7 +749,7 @@ export async function initMuseumLobbyPage() {
 }
 
 export async function initMuseumPiecePage(pieceId) {
-  const { museumPieces } = await loadCatalog();
+  const { museumPieces, museumPieceOrder } = await loadCatalog();
   const piece = museumPieces[pieceId];
   if (!piece) {
     renderBootError(`Unknown museum piece: ${pieceId}`, new Error(`Unknown museum piece: ${pieceId}`));
@@ -684,10 +758,13 @@ export async function initMuseumPiecePage(pieceId) {
 
   try {
     const relatedWorks = findRelatedWorks(pieceId, museumPieces);
+    const { prevPiece, nextPiece } = buildAdjacentPieces(pieceId, museumPieces, museumPieceOrder);
     const pagePiece = {
       ...piece,
-      pageTitle: `${simplifyWorkTitle(piece.viewerTitle)} — Form Gallery`,
-      relatedWorks
+      pageTitle: `${simplifyWorkTitle(piece.viewerTitle)} — Atrium`,
+      relatedWorks,
+      prevPiece,
+      nextPiece
     };
 
     setPageMetadata({
