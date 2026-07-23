@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#050505">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Atrium Preview</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        background: #050505;
+      }
+
+      body {
+        display: grid;
+        min-height: 100dvh;
+        place-items: center;
+        padding: clamp(12px, 2vw, 28px);
+      }
+
+      main {
+        width: min(100%, 1440px);
+      }
+
+      h1 {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      video {
+        display: block;
+        width: 100%;
+        max-height: calc(100dvh - clamp(24px, 4vw, 56px));
+        margin: auto;
+        background: #000;
+        border-radius: 8px;
+        box-shadow: 0 24px 80px rgb(0 0 0 / 55%);
+        object-fit: contain;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Atrium preview</h1>
+      <video autoplay muted loop playsinline controls preload="metadata" aria-label="Atrium product preview">
+        <source src="./atrium-preview.mp4" type="video/mp4">
+        Your browser cannot play this video.
+        <a href="./atrium-preview.mp4">Download the Atrium preview</a>.
+      </video>
+    </main>
+  </body>
+</html>
